@@ -1,5 +1,10 @@
 lockfileVersion: '6.0'
 
+dependencies:
+  comlink:
+    specifier: ^4.4.1
+    version: 4.4.1
+
 devDependencies:
   '@sveltejs/vite-plugin-svelte':
     specifier: ^2.0.4
@@ -345,6 +350,10 @@ packages:
     optionalDependencies:
       fsevents: 2.3.2
     dev: true
+
+  /comlink@4.4.1:
+    resolution: {integrity: sha512-+1dlx0aY5Jo1vHy/tSsIGpSkN4tS9rZSW8FIhG0JH/crs9wwweswIo/POr451r7bZww3hFbPAKnTpimzL/mm4Q==}
+    dev: false
 
   /concat-map@0.0.1:
     resolution: {integrity: sha512-/Srv4dswyQNBfohGpz9o6Yb3Gz3SrUDqBH5rTuhGR7ahtlbYKnVxw2bCFMRljaA7EXHaXZ8wsHdodFvbkhKmqg==}
