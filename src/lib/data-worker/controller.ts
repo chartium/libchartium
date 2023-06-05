@@ -1,5 +1,5 @@
 import wasmUrl from "../../src-rust/pkg/libchartium_bg.wasm?url";
-import init, * as lib from "../../src-rust/pkg/libchartium.js";
+import init, * as lib from "../../../src-rust/pkg/libchartium.js";
 import type {
   BulkloadOptions,
   BundleHandle,
@@ -7,8 +7,8 @@ import type {
   RendererHandle,
   RendererOptions,
   Size,
-} from "../types.js";
-import { todo, yeet } from "../utils/yeet.js";
+} from "../../types.js";
+import { todo, yeet } from "../../utils/yeet.js";
 
 let wasmMemory: WebAssembly.Memory | undefined;
 
