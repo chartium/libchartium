@@ -83,6 +83,7 @@ impl Segment for SharedSegment {
         )
     }
 
+    // FIXME move to a common implementation in Segment trait
     fn value_at(&self, x: RangePrec) -> Option<RangePrec> {
         if !self.contains(x) {
             return None;

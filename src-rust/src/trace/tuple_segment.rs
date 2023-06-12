@@ -75,6 +75,7 @@ impl<X: SegmentNumeric + Copy, Y: SegmentNumeric + Copy> Segment for TupleSegmen
         )
     }
 
+    // FIXME move to a common implementation in Segment trait
     fn value_at(&self, x: RangePrec) -> Option<RangePrec> {
         if !self.contains(x) {
             return None;

@@ -8,6 +8,15 @@ use crate::{
 
 use super::DataModule;
 
+trait OptionUtils<T> {
+    fn is_none_or(self, f: impl FnOnce(T) -> bool) -> bool;
+}
+impl<T> OptionUtils<T> for Option<T> {
+    fn is_none_or(self, f: impl FnOnce(T) -> bool) -> bool {
+        self.is_none() || f(self.unwrap())
+    }
+}
+
 #[wasm_bindgen]
 impl DataModule {
     pub fn get_data_at_point(&self, ptrs: &[DataIdx], x: RangePrec) -> JsValue {
@@ -36,6 +45,48 @@ impl DataModule {
         dists.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap());
 
         dists.first().map(|f| f.0)
+    }
+
+    pub fn find_n_closest(
+        &self,
+        ptrs: &[DataIdx],
+        n: usize,
+        point_x: RangePrec,
+        point_y: RangePrec,
+        from: RangePrec,
+        to: RangePrec,
+        area_chart: bool,
+    ) -> Box<[JsValue]> {
+
+        let mut dists: Vec<(DataIdx, RangePrec)> = self
+            .get_data_at(ptrs, point_x)
+            .filter_map(|(k, v)| v.map(|v| (k, v)))
+            .collect();
+
+        if area_chart {
+            let mut add = 0.0;
+
+            for (id, y) in dists.iter() {
+                if add <= point_y && point_y < add + y {
+                    return Box::new([self.get_trace_metas(*id, from, to)]);
+                }
+
+                add += y;
+            }
+        }
+
+        dists.sort_by(|a, b| {
+            (a.1 - point_y)
+                .abs()
+                .partial_cmp(&(b.1 - point_y).abs())
+                .unwrap()
+        });
+
+        dists
+            .iter()
+            .take(n)
+            .map(|f| self.get_trace_metas(f.0, from, to))
+            .collect()
     }
 
     pub fn shift_clone_trace(
@@ -159,21 +210,54 @@ impl DataModule {
             .expect("Invalid output in op_traces");
     }
 
-    pub fn get_trace_metas(
+    pub fn get_closest_point(
         &self,
         ptr: DataIdx,
-        from: RangePrec,
-        to: RangePrec,
-        val: &[RangePrec],
-    ) -> JsValue {
+        rx: RangePrec,
+        _ry: RangePrec,
+    ) -> Option<Box<[RangePrec]>> {
+        let mut closest_x: Option<RangePrec> = None;
+        let mut closest_y: Option<RangePrec> = None;
+
+        let trace = self
+            .traces
+            .get(&ptr)
+            .expect("Invalid ptr in get_closest_point");
+
+        let data = trace
+            .segments
+            .iter()
+            .find(|s| s.contains(rx))
+            .map(|s| s.iter_high_prec(s.from(), s.to()))
+            .unwrap_or_else(|| {
+                Box::new(
+                    trace
+                        .segments
+                        .iter()
+                        .flat_map(|s| s.iter_high_prec(s.from(), s.to())),
+                )
+            });
+
+        for (x, y) in data {
+            if closest_x.is_none_or(|cx| (rx - cx).abs() > (rx - x).abs()) {
+                closest_x = Some(x);
+                closest_y = Some(y);
+            }
+        }
+
+        return match (closest_x, closest_y) {
+            (Some(x), Some(y)) => Some(vec![x, y].into_boxed_slice()),
+            _ => None,
+        };
+    }
+
+    pub fn get_trace_metas(&self, ptr: DataIdx, from: RangePrec, to: RangePrec) -> JsValue {
         let mut metas = TraceMetas {
             handle: ptr,
             avg: 0.0,
             avg_nz: 0.0,
             min: RangePrec::INFINITY,
             max: RangePrec::NEG_INFINITY,
-            val: val.try_into().ok(),
-            val_closest: None,
         };
         let mut pts = 0;
         let mut nz_pts = 0;
@@ -183,7 +267,7 @@ impl DataModule {
             .get(&ptr)
             .expect("Invalid ptr in get_trace_metas");
 
-        for (x, y) in trace.get_data_high_prec(from, to) {
+        for (_, y) in trace.get_data_high_prec(from, to) {
             metas.avg += y;
             metas.min = RangePrec::min(metas.min, y);
             metas.max = RangePrec::max(metas.max, y);
@@ -193,14 +277,6 @@ impl DataModule {
             if y > 0.0 {
                 nz_pts += 1;
                 metas.avg_nz += y;
-            }
-
-            if metas.val.is_some()
-                && (metas.val_closest.is_none()
-                    || (metas.val_closest.unwrap()[0] - metas.val.unwrap()[0]).abs()
-                        > (metas.val.unwrap()[0] - x).abs())
-            {
-                metas.val_closest = Some([x, y]);
             }
         }
 
@@ -218,51 +294,15 @@ impl DataModule {
         serde_wasm_bindgen::to_value(&metas).unwrap()
     }
 
-    pub fn find_n_closest(
+    pub fn get_multiple_traces_metas(
         &self,
         ptrs: &[DataIdx],
-        point: &[RangePrec],
-        n: usize,
-        x_range: &[RangePrec],
-        area_chart: bool,
-    ) -> Box<[JsValue]> {
-        assert!(point.len() == 2);
-        assert!(x_range.len() == 2);
-
-        let mut dists: Vec<(DataIdx, RangePrec)> = self
-            .get_data_at(ptrs, point[0])
-            .filter_map(|(k, v)| v.map(|v| (k, v)))
-            .collect();
-
-        if area_chart {
-            let mut add = 0.0;
-
-            for (id, y) in dists.iter() {
-                if add <= point[1] && point[1] < add + y {
-                    return Box::new([self.get_trace_metas(
-                        *id,
-                        x_range[0],
-                        x_range[1],
-                        &[point[0], *y],
-                    )]);
-                }
-
-                add += y;
-            }
-        }
-
-        dists.sort_by(|a, b| {
-            (a.1 - point[1])
-                .abs()
-                .partial_cmp(&(b.1 - point[1]).abs())
-                .unwrap()
-        });
-
-        dists
-            .iter()
-            .take(n)
-            .map(|f| self.get_trace_metas(f.0, x_range[0], x_range[1], &[point[0], f.1]))
-            .collect()
+        from: RangePrec,
+        to: RangePrec,
+    ) -> Vec<JsValue> {
+        ptrs.iter()
+            .map(|t| self.get_trace_metas(*t, from, to))
+            .collect::<Vec<JsValue>>()
     }
 
     pub fn is_zero(&self, data_ptr: DataIdx, from: RangePrec, to: RangePrec) -> bool {

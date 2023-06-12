@@ -32,6 +32,7 @@ pub trait Segment: DynClone {
         to: RangePrec,
     ) -> Box<dyn Iterator<Item = (RangePrec, RangePrec)> + 'a>;
 
+    // ! FIXME perform a binary search
     fn value_at(&self, x: RangePrec) -> Option<RangePrec>;
 
     fn shrink(&mut self, from: RangePrec, to: RangePrec);

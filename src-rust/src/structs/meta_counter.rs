@@ -32,8 +32,6 @@ impl MetaCounter {
     pub fn iter_metas(&self) -> impl Iterator<Item = TraceMetas> + '_ {
         (0..self.sums.len()).map(|i| TraceMetas {
             handle: 0,
-            val: None,
-            val_closest: None,
             avg: self.sums[i] / self.lens[i] as RangePrec,
             avg_nz: self.sums[i] / self.nz_lens[i] as RangePrec,
             min: self.mins[i],
