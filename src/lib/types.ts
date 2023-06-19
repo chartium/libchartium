@@ -1,5 +1,30 @@
 import type { RendererOptions as lib_RendererOptions } from "../../src-rust/pkg/libchartium.js";
 
+export type TypedArray =
+  | Int8Array
+  | Uint8Array
+  | Uint8ClampedArray
+  | Int16Array
+  | Uint16Array
+  | Int32Array
+  | Uint32Array
+  | BigInt64Array
+  | BigUint64Array
+  | Float32Array
+  | Float64Array;
+
+export type TypeOfData =
+  | "i8"
+  | "u8"
+  | "i16"
+  | "u16"
+  | "i32"
+  | "u32"
+  | "i64"
+  | "u64"
+  | "f32"
+  | "f64";
+
 export interface Size {
   width: number;
   height: number;
@@ -16,13 +41,6 @@ export interface Point {
 }
 
 export type RendererOptions = Partial<Omit<lib_RendererOptions, "free">>;
-
-export type BulkloadOptions = {
-  source: string;
-  dataset: string;
-  variants?: string[];
-  range: Range;
-};
 
 // Handles
 

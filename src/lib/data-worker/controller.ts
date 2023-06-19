@@ -1,9 +1,8 @@
 import { BiMap } from "bim";
 
-import wasmUrl from "../../src-rust/pkg/libchartium_bg.wasm?url";
+import wasmUrl from "../../../src-rust/pkg/libchartium_bg.wasm?url";
 import init, * as lib from "../../../src-rust/pkg/libchartium.js";
 import type {
-  BulkloadOptions,
   RawBundleHandle,
   Range,
   RawRendererHandle,
@@ -12,6 +11,8 @@ import type {
   RawTraceHandle,
   TraceMetas,
   Point,
+  TypedArray,
+  TypeOfData,
 } from "../types.js";
 import { todo, yeet } from "../../utils/yeet.js";
 import { mapOpt } from "../../utils/mapOpt.js";
@@ -162,8 +163,38 @@ export class ChartiumController {
     throw todo(); // TODO
   }
 
-  public async bulkload({ dataset, range, source, variants }: BulkloadOptions) {
-    throw todo(); // TODO
+  public async addFromArrayBuffer({
+    ids,
+    data,
+    xType,
+    yType,
+  }: {
+    ids: string[];
+    data: ArrayBuffer | TypedArray;
+    xType: TypeOfData;
+    yType: TypeOfData;
+  }) {
+    const dataBuffer = data instanceof ArrayBuffer ? data : data.buffer;
+
+    const handles: RawTraceHandle[] = [];
+
+    for (const id of ids) {
+      let handle = this.traceIds.getKey(id);
+
+      if (!handle) {
+        handle = this.dataModule.create_trace(id, xType) as RawTraceHandle;
+        this.traceIds.set(handle, id);
+      }
+
+      handles.push(handle);
+    }
+
+    const bulkload = await lib.Bulkloader.from_array(
+      new Uint32Array(handles),
+      xType,
+      yType,
+      new Uint8Array(data)
+    );
   }
 
   public disposeTrace(handleOrId: string | RawTraceHandle) {
@@ -198,16 +229,29 @@ export class ChartiumController {
     { x, y }: Point,
     max_dy: number
   ) {
-    return this.dataModule.find_closest(new Uint32Array(traces), x, y, max_dy);
+    return this.dataModule.find_n_closest(
+      new Uint32Array(traces),
+      x,
+      y,
+      1,
+      max_dy
+    )[0];
   }
 
   findNTracesClosestToPoint(
     traces: RawTraceHandle[],
     n: number,
-    { x, y }: Point,
-  ) {}
+    { x, y }: Point
+  ) {
+    return [
+      ...this.dataModule.find_n_closest(new Uint32Array(traces), x, y, 1),
+    ];
+  }
 
-  findClosestPointOfTrace(handle: RawTraceHandle, { x, y }: Point): Point | undefined {
+  findClosestPointOfTrace(
+    handle: RawTraceHandle,
+    { x, y }: Point
+  ): Point | undefined {
     return mapOpt(this.dataModule.get_closest_point(handle, x, y), ([x, y]) => {
       return { x, y };
     });

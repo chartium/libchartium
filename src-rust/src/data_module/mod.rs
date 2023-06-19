@@ -56,9 +56,12 @@ impl DataModule {
             let x = from + i as RangePrec;
 
             output.push_str(
-                &DateTime::<Utc>::from_utc(NaiveDateTime::from_timestamp_opt(x as i64 * 60, 0).unwrap(), Utc)
-                    .format("%m/%d/%Y %H:%M:%S")
-                    .to_string(),
+                &DateTime::<Utc>::from_utc(
+                    NaiveDateTime::from_timestamp_opt(x as i64 * 60, 0).unwrap(),
+                    Utc,
+                )
+                .format("%m/%d/%Y %H:%M:%S")
+                .to_string(),
             );
 
             for (_, val) in self.get_data_at(ptrs, x) {

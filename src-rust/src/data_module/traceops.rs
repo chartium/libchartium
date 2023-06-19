@@ -29,65 +29,69 @@ impl DataModule {
         .unwrap()
     }
 
-    pub fn find_closest(
+    pub fn find_n_closest(
         &self,
         ptrs: &[DataIdx],
         x: RangePrec,
         y: RangePrec,
-        max_dy: RangePrec,
-    ) -> Option<DataIdx> {
+        n: usize,
+        max_dy: Option<RangePrec>,
+    ) -> Box<[DataIdx]> {
         let mut dists: Vec<(DataIdx, RangePrec)> = self
             .get_data_at(ptrs, x)
-            .filter_map(|d| d.1.map(|v| (d.0, (v - y).abs())))
-            .filter(|(_, dy)| *dy < max_dy)
+            .filter_map(|(p, ty)| ty.map(|v| (p, (v - y).abs())))
+            .filter(|(_, delta)| match max_dy {
+                Some(m) => *delta < m,
+                None => true,
+            })
             .collect();
 
-        dists.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap());
+        dists.sort_by(|(_, a_delta), (_, b_delta)| a_delta.partial_cmp(&b_delta).unwrap());
 
-        dists.first().map(|f| f.0)
+        dists.into_iter().take(n).map(|(p, _)| p).collect()
     }
 
-    pub fn find_n_closest(
-        &self,
-        ptrs: &[DataIdx],
-        n: usize,
-        point_x: RangePrec,
-        point_y: RangePrec,
-        from: RangePrec,
-        to: RangePrec,
-        area_chart: bool,
-    ) -> Box<[JsValue]> {
+    // pub fn find_n_closest(
+    //     &self,
+    //     ptrs: &[DataIdx],
+    //     n: usize,
+    //     point_x: RangePrec,
+    //     point_y: RangePrec,
+    //     from: RangePrec,
+    //     to: RangePrec,
+    //     area_chart: bool,
+    // ) -> Box<[JsValue]> {
 
-        let mut dists: Vec<(DataIdx, RangePrec)> = self
-            .get_data_at(ptrs, point_x)
-            .filter_map(|(k, v)| v.map(|v| (k, v)))
-            .collect();
+    //     let mut dists: Vec<(DataIdx, RangePrec)> = self
+    //         .get_data_at(ptrs, point_x)
+    //         .filter_map(|(k, v)| v.map(|v| (k, v)))
+    //         .collect();
 
-        if area_chart {
-            let mut add = 0.0;
+    //     if area_chart {
+    //         let mut add = 0.0;
 
-            for (id, y) in dists.iter() {
-                if add <= point_y && point_y < add + y {
-                    return Box::new([self.get_trace_metas(*id, from, to)]);
-                }
+    //         for (id, y) in dists.iter() {
+    //             if add <= point_y && point_y < add + y {
+    //                 return Box::new([self.get_trace_metas(*id, from, to)]);
+    //             }
 
-                add += y;
-            }
-        }
+    //             add += y;
+    //         }
+    //     }
 
-        dists.sort_by(|a, b| {
-            (a.1 - point_y)
-                .abs()
-                .partial_cmp(&(b.1 - point_y).abs())
-                .unwrap()
-        });
+    //     dists.sort_by(|a, b| {
+    //         (a.1 - point_y)
+    //             .abs()
+    //             .partial_cmp(&(b.1 - point_y).abs())
+    //             .unwrap()
+    //     });
 
-        dists
-            .iter()
-            .take(n)
-            .map(|f| self.get_trace_metas(f.0, from, to))
-            .collect()
-    }
+    //     dists
+    //         .iter()
+    //         .take(n)
+    //         .map(|f| self.get_trace_metas(f.0, from, to))
+    //         .collect()
+    // }
 
     pub fn shift_clone_trace(
         &mut self,
