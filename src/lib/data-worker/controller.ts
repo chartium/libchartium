@@ -25,29 +25,47 @@ const isRunningInWorker = () =>
 
 let instance: ChartiumController | undefined;
 
-export class ChartiumController {
-  private dataModule!: lib.DataModule;
-  private availableRendererHandle = 0;
-  private renderers: { [key: number]: lib.RendererContainer } = {};
-  private traceIds = new BiMap<RawTraceHandle, string>();
-  private sharedCanvas: OffscreenCanvas = new OffscreenCanvas(640, 480);
+export type RenderingMode = "webgl2";
 
-  static async instantiateInThisThread(): Promise<ChartiumController> {
+export interface ChartiumControllerOptions {
+  /**
+   * So far, only WebGL 2 is supported. We will add a WebGPU mode in the future.
+   * It is also not impossible that we will introduce a 2D mode for legacy platforms.
+   */
+  renderingMode?: RenderingMode;
+}
+
+export class ChartiumController {
+  #dataModule!: lib.DataModule;
+  #availableRendererHandle = 0;
+  #renderers: { [key: number]: lib.RendererContainer } = {};
+  #traceIds = new BiMap<RawTraceHandle, string>();
+  #canvas: OffscreenCanvas = new OffscreenCanvas(640, 480);
+  #renderingMode: RenderingMode;
+  #context: WebGL2RenderingContext;
+
+  static async instantiateInThisThread(
+    options: ChartiumControllerOptions = {}
+  ): Promise<ChartiumController> {
     if (!wasmMemory) {
       wasmMemory = (await init(wasmUrl)).memory;
       lib.set_panic_hook();
 
       console.log(
-        `Loaded WASM ${
+        `Loaded Chartium WASM ${
           isRunningInWorker() ? "in a worker!" : "on the main thread!"
         }`
       );
     }
-    return new ChartiumController();
+    return new ChartiumController(options);
   }
 
-  private constructor() {
-    if (instance) return instance;
+  private constructor(options: ChartiumControllerOptions = {}) {
+    if (instance) {
+      throw new Error(
+        "There already is a ChartiumController instance running in this thread."
+      );
+    }
 
     if (!wasmMemory) {
       throw new Error(
@@ -55,7 +73,14 @@ export class ChartiumController {
       );
     }
 
-    this.dataModule = new lib.DataModule();
+    this.#renderingMode = options.renderingMode ?? "webgl2";
+    this.#context =
+      this.#canvas.getContext(this.#renderingMode, {
+        antialias: true,
+        premultipliedAlpha: true,
+      }) ?? yeet("Could not get a WebGL2 context for an OffscreenCanvas.");
+
+    this.#dataModule = new lib.DataModule();
     instance = this;
   }
 
@@ -67,22 +92,22 @@ export class ChartiumController {
     const t = this;
     return {
       get width() {
-        return t.sharedCanvas.width;
+        return t.#canvas.width;
       },
       set width(w) {
-        t.sharedCanvas.width = w;
+        t.#canvas.width = w;
       },
       get height() {
-        return t.sharedCanvas.height;
+        return t.#canvas.height;
       },
       set height(h) {
-        t.sharedCanvas.height = h;
+        t.#canvas.height = h;
       },
     };
   }
   set screenSize({ width, height }: Size) {
-    this.sharedCanvas.width = width;
-    this.sharedCanvas.height = height;
+    this.#canvas.width = width;
+    this.#canvas.height = height;
   }
 
   public async createRendererRaw(
@@ -92,27 +117,27 @@ export class ChartiumController {
     const opts = new lib.RendererOptions(options?.area_chart ?? false);
 
     const renderer = lib.RendererContainer.new_webgl(
-      this.sharedCanvas,
+      this.#canvas,
       canvas,
       opts
     );
 
-    const handle = this.availableRendererHandle++;
+    const handle = this.#availableRendererHandle++;
 
     return handle as RawRendererHandle;
   }
 
   private _getRenderer(handle: RawRendererHandle) {
     return (
-      this.renderers[handle] ??
+      this.#renderers[handle] ??
       yeet("Renderer with given handle does not exist.")
     );
   }
 
   public disposeRenderer(handle: RawRendererHandle) {
-    if (handle in this.renderers) {
-      this.renderers[handle].free();
-      delete this.renderers[handle];
+    if (handle in this.#renderers) {
+      this.#renderers[handle].free();
+      delete this.#renderers[handle];
     }
   }
 
@@ -129,7 +154,7 @@ export class ChartiumController {
 
     return <RawBundleHandle>(
       renderer.create_bundle_from_stream(
-        this.dataModule,
+        this.#dataModule,
         range.from,
         range.to,
         new Uint8Array(data)
@@ -151,7 +176,7 @@ export class ChartiumController {
     const renderer = this._getRenderer(handle);
 
     renderer.rebundle(
-      this.dataModule,
+      this.#dataModule,
       bundle,
       new Uint8Array(toDel),
       new Uint8Array(toAdd),
@@ -179,11 +204,11 @@ export class ChartiumController {
     const handles: RawTraceHandle[] = [];
 
     for (const id of ids) {
-      let handle = this.traceIds.getKey(id);
+      let handle = this.#traceIds.getKey(id);
 
       if (!handle) {
-        handle = this.dataModule.create_trace(id, xType) as RawTraceHandle;
-        this.traceIds.set(handle, id);
+        handle = this.#dataModule.create_trace(id, xType) as RawTraceHandle;
+        this.#traceIds.set(handle, id);
       }
 
       handles.push(handle);
@@ -193,18 +218,18 @@ export class ChartiumController {
       new Uint32Array(handles),
       xType,
       yType,
-      new Uint8Array(data)
+      new Uint8Array(dataBuffer)
     );
   }
 
   public disposeTrace(handleOrId: string | RawTraceHandle) {
     const handle =
       typeof handleOrId === "string"
-        ? this.traceIds.getKey(handleOrId) ?? -1
+        ? this.#traceIds.getKey(handleOrId) ?? -1
         : handleOrId;
 
-    this.dataModule.dispose_trace(handle);
-    this.traceIds.delete(handle);
+    this.#dataModule.dispose_trace(handle);
+    this.#traceIds.delete(handle);
   }
 
   areTracesOverThreshold(
@@ -215,13 +240,13 @@ export class ChartiumController {
   ): boolean[] {
     // FIXME move the map to Rust
     return traces.map((t) =>
-      this.dataModule.treshold(t, from, to, thresholdValue)
+      this.#dataModule.treshold(t, from, to, thresholdValue)
     );
   }
 
   areTracesZero(traces: RawTraceHandle[], from: number, to: number): boolean[] {
     // FIXME move the map to Rust
-    return traces.map((t) => this.dataModule.is_zero(t, from, to));
+    return traces.map((t) => this.#dataModule.is_zero(t, from, to));
   }
 
   findTraceClosestToPoint(
@@ -229,7 +254,7 @@ export class ChartiumController {
     { x, y }: Point,
     max_dy: number
   ) {
-    return this.dataModule.find_n_closest(
+    return this.#dataModule.find_n_closest(
       new Uint32Array(traces),
       x,
       y,
@@ -244,7 +269,7 @@ export class ChartiumController {
     { x, y }: Point
   ) {
     return [
-      ...this.dataModule.find_n_closest(new Uint32Array(traces), x, y, 1),
+      ...this.#dataModule.find_n_closest(new Uint32Array(traces), x, y, 1),
     ];
   }
 
@@ -252,9 +277,12 @@ export class ChartiumController {
     handle: RawTraceHandle,
     { x, y }: Point
   ): Point | undefined {
-    return mapOpt(this.dataModule.get_closest_point(handle, x, y), ([x, y]) => {
-      return { x, y };
-    });
+    return mapOpt(
+      this.#dataModule.get_closest_point(handle, x, y),
+      ([x, y]) => {
+        return { x, y };
+      }
+    );
   }
 
   getTraceMetas(handle: RawTraceHandle, range: Range): TraceMetas;
@@ -264,13 +292,13 @@ export class ChartiumController {
     range: Range
   ): TraceMetas | TraceMetas[] {
     if (Array.isArray(handle)) {
-      return this.dataModule.get_multiple_traces_metas(
+      return this.#dataModule.get_multiple_traces_metas(
         new Uint32Array(handle),
         range.from,
         range.to
       );
     } else {
-      return this.dataModule.get_trace_metas(handle, range.from, range.to);
+      return this.#dataModule.get_trace_metas(handle, range.from, range.to);
     }
   }
 }
