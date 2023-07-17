@@ -1,5 +1,3 @@
-import type { RendererOptions as lib_RendererOptions } from "../../src-rust/pkg/libchartium.js";
-
 export type TypedArray =
   | Int8Array
   | Uint8Array
@@ -39,8 +37,6 @@ export interface Point {
   x: number;
   y: number;
 }
-
-export type RendererOptions = Partial<Omit<lib_RendererOptions, "free">>;
 
 // Handles
 
