@@ -2,7 +2,7 @@ use std::{collections::HashSet, convert::TryInto, mem::size_of};
 
 use wasm_bindgen::prelude::*;
 
-use crate::{data::DataIdx, prelude::*};
+use crate::{data::TraceHandle, prelude::*};
 
 #[wasm_bindgen]
 pub struct RenderJob {
@@ -56,7 +56,7 @@ impl RenderJob {
         }
     }
 
-    pub fn add_trace(&mut self, idx: DataIdx, color: &[u8], width: u32, points_mode: bool) {
+    pub fn add_trace(&mut self, idx: TraceHandle, color: &[u8], width: u32, points_mode: bool) {
         self.traces.push(TraceStyle {
             idx,
             color: color.try_into().unwrap(),
@@ -69,7 +69,7 @@ impl RenderJob {
         self.bundles.push(idx);
     }
 
-    pub fn blacklist_trace(&mut self, handle: DataIdx) {
+    pub fn blacklist_trace(&mut self, handle: TraceHandle) {
         self.bundle_blacklist.insert(handle);
     }
 
@@ -109,7 +109,7 @@ impl RenderJob {
         &self.x_type
     }
 
-    pub fn is_blacklisted(&self, handle: DataIdx) -> bool {
+    pub fn is_blacklisted(&self, handle: TraceHandle) -> bool {
         self.bundle_blacklist.contains(&handle)
     }
 }

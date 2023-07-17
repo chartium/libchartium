@@ -5,7 +5,7 @@ use crate::prelude::*;
 use crate::trace::Segment;
 use lazy_static::lazy_static;
 
-pub type DataIdx = usize;
+pub type TraceHandle = usize;
 
 pub struct TypeDescriptor {
     pub name: String,

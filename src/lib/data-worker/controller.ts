@@ -42,7 +42,6 @@ export class ChartiumController {
   #traceIds = new BiMap<RawTraceHandle, string>();
   #canvas: OffscreenCanvas = new OffscreenCanvas(640, 480);
   #renderingMode: RenderingMode;
-  #context: WebGL2RenderingContext;
 
   static async instantiateInThisThread(
     options: ChartiumControllerOptions = {}
@@ -74,11 +73,6 @@ export class ChartiumController {
     }
 
     this.#renderingMode = options.renderingMode ?? "webgl2";
-    this.#context =
-      this.#canvas.getContext(this.#renderingMode, {
-        antialias: true,
-        premultipliedAlpha: true,
-      }) ?? yeet("Could not get a WebGL2 context for an OffscreenCanvas.");
 
     this.#dataModule = new lib.DataModule();
     instance = this;

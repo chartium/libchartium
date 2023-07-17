@@ -2,13 +2,13 @@ use js_sys::Uint8Array;
 use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
 
 use crate::{
-    data::{DataIdx, TypeDescriptor, TYPE_SIZES},
+    data::{TraceHandle, TypeDescriptor, TYPE_SIZES},
     data_module::DataModule,
 };
 
 #[wasm_bindgen]
 pub struct Bulkloader {
-    ptrs: Vec<DataIdx>,
+    ptrs: Vec<TraceHandle>,
     x_desc: &'static TypeDescriptor,
     y_desc: &'static TypeDescriptor,
     data: Vec<u8>,
@@ -17,7 +17,7 @@ pub struct Bulkloader {
 #[wasm_bindgen]
 impl Bulkloader {
     pub async fn from_stream(
-        ptrs: Vec<DataIdx>,
+        ptrs: Vec<TraceHandle>,
         x_type: String,
         y_type: String,
         stream: wasm_streams::readable::sys::ReadableStream,
@@ -67,7 +67,7 @@ impl Bulkloader {
     }
 
     pub async fn from_array(
-        ptrs: Vec<DataIdx>,
+        ptrs: Vec<TraceHandle>,
         x_type: String,
         y_type: String,
         array: Uint8Array,

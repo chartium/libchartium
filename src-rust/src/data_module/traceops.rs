@@ -1,7 +1,7 @@
 use wasm_bindgen::prelude::*;
 
 use crate::{
-    data::{create_segment, DataIdx, TYPE_SIZES},
+    data::{create_segment, TraceHandle, TYPE_SIZES},
     prelude::*,
     trace::{Segment, TraceMetas},
 };
@@ -19,7 +19,7 @@ impl<T> OptionUtils<T> for Option<T> {
 
 #[wasm_bindgen]
 impl DataModule {
-    pub fn get_data_at_point(&self, ptrs: &[DataIdx], x: RangePrec) -> JsValue {
+    pub fn get_data_at_point(&self, ptrs: &[TraceHandle], x: RangePrec) -> JsValue {
         serde_wasm_bindgen::to_value(
             &self
                 .get_data_at(ptrs, x)
@@ -31,13 +31,13 @@ impl DataModule {
 
     pub fn find_n_closest(
         &self,
-        ptrs: &[DataIdx],
+        ptrs: &[TraceHandle],
         x: RangePrec,
         y: RangePrec,
         n: usize,
         max_dy: Option<RangePrec>,
-    ) -> Box<[DataIdx]> {
-        let mut dists: Vec<(DataIdx, RangePrec)> = self
+    ) -> Box<[TraceHandle]> {
+        let mut dists: Vec<(TraceHandle, RangePrec)> = self
             .get_data_at(ptrs, x)
             .filter_map(|(p, ty)| ty.map(|v| (p, (v - y).abs())))
             .filter(|(_, delta)| match max_dy {
@@ -95,8 +95,8 @@ impl DataModule {
 
     pub fn shift_clone_trace(
         &mut self,
-        output: DataIdx,
-        source: DataIdx,
+        output: TraceHandle,
+        source: TraceHandle,
         from: RangePrec,
         to: RangePrec,
         shift_x: RangePrec,
@@ -125,8 +125,8 @@ impl DataModule {
 
     pub fn op_traces(
         &mut self,
-        output: DataIdx,
-        ptrs: &[DataIdx],
+        output: TraceHandle,
+        ptrs: &[TraceHandle],
         op: &str,
         from: RangePrec,
         to: RangePrec,
@@ -216,7 +216,7 @@ impl DataModule {
 
     pub fn get_closest_point(
         &self,
-        ptr: DataIdx,
+        ptr: TraceHandle,
         rx: RangePrec,
         _ry: RangePrec,
     ) -> Option<Box<[RangePrec]>> {
@@ -255,7 +255,7 @@ impl DataModule {
         };
     }
 
-    pub fn get_trace_metas(&self, ptr: DataIdx, from: RangePrec, to: RangePrec) -> JsValue {
+    pub fn get_trace_metas(&self, ptr: TraceHandle, from: RangePrec, to: RangePrec) -> JsValue {
         let mut metas = TraceMetas {
             handle: ptr,
             avg: 0.0,
@@ -300,7 +300,7 @@ impl DataModule {
 
     pub fn get_multiple_traces_metas(
         &self,
-        ptrs: &[DataIdx],
+        ptrs: &[TraceHandle],
         from: RangePrec,
         to: RangePrec,
     ) -> Vec<JsValue> {
@@ -309,7 +309,7 @@ impl DataModule {
             .collect::<Vec<JsValue>>()
     }
 
-    pub fn is_zero(&self, data_ptr: DataIdx, from: RangePrec, to: RangePrec) -> bool {
+    pub fn is_zero(&self, data_ptr: TraceHandle, from: RangePrec, to: RangePrec) -> bool {
         self.traces
             .get(&data_ptr)
             .map(|t| !t.get_data_in(from, to).any(|(_, y)| y.abs() > 1e-3))
@@ -318,7 +318,7 @@ impl DataModule {
 
     pub fn treshold(
         &self,
-        data_ptr: DataIdx,
+        data_ptr: TraceHandle,
         from: RangePrec,
         to: RangePrec,
         tres: DataPrec,
@@ -331,7 +331,7 @@ impl DataModule {
 
     pub fn get_extents(
         &self,
-        data_ptr: DataIdx,
+        data_ptr: TraceHandle,
         from: RangePrec,
         to: RangePrec,
     ) -> Box<[RangePrec]> {
@@ -352,7 +352,7 @@ impl DataModule {
 
     pub fn get_sum_extents(
         &self,
-        ptrs: &[DataIdx],
+        ptrs: &[TraceHandle],
         from: RangePrec,
         to: RangePrec,
     ) -> Box<[RangePrec]> {

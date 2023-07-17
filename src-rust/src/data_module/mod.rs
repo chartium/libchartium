@@ -3,7 +3,7 @@ use std::{collections::HashMap, rc::Rc};
 use wasm_bindgen::prelude::wasm_bindgen;
 
 use crate::{
-    data::{DataIdx, TypeDescriptor},
+    data::{TraceHandle, TypeDescriptor},
     prelude::*,
     structs::MetaCounter,
     trace::{SharedSegment, TraceDescriptor, TraceMetas},
@@ -14,8 +14,8 @@ mod traceops;
 #[wasm_bindgen]
 #[derive(Default)]
 pub struct DataModule {
-    next_handle: DataIdx,
-    traces: HashMap<DataIdx, TraceDescriptor>,
+    next_handle: TraceHandle,
+    traces: HashMap<TraceHandle, TraceDescriptor>,
 }
 
 #[wasm_bindgen]
@@ -25,7 +25,7 @@ impl DataModule {
         Default::default()
     }
 
-    pub fn create_trace(&mut self, id: &str, x_type: &str) -> DataIdx {
+    pub fn create_trace(&mut self, id: &str, x_type: &str) -> TraceHandle {
         let handle = self.next_handle;
         self.next_handle += 1;
 
@@ -46,7 +46,7 @@ impl DataModule {
         self.traces.remove(&handle);
     }
 
-    pub fn print_data_as_csv(&self, ptrs: &[DataIdx], from: RangePrec, to: RangePrec) -> String {
+    pub fn print_data_as_csv(&self, ptrs: &[TraceHandle], from: RangePrec, to: RangePrec) -> String {
         use chrono::{DateTime, NaiveDateTime, Utc};
         let mut output = String::new();
 
@@ -76,19 +76,19 @@ impl DataModule {
 }
 
 impl DataModule {
-    pub fn get_trace(&self, handle: DataIdx) -> Option<&TraceDescriptor> {
+    pub fn get_trace(&self, handle: TraceHandle) -> Option<&TraceDescriptor> {
         self.traces.get(&handle)
     }
 
-    pub fn get_trace_mut(&mut self, handle: DataIdx) -> Option<&mut TraceDescriptor> {
+    pub fn get_trace_mut(&mut self, handle: TraceHandle) -> Option<&mut TraceDescriptor> {
         self.traces.get_mut(&handle)
     }
 
     pub fn get_data_at<'a, 'b: 'a>(
         &'a self,
-        ptrs: &'b [DataIdx],
+        ptrs: &'b [TraceHandle],
         x: RangePrec,
-    ) -> impl Iterator<Item = (DataIdx, Option<RangePrec>)> + 'a {
+    ) -> impl Iterator<Item = (TraceHandle, Option<RangePrec>)> + 'a {
         ptrs.iter().map(move |&p| {
             (
                 p,
@@ -99,7 +99,7 @@ impl DataModule {
 
     pub fn bulkload_segments(
         &mut self,
-        ptrs: &[DataIdx],
+        ptrs: &[TraceHandle],
         x_desc: &TypeDescriptor,
         y_desc: &TypeDescriptor,
         data: &[u8],

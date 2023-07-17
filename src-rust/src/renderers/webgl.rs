@@ -10,14 +10,14 @@ use web_sys::{
     OffscreenCanvas, WebGl2RenderingContext, WebGlBuffer, WebGlProgram, WebGlUniformLocation,
 };
 
-use crate::{data::DataIdx, data_module::DataModule, prelude::*, structs::RenderJob};
+use crate::{data::TraceHandle, data_module::DataModule, prelude::*, structs::RenderJob};
 
-use super::{AxisTick, RenderJobResult, Renderer, RendererOptions};
+use super::{AxisTick, RenderJobResult};
 use serde::{Deserialize, Serialize};
 
 struct BufferEntry {
     points: usize,
-    handle: DataIdx,
+    handle: TraceHandle,
     buffer: WebGlBuffer,
     area_buffer: Option<WebGlBuffer>,
     area_buffer_points: i32,
@@ -33,6 +33,50 @@ struct BufferBundle {
     buffers: Vec<BufferEntry>,
 }
 
+#[wasm_bindgen]
+pub struct WebGlPrograms {
+    trace_program: WebGlProgram,
+    trace_transform: WebGlUniformLocation,
+    trace_origin: WebGlUniformLocation,
+    trace_size: WebGlUniformLocation,
+    trace_csoffset: WebGlUniformLocation,
+    trace_color: WebGlUniformLocation,
+
+    axis_program: WebGlProgram,
+    axis_resolution: WebGlUniformLocation,
+    axis_color: WebGlUniformLocation,
+}
+
+#[wasm_bindgen]
+impl WebGlPrograms {
+    #[wasm_bindgen(constructor)]
+    pub fn new(
+        trace_program: WebGlProgram,
+        trace_transform: WebGlUniformLocation,
+        trace_origin: WebGlUniformLocation,
+        trace_size: WebGlUniformLocation,
+        trace_csoffset: WebGlUniformLocation,
+        trace_color: WebGlUniformLocation,
+    
+        axis_program: WebGlProgram,
+        axis_resolution: WebGlUniformLocation,
+        axis_color: WebGlUniformLocation,
+    ) -> WebGlPrograms {
+        WebGlPrograms {
+            trace_program,
+            trace_transform,
+            trace_origin,
+            trace_size,
+            trace_csoffset,
+            trace_color,
+        
+            axis_program,
+            axis_resolution,
+            axis_color,
+        }
+    }
+}
+
 pub struct WebGlRenderer {
     width: u32,
     height: u32,
@@ -44,16 +88,7 @@ pub struct WebGlRenderer {
     context: WebGl2RenderingContext,
     trace_buffer: WebGlBuffer,
 
-    tp_size_pos: WebGlUniformLocation,
-    tp_origin_pos: WebGlUniformLocation,
-    tp_color_pos: WebGlUniformLocation,
-    tp_transform_pos: WebGlUniformLocation,
-    tp_csoffset_pos: WebGlUniformLocation,
-    trace_program: WebGlProgram,
-
-    ap_resolution_pos: WebGlUniformLocation,
-    ap_color_pos: WebGlUniformLocation,
-    axes_program: WebGlProgram,
+    programs: WebGlPrograms,
 
     bundles_counter: usize,
     bundles: HashMap<usize, BufferBundle>,
@@ -69,86 +104,12 @@ struct ContextOpts {
 impl WebGlRenderer {
     pub fn new(
         shared_canvas: OffscreenCanvas,
+        context: WebGl2RenderingContext,
+        program: WebGlProgram,
+        axes_program: WebGlProgram,
         present_canvas: OffscreenCanvas,
-        ropts: RendererOptions,
+        is_area_chart: bool,
     ) -> Result<Self, JsValue> {
-        let opts = serde_wasm_bindgen::to_value(&ContextOpts {
-            antialias: true,
-            premultipliedAlpha: true,
-        })
-        .unwrap();
-
-        let context = shared_canvas
-            .get_context_with_context_options("webgl2", &opts)
-            .unwrap()
-            .unwrap()
-            .dyn_into::<WebGl2RenderingContext>()?;
-
-        let vert_shader = webgl_utils::compile_shader(
-            &context,
-            WebGl2RenderingContext::VERTEX_SHADER,
-            r#"
-            attribute vec2 aVertexPosition;
-
-            uniform vec2 transform;
-            uniform vec2 origin;
-            uniform vec2 size;
-
-            uniform vec2 csoffset;
-
-            void main() {
-                gl_Position = vec4(csoffset + vec2(-1,-1) + vec2(2,2) * (aVertexPosition * vec2(1,transform.x) + vec2(0, transform.y) - origin) / size, 0, 1);
-                gl_PointSize = 8.0;
-            }
-            "#,
-        )?;
-
-        let frag_shader = webgl_utils::compile_shader(
-            &context,
-            WebGl2RenderingContext::FRAGMENT_SHADER,
-            r#"
-            precision mediump float;
-            uniform vec4 color;
-
-            void main() {
-                gl_FragColor = color;
-            }
-            "#,
-        )?;
-
-        let program = webgl_utils::link_program(&context, &vert_shader, &frag_shader)?;
-
-        let axes_program = {
-            let vert_shader = webgl_utils::compile_shader(
-                &context,
-                WebGl2RenderingContext::VERTEX_SHADER,
-                r#"
-                attribute vec2 aVertexPosition;
-
-                uniform vec2 resolution;
-
-                void main() {
-                    gl_Position = vec4(vec2(-1, -1) + vec2(2, 2) * aVertexPosition / resolution, 0, 1);
-                }
-                "#,
-            )?;
-
-            let frag_shader = webgl_utils::compile_shader(
-                &context,
-                WebGl2RenderingContext::FRAGMENT_SHADER,
-                r#"
-                precision mediump float;
-                uniform vec4 color;
-
-                void main() {
-                    gl_FragColor = color;
-                }
-                "#,
-            )?;
-
-            webgl_utils::link_program(&context, &vert_shader, &frag_shader)?
-        };
-
         let width_range = context
             .get_parameter(WebGl2RenderingContext::ALIASED_LINE_WIDTH_RANGE)?
             .dyn_into::<Float32Array>()?;
@@ -158,23 +119,25 @@ impl WebGlRenderer {
             height: present_canvas.height(),
             _canvas: shared_canvas,
             _present_canvas: present_canvas,
-            is_area: ropts.area_chart,
+            is_area: is_area_chart,
             line_width_limit: width_range.get_index(1),
 
-            tp_origin_pos: context.get_uniform_location(&program, "origin").unwrap(),
-            tp_size_pos: context.get_uniform_location(&program, "size").unwrap(),
-            tp_color_pos: context.get_uniform_location(&program, "color").unwrap(),
-            tp_transform_pos: context.get_uniform_location(&program, "transform").unwrap(),
-            tp_csoffset_pos: context.get_uniform_location(&program, "csoffset").unwrap(),
-            trace_program: program,
+            programs: WebGlPrograms {
+                trace_origin: context.get_uniform_location(&program, "origin").unwrap(),
+                trace_size: context.get_uniform_location(&program, "size").unwrap(),
+                trace_color: context.get_uniform_location(&program, "color").unwrap(),
+                trace_transform: context.get_uniform_location(&program, "transform").unwrap(),
+                trace_csoffset: context.get_uniform_location(&program, "csoffset").unwrap(),
+                trace_program: program,
 
-            ap_resolution_pos: context
-                .get_uniform_location(&axes_program, "resolution")
-                .unwrap(),
-            ap_color_pos: context
-                .get_uniform_location(&axes_program, "color")
-                .unwrap(),
-            axes_program,
+                axis_resolution: context
+                    .get_uniform_location(&axes_program, "resolution")
+                    .unwrap(),
+                axis_color: context
+                    .get_uniform_location(&axes_program, "color")
+                    .unwrap(),
+                axis_program: axes_program,
+            },
 
             trace_buffer: context.create_buffer().unwrap(),
             context,
@@ -194,13 +157,13 @@ impl WebGlRenderer {
 
         gl.viewport(0, 0, self.width as i32, self.height as i32);
 
-        gl.use_program(Some(&self.axes_program));
+        gl.use_program(Some(&self.programs.axis_program));
         gl.uniform2f(
-            Some(&self.ap_resolution_pos),
+            Some(&self.programs.axis_resolution),
             self.width as f32,
             self.height as f32,
         );
-        gl.uniform4f(Some(&self.ap_color_pos), 0.3, 0.3, 0.3, 1.0);
+        gl.uniform4f(Some(&self.programs.axis_color), 0.3, 0.3, 0.3, 1.0);
         gl.bind_buffer(
             WebGl2RenderingContext::ARRAY_BUFFER,
             Some(&self.trace_buffer),
@@ -287,15 +250,19 @@ impl WebGlRenderer {
             height,
         );
 
-        gl.use_program(Some(&self.trace_program));
-        gl.uniform2f(Some(&self.tp_origin_pos), 0.0, 0.0);
-        gl.uniform2f(Some(&self.tp_size_pos), width as f32, height as f32);
-        gl.uniform2f(Some(&self.tp_transform_pos), 1.0, 0.0);
+        gl.use_program(Some(&self.programs.trace_program));
+        gl.uniform2f(Some(&self.programs.trace_origin), 0.0, 0.0);
+        gl.uniform2f(
+            Some(&self.programs.trace_size),
+            width as f32,
+            height as f32,
+        );
+        gl.uniform2f(Some(&self.programs.trace_transform), 1.0, 0.0);
 
         if job.dark_mode {
-            gl.uniform4f(Some(&self.tp_color_pos), 0.3, 0.3, 0.3, 1.0);
+            gl.uniform4f(Some(&self.programs.trace_color), 0.3, 0.3, 0.3, 1.0);
         } else {
-            gl.uniform4f(Some(&self.tp_color_pos), 0.85, 0.85, 0.85, 1.0);
+            gl.uniform4f(Some(&self.programs.trace_color), 0.85, 0.85, 0.85, 1.0);
         }
 
         gl.line_width(1.0);
@@ -445,7 +412,8 @@ impl WebGlRenderer {
     }
 }
 
-impl Renderer for WebGlRenderer {
+#[wasm_bindgen]
+impl WebGlRenderer {
     fn render(&mut self, module: &DataModule, job: RenderJob) -> Result<RenderJobResult, JsValue> {
         let gl = &self.context;
 
@@ -473,18 +441,18 @@ impl Renderer for WebGlRenderer {
             (self.height - job.margin * 2 - job.x_label_space) as i32,
         );
 
-        gl.use_program(Some(&self.trace_program));
+        gl.use_program(Some(&self.programs.trace_program));
         gl.uniform2f(
-            Some(&self.tp_size_pos),
+            Some(&self.programs.trace_size),
             (job.x_to - job.x_from) as f32,
             (job.y_to - job.y_from) as f32,
         );
-        gl.uniform2f(Some(&self.tp_transform_pos), 1.0, 0.0);
+        gl.uniform2f(Some(&self.programs.trace_transform), 1.0, 0.0);
 
         if !job.get_bundles().is_empty() {
             for bundle in self.bundles.values() {
                 gl.uniform2f(
-                    Some(&self.tp_origin_pos),
+                    Some(&self.programs.trace_origin),
                     (job.x_from - bundle.from) as f32,
                     y_from,
                 );
@@ -496,7 +464,7 @@ impl Renderer for WebGlRenderer {
 
                     if self.is_area && row.area_buffer.is_some() {
                         gl.uniform4f(
-                            Some(&self.tp_color_pos),
+                            Some(&self.programs.trace_color),
                             row.color[0] * 0.5,
                             row.color[1] * 0.5,
                             row.color[2] * 0.5,
@@ -524,7 +492,7 @@ impl Renderer for WebGlRenderer {
                     }
 
                     gl.uniform4f(
-                        Some(&self.tp_color_pos),
+                        Some(&self.programs.trace_color),
                         row.color[0],
                         row.color[1],
                         row.color[2],
@@ -552,7 +520,7 @@ impl Renderer for WebGlRenderer {
 
                         for i in 0..amount {
                             gl.uniform2f(
-                                Some(&self.tp_csoffset_pos),
+                                Some(&self.programs.trace_csoffset),
                                 0.0,
                                 2.0 * (start_offset + i as f32) / self.height as f32,
                             );
@@ -571,7 +539,7 @@ impl Renderer for WebGlRenderer {
             }
         }
 
-        gl.uniform2f(Some(&self.tp_origin_pos), 0.0, y_from);
+        gl.uniform2f(Some(&self.programs.trace_origin), 0.0, y_from);
 
         if !job.get_traces().is_empty() {
             gl.bind_buffer(
@@ -583,7 +551,7 @@ impl Renderer for WebGlRenderer {
                 let n;
 
                 gl.uniform4f(
-                    Some(&self.tp_color_pos),
+                    Some(&self.programs.trace_color),
                     trace.color[0] as f32 / 255.0,
                     trace.color[1] as f32 / 255.0,
                     trace.color[2] as f32 / 255.0,
@@ -616,6 +584,9 @@ impl Renderer for WebGlRenderer {
                 gl.draw_arrays(WebGl2RenderingContext::LINE_STRIP, 0, n as i32);
             }
         }
+
+        // copy into the resulting bitmap present canvas
+        render_between(&self._canvas, &self._present_canvas);
 
         Ok(RenderJobResult { x_ticks, y_ticks })
     }
@@ -695,7 +666,7 @@ impl Renderer for WebGlRenderer {
         module: &DataModule,
         bundle: usize,
         to_add: &[super::BundleEntry],
-        to_del: &[DataIdx],
+        to_del: &[TraceHandle],
         to_mod: &[super::BundleEntry],
     ) -> Result<(), JsValue> {
         let b = self.bundles.get_mut(&bundle).unwrap();
@@ -726,15 +697,6 @@ impl Renderer for WebGlRenderer {
         }
 
         Result::Ok(())
-    }
-
-    #[allow(unused_unsafe)]
-    fn present(&mut self) -> Result<(), JsValue> {
-        unsafe {
-            render_between(&self._canvas, &self._present_canvas);
-        }
-
-        Ok(())
     }
 }
 
