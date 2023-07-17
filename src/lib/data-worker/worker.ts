@@ -1,5 +1,6 @@
 import { ChartiumController } from "./controller.ts";
-import { exportControllerFromWorker } from "./spawn.ts";
+import { exportControllerFromWorker } from "./export.ts";
 
-const controller = await ChartiumController.instantiateInThisThread();
-exportControllerFromWorker(controller);
+ChartiumController.instantiateInThisThread().then((controller) =>
+  exportControllerFromWorker(controller)
+);

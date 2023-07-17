@@ -134,7 +134,7 @@ impl WebGlRenderer {
             width: present_canvas.width(),
             height: present_canvas.height(),
             canvas: shared_canvas,
-            present_canvas: present_canvas,
+            present_canvas,
             is_area: is_area_chart,
             line_width_limit: width_range.get_index(1),
 
