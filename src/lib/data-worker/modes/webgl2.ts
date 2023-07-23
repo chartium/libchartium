@@ -7,6 +7,7 @@ import {
   type Renderer,
   type RenderingController,
 } from "./mod.ts";
+import { proxyMarker } from "comlink";
 
 function compileShader(
   gl: WebGL2RenderingContext,
@@ -31,6 +32,8 @@ function linkProgram(
 }
 
 export class WebGL2Controller implements RenderingController {
+  [proxyMarker] = true;
+
   readonly #dataModule: lib.DataModule;
   readonly #canvas: OffscreenCanvas;
   readonly #context: WebGL2RenderingContext;
@@ -175,6 +178,8 @@ export class WebGL2Controller implements RenderingController {
 }
 
 export class WebGL2Renderer implements Renderer {
+  [proxyMarker] = true;
+
   readonly #dataModule: lib.DataModule;
   readonly #renderer: lib.WebGlRenderer;
 

@@ -13,7 +13,7 @@ import type {
 } from "../types.js";
 import type { RenderingController } from "./modes/mod.ts";
 import { WebGL2Controller } from "./modes/webgl2.ts";
-import { proxy } from "comlink";
+import { proxyMarker } from "comlink";
 
 let wasmMemory: WebAssembly.Memory | undefined;
 
@@ -34,6 +34,8 @@ export interface ChartiumControllerOptions {
 }
 
 export class ChartiumController {
+  [proxyMarker] = true;
+
   #dataModule!: lib.DataModule;
   #traceIds = new BiMap<TraceHandle, string>();
   #canvas: OffscreenCanvas = new OffscreenCanvas(640, 480);
@@ -108,8 +110,7 @@ export class ChartiumController {
 
   public async createRenderer(presentCanvas: OffscreenCanvas) {
     await this.initialized;
-    const renderer = this.#renderingController.createRenderer(presentCanvas);
-    return proxy(renderer);
+    return this.#renderingController.createRenderer(presentCanvas);
   }
 
   // public async createRendererRaw(
