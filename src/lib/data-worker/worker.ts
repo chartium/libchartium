@@ -1,6 +1,4 @@
 import { ChartiumController } from "./controller.ts";
-import { exportControllerFromWorker } from "./export.ts";
+import { exportControllerFromWorker } from "./comlink.ts";
 
-ChartiumController.instantiateInThisThread().then((controller) =>
-  exportControllerFromWorker(controller)
-);
+exportControllerFromWorker(ChartiumController.instantiateInThisThread());

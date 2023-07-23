@@ -13,6 +13,7 @@ import type {
 } from "../types.js";
 import type { RenderingController } from "./modes/mod.ts";
 import { WebGL2Controller } from "./modes/webgl2.ts";
+import { proxy } from "comlink";
 
 let wasmMemory: WebAssembly.Memory | undefined;
 
@@ -103,6 +104,12 @@ export class ChartiumController {
   set screenSize({ width, height }: Size) {
     this.#canvas.width = width;
     this.#canvas.height = height;
+  }
+
+  public async createRenderer(presentCanvas: OffscreenCanvas) {
+    await this.initialized;
+    const renderer = this.#renderingController.createRenderer(presentCanvas);
+    return proxy(renderer);
   }
 
   // public async createRendererRaw(
@@ -198,6 +205,8 @@ export class ChartiumController {
     xType: TypeOfData;
     yType: TypeOfData;
   }) {
+    await this.initialized;
+
     const dataBuffer = data instanceof ArrayBuffer ? data : data.buffer;
 
     const handles: TraceHandle[] = [];
@@ -219,6 +228,10 @@ export class ChartiumController {
       yType,
       new Uint8Array(dataBuffer)
     );
+
+    bulkload.apply(this.#dataModule);
+
+    return handles;
   }
 
   public disposeTrace(handleOrId: string | TraceHandle) {

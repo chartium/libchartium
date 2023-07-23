@@ -1,13 +1,5 @@
-import { wrap, type Remote } from "comlink";
 import Worker from "./worker.ts?worker";
-import { ChartiumController } from "./controller.ts";
-
-export function importControllerFromWorker(
-  w: Worker | { new (): Worker }
-): Remote<ChartiumController> {
-  w = typeof w === "function" ? new w() : w;
-  return wrap<ChartiumController>(w);
-}
+import { importControllerFromWorker } from "./comlink.ts";
 
 export function spawnChartiumWorker() {
   return importControllerFromWorker(Worker);

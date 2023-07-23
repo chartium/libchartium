@@ -10,12 +10,16 @@ export interface Renderer {
   render(job: RenderJob): RenderJobResult;
 }
 
+export interface TraceDescriptor extends Partial<TraceStyle> {
+  handle: TraceHandle;
+}
+
 export interface RenderJob {
   xType: TypeOfData;
 
-  includeTraces: Array<{ handle: TraceHandle } & Partial<TraceStyle>>;
-  includeBundles: number[];
-  excludeTraces: TraceHandle[];
+  includeTraces?: TraceDescriptor[];
+  includeBundles?: number[];
+  excludeTraces?: TraceHandle[];
 
   xRange: Range;
   yRange: Range;
@@ -31,10 +35,14 @@ export interface RenderJob {
 }
 
 export function deserializeRenderJob(job: RenderJob): lib.RenderJob {
+  const includeTraces = job.includeTraces ?? [];
+  const includeBundles = job.includeBundles ?? [];
+  const excludeTraces = job.excludeTraces ?? [];
+
   const rj = new lib.RenderJob(
     job.xType,
-    job.includeTraces.length,
-    job.includeBundles.length
+    includeTraces.length,
+    includeBundles.length
   );
 
   rj.x_from = job.xRange.from;
@@ -42,7 +50,7 @@ export function deserializeRenderJob(job: RenderJob): lib.RenderJob {
   rj.y_from = job.yRange.from;
   rj.y_to = job.yRange.to;
 
-  for (const trace of job.includeTraces) {
+  for (const trace of includeTraces) {
     rj.add_trace(
       trace.handle,
       toUint8ColorOrRandom(trace.color),
@@ -51,8 +59,8 @@ export function deserializeRenderJob(job: RenderJob): lib.RenderJob {
     );
   }
 
-  for (const bundle of job.includeBundles) rj.add_bundle(bundle);
-  for (const trace of job.excludeTraces) rj.blacklist_trace(trace);
+  for (const bundle of includeBundles) rj.add_bundle(bundle);
+  for (const trace of excludeTraces) rj.blacklist_trace(trace);
 
   if (job.clear !== undefined) rj.clear = job.clear;
   if (job.darkMode !== undefined) rj.dark_mode = job.darkMode;

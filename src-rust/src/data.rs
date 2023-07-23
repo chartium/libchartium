@@ -27,31 +27,31 @@ macro_rules! type_map {
     ( "DateTime" ) => {
         i32
     };
-    ( "I16" ) => {
+    ( "i16" ) => {
         i16
     };
-    ( "I32" ) => {
+    ( "i32" ) => {
         i32
     };
-    ( "I64" ) => {
+    ( "i64" ) => {
         i64
     };
-    ( "U8" ) => {
+    ( "u8" ) => {
         u8
     };
-    ( "U16" ) => {
+    ( "u16" ) => {
         u16
     };
-    ( "U32" ) => {
+    ( "u32" ) => {
         u32
     };
-    ( "U64" ) => {
+    ( "u64" ) => {
         u64
     };
-    ( "F32" ) => {
+    ( "f32" ) => {
         f32
     };
-    ( "F64" ) => {
+    ( "f64" ) => {
         f64
     };
 }
@@ -71,17 +71,17 @@ macro_rules! type_desc {
     ( $m:expr ) => {
         type_desc!($m, [
             "DateTime", type_map!("DateTime"),
-            "I16", type_map!("I16"),
-            "I32", type_map!("I32"),
-            "I64", type_map!("I64"),
+            "i16", type_map!("i16"),
+            "i32", type_map!("i32"),
+            "i64", type_map!("i64"),
 
-            "U8", type_map!("U8"),
-            "U16", type_map!("U16"),
-            "U32", type_map!("U32"),
-            "U64", type_map!("U64"),
+            "u8", type_map!("u8"),
+            "u16", type_map!("u16"),
+            "u32", type_map!("u32"),
+            "u64", type_map!("u64"),
 
-            "F32", type_map!("F32"),
-            "F64", type_map!("F64")
+            "f32", type_map!("f32"),
+            "f64", type_map!("f64")
         ])
     };
 }
@@ -104,7 +104,7 @@ pub fn create_segment(
     to: RangePrec,
     mut d: Vec<u8>,
 ) -> Box<dyn Segment> {
-    // FIXME row_align needs to be replaced by a more competent system
+    // FIXME row_align needs to be replaced by a more robust system
     // ! Right now misaligned data from backend would break (row_align != align_of::<(X, Y)>)
     let len = d.len() / row_align;
     let cap = d.capacity() / row_align;
@@ -124,30 +124,30 @@ pub fn create_segment(
     }
 
     match (x_desc.name.as_ref(), y_desc.name.as_ref()) {
-        ("DateTime", "I16") => {
-            create_segment!(type_map!("DateTime"), type_map!("I16"), d)
+        ("DateTime", "i16") => {
+            create_segment!(type_map!("DateTime"), type_map!("i16"), d)
         }
-        ("DateTime", "I32") => create_segment!(type_map!("DateTime"), type_map!("I32"), d),
-        ("DateTime", "I64") => {
-            create_segment!(type_map!("DateTime"), type_map!("I64"), d)
+        ("DateTime", "i32") => create_segment!(type_map!("DateTime"), type_map!("i32"), d),
+        ("DateTime", "i64") => {
+            create_segment!(type_map!("DateTime"), type_map!("i64"), d)
         }
-        ("DateTime", "U8") => {
-            create_segment!(type_map!("DateTime"), type_map!("U8"), d)
+        ("DateTime", "u8") => {
+            create_segment!(type_map!("DateTime"), type_map!("u8"), d)
         }
-        ("DateTime", "U16") => {
-            create_segment!(type_map!("DateTime"), type_map!("U16"), d)
+        ("DateTime", "u16") => {
+            create_segment!(type_map!("DateTime"), type_map!("u16"), d)
         }
-        ("DateTime", "U32") => {
-            create_segment!(type_map!("DateTime"), type_map!("U32"), d)
+        ("DateTime", "u32") => {
+            create_segment!(type_map!("DateTime"), type_map!("u32"), d)
         }
-        ("DateTime", "U64") => {
-            create_segment!(type_map!("DateTime"), type_map!("U64"), d)
+        ("DateTime", "u64") => {
+            create_segment!(type_map!("DateTime"), type_map!("u64"), d)
         }
-        ("DateTime", "F32") => {
-            create_segment!(type_map!("DateTime"), type_map!("F32"), d)
+        ("DateTime", "f32") => {
+            create_segment!(type_map!("DateTime"), type_map!("f32"), d)
         }
-        ("DateTime", "F64") => {
-            create_segment!(type_map!("DateTime"), type_map!("F64"), d)
+        ("DateTime", "f64") => {
+            create_segment!(type_map!("DateTime"), type_map!("f64"), d)
         }
         _ => panic!("Unknown XY pair"),
     }

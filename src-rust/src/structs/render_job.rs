@@ -117,7 +117,7 @@ impl RenderJob {
 // #[wasm_bindgen]
 pub struct TraceStyle {
     pub idx: usize,
-    pub color: [u8; 4],
+    pub color: [u8; 3],
     pub width: u32,
     pub points_mode: bool,
 }

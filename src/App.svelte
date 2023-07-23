@@ -3,14 +3,17 @@
   import viteLogo from "/vite.svg";
   import Chart from "./lib/Chart.svelte";
   import { spawnChartiumWorker } from "./lib/data-worker";
+  import type { TraceDescriptor } from "./lib/data-worker/modes/mod";
 
   const controller = spawnChartiumWorker();
-  controller.addFromArrayBuffer({
-    ids: ["foo", "bar"],
-    data: Uint32Array.from([10, 20, 30, 50, 80, 100]),
-    xType: "u32",
-    yType: "u32",
-  });
+  $: traces = controller
+    .addFromArrayBuffer({
+      ids: ["foo", "bar"],
+      data: Uint32Array.from([10, 20, 30, 50, 80, 100]),
+      xType: "u32",
+      yType: "u32",
+    })
+    .then((handles) => handles.map<TraceDescriptor>((handle) => ({ handle })));
 </script>
 
 <main>
@@ -25,7 +28,9 @@
   <h1>Vite + Svelte</h1>
 
   <div class="card">
-    <Chart />
+    {#await traces then traces}
+      <Chart {controller} {traces} />
+    {/await}
   </div>
 
   <p>

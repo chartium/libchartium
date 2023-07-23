@@ -1,10 +1,25 @@
 <script lang="ts">
-  let count: number = 0
-  const increment = () => {
-    count += 1
-  }
+  import { transfer, type Remote } from "comlink";
+  import type { ChartiumController } from "./data-worker";
+  import { mapOpt } from "../utils/mapOpt";
+  import type { TraceDescriptor } from "./data-worker/modes/mod";
+
+  export let controller: Remote<ChartiumController>;
+  export let traces: TraceDescriptor[];
+
+  let canvas: HTMLCanvasElement | undefined;
+  $: offscreen = canvas?.transferControlToOffscreen();
+  $: renderer = mapOpt(offscreen, (c) => controller.createRenderer(transfer(c, [c])));
+
+  $: console.log(controller);
+  $: renderer?.then((r) =>
+    r.render({
+      xType: "u32",
+      includeTraces: traces,
+      xRange: { from: 0, to: 100 },
+      yRange: { from: 0, to: 100 },
+    })
+  );
 </script>
 
-<button on:click={increment}>
-  count is {count}
-</button>
+<canvas bind:this={canvas} width="100" height="100" />
