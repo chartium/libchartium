@@ -1,4 +1,12 @@
-import { yeet } from "../../../utils/yeet";
+import { lib } from "../wasm.ts";
+import { yeet } from "../../../utils/yeet.ts";
+import {
+  deserializeRenderJob,
+  type RenderJob,
+  type RenderJobResult,
+  type Renderer,
+  type RenderingController,
+} from "./mod.ts";
 
 function compileShader(
   gl: WebGL2RenderingContext,
@@ -22,11 +30,17 @@ function linkProgram(
   return program;
 }
 
-export class WebGL2Mode {
-  #canvas: OffscreenCanvas;
-  #context: WebGL2RenderingContext;
+export class WebGL2Controller implements RenderingController {
+  readonly #dataModule: lib.DataModule;
+  readonly #canvas: OffscreenCanvas;
+  readonly #context: WebGL2RenderingContext;
+  readonly #programs: lib.WebGlPrograms;
 
-  constructor(canvas: OffscreenCanvas) {
+  #renderers: { [key: number]: WebGL2Renderer } = {};
+  #availableRendererHandle = 0;
+
+  constructor(dataModule: lib.DataModule, canvas: OffscreenCanvas) {
+    this.#dataModule = dataModule;
     this.#canvas = canvas;
 
     this.#context =
@@ -34,6 +48,41 @@ export class WebGL2Mode {
         antialias: true,
         premultipliedAlpha: true,
       }) ?? yeet("Could not get a WebGL2 context for an OffscreenCanvas.");
+
+    const {
+      traceProgram,
+      traceColor,
+      traceCsoffset,
+      traceOrigin,
+      traceSize,
+      traceTransform,
+    } = this.#initTraceProgram();
+    const { axisProgram, axisColor, axisResolution } = this.#initAxisProgram();
+    this.#programs = new lib.WebGlPrograms(
+      traceProgram,
+      traceTransform,
+      traceOrigin,
+      traceSize,
+      traceCsoffset,
+      traceColor,
+      axisProgram,
+      axisResolution,
+      axisColor
+    );
+  }
+
+  createRenderer(presentCanvas: OffscreenCanvas): WebGL2Renderer {
+    const raw = new lib.WebGlRenderer(
+      this.#canvas,
+      this.#context,
+      this.#programs,
+      presentCanvas,
+      false
+    );
+    const handle = this.#availableRendererHandle++;
+    const wrapped = new WebGL2Renderer(this, handle, this.#dataModule, raw);
+    this.#renderers[handle] = wrapped;
+    return wrapped;
   }
 
   #initTraceProgram() {
@@ -72,11 +121,11 @@ export class WebGL2Mode {
     );
 
     const traceProgram = linkProgram(gl, vertShader, fragShader);
-    const traceTransform = gl.getUniformLocation(traceProgram, "transform");
-    const traceOrigin = gl.getUniformLocation(traceProgram, "origin");
-    const traceSize = gl.getUniformLocation(traceProgram, "size");
-    const traceCsoffset = gl.getUniformLocation(traceProgram, "csoffset");
-    const traceColor = gl.getUniformLocation(traceProgram, "color");
+    const traceTransform = gl.getUniformLocation(traceProgram, "transform")!;
+    const traceOrigin = gl.getUniformLocation(traceProgram, "origin")!;
+    const traceSize = gl.getUniformLocation(traceProgram, "size")!;
+    const traceCsoffset = gl.getUniformLocation(traceProgram, "csoffset")!;
+    const traceColor = gl.getUniformLocation(traceProgram, "color")!;
 
     return {
       traceProgram,
@@ -88,7 +137,7 @@ export class WebGL2Mode {
     };
   }
 
-  #initAxisProgram(): WebGLProgram {
+  #initAxisProgram() {
     const gl = this.#context;
 
     const vertShader = compileShader(
@@ -118,9 +167,28 @@ export class WebGL2Mode {
     );
 
     const axisProgram = linkProgram(gl, vertShader, fragShader);
-    const axisResolution = gl.getUniformLocation(axisProgram, "resolution");
-    const axisColor = gl.getUniformLocation(axisProgram, "color");
+    const axisResolution = gl.getUniformLocation(axisProgram, "resolution")!;
+    const axisColor = gl.getUniformLocation(axisProgram, "color")!;
 
     return { axisProgram, axisResolution, axisColor };
+  }
+}
+
+export class WebGL2Renderer implements Renderer {
+  readonly #dataModule: lib.DataModule;
+  readonly #renderer: lib.WebGlRenderer;
+
+  constructor(
+    public readonly parent: WebGL2Controller,
+    public readonly handle: number,
+    dataModule: lib.DataModule,
+    renderer: lib.WebGlRenderer
+  ) {
+    this.#dataModule = dataModule;
+    this.#renderer = renderer;
+  }
+
+  render(job: RenderJob): RenderJobResult {
+    return this.#renderer.render(this.#dataModule, deserializeRenderJob(job));
   }
 }

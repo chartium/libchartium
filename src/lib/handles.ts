@@ -2,8 +2,6 @@ import type { Remote } from "comlink";
 import type {
   RawBundleHandle,
   RawRendererHandle,
-  RawTraceHandle,
-  RendererOptions,
   Size,
 } from "./types";
 import type { ChartiumController } from "./data-worker/controller";
@@ -24,8 +22,7 @@ export class Renderer {
 
   static async create(
     controller: ChartiumController | Remote<ChartiumController>,
-    canvas: OffscreenCanvas,
-    opts?: RendererOptions
+    canvas: OffscreenCanvas
   ): Promise<Renderer> {
     return new Renderer(
       controller,

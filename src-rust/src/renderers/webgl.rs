@@ -58,6 +58,7 @@ pub struct WebGlPrograms {
 
 #[wasm_bindgen]
 impl WebGlPrograms {
+    #[allow(clippy::too_many_arguments)]
     #[wasm_bindgen(constructor)]
     pub fn new(
         trace_program: WebGlProgram,
@@ -118,11 +119,11 @@ impl Drop for WebGlRenderer {
 
 #[wasm_bindgen]
 impl WebGlRenderer {
+    #[wasm_bindgen(constructor)]
     pub fn new(
         shared_canvas: OffscreenCanvas,
         context: WebGl2RenderingContext,
-        program: WebGlProgram,
-        axes_program: WebGlProgram,
+        programs: WebGlPrograms,
         present_canvas: OffscreenCanvas,
         is_area_chart: bool,
     ) -> Result<WebGlRenderer, JsValue> {
@@ -138,22 +139,7 @@ impl WebGlRenderer {
             is_area: is_area_chart,
             line_width_limit: width_range.get_index(1),
 
-            programs: WebGlPrograms {
-                trace_origin: context.get_uniform_location(&program, "origin").unwrap(),
-                trace_size: context.get_uniform_location(&program, "size").unwrap(),
-                trace_color: context.get_uniform_location(&program, "color").unwrap(),
-                trace_transform: context.get_uniform_location(&program, "transform").unwrap(),
-                trace_csoffset: context.get_uniform_location(&program, "csoffset").unwrap(),
-                trace_program: program,
-
-                axis_resolution: context
-                    .get_uniform_location(&axes_program, "resolution")
-                    .unwrap(),
-                axis_color: context
-                    .get_uniform_location(&axes_program, "color")
-                    .unwrap(),
-                axis_program: axes_program,
-            },
+            programs,
 
             trace_buffer: context.create_buffer().unwrap(),
             context,
