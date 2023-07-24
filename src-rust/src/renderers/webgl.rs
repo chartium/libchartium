@@ -6,7 +6,7 @@ use std::{
 
 use js_sys::Float32Array;
 use lazy_static::__Deref;
-use wasm_bindgen::{JsCast, JsValue};
+use wasm_bindgen::{JsCast, JsValue, prelude::*};
 use web_sys::{
     OffscreenCanvas, WebGl2RenderingContext, WebGlBuffer, WebGlProgram, WebGlUniformLocation,
 };
@@ -16,6 +16,11 @@ use crate::{data::TraceHandle, data_module::DataModule, prelude::*, structs::Ren
 use super::{AxisTick, RenderJobResult};
 
 const ROW_LEN: usize = std::mem::size_of::<u32>() * 2 + 4;
+
+#[wasm_bindgen(module = "/src/renderers/webgl.ts")]
+extern "C" {
+    fn render_between(source: &OffscreenCanvas, target: &OffscreenCanvas);
+}
 
 struct BufferEntry {
     points: usize,
@@ -773,12 +778,6 @@ mod webgl_utils {
             })
             .collect()
     }
-}
-
-use wasm_bindgen::prelude::*;
-#[wasm_bindgen(module = "/src/renderers/webgl.ts")]
-extern "C" {
-    fn render_between(source: &OffscreenCanvas, target: &OffscreenCanvas);
 }
 
 #[derive(Clone, Copy)]
