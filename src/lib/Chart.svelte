@@ -2,7 +2,7 @@
   import { transfer, type Remote } from "comlink";
   import type { ChartiumController } from "./data-worker";
   import { mapOpt } from "../utils/mapOpt";
-  import type { TraceDescriptor } from "./data-worker/modes/mod";
+  import type { TraceDescriptor } from "./data-worker/renderers/mod";
 
   export let controller: Remote<ChartiumController>;
   export let traces: TraceDescriptor[];
@@ -14,10 +14,10 @@
   $: console.log(controller);
   $: renderer?.then((r) =>
     r.render({
-      xType: "u32",
+      xType: "f32",
       includeTraces: traces,
       xRange: { from: 0, to: 100 },
-      yRange: { from: 0, to: 100 },
+      yRange: { from: -2, to: 2 },
     })
   );
 </script>
