@@ -196,4 +196,8 @@ export class WebGL2Renderer implements Renderer {
   render(job: RenderJob): RenderJobResult {
     return this.#renderer.render(this.#dataModule, deserializeRenderJob(job));
   }
+
+  setSize(width: number, height: number) {
+    this.#renderer.set_size(width, height);
+  }
 }

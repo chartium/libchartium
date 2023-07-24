@@ -8,6 +8,7 @@ export interface RenderingController {
 
 export interface Renderer {
   render(job: RenderJob): RenderJobResult;
+  setSize(width: number, height: number): void;
 }
 
 export interface TraceDescriptor extends Partial<TraceStyle> {

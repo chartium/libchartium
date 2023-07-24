@@ -40,7 +40,7 @@ struct BufferBundle {
     buffers: Vec<BufferEntry>,
 }
 
-pub struct BundleEntry {
+pub struct TraceDescriptor {
     handle: usize,
     width: u32,
     color: [u8; 3],
@@ -331,7 +331,7 @@ impl WebGlRenderer {
         Ok(serde_wasm_bindgen::to_value(&RenderJobResult { x_ticks, y_ticks }).unwrap())
     }
 
-    pub fn size_changed(&mut self, width: u32, height: u32) -> Result<(), JsValue> {
+    pub fn set_size(&mut self, width: u32, height: u32) -> Result<(), JsValue> {
         self.width = width;
         self.height = height;
 
@@ -351,7 +351,7 @@ impl WebGlRenderer {
         let mut vec = Vec::with_capacity(stream.len() / ROW_LEN);
 
         for row in stream.chunks_exact(ROW_LEN) {
-            vec.push(BundleEntry {
+            vec.push(TraceDescriptor {
                 handle: u32::from_be_bytes(row[0..4].try_into().unwrap()) as usize,
                 width: u32::from_be_bytes(row[4..8].try_into().unwrap()),
                 color: row[8..11].try_into().unwrap(),
@@ -396,7 +396,7 @@ impl WebGlRenderer {
         }
 
         for row in add.chunks_exact(ROW_LEN) {
-            to_add.push(BundleEntry {
+            to_add.push(TraceDescriptor {
                 handle: u32::from_be_bytes(row[0..4].try_into().unwrap()) as usize,
                 width: u32::from_be_bytes(row[4..8].try_into().unwrap()),
                 color: row[8..11].try_into().unwrap(),
@@ -405,7 +405,7 @@ impl WebGlRenderer {
         }
 
         for row in modif.chunks_exact(ROW_LEN) {
-            to_mod.push(BundleEntry {
+            to_mod.push(TraceDescriptor {
                 handle: u32::from_be_bytes(row[0..4].try_into().unwrap()) as usize,
                 width: u32::from_be_bytes(row[4..8].try_into().unwrap()),
                 color: row[8..11].try_into().unwrap(),
@@ -455,7 +455,7 @@ impl WebGlRenderer {
         module: &DataModule,
         from: RangePrec,
         to: RangePrec,
-        data: &[BundleEntry],
+        data: &[TraceDescriptor],
     ) -> Result<usize, JsValue> {
         let mut vec = Vec::with_capacity(data.len());
         let mut area_adder = if self.is_area && !data.is_empty() {
@@ -655,7 +655,7 @@ impl WebGlRenderer {
         module: &DataModule,
         from: RangePrec,
         to: RangePrec,
-        entry: &BundleEntry,
+        entry: &TraceDescriptor,
         area_add: Option<&mut Vec<(f32, f32)>>,
     ) -> Result<BufferEntry, JsValue> {
         let buffer =

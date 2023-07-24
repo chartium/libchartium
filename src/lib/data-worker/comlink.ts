@@ -18,6 +18,8 @@ export function importControllerFromWorker(
     createRenderer(presentCanvas: OffscreenCanvas) {
       return remote.createRenderer(transfer(presentCanvas, [presentCanvas]));
     },
+
+    // TODO transfer for data loading
   });
 
   return new Proxy(remote, {
