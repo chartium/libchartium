@@ -309,14 +309,29 @@ impl DataModule {
             .collect::<Vec<JsValue>>()
     }
 
-    pub fn is_zero(&self, data_ptr: TraceHandle, from: RangePrec, to: RangePrec) -> bool {
+    /// checks if all datapoints of selected trace in specific interval are identically zero
+    pub fn is_trace_zero(&self, data_ptr: TraceHandle, from: RangePrec, to: RangePrec) -> bool {
         self.traces
             .get(&data_ptr)
             .map(|t| !t.get_data_in(from, to).any(|(_, y)| y.abs() > 1e-3))
             .unwrap_or(true)
     }
 
-    pub fn treshold(
+    /// checks if which traces have all their datapoints indentically zero on set interval
+    pub fn are_traces_zero(
+        &self,
+        data_ptrs: &[TraceHandle],
+        from: RangePrec,
+        to: RangePrec,
+    ) -> Box<[JsValue]> {
+        data_ptrs
+            .iter()
+            .map(|ptr| self.is_trace_zero(*ptr, from, to).into())
+            .collect()
+    }
+
+    /// Returns true if all values of trace at data_ptr in range from:to are above treshold
+    pub fn is_trace_over_treshold(
         &self,
         data_ptr: TraceHandle,
         from: RangePrec,
@@ -327,6 +342,21 @@ impl DataModule {
             .get(&data_ptr)
             .map(|t| t.get_data_in(from, to).any(|(_, y)| y.abs() >= tres))
             .unwrap_or(false)
+    }
+
+    /// Returns array of bools for each trace in ptrs, true if all values of trace at data_ptr in range from:to are above treshold
+    /// is just map of data_ptrs to treshold() of its values
+    pub fn are_traces_over_threshold(
+        &self,
+        data_ptrs: &[TraceHandle],
+        from: RangePrec,
+        to: RangePrec,
+        tres: DataPrec,
+    ) -> Box<[JsValue]> {
+        data_ptrs
+            .iter()
+            .map(|ptr| self.is_trace_over_treshold(*ptr, from, to, tres).into())
+            .collect()
     }
 
     pub fn get_extents(

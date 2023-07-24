@@ -14,7 +14,6 @@ export interface Renderer {
 export interface TraceDescriptor extends Partial<TraceStyle> {
   handle: TraceHandle;
 }
-
 export interface RenderJob {
   xType: TypeOfData;
 

@@ -253,15 +253,20 @@ export class ChartiumController {
     to: number,
     thresholdValue: number
   ): boolean[] {
-    // FIXME move the map to Rust
-    return traces.map((t) =>
-      this.#dataModule.treshold(t, from, to, thresholdValue)
-    );
+    return this.#dataModule.are_traces_over_threshold(
+      Uint32Array.from(traces),
+      from,
+      to,
+      thresholdValue
+    )
   }
 
   areTracesZero(traces: TraceHandle[], from: number, to: number): boolean[] {
-    // FIXME move the map to Rust
-    return traces.map((t) => this.#dataModule.is_zero(t, from, to));
+    return this.#dataModule.are_traces_zero(
+      Uint32Array.from(traces),
+      from,
+      to
+    )
   }
 
   findTraceClosestToPoint(
