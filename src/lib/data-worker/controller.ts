@@ -11,8 +11,8 @@ import type {
   TypedArray,
   TypeOfData,
 } from "../types.js";
-import type { RenderingController } from "./modes/mod.ts";
-import { WebGL2Controller } from "./modes/webgl2.ts";
+import type { RenderingController } from "./renderers/mod.ts";
+import { WebGL2Controller } from "./renderers/webgl2.ts";
 import { proxyMarker } from "comlink";
 
 let wasmMemory: WebAssembly.Memory | undefined;

@@ -1,12 +1,12 @@
-import { lib } from "../wasm.ts";
-import { yeet } from "../../../utils/yeet.ts";
+import { lib } from "../wasm.js";
+import { yeet } from "../../../utils/yeet.js";
 import {
   deserializeRenderJob,
   type RenderJob,
   type RenderJobResult,
   type Renderer,
   type RenderingController,
-} from "./mod.ts";
+} from "./mod.js";
 import { proxyMarker } from "comlink";
 
 function compileShader(
