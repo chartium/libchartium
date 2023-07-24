@@ -1,5 +1,6 @@
 import { expose, wrap, transfer, type Remote } from "comlink";
 import type { ChartiumController } from "./controller.ts";
+import { asMap } from "../../utils/object.ts";
 
 export function exportControllerFromWorker(
   controller: ChartiumController
@@ -13,15 +14,15 @@ export function importControllerFromWorker(
   w = typeof w === "function" ? new w() : w;
   const remote = wrap<ChartiumController>(w);
 
-  const masked = {
+  const mask = asMap({
     createRenderer(presentCanvas: OffscreenCanvas) {
       return remote.createRenderer(transfer(presentCanvas, [presentCanvas]));
     },
-  };
+  });
 
   return new Proxy(remote, {
     get(target, prop) {
-      if (prop in masked) return (masked as any)[prop];
+      if (mask.has(prop)) return mask.get(prop);
       return (target as any)[prop];
     },
   });
