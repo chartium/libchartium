@@ -14,19 +14,7 @@ pub trait Segment: DynClone {
         self.from() <= to && self.to() >= from
     }
 
-    fn iter_in<'a>(
-        &'a self,
-        from: RangePrec,
-        to: RangePrec,
-    ) -> Box<dyn Iterator<Item = (DataPrec, DataPrec)> + 'a>;
-    fn iter_with_origin<'a>(
-        &'a self,
-        from: RangePrec,
-        to: RangePrec,
-        x_orig: RangePrec,
-        y_orig: RangePrec,
-    ) -> Box<dyn Iterator<Item = (DataPrec, DataPrec)> + 'a>;
-    fn iter_high_prec<'a>(
+    fn iter_in_range<'a>(
         &'a self,
         from: RangePrec,
         to: RangePrec,

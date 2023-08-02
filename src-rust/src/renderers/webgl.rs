@@ -6,12 +6,15 @@ use std::{
 
 use js_sys::Float32Array;
 use lazy_static::__Deref;
-use wasm_bindgen::{JsCast, JsValue, prelude::*};
+use wasm_bindgen::{prelude::*, JsCast, JsValue};
 use web_sys::{
     OffscreenCanvas, WebGl2RenderingContext, WebGlBuffer, WebGlProgram, WebGlUniformLocation,
 };
 
-use crate::{data::TraceHandle, data_module::DataModule, prelude::*, structs::RenderJob};
+use crate::{
+    data::TraceHandle, data_module::DataModule, prelude::*, structs::RenderJob,
+    trace::extensions::PointIteratorExtension,
+};
 
 use super::{AxisTick, RenderJobResult};
 
@@ -303,8 +306,9 @@ impl WebGlRenderer {
                     let data = module
                         .get_trace(trace.idx)
                         .map(|t| {
-                            t.get_data_with_origin(job.x_from - 1., job.x_to + 1., job.x_from, 0.0)
-                                .flat_map(|(x, y)| [x, y])
+                            t.get_data_in_range(job.x_from - 1., job.x_to + 1.)
+                                .with_origin(job.x_from, 0.0)
+                                .flat_map(|(x, y)| [x as f32, y as f32])
                                 .collect::<Vec<_>>()
                         })
                         .expect("Invalid entry handle during bundling");
@@ -460,8 +464,9 @@ impl WebGlRenderer {
         let mut vec = Vec::with_capacity(data.len());
         let mut area_adder = if self.is_area && !data.is_empty() {
             module.get_trace(data[0].handle).map(|d| {
-                d.get_data_with_origin(from, to, from, 0.0)
-                    .map(|p| (p.0, 0.0))
+                d.get_data_in_range(from, to)
+                    .with_origin(from, 0.0)
+                    .map(|(x, _)| (x as f32, 0.0))
                     .collect()
             })
         } else {
@@ -668,7 +673,12 @@ impl WebGlRenderer {
 
         let mut data: Vec<(f32, f32)> = module
             .get_trace(entry.handle)
-            .map(|t| t.get_data_with_origin(from, to, from, 0.0).collect())
+            .map(|t| {
+                t.get_data_in_range(from, to)
+                    .with_origin(from, 0.0)
+                    .map(|(x, y)| (x as f32, y as f32))
+                    .collect()
+            })
             .expect("Invalid entry handle during bundling");
 
         if let Some(ref area) = area_add {

@@ -1,4 +1,5 @@
 mod descriptor;
+pub mod extensions;
 mod metas;
 mod segment;
 mod shared_segment;

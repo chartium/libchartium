@@ -31,44 +31,7 @@ impl Segment for SharedSegment {
         self.to
     }
 
-    fn iter_in<'a>(
-        &'a self,
-        from: RangePrec,
-        to: RangePrec,
-    ) -> Box<dyn Iterator<Item = (crate::prelude::DataPrec, crate::prelude::DataPrec)> + 'a> {
-        Box::new(
-            self.x
-                .iter()
-                .zip(self.y.iter())
-                .skip_while(move |(&x, _)| (x as RangePrec) < from)
-                .take_while(move |(&x, _)| (x as RangePrec) <= to)
-                .map(|(&x, &y)| (x as DataPrec, y as DataPrec)),
-        )
-    }
-
-    fn iter_with_origin<'a>(
-        &'a self,
-        from: RangePrec,
-        to: RangePrec,
-        x_orig: RangePrec,
-        y_orig: RangePrec,
-    ) -> Box<dyn Iterator<Item = (crate::prelude::DataPrec, crate::prelude::DataPrec)> + 'a> {
-        Box::new(
-            self.x
-                .iter()
-                .enumerate()
-                .skip_while(move |(_, x)| (**x as RangePrec) < from)
-                .take_while(move |(_, x)| (**x as RangePrec) <= to)
-                .map(move |(i, &x)| {
-                    (
-                        (x as RangePrec - x_orig) as DataPrec,
-                        (self.y[i] - y_orig) as DataPrec,
-                    )
-                }),
-        )
-    }
-
-    fn iter_high_prec<'a>(
+    fn iter_in_range<'a>(
         &'a self,
         from: RangePrec,
         to: RangePrec,
@@ -77,8 +40,8 @@ impl Segment for SharedSegment {
             self.x
                 .iter()
                 .enumerate()
-                .skip_while(move |(_, x)| (**x as RangePrec) < from)
-                .take_while(move |(_, x)| (**x as RangePrec) <= to)
+                .skip_while(move |(_, x)| x.to_rangeprec() < from)
+                .take_while(move |(_, x)| x.to_rangeprec() <= to)
                 .map(|(i, &x)| (x as RangePrec, self.y[i] as RangePrec)),
         )
     }

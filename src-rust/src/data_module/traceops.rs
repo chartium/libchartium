@@ -46,7 +46,7 @@ impl DataModule {
             })
             .collect();
 
-        dists.sort_by(|(_, a_delta), (_, b_delta)| a_delta.partial_cmp(&b_delta).unwrap());
+        dists.sort_by(|(_, a_delta), (_, b_delta)| a_delta.partial_cmp(b_delta).unwrap());
 
         dists.into_iter().take(n).map(|(p, _)| p).collect()
     }
@@ -168,7 +168,7 @@ impl DataModule {
             .and_then(|ptr| self.traces.get(ptr))
             .map(|t| {
                 let mut current = Vec::<(i32, f64)>::new();
-                for (x, y) in t.get_data_high_prec(from, to) {
+                for (x, y) in t.get_data_in_range(from, to) {
                     current.push((x as i32, y * mul));
                 }
 
@@ -180,7 +180,7 @@ impl DataModule {
             self.traces
                 .get(t)
                 .map(|t| {
-                    for (row, (_, y)) in data.iter_mut().zip(t.get_data_high_prec(from, to)) {
+                    for (row, (_, y)) in data.iter_mut().zip(t.get_data_in_range(from, to)) {
                         row.1 += y * mul;
                     }
                 })
@@ -232,13 +232,13 @@ impl DataModule {
             .segments
             .iter()
             .find(|s| s.contains(rx))
-            .map(|s| s.iter_high_prec(s.from(), s.to()))
+            .map(|s| s.iter_in_range(s.from(), s.to()))
             .unwrap_or_else(|| {
                 Box::new(
                     trace
                         .segments
                         .iter()
-                        .flat_map(|s| s.iter_high_prec(s.from(), s.to())),
+                        .flat_map(|s| s.iter_in_range(s.from(), s.to())),
                 )
             });
 
@@ -249,10 +249,10 @@ impl DataModule {
             }
         }
 
-        return match (closest_x, closest_y) {
+        match (closest_x, closest_y) {
             (Some(x), Some(y)) => Some(vec![x, y].into_boxed_slice()),
             _ => None,
-        };
+        }
     }
 
     pub fn get_trace_metas(&self, ptr: TraceHandle, from: RangePrec, to: RangePrec) -> JsValue {
@@ -271,7 +271,7 @@ impl DataModule {
             .get(&ptr)
             .expect("Invalid ptr in get_trace_metas");
 
-        for (_, y) in trace.get_data_high_prec(from, to) {
+        for (_, y) in trace.get_data_in_range(from, to) {
             metas.avg += y;
             metas.min = RangePrec::min(metas.min, y);
             metas.max = RangePrec::max(metas.max, y);
@@ -313,7 +313,7 @@ impl DataModule {
     pub fn is_trace_zero(&self, data_ptr: TraceHandle, from: RangePrec, to: RangePrec) -> bool {
         self.traces
             .get(&data_ptr)
-            .map(|t| !t.get_data_in(from, to).any(|(_, y)| y.abs() > 1e-3))
+            .map(|t| !t.get_data_in_range(from, to).any(|(_, y)| y.abs() > 1e-3))
             .unwrap_or(true)
     }
 
@@ -336,11 +336,11 @@ impl DataModule {
         data_ptr: TraceHandle,
         from: RangePrec,
         to: RangePrec,
-        tres: DataPrec,
+        tres: RangePrec,
     ) -> bool {
         self.traces
             .get(&data_ptr)
-            .map(|t| t.get_data_in(from, to).any(|(_, y)| y.abs() >= tres))
+            .map(|t| t.get_data_in_range(from, to).any(|(_, y)| y.abs() >= tres))
             .unwrap_or(false)
     }
 
@@ -351,7 +351,7 @@ impl DataModule {
         data_ptrs: &[TraceHandle],
         from: RangePrec,
         to: RangePrec,
-        tres: DataPrec,
+        tres: RangePrec,
     ) -> Box<[JsValue]> {
         data_ptrs
             .iter()
@@ -370,8 +370,8 @@ impl DataModule {
             .get(&data_ptr)
             .map(|trace| {
                 trace
-                    .get_data_in(from, to)
-                    .fold((f32::MAX, f32::MIN), |acc, (_, y)| {
+                    .get_data_in_range(from, to)
+                    .fold((RangePrec::MAX, RangePrec::MIN), |acc, (_, y)| {
                         (acc.0.min(y), acc.1.max(y))
                     })
             })
@@ -391,7 +391,7 @@ impl DataModule {
             .get(ptrs.first().unwrap())
             .map(|t| {
                 let mut current = Vec::<(i32, f64)>::new();
-                for (x, y) in t.get_data_high_prec(from, to) {
+                for (x, y) in t.get_data_in_range(from, to) {
                     current.push((x as i32, y));
                 }
 
@@ -403,7 +403,7 @@ impl DataModule {
             self.traces
                 .get(t)
                 .map(|t| {
-                    for (row, (_, y)) in data.iter_mut().zip(t.get_data_high_prec(from, to)) {
+                    for (row, (_, y)) in data.iter_mut().zip(t.get_data_in_range(from, to)) {
                         row.1 += y;
                     }
                 })

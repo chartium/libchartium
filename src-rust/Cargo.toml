@@ -21,6 +21,7 @@ chrono = { version = "0.4.26", features=[ "wasmbind" ] }
 wasm-streams = "0.3.0"
 wasm-bindgen-futures = "0.4.37"
 serde-wasm-bindgen = "0.5.0"
+num-traits = "0.2.16"
 
 [dependencies.web-sys]
 version = "0.3.64"

@@ -24,33 +24,15 @@ impl TraceDescriptor {
             .filter(move |&x| x.intersects(from, to))
     }
 
-    pub fn get_data_in(
-        &self,
-        from: RangePrec,
-        to: RangePrec,
-    ) -> impl Iterator<Item = (DataPrec, DataPrec)> + '_ {
-        self.get_segments_in(from, to)
-            .flat_map(move |seg| seg.iter_in(from, to))
-    }
-
-    pub fn get_data_high_prec(
+    pub fn get_data_in_range(
         &self,
         from: RangePrec,
         to: RangePrec,
     ) -> impl Iterator<Item = (RangePrec, RangePrec)> + '_ {
-        self.get_segments_in(from, to)
-            .flat_map(move |seg| seg.iter_high_prec(from, to))
-    }
+        // FIXME: this duplicates values on overlapping segments
 
-    pub fn get_data_with_origin(
-        &self,
-        from: RangePrec,
-        to: RangePrec,
-        x_orig: RangePrec,
-        y_orig: RangePrec,
-    ) -> impl Iterator<Item = (DataPrec, DataPrec)> + '_ {
         self.get_segments_in(from, to)
-            .flat_map(move |seg| seg.iter_with_origin(from, to, x_orig, y_orig))
+            .flat_map(move |seg| seg.iter_in_range(from, to))
     }
 
     pub fn get_data_at(&self, x: RangePrec) -> Option<RangePrec> {

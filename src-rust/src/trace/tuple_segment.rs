@@ -17,24 +17,7 @@ pub struct TupleSegment<X: Clone, Y: Clone> {
 }
 
 impl<X: SegmentNumeric + Copy, Y: SegmentNumeric + Copy> Segment for TupleSegment<X, Y> {
-    fn iter_in<'a>(
-        &'a self,
-        from: RangePrec,
-        to: RangePrec,
-    ) -> Box<dyn Iterator<Item = (DataPrec, DataPrec)> + 'a> {
-        let from = from.max(self.from).min(self.to);
-        let to = to.max(self.from).min(self.to);
-
-        Box::new(
-            self.data
-                .iter()
-                .skip_while(move |PointTuple(x, _)| x.to_rangeprec() < from)
-                .take_while(move |PointTuple(x, _)| x.to_rangeprec() < to)
-                .map(|PointTuple(x, y)| (x.to_dataprec(), y.to_dataprec())),
-        )
-    }
-
-    fn iter_high_prec<'a>(
+    fn iter_in_range<'a>(
         &'a self,
         from: RangePrec,
         to: RangePrec,
@@ -48,30 +31,6 @@ impl<X: SegmentNumeric + Copy, Y: SegmentNumeric + Copy> Segment for TupleSegmen
                 .skip_while(move |PointTuple(x, _)| x.to_rangeprec() < from)
                 .take_while(move |PointTuple(x, _)| x.to_rangeprec() < to)
                 .map(|PointTuple(x, y)| (x.to_rangeprec(), y.to_rangeprec())),
-        )
-    }
-
-    fn iter_with_origin<'a>(
-        &'a self,
-        from: RangePrec,
-        to: RangePrec,
-        x_orig: RangePrec,
-        y_orig: RangePrec,
-    ) -> Box<dyn Iterator<Item = (DataPrec, DataPrec)> + 'a> {
-        let from = from.max(self.from).min(self.to);
-        let to = to.max(self.from).min(self.to);
-
-        Box::new(
-            self.data
-                .iter()
-                .skip_while(move |PointTuple(x, _)| x.to_rangeprec() < from)
-                .take_while(move |PointTuple(x, _)| x.to_rangeprec() < to)
-                .map(move |PointTuple(x, y)| {
-                    (
-                        (x.to_rangeprec() - x_orig) as f32,
-                        (y.to_rangeprec() - y_orig) as f32,
-                    )
-                }),
         )
     }
 

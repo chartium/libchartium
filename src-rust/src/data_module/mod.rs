@@ -1,11 +1,11 @@
 use std::{collections::HashMap, rc::Rc};
 
-use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
+use wasm_bindgen::prelude::wasm_bindgen;
 
 use crate::{
     data::{TraceHandle, TypeDescriptor},
     prelude::*,
-    structs::{MetaCounter, Bulkloader},
+    structs::MetaCounter,
     trace::{SharedSegment, TraceDescriptor, TraceMetas},
 };
 
@@ -46,7 +46,12 @@ impl DataModule {
         self.traces.remove(&handle);
     }
 
-    pub fn print_data_as_csv(&self, ptrs: &[TraceHandle], from: RangePrec, to: RangePrec) -> String {
+    pub fn print_data_as_csv(
+        &self,
+        ptrs: &[TraceHandle],
+        from: RangePrec,
+        to: RangePrec,
+    ) -> String {
         use chrono::{DateTime, NaiveDateTime, Utc};
         let mut output = String::new();
 
