@@ -1,3 +1,16 @@
+/**
+ * 𝑪𝑶𝑵𝑻𝑹𝑶𝑳𝑳𝑬𝑹
+ *
+ * This is the JavaScript singleton class, which runs in
+ * a worker and owns and operates essentially all the data
+ * in the worker. It is responsible for the inicialization
+ * of the WebAssembly part of the codebase, and provides a
+ * higher level abstraction above it.
+ *
+ * Data ownership schema:
+ * https://excalidraw.com/#json=jiq85M3Y4yISrkw3N_gl3,oezOiubk0BGKdCtdHsYoEg
+ */
+
 import { BiMap } from "bim";
 import { wasmUrl, init, lib } from "./wasm.ts";
 import { mapOpt } from "../../utils/mapOpt.ts";

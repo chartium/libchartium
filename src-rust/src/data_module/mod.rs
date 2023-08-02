@@ -1,11 +1,11 @@
 use std::{collections::HashMap, rc::Rc};
 
-use wasm_bindgen::prelude::wasm_bindgen;
+use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
 
 use crate::{
     data::{TraceHandle, TypeDescriptor},
     prelude::*,
-    structs::MetaCounter,
+    structs::{MetaCounter, Bulkloader},
     trace::{SharedSegment, TraceDescriptor, TraceMetas},
 };
 
