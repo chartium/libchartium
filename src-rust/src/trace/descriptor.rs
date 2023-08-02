@@ -10,10 +10,6 @@ pub struct TraceDescriptor {
 }
 
 impl TraceDescriptor {
-    pub fn get_x_type(&self) -> &String {
-        &self.x_type
-    }
-
     pub fn get_segments_in(
         &self,
         from: RangePrec,
