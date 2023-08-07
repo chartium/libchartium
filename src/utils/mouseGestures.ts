@@ -2,7 +2,7 @@
 
 export interface MouseDragCallbacks {
     start: (event: MouseEvent) => void;
-    move: (deltaX: number, deltaY: number) => void;
+    move: (event: MouseEvent) => void;
     end: (event: MouseEvent) => void;
 }
 
@@ -31,7 +31,7 @@ export function leftMouseDrag(node: HTMLElement, callbacks: MouseDragCallbacks) 
         }
 
         if (isDragging) {
-            callbacks.move(deltaX, deltaY);
+            callbacks.move(event);
         }
     };
 
@@ -78,7 +78,7 @@ export function rightMouseDrag(node: HTMLElement, callbacks: MouseDragCallbacks)
         }
 
         if (isDragging) {
-            callbacks.move(deltaX, deltaY);
+            callbacks.move(event);
         }
     };
 
