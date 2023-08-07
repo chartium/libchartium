@@ -9,11 +9,15 @@ use crate::{
 use super::DataModule;
 
 trait OptionUtils<T> {
-    fn is_none_or(self, f: impl FnOnce(T) -> bool) -> bool;
+    fn is_none_or(&self, f: impl FnOnce(&T) -> bool) -> bool;
 }
+
 impl<T> OptionUtils<T> for Option<T> {
-    fn is_none_or(self, f: impl FnOnce(T) -> bool) -> bool {
-        self.is_none() || f(self.unwrap())
+    fn is_none_or(&self, f: impl FnOnce(&T) -> bool) -> bool {
+        match self.as_ref() {
+            Some(v) => f(v),
+            None => true,
+        }
     }
 }
 
