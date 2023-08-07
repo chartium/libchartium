@@ -7,8 +7,7 @@
  * of the WebAssembly part of the codebase, and provides a
  * higher level abstraction above it.
  *
- * Data ownership schema:
- * https://excalidraw.com/#json=jiq85M3Y4yISrkw3N_gl3,oezOiubk0BGKdCtdHsYoEg
+ * Data ownership schema in controller.excalidraw
  */
 
 import { BiMap } from "bim";

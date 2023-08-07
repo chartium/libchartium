@@ -1,4 +1,4 @@
-use std::{collections::HashMap, rc::Rc};
+use std::rc::Rc;
 
 use wasm_bindgen::prelude::wasm_bindgen;
 
@@ -6,7 +6,7 @@ use crate::{
     data::{TraceHandle, TypeDescriptor},
     prelude::*,
     structs::MetaCounter,
-    trace::{SharedSegment, TraceDescriptor, TraceMetas},
+    trace::{Batch, TraceMetas},
 };
 
 mod traceops;
@@ -15,7 +15,6 @@ mod traceops;
 #[derive(Default)]
 pub struct DataModule {
     next_handle: TraceHandle,
-    traces: HashMap<TraceHandle, TraceDescriptor>,
 }
 
 #[wasm_bindgen]
@@ -28,17 +27,6 @@ impl DataModule {
     pub fn create_trace(&mut self, id: &str, x_type: &str) -> TraceHandle {
         let handle = self.next_handle;
         self.next_handle += 1;
-
-        self.traces.insert(
-            handle,
-            TraceDescriptor {
-                id: id.to_string(),
-                x_type: x_type.to_string(),
-
-                segments: vec![],
-            },
-        );
-
         handle
     }
 
@@ -81,14 +69,6 @@ impl DataModule {
 }
 
 impl DataModule {
-    pub fn get_trace(&self, handle: TraceHandle) -> Option<&TraceDescriptor> {
-        self.traces.get(&handle)
-    }
-
-    pub fn get_trace_mut(&mut self, handle: TraceHandle) -> Option<&mut TraceDescriptor> {
-        self.traces.get_mut(&handle)
-    }
-
     pub fn get_data_at<'a, 'b: 'a>(
         &'a self,
         ptrs: &'b [TraceHandle],
@@ -150,7 +130,7 @@ impl DataModule {
 
             match self.traces.get_mut(handle) {
                 Some(trace) => {
-                    trace.push_segment(Box::new(SharedSegment::new(x.clone(), Rc::new(d))))
+                    trace.push_segment(Box::new(Batch::new(x.clone(), Rc::new(d))))
                 }
                 None => {
                     panic!("Handle {} is invalid", handle);
