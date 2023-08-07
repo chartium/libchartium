@@ -1,9 +1,9 @@
 
 import { transfer, type Remote } from "comlink";
-import type { ChartiumController } from "./data-worker";
-import type { Renderer, TraceDescriptor } from "./data-worker/renderers/mod";
-import { mapOpt } from "../utils/mapOpt";
-import type { Range, TraceHandle, TypeOfData, Point } from "./types";
+import type { ChartiumController } from "../data-worker";
+import type { Renderer, TraceDescriptor } from "../data-worker/renderers/mod";
+import { mapOpt } from "../../utils/mapOpt";
+import type { Range, TraceHandle, TypeOfData, Point } from "../types";
 
 /** Chartium render handler that is to be used by frontend svelte comonents to render charts
  * it autorenders when anything about the chart changes
@@ -60,10 +60,11 @@ export class Chart {
             return;
         }
 
-        // if the ranges are not set, estimate them from ranges of the first trace
-        const bottomLeft = await this._controller.findClosestPointOfTrace(this._includedTraces[0].handle, { x: -Infinity, y: -Infinity }) ?? { x: 0, y: 0 };
-        const topRight = await this._controller.findClosestPointOfTrace(this._includedTraces[0].handle, {x: Infinity, y: Infinity }) ?? {x: 0, y: 0};
 
+        // if the ranges are not set, estimate them from ranges of the first trace
+        // FIXME This doesnt work, but @m93a will add a function to the controller to help
+        const bottomLeft = await this._controller.findClosestPointOfTrace(this._includedTraces[0].handle, { x: -Infinity, y: -Infinity }) ?? { x: 0, y: 0 };
+        const topRight = await this._controller.findClosestPointOfTrace(this._includedTraces[0].handle, { x: Infinity, y: Infinity }) ?? { x: 0, y: 0 };
         if (this._xRange === undefined) {
             this._xRange = { from: bottomLeft.x, to: topRight.x };
         }
@@ -152,5 +153,24 @@ export class Chart {
         this._yLabelSpace = value;
         this.render();
     }
+
+    //SECTION - getters
+
+    get controller() { return this._controller; }
+    get canvas() { return this._canvas; }
+    get renderer() { return this._renderer; }
+    get includedTraces() { return this._includedTraces; }
+    get includeBundles(): number[] | undefined { return this._includeBundles; }
+    get excludeTraces(): TraceHandle[] | undefined { return this._excludeTraces; }
+    get xType(): TypeOfData | undefined { return this._xType; }
+    get xRange(): Range | undefined { return this._xRange; }
+    get yRange(): Range | undefined { return this._yRange; }
+    get clear(): boolean | undefined { return this._clear; }
+    get darkMode(): boolean | undefined { return this._darkMode; }
+    get renderAxes(): boolean | undefined { return this._renderAxes; }
+    get renderGrid(): boolean | undefined { return this._renderGrid; }
+    get margin(): number | undefined { return this._margin; }
+    get xLabelSpace(): number | undefined { return this._xLabelSpace; }
+    get yLabelSpace(): number | undefined { return this._yLabelSpace; }
 
 }

@@ -45,11 +45,13 @@ export function leftMouseDrag(node: HTMLElement, callbacks: MouseDragCallbacks) 
         document.removeEventListener('mouseup', handleMouseUp);
     };
 
-    document.addEventListener('mousedown', handleMouseDown);
+    node.addEventListener('mousedown', handleMouseDown);
 
     return {
         destroy() {
-            document.removeEventListener('mousedown', handleMouseDown);
+            node.removeEventListener('mousedown', handleMouseDown);
+            document.removeEventListener('mousemove', handleMouseMove);
+            document.removeEventListener('mouseup', handleMouseUp);
         },
     };
 }
@@ -92,11 +94,13 @@ export function rightMouseDrag(node: HTMLElement, callbacks: MouseDragCallbacks)
         document.removeEventListener('mouseup', handleMouseUp);
     };
 
-    document.addEventListener('mousedown', handleMouseDown);
+    node.addEventListener('mousedown', handleMouseDown);
 
     return {
         destroy() {
-            document.removeEventListener('mousedown', handleMouseDown);
+            node.removeEventListener('mousedown', handleMouseDown);
+            document.removeEventListener('mousemove', handleMouseMove);
+            document.removeEventListener('mouseup', handleMouseUp);
         },
     };
 }

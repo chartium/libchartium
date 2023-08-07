@@ -1,9 +1,10 @@
 <script lang="ts">
   import svelteLogo from "./assets/svelte.svg";
   import viteLogo from "/vite.svg";
-  import Chart from "./lib/Chart.svelte";
+  import Chart from "./lib/chart/Chart.svelte";
   import { spawnChartiumWorker } from "./lib/data-worker";
   import type { TraceDescriptor } from "./lib/data-worker/renderers/mod";
+  import ChartAxis from "./lib/chart/ChartAxis.svelte";
 
   const controller = spawnChartiumWorker();
   $: traces = controller
@@ -45,6 +46,8 @@
   </p>
 
   <p class="read-the-docs">Click on the Vite and Svelte logos to learn more</p>
+  <ChartAxis label="Mean color of balls [K]" axis="y" axisHeight={600} axisWidth={40} ticks={[0,1,2,3,4]} /> 
+  <ChartAxis label="Time since I shagged yer mum [days]" axis="x" axisHeight={40} axisWidth={600} ticks={[0,1,2,3,4]}  />
 </main>
 
 <style>
