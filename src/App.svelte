@@ -15,9 +15,6 @@
       yType: "f32",
     })
     .then((handles) => handles.map<TraceDescriptor>((handle) => ({ handle })));
-
-  // FIXME DEBUG
-  $: (window as any).controller = controller;
 </script>
 
 <main>
@@ -30,13 +27,6 @@
     </a>
   </div>
   <h1>Vite + Svelte</h1>
-
-  <div class="card">
-    {#await traces then traces}
-      <Chart {controller} {traces} />
-    {/await}
-  </div>
-
   <p>
     Check out <a
       href="https://github.com/sveltejs/kit#readme"
@@ -46,8 +36,32 @@
   </p>
 
   <p class="read-the-docs">Click on the Vite and Svelte logos to learn more</p>
-  <ChartAxis label="Mean color of balls [K]" axis="y" axisHeight={600} axisWidth={40} ticks={[0,1,2,3,4]} /> 
-  <ChartAxis label="Time since I shagged yer mum [days]" axis="x" axisHeight={40} axisWidth={600} ticks={[0,1,2,3,4]}  />
+  <div class="parent">
+    <div class="div1">
+      <ChartAxis
+        label="Mean color of balls [K]"
+        axis="y"
+        axisHeight={600}
+        axisWidth={40}
+        ticks={[0, 1, 2, 3, 4]}
+      />
+    </div>
+    <div class="div4">
+      {#await traces then traces}
+        <Chart {controller} {traces} />
+      {/await}
+    </div>
+    <div class="div3">
+      <ChartAxis
+        label="Time since I shagged yer mum [days]"
+        axis="x"
+        axisHeight={40}
+        axisWidth={600}
+        ticks={[0, 1, 2, 3, 4]}
+      />
+    </div>
+    <div class="div2" />
+  </div>
 </main>
 
 <style>
@@ -65,5 +79,28 @@
   }
   .read-the-docs {
     color: #888;
+  }
+
+  .parent {
+    display: grid;
+    grid-template-columns: 1fr 3fr;
+    grid-template-rows: 3fr 1fr;
+    grid-column-gap: 0px;
+    grid-row-gap: 0px;
+  }
+
+  .div1 {
+    grid-area: 1 / 1 / 2 / 2;
+    display:flex;
+    justify-content: end;
+  }
+  .div2 {
+    grid-area: 2 / 1 / 3 / 2;
+  }
+  .div3 {
+    grid-area: 2 / 2 / 3 / 3;
+  }
+  .div4 {
+    grid-area: 1 / 2 / 2 / 3;
   }
 </style>

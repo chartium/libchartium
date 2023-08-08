@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { transfer, type Remote } from "comlink";
+  import { type Remote } from "comlink";
   import type { ChartiumController } from "../data-worker";
   import type { TraceDescriptor } from "../data-worker/renderers/mod";
   import { Chart } from "./chart";
@@ -14,14 +14,11 @@
 
   onMount(async () => {
     await chart.assignCanvas(canvas!);
-    chart.includeTraces = traces;
+    chart.includeTraces = await traces;
     chart.xType = "f32";
 
   })
-
   $: (window as any).chart = chart;
-
-
 </script>
 
-<canvas bind:this={canvas} width="100" height="100" />
+<canvas bind:this={canvas} width="600" height="600" />
