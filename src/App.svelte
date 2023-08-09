@@ -42,8 +42,8 @@
         label="Mean color of balls [K]"
         axis="y"
         axisHeight={600}
-        axisWidth={40}
-        ticks={[0, 1, 2, 3, 4]}
+        axisWidth={200}
+        ticks={[{pos: 0, value: 0}, {pos: 0.5, value: 1}, {pos: 1, value: 2}]}
       />
     </div>
     <div class="div4">
@@ -55,9 +55,9 @@
       <ChartAxis
         label="Time since I shagged yer mum [days]"
         axis="x"
-        axisHeight={40}
+        axisHeight={200}
         axisWidth={600}
-        ticks={[0, 1, 2, 3, 4]}
+        ticks={[{pos: 0, value: 0}, {pos: 0.333, value: 1}, {pos: 0.667, value: 2}, {pos: 1, value: 3}]}
       />
     </div>
     <div class="div2" />
