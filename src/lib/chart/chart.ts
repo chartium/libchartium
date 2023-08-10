@@ -3,7 +3,7 @@ import { transfer, type Remote } from "comlink";
 import type { ChartiumController } from "../data-worker";
 import type { Renderer, TraceDescriptor } from "../data-worker/renderers/mod";
 import { mapOpt } from "../../utils/mapOpt";
-import type { Range, TraceHandle, TypeOfData, Point } from "../types";
+import type { Range, TraceHandle, TypeOfData } from "../types";
 
 /** Chartium render handler that is to be used by frontend svelte comonents to render charts
  * it autorenders when anything about the chart changes

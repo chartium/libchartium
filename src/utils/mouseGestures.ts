@@ -6,22 +6,28 @@ export interface MouseDragCallbacks {
     end: (event: MouseEvent) => void;
 }
 
+enum MouseButtons {
+    Left = 1,
+    Middle = 4,
+    Right = 2,
+}
+
 /** adds a left mouse drag event, which requires a trifecta of callbacks bundled in MouseDragOptions */
 export function leftMouseDrag(node: HTMLElement, callbacks: MouseDragCallbacks) {
     let startX : number, startY : number;
     let isDragging = false;
 
     const handleMouseDown = (event: MouseEvent) => {
-        if (event.button !== 0) return; // only left click
+        if (event.buttons !== MouseButtons.Left) return;
         startX = event.clientX;
         startY = event.clientY;
         isDragging = false;
-        document.addEventListener('mousemove', handleMouseMove);
+        node.addEventListener('mousemove', handleMouseMove);
         document.addEventListener('mouseup', handleMouseUp);
     };
 
     const handleMouseMove = (event: MouseEvent) => {
-        if (event.button !== 0) return; // only left click
+        if (event.buttons !== MouseButtons.Left) return;
         const deltaX = event.clientX - startX;
         const deltaY = event.clientY - startY;
 
@@ -36,13 +42,12 @@ export function leftMouseDrag(node: HTMLElement, callbacks: MouseDragCallbacks) 
     };
 
     const handleMouseUp = (event: MouseEvent) => {
-        if (event.button !== 0) return; // only left click
         if (isDragging) {
             callbacks.end(event);
         }
 
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
+        node.removeEventListener('mousemove', handleMouseMove);
+        node.removeEventListener('mouseup', handleMouseUp);
     };
 
     node.addEventListener('mousedown', handleMouseDown);
@@ -50,8 +55,8 @@ export function leftMouseDrag(node: HTMLElement, callbacks: MouseDragCallbacks) 
     return {
         destroy() {
             node.removeEventListener('mousedown', handleMouseDown);
-            document.removeEventListener('mousemove', handleMouseMove);
-            document.removeEventListener('mouseup', handleMouseUp);
+            node.removeEventListener('mousemove', handleMouseMove);
+            node.removeEventListener('mouseup', handleMouseUp);
         },
     };
 }
@@ -61,20 +66,21 @@ export function rightMouseDrag(node: HTMLElement, callbacks: MouseDragCallbacks)
     let isDragging = false;
 
     const handleMouseDown = (event: MouseEvent) => {
-        if (event.button !== 2) return; // only right click
+        if (event.buttons !== MouseButtons.Right) return;
         startX = event.clientX;
         startY = event.clientY;
         isDragging = false;
-        document.addEventListener('mousemove', handleMouseMove);
+        node.addEventListener('mousemove', handleMouseMove);
         document.addEventListener('mouseup', handleMouseUp);
     };
 
     const handleMouseMove = (event: MouseEvent) => {
-        if (event.button !== 2) return; // only right click
+        if (event.buttons !== MouseButtons.Right) return;
         const deltaX = event.clientX - startX;
         const deltaY = event.clientY - startY;
 
         if (!isDragging && (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5)) {
+
             isDragging = true;
             callbacks.start(event);
         }
@@ -85,13 +91,12 @@ export function rightMouseDrag(node: HTMLElement, callbacks: MouseDragCallbacks)
     };
 
     const handleMouseUp = (event: MouseEvent) => {
-        if (event.button !== 2) return; // only right click
         if (isDragging) {
             callbacks.end(event);
         }
 
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
+        node.removeEventListener('mousemove', handleMouseMove);
+        node.removeEventListener('mouseup', handleMouseUp);
     };
 
     node.addEventListener('mousedown', handleMouseDown);
@@ -99,9 +104,8 @@ export function rightMouseDrag(node: HTMLElement, callbacks: MouseDragCallbacks)
     return {
         destroy() {
             node.removeEventListener('mousedown', handleMouseDown);
-            document.removeEventListener('mousemove', handleMouseMove);
-            document.removeEventListener('mouseup', handleMouseUp);
+            node.removeEventListener('mousemove', handleMouseMove);
+            node.removeEventListener('mouseup', handleMouseUp);
         },
     };
 }
-

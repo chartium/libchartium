@@ -1,82 +1,70 @@
 <!-- Component creating both the X and Y axis -->
 
 <script lang="ts">
-    import { onMount } from "svelte";
     import { leftMouseDrag } from "../../utils/mouseGestures";
     import type { MouseDragCallbacks } from "../../utils/mouseGestures";
-    import * as canvas from "./canvas.ts";
+    import type { Range } from "../types";
 
+    /** Label to be displayed next to the axis */
     export let label: string;
+    /** The height of the axis */
     export let axisHeight: number;
+    /** The width of the axis */
     export let axisWidth: number;
+    /** Whether the axis is for x or y. Determines label orientation and selection positions */
     export let axis: "x" | "y";
+    /** Ticks on the axis. Position is to be between 0 and 1 */
     export let ticks: { pos: number; value: number }[];
 
-    let canvasRef: HTMLCanvasElement;
+    export let zoomOrMove: "zoom" | "move" | "neither" = "neither";
 
-    let ctx: CanvasRenderingContext2D;
+    /** Coordinate of where dragging and ended for this axis */
+    export let movePosition: Range | undefined;
+    /** Value of where dragging started and ended. Linearly interpolated from ticks */
+    export let moveValue: Range | undefined;
 
-    onMount(() => {
-        ctx = canvasRef.getContext("2d")!; // TODO is it a good idea to use non-null assertion here?
-        ctx.fillStyle = "black"; // FIXME DEBUG
-        ctx.strokeStyle = "black";
-        ctx.lineWidth = 4;
-    });
-
-    let downPosition: [number, number] | undefined;
-    let movePosition: [number, number] | undefined;
-
-    function redrawInterval() {
-        if (!downPosition || !movePosition) return;
-        ctx.clearRect(0, 0, axisWidth, axisHeight);
-
-        canvas.drawSegment(
-            ctx,
-            axis === "y"
-                ? [0, downPosition[1] - ctx.lineWidth / 2]
-                : [downPosition[0] - ctx.lineWidth / 2, 0],
-            axis === "y"
-                ? [axisWidth, downPosition[1] - ctx.lineWidth / 2]
-                : [downPosition[0] - ctx.lineWidth / 2, axisHeight]
-        );
-
-        canvas.drawSegment(
-            ctx,
-            axis === "y"
-                ? [0, movePosition[1] - ctx.lineWidth / 2]
-                : [movePosition[0] - ctx.lineWidth / 2, 0],
-            axis === "y"
-                ? [axisWidth, movePosition[1] - ctx.lineWidth / 2]
-                : [movePosition[0] - ctx.lineWidth / 2, axisHeight]
-        );
+    $: { // FIXME this should prolly be in chart and the axis should only return values for the positions
+        if (zoomOrMove === "move" && movePosition !== undefined) {
+            const delta =
+                getAxisValueFromPosition(movePosition.from) -
+                getAxisValueFromPosition(movePosition.to);
+            const min = ticks[0].value;
+            const max = (ticks.at(-1) ?? ticks[0]).value;
+            moveValue = {from: min+delta, to: max+delta};
+            zoomOrMove = "move";
+        }
+        if (zoomOrMove === "zoom" && movePosition !== undefined) {
+            const from = getAxisValueFromPosition(movePosition.from);
+            const to = getAxisValueFromPosition(movePosition.to);
+            moveValue = {from, to};
+            zoomOrMove = "zoom";
+        }
     }
 
-    function getAxisValueFromPosition(position: [number, number]) {
-        const longwisePosition = axis === "x" ? position[0] : position[1];
+    /** linearly interpolates value from coordinate along this axis */
+    function getAxisValueFromPosition(positionCoordinate: number) {
         const alongAxis =
             axis === "x"
-                ? longwisePosition / axisWidth
-                : 1 - longwisePosition / axisHeight;
-        return alongAxis * ticks[ticks.length - 1].value;
+                ? positionCoordinate / axisWidth
+                : 1 - positionCoordinate / axisHeight;
+        return (
+            alongAxis * ((ticks.at(-1) ?? ticks[0]).value - ticks[0].value) +
+            ticks[0].value
+        );
+        // TODO: this is linear interpolation. For more complicated graphs this has to be overhauled
     }
 
     const dragCallbacks: MouseDragCallbacks = {
         start: (e) => {
-            downPosition = [e.offsetX, e.offsetY];
-            console.log(
-                "Down position",
-                getAxisValueFromPosition(downPosition)
-            );
+            movePosition =
+                axis === "x" ? {from: e.offsetX, to: e.offsetX} : {from: e.offsetY, to: e.offsetY};
         },
         move: (e) => {
-            movePosition = [e.offsetX, e.offsetY];
-            redrawInterval();
+            movePosition!.to = axis === "x" ? e.offsetX : e.offsetY;
         },
         end: (e) => {
-            console.log("Up position", getAxisValueFromPosition(movePosition!));
-            downPosition = undefined;
+            // FIXME Callbacks for moving the axis
             movePosition = undefined;
-            ctx.clearRect(0, 0, axisWidth, axisHeight);
         },
     };
 </script>
@@ -89,7 +77,6 @@
     style:height="{axisHeight}px"
     style:width="{axisWidth}px"
 >
-    <canvas bind:this={canvasRef} width={axisWidth} height={axisHeight} />
     <div
         class="{axis} ticks-and-label"
         use:leftMouseDrag={dragCallbacks}
@@ -127,11 +114,7 @@
         margin: 0;
     }
     .ticks-and-label {
-        display: flex;
         align-items: stretch;
-        position: absolute;
-        top: 0;
-        left: 0;
     }
     .ticks {
         position: relative;

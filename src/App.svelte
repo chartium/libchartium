@@ -4,13 +4,35 @@
   import Chart from "./lib/chart/Chart.svelte";
   import { spawnChartiumWorker } from "./lib/data-worker";
   import type { TraceDescriptor } from "./lib/data-worker/renderers/mod";
-  import ChartAxis from "./lib/chart/ChartAxis.svelte";
 
+  // autogenerate a lot of data
+  const from = 0;
+  const to = 2 * Math.PI;
+  const numSteps = 1000;
+  const stepSize = (to - from) / (numSteps - 1);
+  /*
+  const xs = Array.from(
+    { length: numSteps },
+    (_, index) => from + index * stepSize
+  );
+  const y1s = xs.map((x) => Math.sin(x));
+  const y2s = xs.map((x) => Math.cos(x));
+  const y3s = xs.map((x) => Math.atan(x));
+  const chartiumFriendlyTraceData = xs.flatMap((x, index) => [
+    x,
+    y1s[index],
+    y2s[index],
+    y3s[index],
+  ]);
+  console.log(xs);
+  */
+
+  const chartiumFriendlyTraceData = [0, 1, 0, -1, 1, 0.5, 0.5, -0.5, 2, 0, 1, 0, 3, -0.5, 0.5, 0.5, 4, -1, 0, 1]
   const controller = spawnChartiumWorker();
   $: traces = controller
     .addFromArrayBuffer({
-      ids: ["foo", "bar"],
-      data: Float32Array.from([1, 0, 1, 25, 0, -1, 50, 0, 0, 75, 0, 1]),
+      ids: ["sin", "cos", "atan"],
+      data: Float32Array.from(chartiumFriendlyTraceData),
       xType: "f32",
       yType: "f32",
     })
@@ -36,32 +58,19 @@
   </p>
 
   <p class="read-the-docs">Click on the Vite and Svelte logos to learn more</p>
-  <div class="parent">
-    <div class="div1">
-      <ChartAxis
-        label="Mean color of balls [K]"
-        axis="y"
-        axisHeight={600}
-        axisWidth={200}
-        ticks={[{pos: 0, value: 0}, {pos: 0.5, value: 1}, {pos: 1, value: 2}]}
-      />
-    </div>
-    <div class="div4">
-      {#await traces then traces}
-        <Chart {controller} {traces} />
-      {/await}
-    </div>
-    <div class="div3">
-      <ChartAxis
-        label="Time since I shagged yer mum [days]"
-        axis="x"
-        axisHeight={200}
-        axisWidth={600}
-        ticks={[{pos: 0, value: 0}, {pos: 0.333, value: 1}, {pos: 0.667, value: 2}, {pos: 1, value: 3}]}
-      />
-    </div>
-    <div class="div2" />
-  </div>
+
+  {#await traces then traces}
+    <Chart
+      {controller}
+      {traces}
+      xLabel="Time since I sagged yer mum [Days]"
+      yLabel="Mean color of balls [K]"
+      chartHeight={600}
+      chartWidth={800}
+      axisHeight={150}
+      axisWidth={150}
+    />
+  {/await}
 </main>
 
 <style>
@@ -79,28 +88,5 @@
   }
   .read-the-docs {
     color: #888;
-  }
-
-  .parent {
-    display: grid;
-    grid-template-columns: 1fr 3fr;
-    grid-template-rows: 3fr 1fr;
-    grid-column-gap: 0px;
-    grid-row-gap: 0px;
-  }
-
-  .div1 {
-    grid-area: 1 / 1 / 2 / 2;
-    display:flex;
-    justify-content: end;
-  }
-  .div2 {
-    grid-area: 2 / 1 / 3 / 2;
-  }
-  .div3 {
-    grid-area: 2 / 2 / 3 / 3;
-  }
-  .div4 {
-    grid-area: 1 / 2 / 2 / 3;
   }
 </style>
