@@ -8,9 +8,10 @@
   // autogenerate a lot of data
   const from = 0;
   const to = 2 * Math.PI;
-  const numSteps = 1000;
+  const numSteps = 60;
   const stepSize = (to - from) / (numSteps - 1);
-  /*
+  
+  
   const xs = Array.from(
     { length: numSteps },
     (_, index) => from + index * stepSize
@@ -21,17 +22,14 @@
   const chartiumFriendlyTraceData = xs.flatMap((x, index) => [
     x,
     y1s[index],
-    y2s[index],
-    y3s[index],
+    //y2s[index],
+    //y3s[index],
   ]);
-  console.log(xs);
-  */
-
-  const chartiumFriendlyTraceData = [0, 1, 0, -1, 1, 0.5, 0.5, -0.5, 2, 0, 1, 0, 3, -0.5, 0.5, 0.5, 4, -1, 0, 1]
+  
   const controller = spawnChartiumWorker();
   $: traces = controller
     .addFromArrayBuffer({
-      ids: ["sin", "cos", "atan"],
+      ids: ["sin"],
       data: Float32Array.from(chartiumFriendlyTraceData),
       xType: "f32",
       yType: "f32",
@@ -67,8 +65,8 @@
       yLabel="Mean color of balls [K]"
       chartHeight={600}
       chartWidth={800}
-      axisHeight={150}
-      axisWidth={150}
+      xAxisHeight={150}
+      yAxisWidth={150}
     />
   {/await}
 </main>

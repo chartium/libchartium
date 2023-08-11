@@ -15,6 +15,8 @@
     export let axis: "x" | "y";
     /** Ticks on the axis. Position is to be between 0 and 1 */
     export let ticks: { pos: number; value: number }[];
+    /** Offset of the axis from the top or left of the chart */
+    export let axisOffset: number;
 
     export let zoomOrMove: "zoom" | "move" | "neither" = "neither";
 
@@ -22,6 +24,8 @@
     export let movePosition: Range | undefined;
     /** Value of where dragging started and ended. Linearly interpolated from ticks */
     export let moveValue: Range | undefined;
+    /** Call Chart's change range */
+    export let changeRange: () => void;
 
     $: { // FIXME this should prolly be in chart and the axis should only return values for the positions
         if (zoomOrMove === "move" && movePosition !== undefined) {
@@ -57,13 +61,15 @@
     const dragCallbacks: MouseDragCallbacks = {
         start: (e) => {
             movePosition =
-                axis === "x" ? {from: e.offsetX, to: e.offsetX} : {from: e.offsetY, to: e.offsetY};
+                axis === "x" ? {from: e.offsetX + axisOffset, to: e.offsetX + axisOffset} : {from: e.offsetY, to: e.offsetY};
         },
         move: (e) => {
-            movePosition!.to = axis === "x" ? e.offsetX : e.offsetY;
+            zoomOrMove = "move";
+            movePosition!.to = axis === "x" ? e.offsetX + axisOffset : e.offsetY;
         },
         end: (e) => {
-            // FIXME Callbacks for moving the axis
+            changeRange();
+            zoomOrMove = "neither";
             movePosition = undefined;
         },
     };

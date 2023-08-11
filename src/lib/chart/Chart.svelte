@@ -14,11 +14,11 @@
   /** Height of only the chart are without axis */
   export let chartHeight: number;
   /** Height of only the x axis, its width is automatically == chart width */
-  export let axisHeight: number;
+  export let xAxisHeight: number;
   /** Width of only the chart are without axis */
   export let chartWidth: number;
   /** Width of only the y axis, its height is automatically == chart height */
-  export let axisWidth: number;
+  export let yAxisWidth: number;
   export let controller: Remote<ChartiumController>;
   export let traces: TraceDescriptor[];
   /** Label to be displayed next to x axis */
@@ -37,7 +37,8 @@
     { pos: 0.5, value: 0 },
     { pos: 1, value: 1 },
   ]; // FIXME populate these
-
+  // FIXME moving via axis doesnt work
+  
   const chart = new Chart(controller);
 
   let canvas: HTMLCanvasElement | undefined;
@@ -59,13 +60,6 @@
   let yTransformValues: Range | undefined;
   /** new border values of x range */
   let xTransformValues:  Range | undefined;
-  //$: {
-  //  console.log("new ranges:")
-  //  console.log(xTransformValues)
-  //  console.log(yTransformValues)
-  //}
-
-  $: console.log(zoomOrMove)
 
   // for drawing
   /** new border values of y range */
@@ -80,10 +74,10 @@
 </script>
 
 <ChartOverlay
-  overlayHeight={chartHeight + axisHeight}
-  overlayWidth={chartWidth + axisWidth}
+  overlayHeight={chartHeight + xAxisHeight}
+  overlayWidth={chartWidth + yAxisWidth}
   {changeRange}
-  bind:yAxisWidth={axisWidth}
+  bind:yAxisWidth={yAxisWidth}
   bind:xTransformPositions
   bind:yTransformPositions
   bind:zoomOrMove
@@ -92,9 +86,11 @@
     label={yLabel}
     axis="y"
     axisHeight={chartHeight}
-    {axisWidth}
+    axisWidth={yAxisWidth}
     ticks={yTicks ?? []}
     slot="yAxis"
+    {changeRange}
+    axisOffset={0}
     bind:movePosition={yTransformPositions}
     bind:moveValue={yTransformValues}
     bind:zoomOrMove
@@ -110,10 +106,12 @@
   <ChartAxis
     label={xLabel}
     axis="x"
-    {axisHeight}
+    axisHeight={xAxisHeight}
     axisWidth={chartWidth}
     ticks={xTicks ?? []}
     slot="xAxis"
+    {changeRange}
+    axisOffset={yAxisWidth}
     bind:movePosition={xTransformPositions}
     bind:moveValue={xTransformValues}
     bind:zoomOrMove
