@@ -66,17 +66,26 @@
   let yTransformPositions: Range | undefined;
   /** new border values of x range */
   let xTransformPositions:  Range | undefined;
-  function changeRange() {
+
+  function updateRange() {
     if (xTransformValues !== undefined ) {chart.xRange = xTransformValues};
     if (yTransformValues !== undefined ) {chart.yRange = yTransformValues};
+  }
+  function resetRange() {
+    // FIXME this should pull data from controller
+    chart.xRange = {from: 0, to: 2*Math.PI};
+    chart.yRange = {from: -1, to: 1};
   }
 
 </script>
 
+
+
 <ChartOverlay
   overlayHeight={chartHeight + xAxisHeight}
   overlayWidth={chartWidth + yAxisWidth}
-  {changeRange}
+  {updateRange}
+  {resetRange}
   bind:yAxisWidth={yAxisWidth}
   bind:xTransformPositions
   bind:yTransformPositions
@@ -89,7 +98,7 @@
     axisWidth={yAxisWidth}
     ticks={yTicks ?? []}
     slot="yAxis"
-    {changeRange}
+    {updateRange}
     axisOffset={0}
     bind:movePosition={yTransformPositions}
     bind:moveValue={yTransformValues}
@@ -110,7 +119,7 @@
     axisWidth={chartWidth}
     ticks={xTicks ?? []}
     slot="xAxis"
-    {changeRange}
+    {updateRange}
     axisOffset={yAxisWidth}
     bind:movePosition={xTransformPositions}
     bind:moveValue={xTransformValues}

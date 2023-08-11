@@ -25,7 +25,7 @@
     /** Value of where dragging started and ended. Linearly interpolated from ticks */
     export let moveValue: Range | undefined;
     /** Call Chart's change range */
-    export let changeRange: () => void;
+    export let updateRange: () => void;
 
     $: { // FIXME this should prolly be in chart and the axis should only return values for the positions
         if (zoomOrMove === "move" && movePosition !== undefined) {
@@ -68,7 +68,7 @@
             movePosition!.to = axis === "x" ? e.offsetX + axisOffset : e.offsetY;
         },
         end: (e) => {
-            changeRange();
+            updateRange();
             zoomOrMove = "neither";
             movePosition = undefined;
         },

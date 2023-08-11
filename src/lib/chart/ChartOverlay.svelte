@@ -12,7 +12,9 @@
     /** The height of the chart area including the axis */
     export let overlayHeight: number;
     /** Call Chart's change range */
-    export let changeRange: () => void;
+    export let updateRange: () => void;
+    /** Call Chart's range reset */
+    export let resetRange: () => void;
 
     let canvasRef: HTMLCanvasElement;
 
@@ -110,7 +112,7 @@
             yTransformPositions!.to = e.offsetY;
         },
         end: (e) => {
-            changeRange();
+            updateRange();
             xTransformPositions = undefined;
             yTransformPositions = undefined;
             zoomOrMove = "neither";
@@ -183,7 +185,7 @@
             yTransformPositions!.to = e.offsetY;
         },
         end: (e) => {
-            changeRange();
+            updateRange();
             xTransformPositions = undefined;
             yTransformPositions = undefined;
             zoomOrMove = "neither";
@@ -191,7 +193,7 @@
     };
 </script>
 
-<div class="container" style="width:{overlayWidth}px; height:{overlayHeight}px">
+<div class="container" style="width:{overlayWidth}px; height:{overlayHeight}px" on:dblclick={resetRange}>
     <slot name="yAxis" class="yAxis" />
     <div
         class="OverChartSelector"
