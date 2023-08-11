@@ -37,7 +37,7 @@
     export let xTransformPositions: Range | undefined;
 
     /** If the zoom rectangle has one side this big or smaller the zoom will be just 1D */
-    const oneDZoomWindow = 10;
+    const oneDZoomWindow = 20;
 
     export let zoomOrMove: "move" | "zoom" | "neither" = "neither";
 
@@ -104,14 +104,27 @@
                 from: e.offsetX + yAxisWidth,
                 to: e.offsetX + yAxisWidth,
             };
-            yTransformPositions = {from: e.offsetY, to: e.offsetY};
+            yTransformPositions = { from: e.offsetY, to: e.offsetY };
             zoomOrMove = "zoom";
         },
         move: (e) => {
-            xTransformPositions!.to = e.offsetX + yAxisWidth;
-            yTransformPositions!.to = e.offsetY;
+            // handle the situation where the user tries to zoom in only one direction
+            const desiredXToPosition = e.offsetX + yAxisWidth;
+            const desiredYToPosition = e.offsetY;
+            const isXTooClose = Math.abs(xTransformPositions!.from - desiredXToPosition) < oneDZoomWindow;
+            const isYTooClose = Math.abs(yTransformPositions!.from - desiredYToPosition) < oneDZoomWindow;
+            xTransformPositions!.to = isXTooClose ? xTransformPositions!.from : desiredXToPosition;
+            yTransformPositions!.to = isYTooClose ? yTransformPositions!.from : desiredYToPosition;
         },
         end: (e) => {
+            // this means the user tried to zoom in only one direction
+            if (xTransformPositions!.from === xTransformPositions!.to) {
+                xTransformPositions = undefined;
+            }
+            if (yTransformPositions!.from === yTransformPositions!.to) {
+                yTransformPositions = undefined;
+            }
+            console.log(xTransformPositions, yTransformPositions);
             updateRange();
             xTransformPositions = undefined;
             yTransformPositions = undefined;
@@ -163,10 +176,18 @@
     $: {
         if (zoomOrMove === "move") {
             drawMove(
-                xTransformPositions !== undefined ? xTransformPositions.from : undefined,
-                xTransformPositions !== undefined ? xTransformPositions.to : undefined,
-                yTransformPositions !== undefined ? yTransformPositions.from : undefined,
-                yTransformPositions !== undefined ? yTransformPositions.to : undefined
+                xTransformPositions !== undefined
+                    ? xTransformPositions.from
+                    : undefined,
+                xTransformPositions !== undefined
+                    ? xTransformPositions.to
+                    : undefined,
+                yTransformPositions !== undefined
+                    ? yTransformPositions.from
+                    : undefined,
+                yTransformPositions !== undefined
+                    ? yTransformPositions.to
+                    : undefined
             );
         }
     }
@@ -176,8 +197,8 @@
             xTransformPositions = {
                 from: e.offsetX + yAxisWidth,
                 to: e.offsetX + yAxisWidth,
-        };
-            yTransformPositions = {from: e.offsetY, to: e.offsetY};
+            };
+            yTransformPositions = { from: e.offsetY, to: e.offsetY };
             zoomOrMove = "move";
         },
         move: (e) => {
@@ -193,7 +214,11 @@
     };
 </script>
 
-<div class="container" style="width:{overlayWidth}px; height:{overlayHeight}px" on:dblclick={resetRange}>
+<div
+    class="container"
+    style="width:{overlayWidth}px; height:{overlayHeight}px"
+    on:dblclick={resetRange}
+>
     <slot name="yAxis" class="yAxis" />
     <div
         class="OverChartSelector"

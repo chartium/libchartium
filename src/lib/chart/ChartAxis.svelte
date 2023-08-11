@@ -28,7 +28,7 @@
     export let updateRange: () => void;
 
     $: { // FIXME this should prolly be in chart and the axis should only return values for the positions
-        if (zoomOrMove === "move" && movePosition !== undefined) {
+        if (zoomOrMove === "move" && movePosition !== undefined && movePosition.from !== movePosition.to) {
             const delta =
                 getAxisValueFromPosition(movePosition.from) -
                 getAxisValueFromPosition(movePosition.to);
@@ -37,10 +37,10 @@
             moveValue = {from: min+delta, to: max+delta};
             zoomOrMove = "move";
         }
-        if (zoomOrMove === "zoom" && movePosition !== undefined) {
+        if (zoomOrMove === "zoom" && movePosition !== undefined && movePosition.from !== movePosition.to) {
             const from = getAxisValueFromPosition(movePosition.from);
             const to = getAxisValueFromPosition(movePosition.to);
-            moveValue = {from, to};
+            moveValue = from < to ? {from, to} : {from: to, to: from};
             zoomOrMove = "zoom";
         }
     }

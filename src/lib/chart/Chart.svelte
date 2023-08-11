@@ -68,6 +68,8 @@
   let xTransformPositions:  Range | undefined;
 
   function updateRange() {
+    console.log("zoomin")
+    console.log(xTransformValues, yTransformValues)
     if (xTransformValues !== undefined ) {chart.xRange = xTransformValues};
     if (yTransformValues !== undefined ) {chart.yRange = yTransformValues};
   }
