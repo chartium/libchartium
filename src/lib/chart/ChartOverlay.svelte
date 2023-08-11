@@ -22,9 +22,9 @@
 
     onMount(() => {
         ctx = canvasRef.getContext("2d")!;
-        ctx.fillStyle = "black"; // FIXME DEBUG
-        ctx.strokeStyle = "black";
-        ctx.lineWidth = 4;
+        ctx.fillStyle = "green"; // FIXME DEBUG
+        ctx.strokeStyle = "green";
+        ctx.lineWidth = 1;
     });
 
     /** Width of the y axis for offset reasons */
@@ -51,50 +51,82 @@
         }
     }
 
-    function drawZoom(
-        xZoomFromPosition?: number,
-        xZoomToPosition?: number,
-        yZoomFromPosition?: number,
-        yZoomToPosition?: number
-    ) {
+    function drawZoom(xZoomPosition: Range, yZoomPosition: Range) {
         ctx?.clearRect(0, 0, overlayWidth, overlayHeight);
-        if (xZoomFromPosition) {
+        const lineStyle: canvas.DrawStyle = {
+            dash: [10, 5],
+        };
+
+        const windowStyle: canvas.DrawStyle = {
+            lineWidth: 3,
+        };
+
+        // the big lines
+        if (xZoomPosition?.from !== xZoomPosition?.to) {
             canvas.drawSegment(
                 ctx,
-                [xZoomFromPosition, 0],
-                [xZoomFromPosition, overlayHeight]
+                [xZoomPosition.from, 0],
+                [xZoomPosition.from, overlayHeight],
+                lineStyle
+            );
+            canvas.drawSegment(
+                ctx,
+                [xZoomPosition.to, 0],
+                [xZoomPosition.to, overlayHeight],
+                lineStyle
             );
         }
-        if (xZoomToPosition) {
+        if (yZoomPosition?.from !== yZoomPosition?.to) {
             canvas.drawSegment(
                 ctx,
-                [xZoomToPosition, 0],
-                [xZoomToPosition, overlayHeight]
+                [0, yZoomPosition.from],
+                [overlayWidth, yZoomPosition.from],
+                lineStyle
+            );
+            canvas.drawSegment(
+                ctx,
+                [0, yZoomPosition.to],
+                [overlayWidth, yZoomPosition.to],
+                lineStyle
             );
         }
-        if (yZoomFromPosition) {
+
+        // The little windows
+        if (yZoomPosition.from === yZoomPosition?.to) {
             canvas.drawSegment(
                 ctx,
-                [0, yZoomFromPosition],
-                [overlayWidth, yZoomFromPosition]
+                [xZoomPosition.from, yZoomPosition.from - oneDZoomWindow],
+                [xZoomPosition.from, yZoomPosition.from + oneDZoomWindow],
+                windowStyle
+            );
+            canvas.drawSegment(
+                ctx,
+                [xZoomPosition.to, yZoomPosition.to - oneDZoomWindow],
+                [xZoomPosition.to, yZoomPosition.to + oneDZoomWindow],
+                windowStyle
             );
         }
-        if (yZoomToPosition) {
+
+        if (xZoomPosition.from === xZoomPosition?.to) {
             canvas.drawSegment(
                 ctx,
-                [0, yZoomToPosition],
-                [overlayWidth, yZoomToPosition]
+                [xZoomPosition.from - oneDZoomWindow, yZoomPosition.from],
+                [xZoomPosition.from + oneDZoomWindow, yZoomPosition.from],
+                windowStyle
+            );
+            canvas.drawSegment(
+                ctx,
+                [xZoomPosition.from - oneDZoomWindow, yZoomPosition.to],
+                [xZoomPosition.from + oneDZoomWindow, yZoomPosition.to],
+                windowStyle
             );
         }
     }
     $: {
         if (zoomOrMove === "zoom") {
-            drawZoom(
-                xTransformPositions!.from,
-                xTransformPositions!.to,
-                yTransformPositions!.from,
-                yTransformPositions!.to
-            );
+            if (xTransformPositions && yTransformPositions) {
+                drawZoom(xTransformPositions, yTransformPositions);
+            }
         }
     }
 
@@ -111,17 +143,25 @@
             // handle the situation where the user tries to zoom in only one direction
             const desiredXToPosition = e.offsetX + yAxisWidth;
             const desiredYToPosition = e.offsetY;
-            const isXTooClose = Math.abs(xTransformPositions!.from - desiredXToPosition) < oneDZoomWindow;
-            const isYTooClose = Math.abs(yTransformPositions!.from - desiredYToPosition) < oneDZoomWindow;
-            xTransformPositions!.to = isXTooClose ? xTransformPositions!.from : desiredXToPosition;
-            yTransformPositions!.to = isYTooClose ? yTransformPositions!.from : desiredYToPosition;
+            const isXTooClose =
+                Math.abs(xTransformPositions!.from - desiredXToPosition) <
+                oneDZoomWindow;
+            const isYTooClose =
+                Math.abs(yTransformPositions!.from - desiredYToPosition) <
+                oneDZoomWindow;
+            xTransformPositions!.to = isXTooClose
+                ? xTransformPositions!.from
+                : desiredXToPosition;
+            yTransformPositions!.to = isYTooClose
+                ? yTransformPositions!.from
+                : desiredYToPosition;
         },
         end: (e) => {
             // this means the user tried to zoom in only one direction
-            if (xTransformPositions!.from === xTransformPositions!.to) {
+            if (xTransformPositions?.from === xTransformPositions?.to) {
                 xTransformPositions = undefined;
             }
-            if (yTransformPositions!.from === yTransformPositions!.to) {
+            if (yTransformPositions?.from === yTransformPositions?.to) {
                 yTransformPositions = undefined;
             }
             console.log(xTransformPositions, yTransformPositions);
@@ -132,63 +172,74 @@
         },
     };
 
-    function drawMove(
-        xFrom?: number,
-        xTo?: number,
-        yFrom?: number,
-        yTo?: number
-    ) {
+    function drawMove(xMovePosition?: Range, yMovePosition?: Range) {
         ctx?.clearRect(0, 0, overlayWidth, overlayHeight);
-        const wingLength = 10; // FIXME DEBUG
-        const spreadRad = Math.PI / 4; // FIXME DEBUG
+        const wingLength = 20; // FIXME DEBUG
+        const spreadRad = Math.PI / 5; // FIXME DEBUG
+        const lineStyle: canvas.DrawStyle = {
+            dash: [10, 5],
+        };
+        const arrowStyle: canvas.DrawStyle = {
+           lineWidth: 3,
+        };
 
-        if (xFrom && xTo && yFrom && yTo) {
+        if (xMovePosition && yMovePosition) {
             canvas.drawArrow(
                 ctx,
-                [xFrom, yFrom],
-                [xTo, yTo],
+                [xMovePosition.from, yMovePosition.from],
+                [xMovePosition.to, yMovePosition.to],
                 wingLength,
-                spreadRad
+                spreadRad,
+                arrowStyle
             );
-        } else if (xFrom && xTo) {
-            canvas.drawSegment(ctx, [xFrom, 0], [xFrom, overlayHeight]);
-            canvas.drawSegment(ctx, [xTo, 0], [xTo, overlayHeight]);
-            canvas.drawArrow(
+        } else if (xMovePosition) {
+            canvas.drawSegment(
                 ctx,
-                [xFrom, overlayHeight / 2],
-                [xTo, overlayHeight / 2],
-                wingLength,
-                spreadRad
+                [xMovePosition.from, 0],
+                [xMovePosition.from, overlayHeight],
+                lineStyle
             );
-        } else if (yFrom && yTo) {
-            canvas.drawSegment(ctx, [0, yFrom], [overlayWidth, yFrom]);
-            canvas.drawSegment(ctx, [0, yTo], [overlayWidth, yTo]);
+            canvas.drawSegment(
+                ctx,
+                [xMovePosition.to, 0],
+                [xMovePosition.to, overlayHeight],
+                lineStyle
+            );
             canvas.drawArrow(
                 ctx,
-                [overlayWidth / 2, yFrom],
-                [overlayWidth / 2, yTo],
+                [xMovePosition.from, overlayHeight / 2],
+                [xMovePosition.to, overlayHeight / 2],
                 wingLength,
-                spreadRad
+                spreadRad,
+                arrowStyle
+            );
+        } else if (yMovePosition) {
+            canvas.drawSegment(
+                ctx,
+                [0, yMovePosition.from],
+                [overlayWidth, yMovePosition.from],
+                lineStyle
+            );
+            canvas.drawSegment(
+                ctx,
+                [0, yMovePosition.to],
+                [overlayWidth, yMovePosition.to],
+                lineStyle
+            );
+            canvas.drawArrow(
+                ctx,
+                [overlayWidth / 2, yMovePosition.from],
+                [overlayWidth / 2, yMovePosition.to],
+                wingLength,
+                spreadRad,
+                arrowStyle
             );
         }
     }
 
     $: {
         if (zoomOrMove === "move") {
-            drawMove(
-                xTransformPositions !== undefined
-                    ? xTransformPositions.from
-                    : undefined,
-                xTransformPositions !== undefined
-                    ? xTransformPositions.to
-                    : undefined,
-                yTransformPositions !== undefined
-                    ? yTransformPositions.from
-                    : undefined,
-                yTransformPositions !== undefined
-                    ? yTransformPositions.to
-                    : undefined
-            );
+            drawMove(xTransformPositions, yTransformPositions);
         }
     }
 

@@ -5,6 +5,7 @@ export type DrawStyle = {
     dash?: number[];
     strokeStyle?: string | CanvasGradient | CanvasPattern;
     fillStyle?: string | CanvasGradient | CanvasPattern;
+    lineWidth?: number;
 };
 
 export function applyStyle(ctxt: CanvasRenderingContext2D, style: DrawStyle) {
@@ -16,6 +17,9 @@ export function applyStyle(ctxt: CanvasRenderingContext2D, style: DrawStyle) {
     }
     if (style.dash) {
         ctxt.setLineDash(style.dash);
+    }
+    if (style.lineWidth) {
+        ctxt.lineWidth = style.lineWidth;
     }
 }
 

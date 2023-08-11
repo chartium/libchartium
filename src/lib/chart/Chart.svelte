@@ -45,6 +45,9 @@
 
   onMount(async () => {
     await chart.assignCanvas(canvas!);
+    chart.xLabelSpace = 0;
+    chart.yLabelSpace = 0;
+    chart.margin = 0;
     chart.includeTraces = await traces;
     chart.xType = "f32";
     chart.xRange = { from: 0, to: 2*Math.PI };
