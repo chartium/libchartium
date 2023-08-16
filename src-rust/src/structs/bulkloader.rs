@@ -4,6 +4,7 @@ use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
 use crate::{
     data::{TraceHandle, TypeDescriptor, TYPE_SIZES},
     data_module::DataModule,
+    trace::BoxedBundle,
 };
 
 #[wasm_bindgen]
@@ -83,13 +84,7 @@ impl Bulkloader {
         })
     }
 
-    pub fn apply(self, module: &mut DataModule) -> JsValue {
-        serde_wasm_bindgen::to_value(&module.bulkload_segments(
-            &self.ptrs,
-            self.x_desc,
-            self.y_desc,
-            &self.data,
-        ))
-        .unwrap()
+    pub fn apply(self, module: &mut DataModule) -> BoxedBundle {
+        module.bulkload_segments(&self.ptrs, self.x_desc, self.y_desc, &self.data)
     }
 }

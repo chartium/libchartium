@@ -1,11 +1,11 @@
-use crate::{prelude::*, trace::TraceMetas};
+use crate::trace::TraceMetas;
 
 pub struct MetaCounter {
-    sums: Vec<RangePrec>,
+    sums: Vec<f64>,
     lens: Vec<usize>,
     nz_lens: Vec<usize>,
-    mins: Vec<RangePrec>,
-    maxs: Vec<RangePrec>,
+    mins: Vec<f64>,
+    maxs: Vec<f64>,
 }
 
 impl MetaCounter {
@@ -19,7 +19,7 @@ impl MetaCounter {
         }
     }
 
-    pub fn add(&mut self, col: usize, val: RangePrec) {
+    pub fn add(&mut self, col: usize, val: f64) {
         self.sums[col] += val;
         self.lens[col] += 1;
         self.maxs[col] = val.max(self.maxs[col]);
@@ -32,8 +32,8 @@ impl MetaCounter {
     pub fn iter_metas(&self) -> impl Iterator<Item = TraceMetas> + '_ {
         (0..self.sums.len()).map(|i| TraceMetas {
             handle: 0,
-            avg: self.sums[i] / self.lens[i] as RangePrec,
-            avg_nz: self.sums[i] / self.nz_lens[i] as RangePrec,
+            avg: self.sums[i] / self.lens[i] as f64,
+            avg_nz: self.sums[i] / self.nz_lens[i] as f64,
             min: self.mins[i],
             max: self.maxs[i],
         })

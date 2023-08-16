@@ -1,21 +1,16 @@
-use std::rc::Rc;
+use std::collections::HashMap;
 
 use wasm_bindgen::prelude::wasm_bindgen;
 
 use crate::{
     data::{TraceHandle, TypeDescriptor},
-    prelude::*,
     structs::MetaCounter,
-    trace::{Batch, TraceMetas},
+    trace::{Batch, BoxedBundle},
 };
-
-mod traceops;
 
 #[wasm_bindgen]
 #[derive(Default)]
-pub struct DataModule {
-    next_handle: TraceHandle,
-}
+pub struct DataModule {}
 
 #[wasm_bindgen]
 impl DataModule {
@@ -24,120 +19,86 @@ impl DataModule {
         Default::default()
     }
 
-    pub fn create_trace(&mut self, id: &str, x_type: &str) -> TraceHandle {
-        let handle = self.next_handle;
-        self.next_handle += 1;
-        handle
-    }
+    // pub fn print_data_as_csv(
+    //     &self,
+    //     ptrs: &[TraceHandle],
+    //     from: f64,
+    //     to: f64,
+    // ) -> String {
+    //     use chrono::{DateTime, NaiveDateTime, Utc};
+    //     let mut output = String::new();
 
-    pub fn dispose_trace(&mut self, handle: usize) {
-        self.traces.remove(&handle);
-    }
+    //     let len = (to - from) as usize;
 
-    pub fn print_data_as_csv(
-        &self,
-        ptrs: &[TraceHandle],
-        from: RangePrec,
-        to: RangePrec,
-    ) -> String {
-        use chrono::{DateTime, NaiveDateTime, Utc};
-        let mut output = String::new();
+    //     for i in 0..=len {
+    //         let x = from + i as f64;
 
-        let len = (to - from) as usize;
+    //         output.push_str(
+    //             &DateTime::<Utc>::from_utc(
+    //                 NaiveDateTime::from_timestamp_opt(x as i64 * 60, 0).unwrap(),
+    //                 Utc,
+    //             )
+    //             .format("%m/%d/%Y %H:%M:%S")
+    //             .to_string(),
+    //         );
 
-        for i in 0..=len {
-            let x = from + i as RangePrec;
+    //         for (_, val) in self.get_data_at(ptrs, x) {
+    //             output.push_str(&format!(",{}", val.unwrap_or(0.)));
+    //         }
 
-            output.push_str(
-                &DateTime::<Utc>::from_utc(
-                    NaiveDateTime::from_timestamp_opt(x as i64 * 60, 0).unwrap(),
-                    Utc,
-                )
-                .format("%m/%d/%Y %H:%M:%S")
-                .to_string(),
-            );
+    //         output.push_str("\r\n");
+    //     }
 
-            for (_, val) in self.get_data_at(ptrs, x) {
-                output.push_str(&format!(",{}", val.unwrap_or(0.)));
-            }
-
-            output.push_str("\r\n");
-        }
-
-        output
-    }
+    //     output
+    // }
 }
 
 impl DataModule {
-    pub fn get_data_at<'a, 'b: 'a>(
-        &'a self,
-        ptrs: &'b [TraceHandle],
-        x: RangePrec,
-    ) -> impl Iterator<Item = (TraceHandle, Option<RangePrec>)> + 'a {
-        ptrs.iter().map(move |&p| {
-            (
-                p,
-                self.traces.get(&p).and_then(|trace| trace.get_data_at(x)),
-            )
-        })
-    }
-
     pub fn bulkload_segments(
         &mut self,
-        ptrs: &[TraceHandle],
+        handles: &[TraceHandle],
         x_desc: &TypeDescriptor,
         y_desc: &TypeDescriptor,
         data: &[u8],
-    ) -> Vec<TraceMetas> {
-        let row_bytes_len = x_desc.size + y_desc.size * ptrs.len();
+    ) -> BoxedBundle {
+        let row_bytes_len = x_desc.size + y_desc.size * handles.len();
 
-        let points = data.len() / row_bytes_len;
-        let mut x = Vec::<u64>::with_capacity(points);
+        let point_count = data.len() / row_bytes_len;
+        let mut x = Vec::<u64>::with_capacity(point_count);
 
-        let mut out = {
+        let mut ys = {
             let ptr = unsafe {
-                std::alloc::alloc(std::alloc::Layout::array::<f64>(points * ptrs.len()).unwrap())
-                    as *mut f64
+                std::alloc::alloc(
+                    std::alloc::Layout::array::<f64>(point_count * handles.len()).unwrap(),
+                ) as *mut f64
             };
-            ptrs.iter()
+            handles
+                .iter()
                 .enumerate()
-                .map(|(i, _)| unsafe { Vec::from_raw_parts(ptr.add(i * points), 0, points) })
+                .map(|(i, _)| unsafe {
+                    Vec::from_raw_parts(ptr.add(i * point_count), 0, point_count)
+                })
                 .collect::<Vec<_>>()
         };
 
-        let mut counter = MetaCounter::new(ptrs.len());
+        let mut counter = MetaCounter::new(handles.len());
 
         for row in data.chunks_exact(row_bytes_len) {
             let cur = (x_desc.parser)(&row[0..x_desc.size]);
             x.push(cur as u64);
 
-            out.iter_mut()
+            ys.iter_mut()
                 .zip(row[x_desc.size..].chunks(y_desc.size))
                 .enumerate()
-                .for_each(|(i, (out, bytes))| {
+                .for_each(|(i, (y, bytes))| {
                     let val = (y_desc.parser)(bytes);
                     counter.add(i, val);
-                    out.push(val);
+                    y.push(val);
                 });
         }
 
-        let x = Rc::new(x);
-        let mut metas = Vec::with_capacity(ptrs.len());
+        let ys = HashMap::from_iter(handles.iter().enumerate().map(|(i, &h)| (h, ys[i].clone())));
 
-        for ((d, handle), mut m) in out.into_iter().zip(ptrs.iter()).zip(counter.iter_metas()) {
-            m.handle = *handle;
-            metas.push(m);
-
-            match self.traces.get_mut(handle) {
-                Some(trace) => {
-                    trace.push_segment(Box::new(Batch::new(x.clone(), Rc::new(d))))
-                }
-                None => {
-                    panic!("Handle {} is invalid", handle);
-                }
-            };
-        }
-
-        metas
+        BoxedBundle::new(Box::new(Batch::new(x, ys)))
     }
 }

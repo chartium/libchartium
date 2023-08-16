@@ -1,21 +1,18 @@
 use std::collections::HashMap;
 use std::convert::TryInto;
 
-use crate::prelude::*;
-use crate::trace::Bundle;
 use lazy_static::lazy_static;
-use num_traits::Num;
 
 pub type TraceHandle = u32;
 
 pub struct TypeDescriptor {
     pub name: String,
     pub size: usize,
-    pub parser: fn(&[u8]) -> RangePrec,
+    pub parser: fn(&[u8]) -> f64,
 }
 
 impl TypeDescriptor {
-    pub fn new(name: impl Into<String>, size: usize, parser: fn(&[u8]) -> RangePrec) -> Self {
+    pub fn new(name: impl Into<String>, size: usize, parser: fn(&[u8]) -> f64) -> Self {
         Self {
             name: name.into(),
             size,
@@ -61,7 +58,7 @@ macro_rules! type_desc {
     ( $m:expr, $s:expr, $t:ty ) => {
         $m.insert(
             $s,
-            TypeDescriptor::new($s, std::mem::size_of::<$t>(), |a| <$t>::from_le_bytes(a.try_into().unwrap()) as RangePrec),
+            TypeDescriptor::new($s, std::mem::size_of::<$t>(), |a| <$t>::from_le_bytes(a.try_into().unwrap()) as f64),
         )
     };
     ( $m: expr, [ $($s:expr, $t:ty),+ ] ) => {
