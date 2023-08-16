@@ -194,7 +194,11 @@ export class WebGL2Renderer implements Renderer {
   }
 
   render(job: RenderJob): RenderJobResult {
-    return this.#renderer.render(this.#dataModule, deserializeRenderJob(job));
+    const dzobRes = this.#renderer.render(this.#dataModule, deserializeRenderJob(job));
+    return {
+      xTicks: dzobRes.x_ticks.map((tick: { val: number, pos: number }) => ({ position: tick.pos, value: tick.val })),
+      yTicks: dzobRes.y_ticks.map((tick: { val: number, pos: number }) => ({ position: tick.pos, value: tick.val })),
+    }
   }
 
   setSize(width: number, height: number) {
