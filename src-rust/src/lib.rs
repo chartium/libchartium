@@ -3,7 +3,6 @@
 use wasm_bindgen::prelude::*;
 
 pub mod data;
-pub mod data_module;
 pub mod renderers;
 pub mod structs;
 pub mod trace;

@@ -1,5 +1,11 @@
-use crate::trace::TraceMetas;
+use wasm_bindgen::prelude::wasm_bindgen;
 
+use crate::{
+    data::TraceHandle,
+    trace::{BoxedBundle, TraceMetas},
+};
+
+#[wasm_bindgen]
 pub struct MetaCounter {
     sums: Vec<f64>,
     lens: Vec<usize>,
@@ -9,16 +15,6 @@ pub struct MetaCounter {
 }
 
 impl MetaCounter {
-    pub fn new(len: usize) -> Self {
-        Self {
-            sums: vec![0.0; len],
-            lens: vec![0; len],
-            nz_lens: vec![0; len],
-            mins: vec![std::f64::INFINITY; len],
-            maxs: vec![std::f64::NEG_INFINITY; len],
-        }
-    }
-
     pub fn add(&mut self, col: usize, val: f64) {
         self.sums[col] += val;
         self.lens[col] += 1;
@@ -37,5 +33,57 @@ impl MetaCounter {
             min: self.mins[i],
             max: self.maxs[i],
         })
+    }
+}
+
+#[wasm_bindgen]
+impl MetaCounter {
+    #[wasm_bindgen(constructor)]
+    pub fn new(len: usize) -> Self {
+        Self {
+            sums: vec![0.0; len],
+            lens: vec![0; len],
+            nz_lens: vec![0; len],
+            mins: vec![std::f64::INFINITY; len],
+            maxs: vec![std::f64::NEG_INFINITY; len],
+        }
+    }
+
+    pub fn add_from_counter(
+        &mut self,
+        col: usize,
+        other: &MetaCounter,
+        other_col: usize,
+    ) {
+        self.sums[col] += other.sums[other_col];
+        self.lens[col] += other.lens[other_col];
+        self.nz_lens[col] += other.nz_lens[other_col];
+        self.mins[col] = self.mins[col].min(other.mins[other_col]);
+        self.maxs[col] = self.maxs[col].max(other.maxs[other_col]);
+    }
+
+    pub fn add_bundle(
+        &mut self,
+        bundle: &BoxedBundle,
+        traces: &[TraceHandle],
+        from: f64,
+        to: f64,
+    ) {
+        for (i, trace_data) in traces
+            .iter()
+            .map(|&t| bundle.unwrap().iter_in_range_f64(t, from, to))
+            .enumerate()
+        {
+            for (_, y) in trace_data {
+                self.add(i, y);
+            }
+        }
+    }
+
+    pub fn to_array(&self) -> js_sys::Array {
+        js_sys::Array::from_iter(
+            self.iter_metas()
+                .map(|m| serde_wasm_bindgen::to_value(&m).unwrap()),
+        )
     }
 }

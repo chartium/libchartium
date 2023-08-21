@@ -1,6 +1,6 @@
-use std::mem::size_of;
+use std::{mem::size_of, rc::Rc};
 
-use js_sys::Float32Array;
+use js_sys::{Array, Float32Array};
 use wasm_bindgen::{prelude::*, JsCast, JsValue};
 use web_sys::{
     OffscreenCanvas, WebGl2RenderingContext, WebGlBuffer, WebGlProgram, WebGlUniformLocation,
@@ -8,7 +8,10 @@ use web_sys::{
 
 use crate::{
     data::TraceHandle,
-    trace::{extensions::PointIteratorExtension, BoxedBundle},
+    trace::{
+        extensions::{IntoStruct, PointIteratorExtension},
+        BoxedBundle,
+    },
 };
 
 use super::{AxisTick, RenderJobResult};
@@ -22,6 +25,7 @@ extern "C" {
 
 use std::{collections::HashSet, convert::TryInto};
 
+#[derive(Clone)]
 struct WebGlTraceBuffer {
     points: usize,
     handle: TraceHandle,
@@ -33,17 +37,32 @@ struct WebGlTraceBuffer {
 }
 
 #[wasm_bindgen]
+#[derive(Clone)]
+#[allow(dead_code)]
 pub struct WebGlBundleBuffer {
     from: f64,
     to: f64,
-    buffers: Vec<WebGlTraceBuffer>,
+    buffers: Rc<Vec<WebGlTraceBuffer>>,
 }
 
-pub struct TraceDescriptor {
-    handle: TraceHandle,
+#[wasm_bindgen]
+#[derive(Clone)]
+pub struct TraceStyle {
     width: u32,
     color: [u8; 3],
     points_mode: bool,
+}
+
+#[wasm_bindgen]
+impl TraceStyle {
+    #[wasm_bindgen(constructor)]
+    pub fn new(width: u32, red: u8, green: u8, blue: u8, points_mode: bool) -> TraceStyle {
+        TraceStyle {
+            width,
+            color: [red, green, blue],
+            points_mode,
+        }
+    }
 }
 
 #[wasm_bindgen]
@@ -65,8 +84,8 @@ pub struct WebGlRenderJob {
     pub x_label_space: u32,
     pub y_label_space: u32,
 
-    bundles: Vec<WebGlBundleBuffer>,
-    bundle_blacklist: HashSet<TraceHandle>,
+    bundle_buffers: Vec<WebGlBundleBuffer>,
+    excluded_traces: HashSet<TraceHandle>,
 }
 
 #[wasm_bindgen]
@@ -91,31 +110,23 @@ impl WebGlRenderJob {
             x_label_space: 0,
             y_label_space: 0,
 
-            bundles: Vec::with_capacity(bundle_count),
-            bundle_blacklist: HashSet::new(),
+            bundle_buffers: Vec::with_capacity(bundle_count),
+            excluded_traces: HashSet::new(),
         }
     }
 
-    pub fn add_bundle(&mut self, buffer: WebGlBundleBuffer) {
-        self.bundles.push(buffer);
+    pub fn add_bundle_buffer(&mut self, buffer: &WebGlBundleBuffer) {
+        self.bundle_buffers.push(buffer.clone());
     }
 
-    pub fn blacklist_trace(&mut self, handle: TraceHandle) {
-        self.bundle_blacklist.insert(handle);
-    }
-
-    pub fn deserialize_blacklist(&mut self, data: &[u8]) {
-        const ROW_SIZE: usize = size_of::<u32>();
-
-        for row in data.chunks_exact(ROW_SIZE) {
-            self.blacklist_trace(TraceHandle::from_be_bytes(row.try_into().unwrap()));
-        }
+    pub fn exclude_trace(&mut self, handle: TraceHandle) {
+        self.excluded_traces.insert(handle);
     }
 }
 
 impl WebGlRenderJob {
     pub fn get_bundles(&self) -> &Vec<WebGlBundleBuffer> {
-        &self.bundles
+        &self.bundle_buffers
     }
 
     pub fn get_x_type(&self) -> &String {
@@ -123,7 +134,7 @@ impl WebGlRenderJob {
     }
 
     pub fn is_blacklisted(&self, handle: TraceHandle) -> bool {
-        self.bundle_blacklist.contains(&handle)
+        self.excluded_traces.contains(&handle)
     }
 }
 
@@ -186,9 +197,9 @@ pub struct WebGlRenderer {
     programs: WebGlPrograms,
 }
 
-// #[wasm_bindgen]
+#[wasm_bindgen]
 impl WebGlRenderer {
-    // #[wasm_bindgen(constructor)]
+    #[wasm_bindgen(constructor)]
     pub fn new(
         shared_canvas: OffscreenCanvas,
         context: WebGl2RenderingContext,
@@ -256,7 +267,7 @@ impl WebGlRenderer {
                     y_from,
                 );
 
-                for row in &bundle.buffers {
+                for row in bundle.buffers.as_ref() {
                     if job.is_blacklisted(row.handle) {
                         continue;
                     }
@@ -327,25 +338,39 @@ impl WebGlRenderer {
         Ok(())
     }
 
-    pub fn create_bundle_buffer_from_byte_array(
-        &mut self,
+    pub fn create_bundle_buffer_from_descriptors(
+        &self,
         bundle: &BoxedBundle,
         from: f64,
         to: f64,
-        bytes: &[u8],
+        styles: Array,
     ) -> WebGlBundleBuffer {
-        let mut vec = Vec::with_capacity(bytes.len() / ROW_LEN);
+        let styles: Vec<TraceStyle> = styles
+            .iter()
+            .map(|x| x.try_into_owned_struct().unwrap())
+            .collect();
 
-        for row in bytes.chunks_exact(ROW_LEN) {
-            vec.push(TraceDescriptor {
-                handle: u32::from_be_bytes(row[0..4].try_into().unwrap()),
+        self.create_bundle_buffer(bundle, from, to, &styles)
+    }
+
+    pub fn create_bundle_buffer_from_byte_array(
+        &self,
+        bundle: &BoxedBundle,
+        from: f64,
+        to: f64,
+        style_bytes: &[u8],
+    ) -> WebGlBundleBuffer {
+        let mut styles = Vec::with_capacity(style_bytes.len() / ROW_LEN);
+
+        for row in style_bytes.chunks_exact(ROW_LEN) {
+            styles.push(TraceStyle {
                 width: u32::from_be_bytes(row[4..8].try_into().unwrap()),
                 color: row[8..11].try_into().unwrap(),
                 points_mode: row[11] > 0,
             });
         }
 
-        self.create_bundle_buffer(bundle, from, to, &vec)
+        self.create_bundle_buffer(bundle, from, to, &styles)
     }
 
     // pub fn rebundle(
@@ -420,24 +445,26 @@ impl WebGlRenderer {
     }
 
     pub fn create_bundle_buffer(
-        &mut self,
+        &self,
         bundle: &BoxedBundle,
         from: f64,
         to: f64,
-        data: &[TraceDescriptor],
+        styles: &[TraceStyle],
     ) -> WebGlBundleBuffer {
-        let mut buffers = Vec::with_capacity(data.len());
+        let mut buffers = Vec::with_capacity(bundle.traces().len());
 
-        for entry in data {
+        for (i, &trace) in bundle.traces().iter().enumerate() {
             buffers.push(WebGlRenderer::allocate_bundle_entry(
                 &self.context,
                 bundle,
                 from,
                 to,
-                entry,
+                trace,
+                &styles[i],
             ));
         }
 
+        let buffers = Rc::new(buffers);
         WebGlBundleBuffer { from, to, buffers }
     }
 
@@ -602,14 +629,15 @@ impl WebGlRenderer {
         bundle: &BoxedBundle,
         from: f64,
         to: f64,
-        entry: &TraceDescriptor,
+        trace: TraceHandle,
+        style: &TraceStyle,
     ) -> WebGlTraceBuffer {
         let buffer = context.create_buffer().unwrap();
 
         let data: Vec<(f32, f32)> = bundle
             .unwrap()
-            .iter_in_range_f64(entry.handle, from, to)
-            .with_origin(from, 0.0)
+            .iter_in_range_f64(trace, from, to)
+            .with_origin_at(from, 0.0)
             .map(|(x, y)| (x as f32, y as f32))
             .collect();
 
@@ -627,15 +655,15 @@ impl WebGlRenderer {
 
         WebGlTraceBuffer {
             points: data.len(),
-            handle: entry.handle,
+            handle: trace,
             buffer,
-            width: entry.width as f32,
+            width: style.width as f32,
             color: [
-                entry.color[0] as f32 / 255.0,
-                entry.color[1] as f32 / 255.0,
-                entry.color[2] as f32 / 255.0,
+                style.color[0] as f32 / 255.0,
+                style.color[1] as f32 / 255.0,
+                style.color[2] as f32 / 255.0,
             ],
-            points_mode: entry.points_mode,
+            points_mode: style.points_mode,
         }
     }
 }

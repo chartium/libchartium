@@ -1,13 +1,16 @@
 import { lib } from "../wasm.js";
 import { yeet } from "../../../utils/yeet.js";
 import {
-  deserializeRenderJob,
   type RenderJob,
   type RenderJobResult,
   type Renderer,
   type RenderingController,
 } from "./mod.js";
 import { proxyMarker } from "comlink";
+import { BUNDLES, EXCLUDE, TraceList } from "../trace-list.js";
+import { map, reduce } from "../../../utils/collection.js";
+import { computeStyles } from "../trace-styles.js";
+import { traceIds } from "../controller.js";
 
 function compileShader(
   gl: WebGL2RenderingContext,
@@ -34,7 +37,6 @@ function linkProgram(
 export class WebGL2Controller implements RenderingController {
   [proxyMarker] = true;
 
-  readonly #dataModule: lib.DataModule;
   readonly #canvas: OffscreenCanvas;
   readonly #context: WebGL2RenderingContext;
   readonly #programs: lib.WebGlPrograms;
@@ -42,8 +44,7 @@ export class WebGL2Controller implements RenderingController {
   #renderers: { [key: number]: WebGL2Renderer } = {};
   #availableRendererHandle = 0;
 
-  constructor(dataModule: lib.DataModule, canvas: OffscreenCanvas) {
-    this.#dataModule = dataModule;
+  constructor(canvas: OffscreenCanvas) {
     this.#canvas = canvas;
 
     this.#context =
@@ -79,11 +80,10 @@ export class WebGL2Controller implements RenderingController {
       this.#canvas,
       this.#context,
       this.#programs,
-      presentCanvas,
-      false
+      presentCanvas
     );
     const handle = this.#availableRendererHandle++;
-    const wrapped = new WebGL2Renderer(this, handle, this.#dataModule, raw);
+    const wrapped = new WebGL2Renderer(this, handle, this.#context, raw);
     this.#renderers[handle] = wrapped;
     return wrapped;
   }
@@ -180,21 +180,61 @@ export class WebGL2Controller implements RenderingController {
 export class WebGL2Renderer implements Renderer {
   [proxyMarker] = true;
 
-  readonly #dataModule: lib.DataModule;
+  readonly #context: WebGL2RenderingContext;
   readonly #renderer: lib.WebGlRenderer;
+
+  readonly #buffers = new WeakMap<TraceList, lib.WebGlBundleBuffer>();
 
   constructor(
     public readonly parent: WebGL2Controller,
     public readonly handle: number,
-    dataModule: lib.DataModule,
+    context: WebGL2RenderingContext,
     renderer: lib.WebGlRenderer
   ) {
-    this.#dataModule = dataModule;
+    this.#context = context;
     this.#renderer = renderer;
   }
 
   render(job: RenderJob): RenderJobResult {
-    return this.#renderer.render(this.#dataModule, deserializeRenderJob(job));
+    const traceList = job.traces;
+    const rj = new lib.WebGlRenderJob(job.xType, traceList[BUNDLES].length);
+    const xRange = job.xRange ?? traceList.range;
+
+    // prettier-ignore
+    const yRange = job.yRange ?? (() => {
+      const metas = traceList.calculateMetas(xRange);
+      const from = reduce(map(metas, (m) => m.min), Math.min);
+      const to = reduce(map(metas, (m) => m.max), Math.max);
+      return { from, to };
+    })();
+
+    rj.x_from = xRange.from;
+    rj.x_to = xRange.to;
+    rj.y_from = yRange.from;
+    rj.y_to = yRange.to;
+
+    for (const trace of traceList[EXCLUDE]) rj.exclude_trace(trace);
+    for (const bundle of traceList[BUNDLES]) {
+      const styles = computeStyles(
+        traceList.stylesheet,
+        bundle.traces(),
+        traceIds
+      );
+      const buffer = this.#renderer.create_bundle_buffer_from_descriptors(
+        bundle,
+        xRange.from,
+        xRange.to,
+        styles
+      );
+      rj.add_bundle_buffer(buffer);
+    }
+
+    if (job.clear !== undefined) rj.clear = job.clear;
+    if (job.darkMode !== undefined) rj.dark_mode = job.darkMode;
+    if (job.renderAxes !== undefined) rj.render_axes = job.renderAxes;
+    if (job.renderGrid !== undefined) rj.render_grid = job.renderGrid;
+
+    return this.#renderer.render(rj);
   }
 
   setSize(width: number, height: number) {

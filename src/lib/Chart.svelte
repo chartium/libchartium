@@ -2,10 +2,9 @@
   import { transfer, type Remote } from "comlink";
   import type { ChartiumController } from "./data-worker";
   import { mapOpt } from "../utils/mapOpt";
-  import type { TraceDescriptor } from "./data-worker/renderers/mod";
 
   export let controller: Remote<ChartiumController>;
-  export let traces: TraceDescriptor[];
+  export let traces: TraceList;
 
   let canvas: HTMLCanvasElement | undefined;
   $: offscreen = canvas?.transferControlToOffscreen();

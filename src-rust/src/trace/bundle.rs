@@ -50,6 +50,7 @@ impl BoxedBundle {
         BoxedBundle { bundle }
     }
 
+    #[allow(clippy::borrowed_box)]
     pub fn unwrap(&self) -> &Box<dyn Bundle> {
         &self.bundle
     }
@@ -65,5 +66,11 @@ impl BoxedBundle {
     }
     pub fn to(&self) -> f64 {
         self.bundle.to()
+    }
+    pub fn contains(&self, point: f64) -> bool {
+        self.bundle.contains(point)
+    }
+    pub fn intersects(&self, from: f64, to: f64) -> bool {
+        self.bundle.intersects(from, to)
     }
 }

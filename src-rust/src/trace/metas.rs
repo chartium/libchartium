@@ -1,9 +1,9 @@
+use crate::data::TraceHandle;
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::wasm_bindgen;
-use crate::data::TraceHandle;
 
 #[wasm_bindgen]
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct TraceMetas {
     pub handle: TraceHandle,
     pub avg: f64,
@@ -13,7 +13,7 @@ pub struct TraceMetas {
 }
 
 #[wasm_bindgen]
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct TracePoint {
     pub handle: TraceHandle,
     pub x: f64,

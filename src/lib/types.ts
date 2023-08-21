@@ -41,12 +41,6 @@ export interface Point {
 type RawHandle<S extends string> = number & { __handleType: S };
 export type TraceHandle = RawHandle<"Trace">;
 
-export interface TraceStyle {
-  color: string | Uint8Array;
-  width: number;
-  pointsMode: boolean;
-}
-
 export interface TraceMetas {
   avg: number;
   avg_nz: number;

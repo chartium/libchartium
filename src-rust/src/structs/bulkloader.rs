@@ -1,15 +1,17 @@
+use std::collections::HashMap;
+
 use js_sys::Uint8Array;
 use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
 
 use crate::{
     data::{TraceHandle, TypeDescriptor, TYPE_SIZES},
-    data_module::DataModule,
-    trace::BoxedBundle,
+    structs::MetaCounter,
+    trace::{Batch, BoxedBundle},
 };
 
 #[wasm_bindgen]
 pub struct Bulkloader {
-    ptrs: Vec<TraceHandle>,
+    handles: Vec<TraceHandle>,
     x_desc: &'static TypeDescriptor,
     y_desc: &'static TypeDescriptor,
     data: Vec<u8>,
@@ -18,7 +20,7 @@ pub struct Bulkloader {
 #[wasm_bindgen]
 impl Bulkloader {
     pub async fn from_stream(
-        ptrs: Vec<TraceHandle>,
+        handles: Vec<TraceHandle>,
         x_type: String,
         y_type: String,
         stream: wasm_streams::readable::sys::ReadableStream,
@@ -29,7 +31,7 @@ impl Bulkloader {
 
         let x_desc = TYPE_SIZES.get(x_type.as_str()).unwrap();
         let y_desc = TYPE_SIZES.get(y_type.as_str()).unwrap();
-        let row_len_bytes = x_desc.size + y_desc.size * ptrs.len();
+        let row_len_bytes = x_desc.size + y_desc.size * handles.len();
         let default_alloc = ALLOC_ROWS * row_len_bytes;
 
         let mut buffer: Vec<u8> = Vec::with_capacity(default_alloc);
@@ -60,7 +62,7 @@ impl Bulkloader {
         }
 
         Ok(Self {
-            ptrs,
+            handles,
             x_desc,
             y_desc,
             data: buffer,
@@ -68,7 +70,7 @@ impl Bulkloader {
     }
 
     pub async fn from_array(
-        ptrs: Vec<TraceHandle>,
+        handles: Vec<TraceHandle>,
         x_type: String,
         y_type: String,
         array: Uint8Array,
@@ -77,14 +79,59 @@ impl Bulkloader {
         let y_desc = TYPE_SIZES.get(y_type.as_str()).unwrap();
 
         Ok(Self {
-            ptrs,
+            handles,
             x_desc,
             y_desc,
             data: array.to_vec(),
         })
     }
 
-    pub fn apply(self, module: &mut DataModule) -> BoxedBundle {
-        module.bulkload_segments(&self.ptrs, self.x_desc, self.y_desc, &self.data)
+    pub fn apply(self) -> BoxedBundle {
+        let handles = &self.handles;
+        let x_desc = self.x_desc;
+        let y_desc = self.y_desc;
+        let data = &self.data;
+
+        let row_bytes_len = x_desc.size + y_desc.size * handles.len();
+
+        let point_count = data.len() / row_bytes_len;
+        let mut x = Vec::<u64>::with_capacity(point_count);
+
+        let mut ys = {
+            let ptr = unsafe {
+                std::alloc::alloc(
+                    std::alloc::Layout::array::<f64>(point_count * handles.len()).unwrap(),
+                ) as *mut f64
+            };
+            handles
+                .iter()
+                .enumerate()
+                .map(|(i, _)| unsafe {
+                    Vec::from_raw_parts(ptr.add(i * point_count), 0, point_count)
+                })
+                .collect::<Vec<_>>()
+        };
+
+        let mut counter = MetaCounter::new(handles.len());
+
+        for row in data.chunks_exact(row_bytes_len) {
+            let cur = (x_desc.parser)(&row[0..x_desc.size]);
+            x.push(cur as u64);
+
+            ys.iter_mut()
+                .zip(row[x_desc.size..].chunks(y_desc.size))
+                .enumerate()
+                .for_each(|(i, (y, bytes))| {
+                    let val = (y_desc.parser)(bytes);
+                    counter.add(i, val);
+                    y.push(val);
+                });
+        }
+
+        // ! FIXME store the meta counter somewhere
+
+        let ys = HashMap::from_iter(handles.iter().enumerate().map(|(i, &h)| (h, ys[i].clone())));
+
+        BoxedBundle::new(Box::new(Batch::new(x, ys)))
     }
 }
