@@ -2,7 +2,11 @@
 
 <script lang="ts">
     import { onMount } from "svelte";
-    import { leftMouseDrag, rightMouseDrag } from "../../utils/mouseGestures";
+    import {
+        leftMouseDrag,
+        rightMouseDrag,
+        rightMouseClick,
+    } from "../../utils/mouseGestures";
     import type { MouseDragCallbacks } from "../../utils/mouseGestures";
     import * as canvas from "./canvas.ts";
     import type { Range } from "../types.ts";
@@ -164,7 +168,6 @@
             if (yTransformPositions?.from === yTransformPositions?.to) {
                 yTransformPositions = undefined;
             }
-            console.log(xTransformPositions, yTransformPositions);
             updateRange();
             xTransformPositions = undefined;
             yTransformPositions = undefined;
@@ -174,13 +177,13 @@
 
     function drawMove(xMovePosition?: Range, yMovePosition?: Range) {
         ctx?.clearRect(0, 0, overlayWidth, overlayHeight);
-        const wingLength = 20; // FIXME DEBUG
-        const spreadRad = Math.PI / 5; // FIXME DEBUG
+        const wingLength = 20;
+        const spreadRad = Math.PI / 5;
         const lineStyle: canvas.DrawStyle = {
             dash: [10, 5],
         };
         const arrowStyle: canvas.DrawStyle = {
-           lineWidth: 3,
+            lineWidth: 3,
         };
 
         if (xMovePosition && yMovePosition) {
@@ -263,12 +266,87 @@
             zoomOrMove = "neither";
         },
     };
+
+    // FIXME DEbug
+    import type { ContextItem } from "../types";
+    import GenericContextMenu from "../contextMenu/GenericContextMenu.svelte";
+    let menu: any;
+
+    const options: ContextItem[] = [
+        {
+            type: "leaf",
+            text: "First option",
+            callback: () => console.log("First option clicked"),
+        },
+        {
+            type: "leaf",
+            text: "Second option above separator",
+            callback: () => console.log("Second option clicked"),
+        },
+        {
+            type: "separator",
+        },
+        {
+            type: "branch",
+            text: "Submenu",
+            children: [
+                {
+                    type: "leaf",
+                    text: "First option in submenu",
+                    callback: () =>
+                        console.log("First option in submenu clicked"),
+                },
+                {
+                    type: "branch",
+                    text: "Submenu in submenu",
+                    children: [
+                        {
+                            type: "leaf",
+                            text: "First option in submenu in submenu",
+                            callback: () =>
+                                console.log(
+                                    "First option in submenu in submenu clicked"
+                                ),
+                        },
+                        {
+                            type: "leaf",
+                            text: "Second option in submenu in submenu",
+                            callback: () =>
+                                console.log(
+                                    "Second option in submenu in submenu clicked"
+                                ),
+                        },
+                    ],
+                },
+
+                {
+                    type: "leaf",
+                    text: "Second option in submenu",
+                    callback: () =>
+                        console.log("Second option in submenu clicked"),
+                },
+            ],
+        },
+        {
+            type: "leaf",
+            text: "Last option below Submenu",
+            callback: () => console.log("Last option clicked"),
+        },
+    ];
+
+    // FIXME DEbug
+    $: (window as any).menu = menu;
 </script>
+
+    <GenericContextMenu items={options} bind:this={menu} />
 
 <div
     class="container"
     style="width:{overlayWidth}px; height:{overlayHeight}px"
     on:dblclick={resetRange}
+    use:rightMouseClick={(e) => {
+        menu.open({ x: e.pageX, y: e.pageY });
+    }}
 >
     <slot name="yAxis" class="yAxis" />
     <div

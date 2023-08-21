@@ -2,14 +2,15 @@
   import { type Remote } from "comlink";
   import type { ChartiumController } from "../data-worker";
   import type { TraceDescriptor } from "../data-worker/renderers/mod";
-  import type { Range } from "../types";
-  
+  import type { Range, Tick } from "../types";
+
   import { Chart } from "./chart";
   import ChartOverlay from "./ChartOverlay.svelte";
   import ChartAxis from "./ChartAxis.svelte";
   import { onMount } from "svelte";
 
   import ChartLegend from "./ChartLegend.svelte";
+  import type { ReadableSignal } from "../../utils/signal";
 
   /** Height of only the chart are without axis */
   export let chartHeight: number;
@@ -26,20 +27,10 @@
   /** Label to be displayed next to y axis */
   export let yLabel: string;
 
-  let xTicks = [
-    { pos: 0, value: 0 },
-    { pos: 0.333, value: 2/3 * Math.PI },
-    { pos: 0.667, value: 4/3 * Math.PI },
-    { pos: 1, value: 2 * Math.PI },
-  ]; // FIXME populate these
-  let yTicks = [
-    { pos: 0, value: -1 },
-    { pos: 0.5, value: 0 },
-    { pos: 1, value: 1 },
-  ]; // FIXME populate these
-  // FIXME moving via axis doesnt work
-  
   const chart = new Chart(controller);
+
+  $: xTicks = [] as Tick[];
+  $: yTicks = [] as Tick[];
 
   let canvas: HTMLCanvasElement | undefined;
 
@@ -50,8 +41,14 @@
     chart.margin = 0;
     chart.includeTraces = await traces;
     chart.xType = "f32";
-    chart.xRange = { from: 0, to: 2*Math.PI };
+    chart.xRange = { from: 0, to: 2 * Math.PI };
     chart.yRange = { from: -1, to: 1 };
+    chart.xTicks?.subscribe((ticks) => {
+      xTicks = ticks;
+    });
+    chart.yTicks?.subscribe((ticks) => {
+      yTicks = ticks;
+    });
   });
 
   $: (window as any).chart = chart; // FIXME DEBUG
@@ -62,36 +59,46 @@
   /** new border values of y range */
   let yTransformValues: Range | undefined;
   /** new border values of x range */
-  let xTransformValues:  Range | undefined;
+  let xTransformValues: Range | undefined;
 
   // for drawing
   /** new border values of y range */
   let yTransformPositions: Range | undefined;
   /** new border values of x range */
-  let xTransformPositions:  Range | undefined;
+  let xTransformPositions: Range | undefined;
 
   function updateRange() {
-    console.log("zoomin")
-    console.log(xTransformValues, yTransformValues)
-    if (xTransformValues !== undefined ) {chart.xRange = xTransformValues};
-    if (yTransformValues !== undefined ) {chart.yRange = yTransformValues};
+    if (xTransformValues !== undefined) {
+      chart.xRange =
+        xTransformValues.from < xTransformValues.to
+          ? xTransformValues
+          : { from: xTransformValues.to, to: xTransformValues.from };
+    }
+    if (yTransformValues !== undefined) {
+      chart.yRange =
+        yTransformValues.from < yTransformValues.to
+          ? yTransformValues
+          : { from: yTransformValues.to, to: yTransformValues.from };
+    }
   }
   function resetRange() {
     // FIXME this should pull data from controller
-    chart.xRange = {from: 0, to: 2*Math.PI};
-    chart.yRange = {from: -1, to: 1};
+    chart.xRange = { from: 0, to: 1000 };
+    chart.yRange = { from: -1, to: 1 };
+
+    xTransformPositions = undefined;
+    yTransformPositions = undefined;
+    xTransformValues = undefined;
+    yTransformValues = undefined;
   }
-
 </script>
-
-
 
 <ChartOverlay
   overlayHeight={chartHeight + xAxisHeight}
   overlayWidth={chartWidth + yAxisWidth}
   {updateRange}
   {resetRange}
-  bind:yAxisWidth={yAxisWidth}
+  bind:yAxisWidth
   bind:xTransformPositions
   bind:yTransformPositions
   bind:zoomOrMove
@@ -105,8 +112,8 @@
     slot="yAxis"
     {updateRange}
     axisOffset={0}
-    bind:movePosition={yTransformPositions}
-    bind:moveValue={yTransformValues}
+    bind:transformPosition={yTransformPositions}
+    bind:transformValue={yTransformValues}
     bind:zoomOrMove
   />
   <canvas
@@ -126,8 +133,8 @@
     slot="xAxis"
     {updateRange}
     axisOffset={yAxisWidth}
-    bind:movePosition={xTransformPositions}
-    bind:moveValue={xTransformValues}
+    bind:transformPosition={xTransformPositions}
+    bind:transformValue={xTransformValues}
     bind:zoomOrMove
   />
 </ChartOverlay>

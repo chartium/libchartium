@@ -7,29 +7,28 @@
 
   // autogenerate a lot of data
   const from = 0;
-  const to = 2 * Math.PI;
-  const numSteps = 60;
-  const stepSize = (to - from) / (numSteps - 1);
-  
-  
+  const to = 1000;
+  const numSteps = to;
+  const stepSize = (to - from) / (numSteps);
+
   const xs = Array.from(
     { length: numSteps },
     (_, index) => from + index * stepSize
   );
-  const y1s = xs.map((x) => Math.sin(x));
-  const y2s = xs.map((x) => Math.cos(x));
-  const y3s = xs.map((x) => Math.atan(x));
+  const y1s = xs.map((x) => Math.sin((x / to) * 2 * Math.PI));
+  const y2s = xs.map((x) => Math.cos((x / to) * 2 * Math.PI));
+  const y3s = xs.map((x) => Math.tanh(( (x / to) - 0.5) * 2 * Math.PI));
   const chartiumFriendlyTraceData = xs.flatMap((x, index) => [
     x,
     y1s[index],
-    //y2s[index],
-    //y3s[index],
+    y2s[index],
+    y3s[index],
   ]);
-  
+
   const controller = spawnChartiumWorker();
   $: traces = controller
     .addFromArrayBuffer({
-      ids: ["sin"],
+      ids: ["sin", "cos", "atan"],
       data: Float32Array.from(chartiumFriendlyTraceData),
       xType: "f32",
       yType: "f32",

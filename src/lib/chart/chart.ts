@@ -3,59 +3,64 @@ import { transfer, type Remote } from "comlink";
 import type { ChartiumController } from "../data-worker";
 import type { Renderer, TraceDescriptor } from "../data-worker/renderers/mod";
 import { mapOpt } from "../../utils/mapOpt";
-import type { Range, TraceHandle, TypeOfData } from "../types";
+import type { Range, Tick, TraceHandle, TypeOfData } from "../types";
+import { createWritableSignal, type WritableSignal, type ReadableSignal } from "../../utils/signal";
 
 /** Chartium render handler that is to be used by frontend svelte comonents to render charts
  * it autorenders when anything about the chart changes
  */
 export class Chart {
-    private _controller: Remote<ChartiumController>;
-    private _canvas?: HTMLCanvasElement;
-    private _renderer?: Renderer;
-    private _includedTraces: TraceDescriptor[] = [];
-    private _includeBundles?: number[];
-    private _excludeTraces?: TraceHandle[];
+    #controller: Remote<ChartiumController>;
+    #canvas?: HTMLCanvasElement;
+    #renderer?: Renderer;
+    #includedTraces: TraceDescriptor[] = [];
+    #includeBundles?: number[];
+    #excludeTraces?: TraceHandle[];
 
-    private _xType?: TypeOfData;
+    #xType?: TypeOfData;
 
-    private _xRange?: Range;
-    private _yRange?: Range;
+    #xRange?: Range;
+    #yRange?: Range;
 
-    private _clear?: boolean;
-    private _darkMode?: boolean;
-    private _renderAxes?: boolean;
-    private _renderGrid?: boolean;
+    #clear?: boolean;
+    #darkMode?: boolean;
+    #renderAxes?: boolean;
+    #renderGrid?: boolean;
 
-    private _margin?: number;
-    private _xLabelSpace?: number;
-    private _yLabelSpace?: number;
+    #margin?: number;
+    #xLabelSpace?: number;
+    #yLabelSpace?: number;
 
+    #xTicks?: WritableSignal<Tick[]>;
+    #yTicks?: WritableSignal<Tick[]>;
 
     constructor(controller: Remote<ChartiumController>) {
-        this._controller = controller;
+        this.#controller = controller;
+        this.#xTicks = createWritableSignal([]);
+        this.#yTicks = createWritableSignal([]);
     }
 
     /** assign a canvas to this render handler and prepares the renderer */
     async assignCanvas(canvas: HTMLCanvasElement) {
-        this._canvas = canvas;
-        let offscreen = this._canvas?.transferControlToOffscreen();
-        this._renderer = await mapOpt(offscreen, (c) => this._controller.createRenderer(transfer(c, [c])));
+        this.#canvas = canvas;
+        let offscreen = this.#canvas?.transferControlToOffscreen();
+        this.#renderer = await mapOpt(offscreen, (c) => this.#controller.createRenderer(transfer(c, [c])));
     }
 
     /** Render the chart. This gets called automatically if you use any of the setters.
      *  Autocalculates the ranges and estimates type if undefined */
     async render() {
-        if (this._renderer === undefined) {
+        if (this.#renderer === undefined) {
             // renderer gets initialized when canvas is assigned
             throw new Error("Canvas not assigned");
         }
 
-        if (this._xType === undefined) {
+        if (this.#xType === undefined) {
             // TODO estimate xType
-            this._xType = "f32";
+            this.#xType = "f32";
         }
 
-        if (this._includedTraces.length === 0) {
+        if (this.#includedTraces.length === 0) {
             console.log("No traces to render");
             return;
         }
@@ -63,114 +68,120 @@ export class Chart {
 
         // if the ranges are not set, estimate them from ranges of the first trace
         // FIXME This doesnt work, but @m93a will add a function to the controller to help
-        const bottomLeft = await this._controller.findClosestPointOfTrace(this._includedTraces[0].handle, { x: -Infinity, y: -Infinity }) ?? { x: 0, y: 0 };
-        const topRight = await this._controller.findClosestPointOfTrace(this._includedTraces[0].handle, { x: Infinity, y: Infinity }) ?? { x: 0, y: 0 };
-        if (this._xRange === undefined) {
-            this._xRange = { from: bottomLeft.x, to: topRight.x };
+        const bottomLeft = await this.#controller.findClosestPointOfTrace(this.#includedTraces[0].handle, { x: -Infinity, y: -Infinity }) ?? { x: 0, y: 0 };
+        const topRight = await this.#controller.findClosestPointOfTrace(this.#includedTraces[0].handle, { x: Infinity, y: Infinity }) ?? { x: 0, y: 0 };
+        if (this.#xRange === undefined) {
+            this.#xRange = { from: bottomLeft.x, to: topRight.x };
         }
 
-        if (this._yRange === undefined) {
-            this._yRange = { from: bottomLeft.y, to: topRight.y };
+        if (this.#yRange === undefined) {
+            this.#yRange = { from: bottomLeft.y, to: topRight.y };
         }
 
         const renderJob = {
-            xType: this._xType,
-            includeTraces: this._includedTraces,
-            includeBundles: this._includeBundles,
-            excludeTraces: this._excludeTraces,
-            xRange: this._xRange,
-            yRange: this._yRange,
+            xType: this.#xType,
+            includeTraces: this.#includedTraces,
+            includeBundles: this.#includeBundles,
+            excludeTraces: this.#excludeTraces,
+            xRange: this.#xRange,
+            yRange: this.#yRange,
 
-            clear: this._clear,
-            darkMode: this._darkMode,
-            renderAxes: this._renderAxes,
-            renderGrid: this._renderGrid,
+            clear: this.#clear,
+            darkMode: this.#darkMode,
+            renderAxes: this.#renderAxes,
+            renderGrid: this.#renderGrid,
 
-            margin: this._margin,
-            xLabelSpace: this._xLabelSpace,
-            yLabelSpace: this._yLabelSpace,
+            margin: this.#margin,
+            xLabelSpace: this.#xLabelSpace,
+            yLabelSpace: this.#yLabelSpace,
         };
 
-        this._renderer.render(renderJob);
+        const renderResults = await this.#renderer.render(renderJob);
+        this.#xTicks?.set(renderResults.xTicks);
+        this.#yTicks?.set( renderResults.yTicks );
     }
 
+    //SECTION - setters
+
     set includeTraces(traces: TraceDescriptor[]) {
-        this._includedTraces = traces;
+        this.#includedTraces = traces;
         this.render()
     }
 
     set includeBundles(bundles: number[]) {
-        this._includeBundles = bundles;
+        this.#includeBundles = bundles;
         this.render()
     }
 
     set excludeTraces(traces: TraceHandle[]) {
-        this._excludeTraces = traces;
+        this.#excludeTraces = traces;
         this.render()
     }
 
     set xType(type: TypeOfData) {
-        this._xType = type;
+        this.#xType = type;
         this.render()
     }
 
     set xRange(range: Range) {
-        this._xRange = range;
+        this.#xRange = range;
         this.render()
     }
 
     set yRange(range: Range) {
-        this._yRange = range;
+        this.#yRange = range;
         this.render()
     }
 
     set clear(value: boolean) {
-        this._clear = value;
+        this.#clear = value;
         this.render();
     }
     set darkMode(value: boolean) {
-        this._darkMode = value;
+        this.#darkMode = value;
         this.render();
     }
     set renderAxes(value: boolean) {
-        this._renderAxes = value;
+        this.#renderAxes = value;
         this.render();
     }
     set renderGrid(value: boolean) {
-        this._renderGrid = value;
+        this.#renderGrid = value;
         this.render();
     }
 
     set margin(value: number) {
-        this._margin = value;
+        this.#margin = value;
         this.render();
     }
     set xLabelSpace(value: number) {
-        this._xLabelSpace = value;
+        this.#xLabelSpace = value;
         this.render();
     }
     set yLabelSpace(value: number) {
-        this._yLabelSpace = value;
+        this.#yLabelSpace = value;
         this.render();
     }
 
     //SECTION - getters
 
-    get controller() { return this._controller; }
-    get canvas() { return this._canvas; }
-    get renderer() { return this._renderer; }
-    get includedTraces() { return this._includedTraces; }
-    get includeBundles(): number[] | undefined { return this._includeBundles; }
-    get excludeTraces(): TraceHandle[] | undefined { return this._excludeTraces; }
-    get xType(): TypeOfData | undefined { return this._xType; }
-    get xRange(): Range | undefined { return this._xRange; }
-    get yRange(): Range | undefined { return this._yRange; }
-    get clear(): boolean | undefined { return this._clear; }
-    get darkMode(): boolean | undefined { return this._darkMode; }
-    get renderAxes(): boolean | undefined { return this._renderAxes; }
-    get renderGrid(): boolean | undefined { return this._renderGrid; }
-    get margin(): number | undefined { return this._margin; }
-    get xLabelSpace(): number | undefined { return this._xLabelSpace; }
-    get yLabelSpace(): number | undefined { return this._yLabelSpace; }
+    get controller() { return this.#controller; }
+    get canvas() { return this.#canvas; }
+    get renderer() { return this.#renderer; }
+    get includedTraces() { return this.#includedTraces; }
+    get includeBundles(): number[] | undefined { return this.#includeBundles; }
+    get excludeTraces(): TraceHandle[] | undefined { return this.#excludeTraces; }
+    get xType(): TypeOfData | undefined { return this.#xType; }
+    get xRange(): Range | undefined { return this.#xRange; }
+    get yRange(): Range | undefined { return this.#yRange; }
+    get clear(): boolean | undefined { return this.#clear; }
+    get darkMode(): boolean | undefined { return this.#darkMode; }
+    get renderAxes(): boolean | undefined { return this.#renderAxes; }
+    get renderGrid(): boolean | undefined { return this.#renderGrid; }
+    get margin(): number | undefined { return this.#margin; }
+    get xLabelSpace(): number | undefined { return this.#xLabelSpace; }
+    get yLabelSpace(): number | undefined { return this.#yLabelSpace; }
+    get xTicks(): ReadableSignal<Tick[]> | undefined { return this.#xTicks?.toReadable(); }
+    get yTicks(): ReadableSignal<Tick[]> | undefined { return this.#yTicks?.toReadable(); }
 
 }

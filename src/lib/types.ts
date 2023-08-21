@@ -56,3 +56,44 @@ export interface TraceMetas {
 
   [key: string]: unknown;
 }
+
+/** Type for ticks used in graph axis. Position is expected to be between 0 and 1 and denotes at what
+ * fraction of axis length/height the tick should be placed.
+ */
+export interface Tick {
+  value: number;
+  position: number;
+}
+
+
+export interface ContextLeaf {
+  type: "leaf";
+  text: string;
+  callback: () => void;
+}
+export interface ContextBranch {
+  type: "branch";
+  text: string;
+  children: ContextItem[];
+}
+export interface ContextSeparator {
+  type: "separator";
+}
+/** Type for the context menu
+ * context menu is just a list of ContextItems where each can be
+ * a leaf with content and callback,
+ * a branch, i.e. a submenu,
+ * or a separator which is just a line
+ */
+export type ContextItem = ContextLeaf | ContextBranch | ContextSeparator;
+
+/** A type for passing rectangle position by declaring top left and bottom right corners */
+export type RectanglePosition = {
+  topLeft: Point;
+  bottomRight: Point;
+} | {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}

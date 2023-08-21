@@ -1,5 +1,5 @@
 import { toUint8ColorOrRandom } from "../../../utils/color";
-import type { Range, TraceHandle, TraceStyle, TypeOfData } from "../../types";
+import type { Range, Tick, TraceHandle, TraceStyle, TypeOfData } from "../../types";
 import { lib } from "../wasm";
 
 export interface RenderingController {
@@ -71,12 +71,6 @@ export function deserializeRenderJob(job: RenderJob): lib.RenderJob {
 }
 
 export interface RenderJobResult {
-  xTicks: Array<{
-    value: number;
-    position: number;
-  }>;
-  yTicks: Array<{
-    value: number;
-    position: number;
-  }>;
+  xTicks: Tick[];
+  yTicks: Tick[];
 }
