@@ -64,7 +64,26 @@ export class ChartiumController {
   static instantiateInThisThread(
     options: ChartiumControllerOptions = {}
   ): ChartiumController {
-    return new ChartiumController(options);
+    const ctl = new ChartiumController(options);
+
+    if (window) {
+      ctl.screenSize = {
+        width: innerWidth * devicePixelRatio,
+        height: innerHeight * devicePixelRatio,
+      };
+
+      // FIXME: don't forget to destroy this listener when the worker is destroyed
+      window.addEventListener(
+        "resize",
+        () =>
+          (ctl.screenSize = {
+            width: innerWidth * devicePixelRatio,
+            height: innerHeight * devicePixelRatio,
+          })
+      );
+    }
+
+    return ctl;
   }
 
   public initialized: Promise<true> | true;

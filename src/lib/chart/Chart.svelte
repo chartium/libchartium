@@ -99,9 +99,12 @@
     yTransformValues = undefined;
   }
 
-  let contentSize: [number, number] = [1, 1];
-  $: if (chart && mounted) {
-    chart.renderer?.setSize(contentSize[0], contentSize[1]);
+  let contentSize: [number, number];
+  $: if (chart && mounted && contentSize) {
+    chart.renderer?.setSize(
+      contentSize[0] * devicePixelRatio,
+      contentSize[1] * devicePixelRatio
+    );
     chart?.render();
   }
 </script>
@@ -164,5 +167,7 @@
   canvas {
     position: absolute;
     inset: 0;
+    width: 100%;
+    height: 100%;
   }
 </style>

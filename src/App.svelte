@@ -35,20 +35,6 @@
 
 <main>
   <h1>Chartium test page</h1>
-
-  <div class="frame">
-    <ChartGrid>
-      <svelte:fragment slot="title">Title</svelte:fragment>
-      <svelte:fragment slot="subtitle">Subtitle</svelte:fragment>
-      <svelte:fragment slot="ylabel">Osa Y</svelte:fragment>
-      <svelte:fragment slot="yticks"><span>Y ticks</span></svelte:fragment>
-      <svelte:fragment slot="xlabel">Osa X</svelte:fragment>
-      <svelte:fragment slot="xticks">X ticks</svelte:fragment>
-      <!-- <svelte:fragment slot="right-legend">Right legend</svelte:fragment> -->
-      <!-- <svelte:fragment slot="bottom-legend">Bottom legend</svelte:fragment> -->
-    </ChartGrid>
-  </div>
-
   {#await traces then traces}
     <Chart
       {controller}
@@ -60,14 +46,3 @@
     />
   {/await}
 </main>
-
-<style>
-  .frame {
-    width: 800px;
-    height: 600px;
-    border: 1px solid white;
-    border-radius: 8px;
-
-    overflow: hidden;
-  }
-</style>
