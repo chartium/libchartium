@@ -1,28 +1,31 @@
 <!-- Component creating both the X and Y axis -->
 
 <script lang="ts">
+  import { createEventDispatcher } from "svelte";
   import { leftMouseDrag } from "../../utils/mouseGestures";
   import type { MouseDragCallbacks } from "../../utils/mouseGestures";
   import type { Range, Tick } from "../types";
+
+  export const events = createEventDispatcher<{
+    shift: { dx?: number; dy?: number };
+  }>();
 
   /** Whether the axis is for x or y. Determines label orientation and selection positions */
   export let axis: "x" | "y";
   /** Ticks on the axis. Position is to be between 0 and 1 */
   export let ticks: Tick[];
 
-  export let zoomOrMove: "zoom" | "move" | "neither" = "neither";
+  export let dragAction: "move" | "zoom" | "none" = "none";
 
   /** Coordinate of where dragging and ended for this axis */
   export let transformPosition: Range | undefined;
   /** Value of where dragging started and ended. Linearly interpolated from ticks */
   export let transformValue: Range | undefined;
-  /** Call Chart's change range */
-  export let updateRange: () => void;
 
   $: {
     // FIXME this should prolly be in chart and the axis should only return values for the positions
     if (
-      zoomOrMove === "move" &&
+      dragAction === "move" &&
       transformPosition !== undefined &&
       transformPosition.from !== transformPosition.to
     ) {
@@ -32,17 +35,6 @@
       const min = ticks[0].value;
       const max = (ticks.at(-1) ?? ticks[0]).value;
       transformValue = { from: min + delta, to: max + delta };
-      zoomOrMove = "move";
-    }
-    if (
-      zoomOrMove === "zoom" &&
-      transformPosition !== undefined &&
-      transformPosition.from !== transformPosition.to
-    ) {
-      const from = getAxisValueFromPosition(transformPosition.from);
-      const to = getAxisValueFromPosition(transformPosition.to);
-      transformValue = { from, to };
-      zoomOrMove = "zoom";
     }
   }
 
@@ -50,8 +42,8 @@
   function getAxisValueFromPosition(positionCoordinate: number) {
     const alongAxis =
       axis === "x"
-        ? positionCoordinate / 20 // axisWidth
-        : 1 - positionCoordinate / 20; // axisHeight;
+        ? positionCoordinate / axisWidth
+        : 1 - positionCoordinate / axisHeight;
     return (
       alongAxis * ((ticks.at(-1) ?? ticks[0]).value - ticks[0].value) +
       ticks[0].value
@@ -61,50 +53,47 @@
 
   const dragCallbacks: MouseDragCallbacks = {
     start: (e) => {
-      transformPosition =
-        axis === "x"
-          ? {
-              from: e.offsetX,
-              to: e.offsetX,
-            }
-          : { from: e.offsetY, to: e.offsetY };
+      const from = axis === "x" ? e.offsetX : e.offsetY;
+      transformPosition = { from, to: from };
     },
     move: (e) => {
-      zoomOrMove = "move";
+      dragAction = "move";
       transformPosition!.to = axis === "x" ? e.offsetX : e.offsetY;
     },
     end: (e) => {
-      updateRange();
-      zoomOrMove = "neither";
+      if (transformPosition && dragAction === "move") {
+        const diff = transformPosition.to - transformPosition.from;
+        const axisSize = axis === "x" ? axisWidth : -axisHeight;
+
+        events("shift", {
+          [`d${axis}`]: -diff / axisSize,
+        });
+      }
+
+      dragAction = "none";
       transformPosition = undefined;
     },
   };
+
+  let axisWidth: number = 1;
+  let axisHeight: number = 1;
 </script>
 
 <div
   class="{axis} ticks-and-label"
   use:leftMouseDrag={dragCallbacks}
-  style={axis === "y"
-    ? "flex-direction: column-reverse"
-    : "flex-direction: column"}
+  bind:clientWidth={axisWidth}
+  bind:clientHeight={axisHeight}
 >
   <!-- tooltip -->
   {#if transformPosition !== undefined && transformPosition.from !== transformPosition.to}
-    {#if axis === "x"}
-      <div class="tooltip" style:left="{transformPosition.from}px">
-        {transformValue?.from.toFixed(3)}
-      </div>
-      <div class="tooltip" style:left="{transformPosition.to}px">
-        {transformValue?.to.toFixed(3)}
-      </div>
-    {:else}
-      <div class="tooltip" style:top="{transformPosition.from}px">
-        {transformValue?.from.toFixed(3)}
-      </div>
-      <div class="tooltip" style:top="{transformPosition.to}px">
-        {transformValue?.to.toFixed(3)}
-      </div>
-    {/if}
+    {@const prop = axis === "x" ? "left" : "top"}
+    <div class="tooltip" style="{prop}={transformPosition.from}px">
+      {transformValue?.from.toFixed(3)}
+    </div>
+    <div class="tooltip" style="{prop}={transformPosition.to}px">
+      {transformValue?.to.toFixed(3)}
+    </div>
   {/if}
 
   <div class="ticks">
@@ -112,7 +101,7 @@
       <span
         style={axis === "x"
           ? `left: ${(tick.position * 100).toFixed(2)}%`
-          : `top: ${(tick.position * 100).toFixed(2)}%`}
+          : `top: ${((1 - tick.position) * 100).toFixed(2)}%`}
       >
         {tick.value.toFixed(2)}
       </span>
@@ -128,7 +117,6 @@
 
   .y {
     writing-mode: sideways-lr;
-    flex-direction: column-reverse;
     width: 4rem;
     height: 100%;
   }
@@ -141,8 +129,6 @@
 
   .ticks {
     position: relative;
-    user-select: none;
-    pointer-events: none;
 
     width: 100%;
     height: 100%;
@@ -163,22 +149,19 @@
     }
   }
 
-  span {
-    pointer-events: none;
+  span,
+  .tooltip,
+  .ticks {
     user-select: none;
+    pointer-events: none;
+  }
+
+  span {
     display: inline-block;
     text-align: center;
   }
 
-  div {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-
   .tooltip {
-    user-select: none;
-    pointer-events: none;
     position: absolute;
   }
 </style>

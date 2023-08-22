@@ -59,6 +59,8 @@
       "a b xlabel c" auto
       "bl bl bl bl" auto / auto auto 1fr auto;
 
+    gap: 0.5rem;
+
     /* -        -        Title      -        */
     /* -        -        Subtitle   -        */
     /* YLabel | YTicks | graph    | (legend) */

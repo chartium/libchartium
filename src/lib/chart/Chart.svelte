@@ -74,20 +74,50 @@
   /** new border values of x range */
   let xTransformPositions: Range | undefined;
 
-  function updateRange() {
-    if (xTransformValues !== undefined) {
-      chart.xRange =
-        xTransformValues.from < xTransformValues.to
-          ? xTransformValues
-          : { from: xTransformValues.to, to: xTransformValues.from };
+  function shiftRange({
+    detail: shift,
+  }: {
+    detail: { dx?: number; dy?: number };
+  }) {
+    if (chart.xRange && shift.dx) {
+      const delta = (chart.xRange.to - chart.xRange.from) * shift.dx;
+      chart.xRange = {
+        from: chart.xRange.from + delta,
+        to: chart.xRange.to + delta,
+      };
     }
-    if (yTransformValues !== undefined) {
-      chart.yRange =
-        yTransformValues.from < yTransformValues.to
-          ? yTransformValues
-          : { from: yTransformValues.to, to: yTransformValues.from };
+
+    if (chart.yRange && shift.dy) {
+      const delta = (chart.yRange.to - chart.yRange.from) * shift.dy;
+      chart.yRange = {
+        from: chart.yRange.from + delta,
+        to: chart.yRange.to + delta,
+      };
     }
   }
+
+  function zoomRange(e: {
+    detail: { yStart: number; yEnd: number; xStart: number; xEnd: number };
+  }) {
+    const { xStart, xEnd, yStart, yEnd } = e.detail;
+    const xRange = chart.xRange;
+    const yRange = chart.yRange;
+
+    if (!xRange || !yRange) return;
+
+    const dx = xRange.to - xRange.from;
+    const dy = yRange.to - yRange.from;
+
+    chart.xRange = {
+      from: xRange.from + dx * xStart,
+      to: xRange.from + dx * xEnd,
+    };
+    chart.yRange = {
+      from: yRange.from + dy * yStart,
+      to: yRange.from + dy * yEnd,
+    };
+  }
+
   function resetRange() {
     // FIXME this should pull data from controller
     chart.xRange = { from: 0, to: 1000 };
@@ -99,7 +129,7 @@
     yTransformValues = undefined;
   }
 
-  let contentSize: [number, number];
+  let contentSize: [number, number] = [1, 1];
   $: if (chart && mounted && contentSize) {
     chart.renderer?.setSize(
       contentSize[0] * devicePixelRatio,
@@ -128,42 +158,34 @@
       slot="yticks"
       axis="y"
       ticks={yTicks ?? []}
-      {updateRange}
+      on:shift={shiftRange}
       bind:transformPosition={yTransformPositions}
       bind:transformValue={yTransformValues}
-      bind:zoomOrMove
     />
 
     <AxisTicks
       slot="xticks"
       axis="x"
       ticks={xTicks ?? []}
-      {updateRange}
+      on:shift={shiftRange}
       bind:transformPosition={xTransformPositions}
       bind:transformValue={xTransformValues}
-      bind:zoomOrMove
     />
 
     <canvas bind:this={canvas} on:contextmenu|preventDefault />
+
+    <ChartOverlay
+      on:reset={resetRange}
+      on:zoom={zoomRange}
+      on:shift={shiftRange}
+      bind:xTransformPositions
+      bind:yTransformPositions
+      bind:zoomOrMove
+    />
   </ChartGrid>
 </div>
 
-<!-- <ChartOverlay
-  overlayHeight={chartHeight + xAxisHeight}
-  overlayWidth={chartWidth + yAxisWidth}
-  {updateRange}
-  {resetRange}
-  bind:yAxisWidth
-  bind:xTransformPositions
-  bind:yTransformPositions
-  bind:zoomOrMove
-> -->
-
 <style>
-  div {
-    overflow: hidden;
-  }
-
   canvas {
     position: absolute;
     inset: 0;
