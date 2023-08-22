@@ -1,21 +1,23 @@
-
 import { transfer, type Remote } from "comlink";
 import type { ChartiumController } from "../data-worker";
-import type { Renderer, TraceDescriptor } from "../data-worker/renderers/mod";
+import type { RenderJob, Renderer } from "../data-worker/renderers/mod";
 import { mapOpt } from "../../utils/mapOpt";
 import type { Range, Tick, TraceHandle, TypeOfData } from "../types";
-import { createWritableSignal, type WritableSignal, type ReadableSignal } from "../../utils/signal";
+import {
+    createWritableSignal,
+    type WritableSignal,
+    type ReadableSignal,
+} from "../../utils/signal";
+import type { TraceList } from "../data-worker/trace-list";
 
 /** Chartium render handler that is to be used by frontend svelte comonents to render charts
  * it autorenders when anything about the chart changes
  */
 export class Chart {
-    #controller: Remote<ChartiumController>;
+    #controller: ChartiumController | Remote<ChartiumController>;
     #canvas?: HTMLCanvasElement;
     #renderer?: Renderer;
-    #includedTraces: TraceDescriptor[] = [];
-    #includeBundles?: number[];
-    #excludeTraces?: TraceHandle[];
+    #traces: TraceList;
 
     #xType?: TypeOfData;
 
@@ -34,17 +36,23 @@ export class Chart {
     #xTicks?: WritableSignal<Tick[]>;
     #yTicks?: WritableSignal<Tick[]>;
 
-    constructor(controller: Remote<ChartiumController>) {
+    constructor(
+        controller: ChartiumController | Remote<ChartiumController>,
+        traces: TraceList
+    ) {
         this.#controller = controller;
         this.#xTicks = createWritableSignal([]);
         this.#yTicks = createWritableSignal([]);
+        this.#traces = traces;
     }
 
     /** assign a canvas to this render handler and prepares the renderer */
     async assignCanvas(canvas: HTMLCanvasElement) {
         this.#canvas = canvas;
         let offscreen = this.#canvas?.transferControlToOffscreen();
-        this.#renderer = await mapOpt(offscreen, (c) => this.#controller.createRenderer(transfer(c, [c])));
+        this.#renderer = await mapOpt(offscreen, (c) =>
+            this.#controller.createRenderer(transfer(c, [c]))
+        );
     }
 
     /** Render the chart. This gets called automatically if you use any of the setters.
@@ -60,16 +68,16 @@ export class Chart {
             this.#xType = "f32";
         }
 
-        if (this.#includedTraces.length === 0) {
-            console.log("No traces to render");
-            return;
-        }
-
-
         // if the ranges are not set, estimate them from ranges of the first trace
         // FIXME This doesnt work, but @m93a will add a function to the controller to help
-        const bottomLeft = await this.#controller.findClosestPointOfTrace(this.#includedTraces[0].handle, { x: -Infinity, y: -Infinity }) ?? { x: 0, y: 0 };
-        const topRight = await this.#controller.findClosestPointOfTrace(this.#includedTraces[0].handle, { x: Infinity, y: Infinity }) ?? { x: 0, y: 0 };
+        const bottomLeft = /*(await this.#controller.findClosestPointOfTrace(
+      this.#includedTraces[0].handle,
+      { x: -Infinity, y: -Infinity }
+    )) ??*/ { x: 0, y: 0 };
+        const topRight = /*(await this.#controller.findClosestPointOfTrace(
+      this.#includedTraces[0].handle,
+      { x: Infinity, y: Infinity }
+    )) ??*/ { x: 0, y: 0 };
         if (this.#xRange === undefined) {
             this.#xRange = { from: bottomLeft.x, to: topRight.x };
         }
@@ -78,11 +86,9 @@ export class Chart {
             this.#yRange = { from: bottomLeft.y, to: topRight.y };
         }
 
-        const renderJob = {
+        const renderJob: RenderJob = {
             xType: this.#xType,
-            includeTraces: this.#includedTraces,
-            includeBundles: this.#includeBundles,
-            excludeTraces: this.#excludeTraces,
+            traces: this.#traces,
             xRange: this.#xRange,
             yRange: this.#yRange,
 
@@ -98,39 +104,29 @@ export class Chart {
 
         const renderResults = await this.#renderer.render(renderJob);
         this.#xTicks?.set(renderResults.xTicks);
-        this.#yTicks?.set( renderResults.yTicks );
+        this.#yTicks?.set(renderResults.yTicks);
     }
 
     //SECTION - setters
 
-    set includeTraces(traces: TraceDescriptor[]) {
-        this.#includedTraces = traces;
-        this.render()
-    }
-
-    set includeBundles(bundles: number[]) {
-        this.#includeBundles = bundles;
-        this.render()
-    }
-
-    set excludeTraces(traces: TraceHandle[]) {
-        this.#excludeTraces = traces;
-        this.render()
+    set traces(t: TraceList) {
+        this.#traces = t;
+        this.render();
     }
 
     set xType(type: TypeOfData) {
         this.#xType = type;
-        this.render()
+        this.render();
     }
 
     set xRange(range: Range) {
         this.#xRange = range;
-        this.render()
+        this.render();
     }
 
     set yRange(range: Range) {
         this.#yRange = range;
-        this.render()
+        this.render();
     }
 
     set clear(value: boolean) {
@@ -168,9 +164,7 @@ export class Chart {
     get controller() { return this.#controller; }
     get canvas() { return this.#canvas; }
     get renderer() { return this.#renderer; }
-    get includedTraces() { return this.#includedTraces; }
-    get includeBundles(): number[] | undefined { return this.#includeBundles; }
-    get excludeTraces(): TraceHandle[] | undefined { return this.#excludeTraces; }
+    get traces() { return this.#traces; }
     get xType(): TypeOfData | undefined { return this.#xType; }
     get xRange(): Range | undefined { return this.#xRange; }
     get yRange(): Range | undefined { return this.#yRange; }

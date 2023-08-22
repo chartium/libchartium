@@ -1,7 +1,6 @@
 <script lang="ts">
   import { type Remote } from "comlink";
   import type { ChartiumController } from "../data-worker";
-  import type { TraceDescriptor } from "../data-worker/renderers/mod";
   import type { Range, Tick } from "../types";
 
   import { Chart } from "./chart";
@@ -11,6 +10,7 @@
 
   import ChartLegend from "./ChartLegend.svelte";
   import type { ReadableSignal } from "../../utils/signal";
+  import type { TraceList } from "../data-worker/trace-list";
 
   /** Height of only the chart are without axis */
   export let chartHeight: number;
@@ -20,14 +20,14 @@
   export let chartWidth: number;
   /** Width of only the y axis, its height is automatically == chart height */
   export let yAxisWidth: number;
-  export let controller: Remote<ChartiumController>;
-  export let traces: TraceDescriptor[];
+  export let controller: ChartiumController;
+  export let traces: TraceList;
   /** Label to be displayed next to x axis */
   export let xLabel: string;
   /** Label to be displayed next to y axis */
   export let yLabel: string;
 
-  const chart = new Chart(controller);
+  const chart = new Chart(controller, traces);
 
   $: xTicks = [] as Tick[];
   $: yTicks = [] as Tick[];
@@ -39,7 +39,7 @@
     chart.xLabelSpace = 0;
     chart.yLabelSpace = 0;
     chart.margin = 0;
-    chart.includeTraces = await traces;
+    chart.traces = await traces;
     chart.xType = "f32";
     chart.xRange = { from: 0, to: 2 * Math.PI };
     chart.yRange = { from: -1, to: 1 };
@@ -84,7 +84,7 @@
   function resetRange() {
     // FIXME this should pull data from controller
     chart.xRange = { from: 0, to: 1000 };
-    chart.yRange = { from: -1, to: 1 };
+    chart.yRange = { from: -500, to: 500 };
 
     xTransformPositions = undefined;
     yTransformPositions = undefined;

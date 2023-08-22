@@ -1,4 +1,6 @@
 import { startsWith } from "./string";
+import random, { Random } from "random";
+import seedrandom from "seedrandom";
 
 export type HexColor = `#${string}`;
 export type RgbaColor = `rgba(${number}, ${number}, ${number}, ${number})`;
@@ -17,7 +19,7 @@ function colorStringToHexOrRgba(color: string): HexColor | RgbaColor {
   return context.fillStyle as any;
 }
 
-export function colorStringToUint8Array(color: string): Uint8Array {
+export function colorStringToColor(color: string): Color {
   const hexOrRgba = colorStringToHexOrRgba(color);
 
   if (startsWith(hexOrRgba, "#")) {
@@ -25,42 +27,49 @@ export function colorStringToUint8Array(color: string): Uint8Array {
     const red = parseInt(R + r, 16);
     const green = parseInt(G + g, 16);
     const blue = parseInt(B + b, 16);
-    return Uint8Array.from([red, green, blue]);
+    return [red, green, blue];
   }
 
-  const [_, r, g, b] = hexOrRgba.match(
-    /^rgba\(\s*(\d+),\s*(\d+),\s*(\d+)\s*\)$/
-  )!;
-  return Uint8Array.from([+r, +g, +b]);
+  if (startsWith(hexOrRgba, "rgba(")) {
+    const [_, r, g, b] = hexOrRgba.match(
+      /^rgba\(\s*(\d+),\s*(\d+),\s*(\d+)\s*\)$/
+    )!;
+    return [+r, +g, +b];
+  }
+
+  throw new TypeError(`Unsupported color: ${hexOrRgba}`);
 }
 
-type Color = [R: number, G: number, B: number];
+export type Color = [R: number, G: number, B: number];
 const deg = 1 / 360;
 
 export function colorToHex(color: Color): string {
   return "#" + color.map((c) => c.toString(16).padStart(2, "0")).join("");
 }
 
-export function randomColor(): Color {
-  return [0, 0, 0].map(() => Math.floor(255 * Math.random())) as Color;
+export function randomColor(seed?: string): Color {
+  const rng = random.clone(seedrandom(seed)).uniform();
+  return [0, 0, 0].map(() => Math.floor(255 * rng())) as Color;
 }
 
-export function randomContrastingColor(): Color {
+export function randomContrastingColor(seedOrRng?: string | (() => number), contrastWithLight = true, contrastWithDark = true): Color {
   // for a tutorial on custom probability distributions see:
   // https://programming.guide/generate-random-value-with-distribution.html
 
-  const h = Math.random();
-  const s = Math.sqrt(0.2 + Math.random() * 0.8);
-  const l = 0.3 + Math.random() * 0.5;
+  const rng = typeof seedOrRng === 'function' ? seedOrRng : random.clone(seedrandom(seedOrRng)).uniform();
+
+  const h = rng();
+  const s = Math.sqrt(0.2 + rng() * 0.8);
+  const l = 0.3 + rng() * 0.5;
 
   // dark violet and dark red are unreadable against dark background
-  if (l < 0.55 && (210 * deg < h || h < 10 * deg)) {
-    return randomContrastingColor();
+  if (contrastWithDark && l < 0.55 && (210 * deg < h || h < 10 * deg)) {
+    return randomContrastingColor(rng, contrastWithLight, contrastWithDark);
   }
 
   // light yellow is unreadable against white background
-  if (l > 0.7 && 30 * deg < h && h < 100 * deg) {
-    return randomContrastingColor();
+  if (contrastWithLight && l > 0.7 && 30 * deg < h && h < 100 * deg) {
+    return randomContrastingColor(rng, contrastWithLight, contrastWithDark);
   }
 
   return hslToColor(h, s, l);
@@ -138,12 +147,4 @@ export function hslToColor(h: number, s: number, l: number): Color {
   }
 
   return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
-}
-
-export function toUint8ColorOrRandom(
-  color: string | Uint8Array | undefined
-): Uint8Array {
-  if (color === undefined) return Uint8Array.from(randomContrastingColor());
-  if (typeof color === "string") return colorStringToUint8Array(color);
-  return color;
 }

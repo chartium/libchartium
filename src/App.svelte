@@ -2,22 +2,21 @@
   import svelteLogo from "./assets/svelte.svg";
   import viteLogo from "/vite.svg";
   import Chart from "./lib/chart/Chart.svelte";
-  import { spawnChartiumWorker } from "./lib/data-worker";
-  import type { TraceDescriptor } from "./lib/data-worker/renderers/mod";
+  import { spawnChartiumWorker, ChartiumController } from "./lib/data-worker";
 
   // autogenerate a lot of data
   const from = 0;
   const to = 1000;
   const numSteps = to;
-  const stepSize = (to - from) / (numSteps);
+  const stepSize = (to - from) / numSteps;
 
   const xs = Array.from(
     { length: numSteps },
     (_, index) => from + index * stepSize
   );
-  const y1s = xs.map((x) => Math.sin((x / to) * 2 * Math.PI));
-  const y2s = xs.map((x) => Math.cos((x / to) * 2 * Math.PI));
-  const y3s = xs.map((x) => Math.tanh(( (x / to) - 0.5) * 2 * Math.PI));
+  const y1s = xs.map((x) => 100 * Math.sin((x / to) * 2 * Math.PI));
+  const y2s = xs.map((x) => 100 * Math.cos((x / to) * 2 * Math.PI));
+  const y3s = xs.map((x) => 100 * Math.tanh((x / to - 0.5) * 2 * Math.PI));
   const chartiumFriendlyTraceData = xs.flatMap((x, index) => [
     x,
     y1s[index],
@@ -25,15 +24,14 @@
     y3s[index],
   ]);
 
-  const controller = spawnChartiumWorker();
-  $: traces = controller
-    .addFromArrayBuffer({
-      ids: ["sin", "cos", "atan"],
-      data: Float32Array.from(chartiumFriendlyTraceData),
-      xType: "f32",
-      yType: "f32",
-    })
-    .then((handles) => handles.map<TraceDescriptor>((handle) => ({ handle })));
+  // const controller = spawnChartiumWorker();
+  const controller = ChartiumController.instantiateInThisThread();
+  $: traces = controller.addFromArrayBuffer({
+    ids: ["sin", "cos", "atan"],
+    data: Uint32Array.from(chartiumFriendlyTraceData),
+    xType: "u32",
+    yType: "u32",
+  });
 </script>
 
 <main>

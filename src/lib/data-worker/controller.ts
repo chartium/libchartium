@@ -7,26 +7,17 @@
  * of the WebAssembly part of the codebase, and provides a
  * higher level abstraction above it.
  *
- * Data ownership schema:
- * https://excalidraw.com/#json=jiq85M3Y4yISrkw3N_gl3,oezOiubk0BGKdCtdHsYoEg
+ * Data ownership schema in controller.excalidraw
  */
 
 import { BiMap } from "bim";
 import { wasmUrl, init, lib } from "./wasm.ts";
-import { mapOpt } from "../../utils/mapOpt.ts";
 
-import type {
-  Range,
-  Size,
-  TraceHandle,
-  TraceMetas,
-  Point,
-  TypedArray,
-  TypeOfData,
-} from "../types.js";
+import type { Size, TraceHandle, TypedArray, TypeOfData } from "../types.js";
 import type { RenderingController } from "./renderers/mod.ts";
 import { WebGL2Controller } from "./renderers/webgl2.ts";
 import { proxyMarker } from "comlink";
+import { TraceList } from "./trace-list.ts";
 
 let wasmMemory: WebAssembly.Memory | undefined;
 
@@ -37,6 +28,8 @@ const isRunningInWorker = () =>
 let instance: ChartiumController | undefined;
 
 export type RenderingMode = "webgl2";
+
+export const traceIds = new BiMap<TraceHandle, string>();
 
 export interface ChartiumControllerOptions {
   /**
@@ -49,8 +42,22 @@ export interface ChartiumControllerOptions {
 export class ChartiumController {
   [proxyMarker] = true;
 
-  #dataModule!: lib.DataModule;
-  #traceIds = new BiMap<TraceHandle, string>();
+  #nextTraceHandle = 1 as TraceHandle;
+  #getNewTraceHandle() {
+    return this.#nextTraceHandle++ as TraceHandle;
+  }
+  $getTraceHandleById(id: string) {
+    {
+      const h = traceIds.getKey(id);
+      if (h !== undefined) return h;
+    }
+    {
+      const h = this.#getNewTraceHandle();
+      traceIds.set(h, id);
+      return h;
+    }
+  }
+
   #canvas: OffscreenCanvas = new OffscreenCanvas(640, 480);
   #renderingController!: RenderingController;
 
@@ -80,14 +87,9 @@ export class ChartiumController {
         }`
       );
 
-      this.#dataModule = new lib.DataModule();
-
       switch (options.renderingMode ?? "webgl2") {
         case "webgl2":
-          this.#renderingController = new WebGL2Controller(
-            this.#dataModule,
-            this.#canvas
-          );
+          this.#renderingController = new WebGL2Controller(this.#canvas);
           break;
       }
 
@@ -126,88 +128,6 @@ export class ChartiumController {
     return this.#renderingController.createRenderer(presentCanvas);
   }
 
-  // public async createRendererRaw(
-  //   canvas: OffscreenCanvas,
-  //   options?: RendererOptions
-  // ): Promise<RawRendererHandle> {
-  //   await this.initialized;
-
-  //   const opts = new lib.RendererOptions(options?.area_chart ?? false);
-
-  //   const renderer = lib.RendererContainer.new_webgl(
-  //     this.#canvas,
-  //     canvas,
-  //     opts
-  //   );
-
-  //   const handle = this.#availableRendererHandle++;
-
-  //   return handle as RawRendererHandle;
-  // }
-
-  // private _getRenderer(handle: RawRendererHandle) {
-  //   return (
-  //     this.#renderers[handle] ??
-  //     yeet("Renderer with given handle does not exist.")
-  //   );
-  // }
-
-  // public disposeRenderer(handle: RawRendererHandle) {
-  //   if (handle in this.#renderers) {
-  //     this.#renderers[handle].free();
-  //     delete this.#renderers[handle];
-  //   }
-  // }
-
-  // public resizeRenderer(handle: RawRendererHandle, size: Size) {
-  //   this._getRenderer(handle).size_changed(size.width, size.height);
-  // }
-
-  // public async createBundleRaw(
-  //   handle: RawRendererHandle,
-  //   range: Range,
-  //   data: ArrayBuffer
-  // ): Promise<RawBundleHandle> {
-  //   await this.initialized;
-
-  //   const renderer = this._getRenderer(handle);
-
-  //   return <RawBundleHandle>(
-  //     renderer.create_bundle_from_stream(
-  //       this.#dataModule,
-  //       range.from,
-  //       range.to,
-  //       new Uint8Array(data)
-  //     )
-  //   );
-  // }
-
-  // public disposeBundle(handle: RawRendererHandle, bundle: RawBundleHandle) {
-  //   this._getRenderer(handle).dispose_bundle(bundle);
-  // }
-
-  // public rebundle(
-  //   handle: RawRendererHandle,
-  //   bundle: RawBundleHandle,
-  //   toDel: ArrayBuffer,
-  //   toAdd: ArrayBuffer,
-  //   toMod: ArrayBuffer
-  // ) {
-  //   const renderer = this._getRenderer(handle);
-
-  //   renderer.rebundle(
-  //     this.#dataModule,
-  //     bundle,
-  //     new Uint8Array(toDel),
-  //     new Uint8Array(toAdd),
-  //     new Uint8Array(toMod)
-  //   );
-  // }
-
-  // public async invokeRenderJob() {
-  //   throw todo(); // TODO
-  // }
-
   public async addFromArrayBuffer({
     ids,
     data,
@@ -218,7 +138,7 @@ export class ChartiumController {
     data: ArrayBuffer | TypedArray;
     xType: TypeOfData;
     yType: TypeOfData;
-  }) {
+  }): Promise<TraceList> {
     await this.initialized;
 
     const dataBuffer = data instanceof ArrayBuffer ? data : data.buffer;
@@ -226,11 +146,11 @@ export class ChartiumController {
     const handles: TraceHandle[] = [];
 
     for (const id of ids) {
-      let handle = this.#traceIds.getKey(id);
+      let handle = traceIds.getKey(id);
 
       if (!handle) {
-        handle = this.#dataModule.create_trace(id, xType) as TraceHandle;
-        this.#traceIds.set(handle, id);
+        handle = this.#getNewTraceHandle();
+        traceIds.set(handle, id);
       }
 
       handles.push(handle);
@@ -243,91 +163,14 @@ export class ChartiumController {
       new Uint8Array(dataBuffer)
     );
 
-    bulkload.apply(this.#dataModule);
+    const bundle = bulkload.apply();
 
-    return handles;
-  }
-
-  public disposeTrace(handleOrId: string | TraceHandle) {
-    const handle =
-      typeof handleOrId === "string"
-        ? this.#traceIds.getKey(handleOrId)
-        : handleOrId;
-
-    if (handle === undefined) return;
-
-    this.#dataModule.dispose_trace(handle);
-    this.#traceIds.delete(handle);
-  }
-
-  areTracesOverThreshold(
-    traces: TraceHandle[],
-    from: number,
-    to: number,
-    thresholdValue: number
-  ): boolean[] {
-    return this.#dataModule.are_traces_over_threshold(
-      Uint32Array.from(traces),
-      from,
-      to,
-      thresholdValue
-    )
-  }
-
-  areTracesZero(traces: TraceHandle[], from: number, to: number): boolean[] {
-    return this.#dataModule.are_traces_zero(
-      Uint32Array.from(traces),
-      from,
-      to
-    )
-  }
-
-  findTraceClosestToPoint(
-    traces: TraceHandle[],
-    { x, y }: Point,
-    max_dy: number
-  ) {
-    return this.#dataModule.find_n_closest(
-      new Uint32Array(traces),
-      x,
-      y,
-      1,
-      max_dy
-    )[0];
-  }
-
-  findNTracesClosestToPoint(traces: TraceHandle[], n: number, { x, y }: Point) {
-    return [
-      ...this.#dataModule.find_n_closest(new Uint32Array(traces), x, y, 1),
-    ];
-  }
-
-  findClosestPointOfTrace(
-    handle: TraceHandle,
-    { x, y }: Point
-  ): Point | undefined {
-    return mapOpt(
-      this.#dataModule.get_closest_point(handle, x, y),
-      ([x, y]) => {
-        return { x, y };
-      }
+    return new TraceList(
+      handles,
+      new Set(),
+      { from: bundle.from(), to: bundle.to() },
+      [bundle],
+      {}
     );
-  }
-
-  getTraceMetas(handle: TraceHandle, range: Range): TraceMetas;
-  getTraceMetas(handles: TraceHandle[], range: Range): TraceMetas[];
-  getTraceMetas(
-    handle: TraceHandle | TraceHandle[],
-    range: Range
-  ): TraceMetas | TraceMetas[] {
-    if (Array.isArray(handle)) {
-      return this.#dataModule.get_multiple_traces_metas(
-        new Uint32Array(handle),
-        range.from,
-        range.to
-      );
-    } else {
-      return this.#dataModule.get_trace_metas(handle, range.from, range.to);
-    }
   }
 }
