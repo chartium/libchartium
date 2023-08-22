@@ -46,17 +46,6 @@ export class ChartiumController {
   #getNewTraceHandle() {
     return this.#nextTraceHandle++ as TraceHandle;
   }
-  $getTraceHandleById(id: string) {
-    {
-      const h = traceIds.getKey(id);
-      if (h !== undefined) return h;
-    }
-    {
-      const h = this.#getNewTraceHandle();
-      traceIds.set(h, id);
-      return h;
-    }
-  }
 
   #canvas: OffscreenCanvas = new OffscreenCanvas(640, 480);
   #renderingController!: RenderingController;
@@ -186,7 +175,6 @@ export class ChartiumController {
 
     return new TraceList(
       handles,
-      new Set(),
       { from: bundle.from(), to: bundle.to() },
       [bundle],
       {}

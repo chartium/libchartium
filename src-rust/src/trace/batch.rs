@@ -44,6 +44,10 @@ impl<X: N, Y: N> Bundle for Batch<X, Y> {
         self.to.as_f64()
     }
 
+    fn point_count(&self) -> usize {
+        self.x.len()
+    }
+
     fn iter_in_range_f64<'a>(
         &'a self,
         trace: TraceHandle,
@@ -111,43 +115,5 @@ impl<X: N, Y: N> Bundle for Batch<X, Y> {
         }
 
         None
-    }
-
-    fn shrink(&mut self, from: f64, to: f64) {
-        let mut next_x = vec![];
-        let mut next_ys = HashMap::new();
-
-        self.x
-            .iter()
-            .zip(self.ys.iter())
-            .skip_while(|(x, _)| x.as_f64() < from)
-            .take_while(|(x, _)| x.as_f64() <= to)
-            .for_each(|(x, (&handle, y))| {
-                next_x.push(x.clone());
-                next_ys.insert(handle, y.clone());
-            });
-
-        self.from = from;
-        self.to = to;
-
-        self.x = next_x;
-        self.ys = next_ys;
-    }
-
-    fn shift(&mut self, shift_x: f64, shift_y: f64) {
-        self.from += shift_x;
-        self.to += shift_x;
-
-        let dx = X::from_f64(shift_x).unwrap();
-        let dy = Y::from_f64(shift_y).unwrap();
-
-        println!("{}", self.from);
-
-        self.x = self.x.iter().map(|x| x.clone() + dx.clone()).collect();
-        self.ys = self
-            .ys
-            .iter()
-            .map(|(&handle, y)| (handle, y.iter().map(|y| y.clone() + dy.clone()).collect()))
-            .collect();
     }
 }

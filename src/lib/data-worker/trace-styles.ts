@@ -40,11 +40,11 @@ interface RawTraceStyle {
  * Take a user-defined stylesheet, and apply it to
  * all the available traces, creating a list of TraceStyle's
  */
-export function computeStyles(
+export function* computeStyles(
   stylesheet: TraceStylesheet,
   traces: Uint32Array | TraceHandle[],
   ids: Map<TraceHandle, string>
-): RawTraceStyle[] {
+): Iterable<RawTraceStyle> {
   const baseStyle: TraceStyle = {
     ...defaultStyle,
     ...stylesheet?.["*"],
@@ -57,7 +57,6 @@ export function computeStyles(
     ])
   );
 
-  const styles: RawTraceStyle[] = [];
   for (const handle of traces) {
     const id =
       ids.get(handle as TraceHandle) ?? yeet(UnknownTraceHandleError, handle);
@@ -77,14 +76,12 @@ export function computeStyles(
       }
     })();
 
-    const style: RawTraceStyle = {
+    yield {
       width,
       color: [r, g, b],
       points_mode: display === "points",
     };
-    styles.push(style);
   }
-  return styles;
 }
 
 /** Remove styles that don't apply to any trace */

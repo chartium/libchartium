@@ -13,6 +13,7 @@ pub trait Bundle {
     fn traces(&self) -> Vec<TraceHandle>;
     fn from(&self) -> f64;
     fn to(&self) -> f64;
+    fn point_count(&self) -> usize;
 
     fn contains(&self, point: f64) -> bool {
         self.from() <= point && self.to() >= point
@@ -35,9 +36,6 @@ pub trait Bundle {
         x: f64,
         interpolation_strategy: InterpolationStrategy,
     ) -> Option<f64>;
-
-    fn shrink(&mut self, from: f64, to: f64);
-    fn shift(&mut self, shift_x: f64, shift_y: f64);
 }
 
 #[wasm_bindgen]
@@ -66,6 +64,9 @@ impl BoxedBundle {
     }
     pub fn to(&self) -> f64 {
         self.bundle.to()
+    }
+    pub fn point_count(&self) -> usize {
+        self.bundle.point_count()
     }
     pub fn contains(&self, point: f64) -> bool {
         self.bundle.contains(point)

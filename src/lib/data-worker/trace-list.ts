@@ -17,13 +17,11 @@ import { proxyMarker } from "comlink";
 
 export const BUNDLES = Symbol("bundles");
 export const HANDLES = Symbol("handles");
-export const EXCLUDE = Symbol("exclude");
 
 export class TraceList {
   [proxyMarker] = true;
 
   #traceHandles: TraceHandle[];
-  #excludedTraces: Set<TraceHandle>;
   #bundles: lib.BoxedBundle[];
   #metas: lib.TraceMetas[] | undefined;
   #stylesheet: TraceStylesheet;
@@ -31,13 +29,11 @@ export class TraceList {
 
   constructor(
     handles: TraceHandle[],
-    exclude: Set<TraceHandle>,
     range: Range,
     bundles: lib.BoxedBundle[],
     stylesheet: TraceStylesheet
   ) {
     this.#traceHandles = handles;
-    this.#excludedTraces = exclude;
     this.#range = range;
     this.#bundles = bundles;
     this.#stylesheet = stylesheet;
@@ -68,20 +64,13 @@ export class TraceList {
   get [HANDLES]() {
     return this.#traceHandles;
   }
-  get [EXCLUDE]() {
-    return this.#excludedTraces;
-  }
 
   withStyle(stylesheet: TraceStylesheet): TraceList {
     return new TraceList(
       this.#traceHandles,
-      this.#excludedTraces,
       this.#range,
       this.#bundles,
-      {
-        ...this.stylesheet,
-        ...stylesheet,
-      }
+      merge(this.stylesheet, stylesheet)
     );
   }
 
@@ -90,67 +79,30 @@ export class TraceList {
       bundle.intersects(from, to)
     );
 
-    const currentHandles = new Set(this.#traceHandles);
     const availableHandles = new Set(
       flatMap(bundles, (b) => b.traces() as Iterable<TraceHandle>)
     );
     const handles = this.#traceHandles.filter((t) => availableHandles.has(t));
-    const exclude = new Set<TraceHandle>(
-      filter(availableHandles, (t) => !currentHandles.has(t))
-    );
 
-    return new TraceList(
-      handles,
-      exclude,
-      { from, to },
-      bundles,
-      this.#stylesheet
-    );
+    return new TraceList(handles, { from, to }, bundles, this.#stylesheet);
   }
 
-  withoutTraces(traces: Iterable<string>) {
-    const availableHandles = new Set(this.#traceHandles);
-
+  withoutTraces(tracesToExclude: Iterable<string>) {
     const exclude = new Set(
-      concat(
-        this.#excludedTraces,
-        filter(
-          filter(
-            map(traces, (id) => traceIds.getKey(id)),
-            (n): n is TraceHandle => n !== undefined
-          ),
-          (h) => availableHandles.has(h)
-        )
+      filter(
+        map(tracesToExclude, (id) => traceIds.getKey(id)),
+        (n): n is TraceHandle => n !== undefined
       )
     );
 
     const handles = this.#traceHandles.filter((h) => !exclude.has(h));
 
-    return new TraceList(
-      handles,
-      exclude,
-      this.#range,
-      this.#bundles,
-      this.#stylesheet
-    );
+    return new TraceList(handles, this.#range, this.#bundles, this.#stylesheet);
   }
 
   static union(...lists: TraceList[]): TraceList {
     const bundles = Array.from(unique(flatMap(lists, (l) => l[BUNDLES])));
-
-    const availableHandles = new Set(
-      flatMap(bundles, (b) => b.traces() as Iterable<TraceHandle>)
-    );
-    const handlesSet = new Set<TraceHandle>();
-    const handles = Array.from(
-      unique(
-        flatMap(lists, (l) => l[HANDLES]),
-        handlesSet
-      )
-    );
-    const exclude = new Set(
-      filter(availableHandles, (h) => !handlesSet.has(h))
-    );
+    const handles = Array.from(unique(flatMap(lists, (l) => l[HANDLES])));
 
     const from = reduce(
       map(bundles, (b) => b.from()),
@@ -166,7 +118,7 @@ export class TraceList {
       merge
     );
 
-    return new TraceList(handles, exclude, { from, to }, bundles, stylesheet);
+    return new TraceList(handles, { from, to }, bundles, stylesheet);
   }
 
   calculateMetas({

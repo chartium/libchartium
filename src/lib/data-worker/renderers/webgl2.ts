@@ -7,10 +7,18 @@ import {
   type RenderingController,
 } from "./mod.js";
 import { proxyMarker } from "comlink";
-import { BUNDLES, EXCLUDE, TraceList } from "../trace-list.js";
-import { map, reduce } from "../../../utils/collection.js";
-import { computeStyles } from "../trace-styles.js";
+import { BUNDLES, HANDLES, TraceList } from "../trace-list.ts";
+import {
+  concat,
+  filter,
+  map,
+  reduce,
+  unique,
+} from "../../../utils/collection.ts";
+import { computeStyles } from "../trace-styles.ts";
 import { traceIds } from "../controller.js";
+import type { BoxedBundle } from "../../../../src-rust/pkg/libchartium.ts";
+import type { TraceHandle } from "../../types.ts";
 
 function compileShader(
   gl: WebGL2RenderingContext,
@@ -183,7 +191,10 @@ export class WebGL2Renderer implements Renderer {
   readonly #context: WebGL2RenderingContext;
   readonly #renderer: lib.WebGlRenderer;
 
-  readonly #buffers = new WeakMap<TraceList, lib.WebGlBundleBuffer>();
+  readonly #buffers = new WeakMap<
+    BoxedBundle,
+    Map<TraceHandle, Map</* width */ number, WebGLBuffer>>
+  >();
 
   constructor(
     public readonly parent: WebGL2Controller,
@@ -197,7 +208,8 @@ export class WebGL2Renderer implements Renderer {
 
   render(job: RenderJob): RenderJobResult {
     const traceList = job.traces;
-    const rj = new lib.WebGlRenderJob(job.xType, traceList[BUNDLES].length);
+    const availableHandles = new Set(traceList[HANDLES]);
+    const rj = new lib.WebGlRenderJob(job.xType);
     const xRange = job.xRange ?? traceList.range;
 
     // prettier-ignore
@@ -213,20 +225,17 @@ export class WebGL2Renderer implements Renderer {
     rj.y_from = yRange.from;
     rj.y_to = yRange.to;
 
-    for (const trace of traceList[EXCLUDE]) rj.exclude_trace(trace);
     for (const bundle of traceList[BUNDLES]) {
-      const styles = computeStyles(
-        traceList.stylesheet,
-        bundle.traces(),
-        traceIds
+      const handles = Array.from(
+        filter(bundle.traces() as Iterable<TraceHandle>, (h) =>
+          availableHandles.has(h)
+        )
       );
-      const buffer = this.#renderer.create_bundle_buffer_from_descriptors(
-        bundle,
-        xRange.from,
-        xRange.to,
-        styles
+      const styles = computeStyles(traceList.stylesheet, handles, traceIds);
+      const buffers = map(handles, (h) =>
+        lib.WebGlRenderer.create_trace_buffer(this.#context, bundle, h)
       );
-      rj.add_bundle_buffer(buffer);
+      rj.add_traces(bundle, handles.length, buffers, styles);
     }
 
     if (job.clear !== undefined) rj.clear = job.clear;
