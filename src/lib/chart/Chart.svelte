@@ -36,8 +36,10 @@
 
   let canvas: HTMLCanvasElement;
 
+  let mounted = false;
   onMount(async () => {
     await chart.assignCanvas(canvas!);
+    mounted = true;
 
     chart.xLabelSpace = 0;
     chart.yLabelSpace = 0;
@@ -98,7 +100,7 @@
   }
 
   let contentSize: [number, number] = [1, 1];
-  $: if (chart) {
+  $: if (chart && mounted) {
     chart.renderer?.setSize(contentSize[0], contentSize[1]);
     chart?.render();
   }
