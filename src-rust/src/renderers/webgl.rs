@@ -1,6 +1,7 @@
 use std::{mem::size_of, rc::Rc};
 
 use js_sys::{Array, Float32Array};
+use serde::{Deserialize, Serialize};
 use wasm_bindgen::{prelude::*, JsCast, JsValue};
 use web_sys::{
     OffscreenCanvas, WebGl2RenderingContext, WebGlBuffer, WebGlProgram, WebGlUniformLocation,
@@ -8,15 +9,12 @@ use web_sys::{
 
 use crate::{
     data::TraceHandle,
-    trace::{
-        extensions::{IntoStruct, PointIteratorExtension},
-        BoxedBundle,
-    },
+    trace::{extensions::PointIteratorExtension, BoxedBundle},
 };
 
 use super::{AxisTick, RenderJobResult};
 
-const ROW_LEN: usize = std::mem::size_of::<u32>() * 2 + 4;
+const ROW_LEN: usize = size_of::<u32>() * 2 + 4;
 
 #[wasm_bindgen(module = "/src/renderers/webgl.ts")]
 extern "C" {
@@ -46,7 +44,7 @@ pub struct WebGlBundleBuffer {
 }
 
 #[wasm_bindgen]
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct TraceStyle {
     width: u32,
     color: [u8; 3],
@@ -347,7 +345,7 @@ impl WebGlRenderer {
     ) -> WebGlBundleBuffer {
         let styles: Vec<TraceStyle> = styles
             .iter()
-            .map(|x| x.try_into_owned_struct().unwrap())
+            .map(|x| serde_wasm_bindgen::from_value(x).unwrap())
             .collect();
 
         self.create_bundle_buffer(bundle, from, to, &styles)

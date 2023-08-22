@@ -1,4 +1,8 @@
-import { colorStringToColor, randomContrastingColor } from "../../utils/color";
+import {
+  colorStringToColor,
+  randomContrastingColor,
+  type Color,
+} from "../../utils/color";
 import { yeet } from "../../utils/yeet";
 import { UnknownTraceHandleError } from "../errors";
 import type { TraceHandle } from "../types";
@@ -26,6 +30,12 @@ const defaultStyle: TraceStyle = {
   display: "line",
 };
 
+interface RawTraceStyle {
+  width: number;
+  color: Color;
+  points_mode: boolean;
+}
+
 /**
  * Take a user-defined stylesheet, and apply it to
  * all the available traces, creating a list of TraceStyle's
@@ -34,7 +44,7 @@ export function computeStyles(
   stylesheet: TraceStylesheet,
   traces: Uint32Array | TraceHandle[],
   ids: Map<TraceHandle, string>
-): lib.TraceStyle[] {
+): RawTraceStyle[] {
   const baseStyle: TraceStyle = {
     ...defaultStyle,
     ...stylesheet?.["*"],
@@ -47,7 +57,7 @@ export function computeStyles(
     ])
   );
 
-  const styles: lib.TraceStyle[] = [];
+  const styles: RawTraceStyle[] = [];
   for (const handle of traces) {
     const id =
       ids.get(handle as TraceHandle) ?? yeet(UnknownTraceHandleError, handle);
@@ -67,7 +77,11 @@ export function computeStyles(
       }
     })();
 
-    const style = new lib.TraceStyle(width, r, g, b, display === "points");
+    const style: RawTraceStyle = {
+      width,
+      color: [r, g, b],
+      points_mode: display === "points",
+    };
     styles.push(style);
   }
   return styles;

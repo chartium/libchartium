@@ -2,21 +2,21 @@
   import svelteLogo from "./assets/svelte.svg";
   import viteLogo from "/vite.svg";
   import Chart from "./lib/Chart.svelte";
-  import { spawnChartiumWorker } from "./lib/data-worker";
-  import type { TraceDescriptor } from "./lib/data-worker/renderers/mod";
+  import { spawnChartiumWorker, ChartiumController } from "./lib/data-worker";
 
-  const controller = spawnChartiumWorker();
-  $: traces = controller
-    .addFromArrayBuffer({
-      ids: ["foo", "bar"],
-      data: Float32Array.from([1, 0, 1, 25, 0, -1, 50, 0, 0, 75, 0, 1]),
-      xType: "f32",
-      yType: "f32",
-    })
-    .then((handles) => handles.map<TraceDescriptor>((handle) => ({ handle })));
+  // const controller = spawnChartiumWorker();
+  const controller = ChartiumController.instantiateInThisThread();
+
+  $: traces = controller.addFromArrayBuffer({
+    ids: ["foo", "bar"],
+    data: Float32Array.from([1, 0, 1, 25, 0, -1, 50, 0, 0, 75, 0, 1]),
+    xType: "f32",
+    yType: "f32",
+  });
 
   // FIXME DEBUG
   $: (window as any).controller = controller;
+  $: traces.then((t) => ((window as any).traces = t));
 </script>
 
 <main>

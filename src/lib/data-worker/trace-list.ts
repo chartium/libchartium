@@ -13,12 +13,15 @@ import {
   unique,
 } from "../../utils/collection";
 import { merge } from "lodash-es";
+import { proxyMarker } from "comlink";
 
 export const BUNDLES = Symbol("bundles");
 export const HANDLES = Symbol("handles");
 export const EXCLUDE = Symbol("exclude");
 
 export class TraceList {
+  [proxyMarker] = true;
+
   #traceHandles: TraceHandle[];
   #excludedTraces: Set<TraceHandle>;
   #bundles: lib.BoxedBundle[];
