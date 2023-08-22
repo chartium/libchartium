@@ -25,10 +25,6 @@ export interface RenderJob {
   darkMode?: boolean;
   renderAxes?: boolean;
   renderGrid?: boolean;
-
-  margin?: number;
-  xLabelSpace?: number;
-  yLabelSpace?: number;
 }
 
 export interface RenderJobResult {
