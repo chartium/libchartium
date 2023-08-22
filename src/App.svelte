@@ -1,8 +1,7 @@
 <script lang="ts">
-  import svelteLogo from "./assets/svelte.svg";
-  import viteLogo from "/vite.svg";
   import Chart from "./lib/chart/Chart.svelte";
-  import { spawnChartiumWorker, ChartiumController } from "./lib/data-worker";
+  import ChartGrid from "./lib/chart/ChartGrid.svelte";
+  import { ChartiumController } from "./lib/data-worker";
 
   // autogenerate a lot of data
   const from = 0;
@@ -35,24 +34,20 @@
 </script>
 
 <main>
-  <div>
-    <a href="https://vitejs.dev" target="_blank" rel="noreferrer">
-      <img src={viteLogo} class="logo" alt="Vite Logo" />
-    </a>
-    <a href="https://svelte.dev" target="_blank" rel="noreferrer">
-      <img src={svelteLogo} class="logo svelte" alt="Svelte Logo" />
-    </a>
-  </div>
-  <h1>Vite + Svelte</h1>
-  <p>
-    Check out <a
-      href="https://github.com/sveltejs/kit#readme"
-      target="_blank"
-      rel="noreferrer">SvelteKit</a
-    >, the official Svelte app framework powered by Vite!
-  </p>
+  <h1>Chartium test page</h1>
 
-  <p class="read-the-docs">Click on the Vite and Svelte logos to learn more</p>
+  <div class="frame">
+    <ChartGrid>
+      <svelte:fragment slot="title">Title</svelte:fragment>
+      <svelte:fragment slot="subtitle">Subtitle</svelte:fragment>
+      <svelte:fragment slot="ylabel">Osa Y</svelte:fragment>
+      <svelte:fragment slot="yticks"><span>Y ticks</span></svelte:fragment>
+      <svelte:fragment slot="xlabel">Osa X</svelte:fragment>
+      <svelte:fragment slot="xticks">X ticks</svelte:fragment>
+      <!-- <svelte:fragment slot="right-legend">Right legend</svelte:fragment> -->
+      <!-- <svelte:fragment slot="bottom-legend">Bottom legend</svelte:fragment> -->
+    </ChartGrid>
+  </div>
 
   {#await traces then traces}
     <Chart
@@ -62,26 +57,17 @@
       yLabel="Mean color of balls [K]"
       chartHeight={600}
       chartWidth={800}
-      xAxisHeight={150}
-      yAxisWidth={150}
     />
   {/await}
 </main>
 
 <style>
-  .logo {
-    height: 6em;
-    padding: 1.5em;
-    will-change: filter;
-    transition: filter 300ms;
-  }
-  .logo:hover {
-    filter: drop-shadow(0 0 2em #646cffaa);
-  }
-  .logo.svelte:hover {
-    filter: drop-shadow(0 0 2em #ff3e00aa);
-  }
-  .read-the-docs {
-    color: #888;
+  .frame {
+    width: 800px;
+    height: 600px;
+    border: 1px solid white;
+    border-radius: 8px;
+
+    overflow: hidden;
   }
 </style>

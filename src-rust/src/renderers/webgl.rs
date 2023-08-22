@@ -333,6 +333,8 @@ impl WebGlRenderer {
         self.present_canvas.set_width(width);
         self.present_canvas.set_height(height);
 
+        crate::log(&format!("Resized to {}x{}", width, height));
+
         Ok(())
     }
 

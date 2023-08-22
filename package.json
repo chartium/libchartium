@@ -26,6 +26,7 @@
     "comlink": "^4.4.1",
     "lodash-es": "^4.17.21",
     "random": "^4.1.0",
+    "sass": "^1.66.1",
     "seedrandom": "^3.0.5"
   }
 }
