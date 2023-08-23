@@ -29,10 +29,6 @@ export class Chart {
     #renderAxes?: boolean;
     #renderGrid?: boolean;
 
-    #margin?: number;
-    #xLabelSpace?: number;
-    #yLabelSpace?: number;
-
     #xTicks?: WritableSignal<Tick[]>;
     #yTicks?: WritableSignal<Tick[]>;
 
@@ -96,10 +92,6 @@ export class Chart {
             darkMode: this.#darkMode,
             renderAxes: this.#renderAxes,
             renderGrid: this.#renderGrid,
-
-            margin: this.#margin,
-            xLabelSpace: this.#xLabelSpace,
-            yLabelSpace: this.#yLabelSpace,
         };
 
         const renderResults = await this.#renderer.render(renderJob);
@@ -146,18 +138,6 @@ export class Chart {
         this.render();
     }
 
-    set margin(value: number) {
-        this.#margin = value;
-        this.render();
-    }
-    set xLabelSpace(value: number) {
-        this.#xLabelSpace = value;
-        this.render();
-    }
-    set yLabelSpace(value: number) {
-        this.#yLabelSpace = value;
-        this.render();
-    }
 
     //SECTION - getters
 
@@ -172,9 +152,6 @@ export class Chart {
     get darkMode(): boolean | undefined { return this.#darkMode; }
     get renderAxes(): boolean | undefined { return this.#renderAxes; }
     get renderGrid(): boolean | undefined { return this.#renderGrid; }
-    get margin(): number | undefined { return this.#margin; }
-    get xLabelSpace(): number | undefined { return this.#xLabelSpace; }
-    get yLabelSpace(): number | undefined { return this.#yLabelSpace; }
     get xTicks(): ReadableSignal<Tick[]> | undefined { return this.#xTicks?.toReadable(); }
     get yTicks(): ReadableSignal<Tick[]> | undefined { return this.#yTicks?.toReadable(); }
 

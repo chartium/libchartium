@@ -41,13 +41,10 @@
     await chart.assignCanvas(canvas!);
     mounted = true;
 
-    chart.xLabelSpace = 0;
-    chart.yLabelSpace = 0;
-    chart.margin = 0;
     chart.traces = await traces;
-    chart.xType = "f32";
-    chart.xRange = { from: 0, to: 2 * Math.PI };
-    chart.yRange = { from: -1, to: 1 };
+    chart.xType = "u32";
+    chart.xRange = { from: 0, to: 1000 };
+    chart.yRange = { from: -10, to: 200 };
 
     chart.xTicks?.subscribe((ticks) => {
       xTicks = ticks;
@@ -121,7 +118,7 @@
   function resetRange() {
     // FIXME this should pull data from controller
     chart.xRange = { from: 0, to: 1000 };
-    chart.yRange = { from: -500, to: 500 };
+    chart.yRange = { from: -10, to: 200 };
 
     xTransformPositions = undefined;
     yTransformPositions = undefined;
