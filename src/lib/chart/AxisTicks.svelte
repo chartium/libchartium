@@ -2,7 +2,7 @@
 
 <script lang="ts">
   import { createEventDispatcher } from "svelte";
-  import { leftMouseDrag } from "../../utils/mouseGestures";
+  import { MouseButtons, mouseDrag } from "../../utils/mouseGestures";
   import type { MouseDragCallbacks } from "../../utils/mouseGestures";
   import type { Range, Shift, Tick } from "../types";
 
@@ -81,7 +81,10 @@
 
 <div
   class="{axis} ticks-and-label"
-  use:leftMouseDrag={dragCallbacks}
+  use:mouseDrag={{
+    ...dragCallbacks,
+    button: MouseButtons.Left,
+  }}
   bind:clientWidth={axisWidth}
   bind:clientHeight={axisHeight}
 >

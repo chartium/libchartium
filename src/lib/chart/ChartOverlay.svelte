@@ -3,13 +3,13 @@
 <script lang="ts">
   import { createEventDispatcher, onMount } from "svelte";
   import {
-    leftMouseDrag,
-    rightMouseDrag,
+    MouseButtons,
+    mouseDrag,
     rightMouseClick,
   } from "../../utils/mouseGestures";
+  import * as canvas from "./canvas";
   import type { MouseDragCallbacks } from "../../utils/mouseGestures";
-  import * as canvas from "./canvas.ts";
-  import type { Range, Shift, Zoom } from "../types.ts";
+  import type { Range, Shift, Zoom } from "../types";
 
   export const events = createEventDispatcher<{
     reset: {};
@@ -375,8 +375,8 @@
 >
   <div
     class="OverChartSelector"
-    use:leftMouseDrag={leftDragCallbacks}
-    use:rightMouseDrag={rightDragCallbacks}
+    use:mouseDrag={{ ...leftDragCallbacks, button: MouseButtons.Left }}
+    use:mouseDrag={{ ...rightDragCallbacks, button: MouseButtons.Right }}
   >
     <slot name="chart" class="chart" />
   </div>

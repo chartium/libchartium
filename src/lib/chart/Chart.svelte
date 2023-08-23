@@ -90,7 +90,6 @@
   }
 
   function zoomRange({ detail }: { detail: Zoom }) {
-    console.log(detail);
     for (const [axis, zoom] of Object.entries(detail) as [string, Range][]) {
       const rangeName = `${axis}Range` as "xRange" | "yRange";
       const range = chart[rangeName];

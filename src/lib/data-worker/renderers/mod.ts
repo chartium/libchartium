@@ -1,8 +1,5 @@
-import { toUint8ColorOrRandom } from "../../../utils/color";
-import type { Range, Tick, TraceHandle, TraceStyle, TypeOfData } from "../../types";
-import { lib } from "../wasm";
-import type { Range, TypeOfData } from "../../types";
 import type { TraceList } from "../trace-list";
+import type { Range, Tick, TypeOfData } from "../../types";
 
 export interface RenderingController {
   createRenderer(presentCanvas: OffscreenCanvas): Renderer;

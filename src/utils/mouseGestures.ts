@@ -1,3 +1,6 @@
+import type { Action } from "svelte/action";
+import type { Point } from "../lib/types";
+
 /** this file handles bunch of mouse gesture events you can use as svelte actions */
 
 export interface MouseDragCallbacks {
@@ -6,114 +9,57 @@ export interface MouseDragCallbacks {
   end: (event: MouseEvent) => void;
 }
 
-enum MouseButtons {
+export enum MouseButtons {
   Left = 1,
   Middle = 4,
   Right = 2,
 }
 
-/** adds a left mouse drag event, which requires a trifecta of callbacks bundled in MouseDragOptions */
-export function leftMouseDrag(
-  node: HTMLElement,
-  callbacks: MouseDragCallbacks
-) {
-  let startX: number, startY: number;
-  let isDragging = false;
+export const mouseDrag = ((
+  elem: HTMLElement,
+  params: MouseDragCallbacks & { button: MouseButtons; threshold?: number }
+) => {
+  let init: Point | undefined = undefined;
 
-  const handleMouseDown = (event: MouseEvent) => {
-    if (event.buttons !== MouseButtons.Left) return;
-    startX = event.clientX;
-    startY = event.clientY;
-    isDragging = false;
-    node.addEventListener("mousemove", handleMouseMove);
-    document.addEventListener("mouseup", handleMouseUp);
+  const onStart = (event: MouseEvent) => {
+    if (event.buttons !== params.button) return;
+
+    init = { x: event.clientX, y: event.clientY };
+    params.start(event);
   };
 
-  const handleMouseMove = (event: MouseEvent) => {
-    if (event.buttons !== MouseButtons.Left) return;
-    const deltaX = event.clientX - startX;
-    const deltaY = event.clientY - startY;
+  const onMove = (event: MouseEvent) => {
+    if (init) {
+      const deltaX = event.clientX - init.x;
+      const deltaY = event.clientY - init.y;
+      const threshold = params.threshold ?? 5;
 
-    if (!isDragging && (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5)) {
-      isDragging = true;
-      callbacks.start(event);
-    }
+      if (deltaX * deltaX + deltaY * deltaY < threshold * threshold) return;
 
-    if (isDragging) {
-      callbacks.move(event);
+      params.move(event);
     }
   };
 
-  const handleMouseUp = (event: MouseEvent) => {
-    if (isDragging) {
-      callbacks.end(event);
+  const onEnd = (event: MouseEvent) => {
+    if (init) {
+      params.end(event);
     }
 
-    node.removeEventListener("mousemove", handleMouseMove);
-    document.removeEventListener("mouseup", handleMouseUp);
+    init = undefined;
   };
 
-  node.addEventListener("mousedown", handleMouseDown);
+  elem.addEventListener("mousedown", onStart);
+  window.addEventListener("mousemove", onMove);
+  window.addEventListener("mouseup", onEnd);
 
   return {
     destroy() {
-      node.removeEventListener("mousedown", handleMouseDown);
-      node.removeEventListener("mousemove", handleMouseMove);
-      document.removeEventListener("mouseup", handleMouseUp);
+      window.removeEventListener("mouseup", onEnd);
+      window.removeEventListener("mousemove", onMove);
+      elem.removeEventListener("mousedown", onStart);
     },
   };
-}
-
-export function rightMouseDrag(
-  node: HTMLElement,
-  callbacks: MouseDragCallbacks
-) {
-  let startX: number, startY: number;
-  let isDragging = false;
-
-  const handleMouseDown = (event: MouseEvent) => {
-    if (event.buttons !== MouseButtons.Right) return;
-    startX = event.clientX;
-    startY = event.clientY;
-    isDragging = false;
-    node.addEventListener("mousemove", handleMouseMove);
-    document.addEventListener("mouseup", handleMouseUp);
-  };
-
-  const handleMouseMove = (event: MouseEvent) => {
-    if (event.buttons !== MouseButtons.Right) return;
-    const deltaX = event.clientX - startX;
-    const deltaY = event.clientY - startY;
-
-    if (!isDragging && (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5)) {
-      isDragging = true;
-      callbacks.start(event);
-    }
-
-    if (isDragging) {
-      callbacks.move(event);
-    }
-  };
-
-  const handleMouseUp = (event: MouseEvent) => {
-    if (isDragging) {
-      callbacks.end(event);
-    }
-
-    node.removeEventListener("mousemove", handleMouseMove);
-    document.removeEventListener("mouseup", handleMouseUp);
-  };
-
-  node.addEventListener("mousedown", handleMouseDown);
-
-  return {
-    destroy() {
-      node.removeEventListener("mousedown", handleMouseDown);
-      node.removeEventListener("mousemove", handleMouseMove);
-      document.removeEventListener("mouseup", handleMouseUp);
-    },
-  };
-}
+}) satisfies Action;
 
 export function rightMouseClick(
   node: HTMLElement,
