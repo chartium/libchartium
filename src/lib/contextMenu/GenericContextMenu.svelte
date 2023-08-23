@@ -1,11 +1,15 @@
 <svelte:options accessors />
 
 <script lang="ts">
-  import type { ContextItem, Point } from "../types";
-  import { clickOutside } from "../../utils/mouseGestures";
+  import type { ContextItem, Point } from "./contextMenu";
+  import {
+    openPositionNextToPoint,
+    openPositionNextToRect,
+    clickOutside,
+  } from "./contextMenu";
 
+  /** The only required input from outside, the content of the context menu */
   export let items: ContextItem[];
-
   $: itemsWithIDs = items.map((item, i) => ({ ...item, id: i }));
 
   /** dic of submenus enumerated by ID */
@@ -31,33 +35,18 @@
   export function open(positionRelativeToPage: Point): void {
     opened = true;
     sourceHovered = !main;
-    const { x, y } = positionRelativeToPage;
-    const { innerWidth, innerHeight } = window;
-    const positionOfRightMenuBoundary = x + menuWidth + 3;
-    const positionOfBottomMenuBoundary = y + menuHeight + 3;
-    const rightOverflow = positionOfRightMenuBoundary - innerWidth;
-    const bottomOverflow = positionOfBottomMenuBoundary - innerHeight;
-    renderPosition = {
-      x: rightOverflow > 0 ? x - rightOverflow : x,
-      y: bottomOverflow > 0 ? y - bottomOverflow : y,
-    };
+    renderPosition = openPositionNextToPoint(
+      positionRelativeToPage,
+      menuHeight,
+      menuWidth
+    );
   }
 
   /** opens on the right of this rect or, if there isnt enough space, on the left */
   export function openNextToRect(rect: DOMRect): void {
     opened = true;
     sourceHovered = true;
-    const x = rect.right + window.scrollX;
-    const y = rect.top + window.scrollY;
-    const { innerWidth, innerHeight } = window;
-    const positionOfRightMenuBoundary = x + menuWidth + 3;
-    const positionOfBottomMenuBoundary = y + menuHeight + 3;
-    const rightOverflow = positionOfRightMenuBoundary - innerWidth;
-    const bottomOverflow = positionOfBottomMenuBoundary - innerHeight;
-    renderPosition = {
-      x: rightOverflow > 0 ? x - rect.width - menuWidth - 3 : x,
-      y: bottomOverflow > 0 ? y - bottomOverflow : y,
-    };
+    renderPosition = openPositionNextToRect(rect, menuHeight, menuWidth);
   }
 
   export function close(): void {
@@ -87,7 +76,7 @@
   class="context-menu"
   role="menu"
   tabindex="-1"
-  style="visibility:{visibility}; position: absolute;
+  style="visibility:{visibility}; position: fixed;
     left: {renderPosition?.x ?? 0}px;
     top:{renderPosition?.y ?? 0}px; z-index: 1; user-select: none;"
   use:clickOutside={closeIfNotHovered}
@@ -111,7 +100,7 @@
   {#each itemsWithIDs as item}
     {#if item.type === "leaf"}
       <div class="context-item" on:click={item.callback} on:keypress|once>
-        {item.text}
+        {item.content}
       </div>
     {/if}
     {#if item.type === "separator"}
@@ -145,7 +134,7 @@
           }, 50);
         }}
       >
-        {item.text}
+        {item.content}
       </div>
     {/if}
   {/each}
