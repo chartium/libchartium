@@ -15,7 +15,7 @@ export enum MouseButtons {
   Right = 2,
 }
 
-export const mouseDrag = ((
+export const mouseDrag = (
   elem: HTMLElement,
   params: MouseDragCallbacks & { button: MouseButtons; threshold?: number }
 ) => {
@@ -59,7 +59,7 @@ export const mouseDrag = ((
       elem.removeEventListener("mousedown", onStart);
     },
   };
-}) satisfies Action;
+};
 
 export function rightMouseClick(
   node: HTMLElement,

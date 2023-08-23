@@ -85,8 +85,10 @@
 
 <div
   class="context-menu"
-  style="visibility:{visibility}; position: absolute; 
-    left: {renderPosition?.x ?? 0}px; 
+  role="menu"
+  tabindex="-1"
+  style="visibility:{visibility}; position: absolute;
+    left: {renderPosition?.x ?? 0}px;
     top:{renderPosition?.y ?? 0}px; z-index: 1; user-select: none;"
   use:clickOutside={closeIfNotHovered}
   bind:clientHeight={menuHeight}

@@ -365,7 +365,8 @@
 
 <div
   class="container"
-  on:dblclick={() => events("reset")}
+  role="region"
+  on:dblclick={() => events("reset", {})}
   use:rightMouseClick={(e) => {
     menu.open({ x: e.pageX, y: e.pageY });
   }}

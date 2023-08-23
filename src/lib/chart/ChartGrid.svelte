@@ -89,6 +89,18 @@
     transform: rotate(180deg);
   }
 
+  .title,
+  .subtitle,
+  .ylabel,
+  .xlabel {
+    line-height: 1;
+  }
+
+  .xticks,
+  .yticks {
+    overflow: hidden;
+  }
+
   .title {
     grid-area: title;
     font-size: 1.25em;

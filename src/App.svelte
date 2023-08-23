@@ -1,6 +1,5 @@
 <script lang="ts">
   import Chart from "./lib/chart/Chart.svelte";
-  import ChartGrid from "./lib/chart/ChartGrid.svelte";
   import { ChartiumController } from "./lib/data-worker";
 
   // autogenerate a lot of data
