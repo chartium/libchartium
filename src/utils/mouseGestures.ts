@@ -1,4 +1,3 @@
-import type { Action } from "svelte/action";
 import type { Point } from "../lib/types";
 
 /** this file handles bunch of mouse gesture events you can use as svelte actions */
@@ -29,34 +28,33 @@ export const mouseDrag = (
   };
 
   const onMove = (event: MouseEvent) => {
-    if (init) {
-      const deltaX = event.clientX - init.x;
-      const deltaY = event.clientY - init.y;
-      const threshold = params.threshold ?? 5;
+    if (!init) return;
 
-      if (deltaX * deltaX + deltaY * deltaY < threshold * threshold) return;
+    const deltaX = event.clientX - init.x;
+    const deltaY = event.clientY - init.y;
+    const threshold = params.threshold ?? 5;
 
-      params.move(event);
-    }
+    if (deltaX * deltaX + deltaY * deltaY < threshold * threshold) return;
+
+    params.move(event);
   };
 
   const onEnd = (event: MouseEvent) => {
-    if (init) {
-      params.end(event);
-    }
+    if (!init) return;
 
+    params.end(event);
     init = undefined;
   };
 
-  elem.addEventListener("mousedown", onStart);
-  window.addEventListener("mousemove", onMove);
-  window.addEventListener("mouseup", onEnd);
+  elem.addEventListener("mousedown", onStart, true);
+  window.addEventListener("mousemove", onMove, true);
+  window.addEventListener("mouseup", onEnd, true);
 
   return {
     destroy() {
-      window.removeEventListener("mouseup", onEnd);
-      window.removeEventListener("mousemove", onMove);
-      elem.removeEventListener("mousedown", onStart);
+      window.removeEventListener("mouseup", onEnd, true);
+      window.removeEventListener("mousemove", onMove, true);
+      elem.removeEventListener("mousedown", onStart, true);
     },
   };
 };
@@ -65,45 +63,35 @@ export function rightMouseClick(
   node: HTMLElement,
   callback: (event: MouseEvent) => void
 ) {
-  // just like dragging but triggers on mouseup only if the mouse didn't move
-  let startX: number, startY: number;
-  let isDragging = false;
+  let init: Point | undefined;
 
   const handleMouseDown = (event: MouseEvent) => {
     if (event.buttons !== MouseButtons.Right) return;
-    startX = event.clientX;
-    startY = event.clientY;
-    isDragging = false;
-    node.addEventListener("mousemove", handleMouseMove);
-    node.addEventListener("mouseup", handleMouseUp);
-  };
 
-  const handleMouseMove = (event: MouseEvent) => {
-    if (event.buttons !== MouseButtons.Right) return;
-    const deltaX = event.clientX - startX;
-    const deltaY = event.clientY - startY;
-
-    if (!isDragging && (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5)) {
-      isDragging = true;
-    }
+    init = { x: event.clientX, y: event.clientY };
   };
 
   const handleMouseUp = (event: MouseEvent) => {
-    if (!isDragging) {
-      callback(event);
-    }
+    if (!init) return;
 
-    node.removeEventListener("mousemove", handleMouseMove);
-    node.removeEventListener("mouseup", handleMouseUp);
+    // Check distance and call callback
+    const deltaX = event.clientX - init.x;
+    const deltaY = event.clientY - init.y;
+    const threshold = 5;
+
+    if (deltaX * deltaX + deltaY * deltaY < threshold * threshold)
+      callback(event);
+
+    init = undefined;
   };
 
-  node.addEventListener("mousedown", handleMouseDown);
+  node.addEventListener("mousedown", handleMouseDown, true);
+  node.addEventListener("mouseup", handleMouseUp, true);
 
   return {
     destroy() {
-      node.removeEventListener("mousedown", handleMouseDown);
-      node.removeEventListener("mousemove", handleMouseMove);
-      node.removeEventListener("mouseup", handleMouseUp);
+      node.removeEventListener("mouseup", handleMouseUp, true);
+      node.removeEventListener("mousedown", handleMouseDown, true);
     },
   };
 }
