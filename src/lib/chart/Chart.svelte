@@ -1,7 +1,7 @@
 <script lang="ts">
   import { type Remote } from "comlink";
   import type { ChartiumController } from "../data-worker";
-  import type { Range, Tick } from "../types";
+  import type { Range, Shift, Tick, Zoom } from "../types";
 
   import { Chart } from "./chart";
   import ChartOverlay from "./ChartOverlay.svelte";
@@ -71,11 +71,7 @@
   /** new border values of x range */
   let xTransformPositions: Range | undefined;
 
-  function shiftRange({
-    detail: shift,
-  }: {
-    detail: { dx?: number; dy?: number };
-  }) {
+  function shiftRange({ detail: shift }: { detail: Shift }) {
     if (chart.xRange && shift.dx) {
       const delta = (chart.xRange.to - chart.xRange.from) * shift.dx;
       chart.xRange = {
@@ -93,26 +89,21 @@
     }
   }
 
-  function zoomRange(e: {
-    detail: { yStart: number; yEnd: number; xStart: number; xEnd: number };
-  }) {
-    const { xStart, xEnd, yStart, yEnd } = e.detail;
-    const xRange = chart.xRange;
-    const yRange = chart.yRange;
+  function zoomRange({ detail }: { detail: Zoom }) {
+    console.log(detail);
+    for (const [axis, zoom] of Object.entries(detail) as [string, Range][]) {
+      const rangeName = `${axis}Range` as "xRange" | "yRange";
+      const range = chart[rangeName];
 
-    if (!xRange || !yRange) return;
+      if (!range) continue;
 
-    const dx = xRange.to - xRange.from;
-    const dy = yRange.to - yRange.from;
+      const d = range.to - range.from;
 
-    chart.xRange = {
-      from: xRange.from + dx * xStart,
-      to: xRange.from + dx * xEnd,
-    };
-    chart.yRange = {
-      from: yRange.from + dy * yStart,
-      to: yRange.from + dy * yEnd,
-    };
+      chart[rangeName] = {
+        from: range.from + d * zoom.from,
+        to: range.from + d * zoom.to,
+      };
+    }
   }
 
   function resetRange() {

@@ -9,12 +9,12 @@
   } from "../../utils/mouseGestures";
   import type { MouseDragCallbacks } from "../../utils/mouseGestures";
   import * as canvas from "./canvas.ts";
-  import type { Range } from "../types.ts";
+  import type { Range, Shift, Zoom } from "../types.ts";
 
   export const events = createEventDispatcher<{
     reset: {};
-    zoom: { xStart: number; xEnd: number; yStart: number; yEnd: number };
-    shift: { dx?: number; dy?: number };
+    zoom: Zoom;
+    shift: Shift;
   }>();
 
   let canvasRef: HTMLCanvasElement;
@@ -155,41 +155,29 @@
         : desiredYToPosition;
     },
     end: (e) => {
-      const zoom = {
-        xStart: xTransformPositions?.from ?? 0,
-        xEnd: xTransformPositions?.to ?? 1,
-        yStart: yTransformPositions?.from ?? 0,
-        yEnd: yTransformPositions?.to ?? 1,
+      const zoom: Zoom = {
+        x: { from: 0, to: 0 },
+        y: { from: 0, to: 1 },
       };
 
       // this means the user tried to zoom in only one direction
-      if (xTransformPositions?.from === xTransformPositions?.to) {
-        xTransformPositions = undefined;
-      } else if (xTransformPositions) {
-        const axisSize = overlayWidth;
-        const [from, to] = [
-          xTransformPositions.from / axisSize,
-          xTransformPositions.to / axisSize,
-        ].sort();
+      for (const [axis, positions, axisSize] of [
+        ["x", xTransformPositions, overlayWidth] as const,
+        ["y", yTransformPositions, overlayHeight] as const,
+      ]) {
+        if (!positions || positions.from === positions.to) continue;
 
-        zoom.xStart = from;
-        zoom.xEnd = to;
+        const [from, to] = (<const>["from", "to"])
+          .map((side) =>
+            axis === "x"
+              ? positions[side] / axisSize
+              : 1 - positions[side] / axisSize
+          )
+          .sort();
+
+        zoom[axis] = { from, to };
       }
 
-      if (yTransformPositions?.from === yTransformPositions?.to) {
-        yTransformPositions = undefined;
-      } else if (yTransformPositions) {
-        const axisSize = overlayHeight;
-        const [from, to] = [
-          1 - yTransformPositions.from / axisSize,
-          1 - yTransformPositions.to / axisSize,
-        ].sort();
-
-        zoom.yStart = from;
-        zoom.yEnd = to;
-      }
-
-      console.log(zoom);
       events("zoom", zoom);
 
       xTransformPositions = undefined;

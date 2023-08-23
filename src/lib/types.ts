@@ -33,6 +33,16 @@ export interface Range {
   to: number;
 }
 
+export interface Shift {
+  dx?: number;
+  dy?: number;
+}
+
+export interface Zoom {
+  x: Range;
+  y: Range;
+}
+
 export interface Point {
   x: number;
   y: number;
@@ -59,7 +69,6 @@ export interface Tick {
   position: number;
 }
 
-
 export interface ContextLeaf {
   type: "leaf";
   text: string;
@@ -82,12 +91,14 @@ export interface ContextSeparator {
 export type ContextItem = ContextLeaf | ContextBranch | ContextSeparator;
 
 /** A type for passing rectangle position by declaring top left and bottom right corners */
-export type RectanglePosition = {
-  topLeft: Point;
-  bottomRight: Point;
-} | {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
+export type RectanglePosition =
+  | {
+      topLeft: Point;
+      bottomRight: Point;
+    }
+  | {
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+    };

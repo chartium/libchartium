@@ -4,10 +4,10 @@
   import { createEventDispatcher } from "svelte";
   import { leftMouseDrag } from "../../utils/mouseGestures";
   import type { MouseDragCallbacks } from "../../utils/mouseGestures";
-  import type { Range, Tick } from "../types";
+  import type { Range, Shift, Tick } from "../types";
 
   export const events = createEventDispatcher<{
-    shift: { dx?: number; dy?: number };
+    shift: Shift;
   }>();
 
   /** Whether the axis is for x or y. Determines label orientation and selection positions */
