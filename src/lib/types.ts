@@ -69,27 +69,6 @@ export interface Tick {
   position: number;
 }
 
-export interface ContextLeaf {
-  type: "leaf";
-  text: string;
-  callback: () => void;
-}
-export interface ContextBranch {
-  type: "branch";
-  text: string;
-  children: ContextItem[];
-}
-export interface ContextSeparator {
-  type: "separator";
-}
-/** Type for the context menu
- * context menu is just a list of ContextItems where each can be
- * a leaf with content and callback,
- * a branch, i.e. a submenu,
- * or a separator which is just a line
- */
-export type ContextItem = ContextLeaf | ContextBranch | ContextSeparator;
-
 /** A type for passing rectangle position by declaring top left and bottom right corners */
 export type RectanglePosition =
   | {

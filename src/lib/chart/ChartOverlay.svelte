@@ -294,19 +294,19 @@
   };
 
   // FIXME DEbug
-  import type { ContextItem } from "../types";
+  import type { ContextItem } from "../contextMenu/contextMenu.ts";
   import GenericContextMenu from "../contextMenu/GenericContextMenu.svelte";
   let menu: any;
 
   const options: ContextItem[] = [
     {
       type: "leaf",
-      text: "First option",
+      content: "First option",
       callback: () => console.log("First option clicked"),
     },
     {
       type: "leaf",
-      text: "Second option above separator",
+      content: "Second option above separator",
       callback: () => console.log("Second option clicked"),
     },
     {
@@ -314,26 +314,26 @@
     },
     {
       type: "branch",
-      text: "Submenu",
+      content: "Submenu",
       children: [
         {
           type: "leaf",
-          text: "First option in submenu",
+          content: "First option in submenu",
           callback: () => console.log("First option in submenu clicked"),
         },
         {
           type: "branch",
-          text: "Submenu in submenu",
+          content: "Submenu in submenu",
           children: [
             {
               type: "leaf",
-              text: "First option in submenu in submenu",
+              content: "First option in submenu in submenu",
               callback: () =>
                 console.log("First option in submenu in submenu clicked"),
             },
             {
               type: "leaf",
-              text: "Second option in submenu in submenu",
+              content: "Second option in submenu in submenu",
               callback: () =>
                 console.log("Second option in submenu in submenu clicked"),
             },
@@ -342,14 +342,14 @@
 
         {
           type: "leaf",
-          text: "Second option in submenu",
+          content: "Second option in submenu",
           callback: () => console.log("Second option in submenu clicked"),
         },
       ],
     },
     {
       type: "leaf",
-      text: "Last option below Submenu",
+      content: "Last option below Submenu",
       callback: () => console.log("Last option clicked"),
     },
   ];
