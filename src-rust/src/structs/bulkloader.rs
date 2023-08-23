@@ -87,10 +87,12 @@ impl Bulkloader {
     }
 
     pub fn apply(self) -> BoxedBundle {
-        let handles = &self.handles;
-        let x_desc = self.x_desc;
-        let y_desc = self.y_desc;
-        let data = &self.data;
+        let Bulkloader {
+            handles,
+            x_desc,
+            y_desc,
+            data,
+        } = self;
 
         let row_bytes_len = x_desc.size + y_desc.size * handles.len();
 
@@ -99,9 +101,9 @@ impl Bulkloader {
 
         let mut ys = {
             let ptr = unsafe {
-                std::alloc::alloc(
-                    std::alloc::Layout::array::<f64>(point_count * handles.len()).unwrap(),
-                ) as *mut f64
+                use std::alloc::{alloc, Layout};
+
+                alloc(Layout::array::<f64>(point_count * handles.len()).unwrap()) as *mut f64
             };
             handles
                 .iter()
@@ -128,10 +130,8 @@ impl Bulkloader {
                 });
         }
 
-        // ! FIXME store the meta counter somewhere
+        let ys = HashMap::from_iter(handles.iter().zip(ys.into_iter()).map(|(h, y)| (*h, y)));
 
-        let ys = HashMap::from_iter(handles.iter().enumerate().map(|(i, &h)| (h, ys[i].clone())));
-
-        BoxedBundle::new(Box::new(Batch::new(x, ys)))
+        BoxedBundle::new(Batch::new(x, ys))
     }
 }

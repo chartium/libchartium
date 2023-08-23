@@ -23,7 +23,7 @@ impl TypeDescriptor {
 
 macro_rules! type_map {
     ( "DateTime" ) => {
-        i32
+        u32
     };
     ( "i16" ) => {
         i16

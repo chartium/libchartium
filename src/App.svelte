@@ -15,7 +15,9 @@
   );
   const y1s = xs.map((x) => 100 + 100 * Math.sin((x / to) * 2 * Math.PI));
   const y2s = xs.map((x) => 100 + 100 * Math.cos((x / to) * 2 * Math.PI));
-  const y3s = xs.map((x) => 100 + 100 * Math.tanh((x / to - 0.5) * 2 * Math.PI));
+  const y3s = xs.map(
+    (x) => 100 + 100 * Math.tanh((x / to - 0.5) * 2 * Math.PI)
+  );
   const chartiumFriendlyTraceData = xs.flatMap((x, index) => [
     x,
     y1s[index],
@@ -27,9 +29,9 @@
   const controller = ChartiumController.instantiateInThisThread();
   $: traces = controller.addFromArrayBuffer({
     ids: ["sin", "cos", "atan"],
-    data: Uint32Array.from(chartiumFriendlyTraceData),
-    xType: "u32",
-    yType: "u32",
+    data: Float32Array.from(chartiumFriendlyTraceData),
+    xType: "f32",
+    yType: "f32",
   });
 </script>
 
@@ -39,6 +41,8 @@
     <Chart
       {controller}
       {traces}
+      title="Titulek"
+      subtitle="Podtitulek"
       xLabel="Time since I sagged yer mum [Days]"
       yLabel="Mean color of balls [K]"
       chartHeight={600}

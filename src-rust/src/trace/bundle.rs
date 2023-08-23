@@ -43,9 +43,17 @@ pub struct BoxedBundle {
     bundle: Box<dyn Bundle>,
 }
 
-impl BoxedBundle {
-    pub fn new(bundle: Box<dyn Bundle>) -> BoxedBundle {
+impl From<Box<dyn Bundle>> for BoxedBundle {
+    fn from(bundle: Box<dyn Bundle>) -> Self {
         BoxedBundle { bundle }
+    }
+}
+
+impl BoxedBundle {
+    pub fn new(bundle: impl Bundle + 'static) -> BoxedBundle {
+        BoxedBundle {
+            bundle: Box::new(bundle),
+        }
     }
 
     #[allow(clippy::borrowed_box)]
