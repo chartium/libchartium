@@ -1,4 +1,13 @@
 <!-- Chart overlay that draw rectangles and line segements on zoom -->
+<script lang="ts" context="module">
+  export type VisibleAction =
+    | {
+        zoom: Zoom;
+      }
+    | {
+        shift: Shift;
+      };
+</script>
 
 <script lang="ts">
   import { createEventDispatcher, onMount } from "svelte";
@@ -9,16 +18,17 @@
   } from "../../utils/mouseGestures";
   import * as canvas from "./canvas";
   import type { MouseDragCallbacks } from "../../utils/mouseGestures";
-  import type { Range, Shift, Zoom } from "../types";
+  import type { Point, Range, Shift, Zoom } from "../types";
 
   export const events = createEventDispatcher<{
-    reset: {};
+    reset: undefined;
     zoom: Zoom;
     shift: Shift;
   }>();
 
-  let canvasRef: HTMLCanvasElement;
+  export let visibleAction: Writable<VisibleAction | undefined>;
 
+  let canvasRef: HTMLCanvasElement;
   let ctx: CanvasRenderingContext2D;
 
   onMount(() => {
@@ -28,29 +38,28 @@
     ctx.lineWidth = 1;
   });
 
-  // for drawing
-  /** new border values of y range */
-  export let yTransformPositions: Range | undefined;
-  /** new border values of x range */
-  export let xTransformPositions: Range | undefined;
-
   /** If the zoom rectangle has one side this big or smaller the zoom will be just 1D */
   const oneDZoomWindow = 20;
-
-  export let zoomOrMove: "move" | "zoom" | "neither" = "neither";
 
   function clearCanvas() {
     ctx?.clearRect(0, 0, overlayWidth, overlayHeight);
   }
 
   $: {
-    if (zoomOrMove === "neither") {
-      clearCanvas();
+    const current = $visibleAction;
+
+    clearCanvas();
+
+    if (current) {
+      if ("zoom" in current) {
+        drawZoom(current.zoom);
+      } else if ("shift" in current) {
+        drawShift(current.shift);
+      }
     }
   }
 
-  function drawZoom(xZoomPosition: Range, yZoomPosition: Range) {
-    ctx?.clearRect(0, 0, overlayWidth, overlayHeight);
+  function drawZoom(zoom: Zoom) {
     const lineStyle: canvas.DrawStyle = {
       dash: [10, 5],
     };
@@ -59,134 +68,66 @@
       lineWidth: 3,
     };
 
+    const xFrom = zoom.x.from * overlayWidth;
+    const xTo = zoom.x.to * overlayWidth;
+    const yFrom = (1 - zoom.y.from) * overlayHeight;
+    const yTo = (1 - zoom.y.to) * overlayHeight;
+
     // the big lines
-    if (xZoomPosition?.from !== xZoomPosition?.to) {
-      canvas.drawSegment(
-        ctx,
-        [xZoomPosition.from, 0],
-        [xZoomPosition.from, overlayHeight],
-        lineStyle
-      );
-      canvas.drawSegment(
-        ctx,
-        [xZoomPosition.to, 0],
-        [xZoomPosition.to, overlayHeight],
-        lineStyle
-      );
+    if (zoom.x.from !== zoom.x.to) {
+      canvas.drawSegment(ctx, [xFrom, 0], [xFrom, overlayHeight], lineStyle);
+      canvas.drawSegment(ctx, [xTo, 0], [xTo, overlayHeight], lineStyle);
     }
-    if (yZoomPosition?.from !== yZoomPosition?.to) {
-      canvas.drawSegment(
-        ctx,
-        [0, yZoomPosition.from],
-        [overlayWidth, yZoomPosition.from],
-        lineStyle
-      );
-      canvas.drawSegment(
-        ctx,
-        [0, yZoomPosition.to],
-        [overlayWidth, yZoomPosition.to],
-        lineStyle
-      );
+    if (zoom.y.from !== zoom.y.to) {
+      canvas.drawSegment(ctx, [0, yFrom], [overlayWidth, yFrom], lineStyle);
+      canvas.drawSegment(ctx, [0, yTo], [overlayWidth, yTo], lineStyle);
     }
 
     // The little windows
-    if (yZoomPosition.from === yZoomPosition?.to) {
+    if (zoom.y.from === zoom.y.to) {
       canvas.drawSegment(
         ctx,
-        [xZoomPosition.from, yZoomPosition.from - oneDZoomWindow],
-        [xZoomPosition.from, yZoomPosition.from + oneDZoomWindow],
+        [xFrom, yFrom - oneDZoomWindow],
+        [xFrom, yFrom + oneDZoomWindow],
         windowStyle
       );
       canvas.drawSegment(
         ctx,
-        [xZoomPosition.to, yZoomPosition.to - oneDZoomWindow],
-        [xZoomPosition.to, yZoomPosition.to + oneDZoomWindow],
+        [xTo, yTo - oneDZoomWindow],
+        [xTo, yTo + oneDZoomWindow],
         windowStyle
       );
     }
 
-    if (xZoomPosition.from === xZoomPosition?.to) {
+    if (zoom.x.from === zoom.x.to) {
       canvas.drawSegment(
         ctx,
-        [xZoomPosition.from - oneDZoomWindow, yZoomPosition.from],
-        [xZoomPosition.from + oneDZoomWindow, yZoomPosition.from],
+        [xFrom - oneDZoomWindow, yFrom],
+        [xFrom + oneDZoomWindow, yFrom],
         windowStyle
       );
       canvas.drawSegment(
         ctx,
-        [xZoomPosition.from - oneDZoomWindow, yZoomPosition.to],
-        [xZoomPosition.from + oneDZoomWindow, yZoomPosition.to],
+        [xFrom - oneDZoomWindow, yTo],
+        [xFrom + oneDZoomWindow, yTo],
         windowStyle
       );
-    }
-  }
-  $: {
-    if (zoomOrMove === "zoom") {
-      if (xTransformPositions && yTransformPositions) {
-        drawZoom(xTransformPositions, yTransformPositions);
-      }
     }
   }
 
   const leftDragCallbacks: MouseDragCallbacks = {
-    start: (e) => {
-      xTransformPositions = {
-        from: e.offsetX,
-        to: e.offsetX,
-      };
-      yTransformPositions = { from: e.offsetY, to: e.offsetY };
-      zoomOrMove = "zoom";
+    start: (_) => {},
+    move: (_, status) => {
+      visibleAction.set({ zoom: status.relativeZoom });
     },
-    move: (e) => {
-      // handle the situation where the user tries to zoom in only one direction
-      const desiredXToPosition = e.offsetX;
-      const desiredYToPosition = e.offsetY;
-      const isXTooClose =
-        Math.abs(xTransformPositions!.from - desiredXToPosition) <
-        oneDZoomWindow;
-      const isYTooClose =
-        Math.abs(yTransformPositions!.from - desiredYToPosition) <
-        oneDZoomWindow;
-      xTransformPositions!.to = isXTooClose
-        ? xTransformPositions!.from
-        : desiredXToPosition;
-      yTransformPositions!.to = isYTooClose
-        ? yTransformPositions!.from
-        : desiredYToPosition;
-    },
-    end: (e) => {
-      const zoom: Zoom = {
-        x: { from: 0, to: 0 },
-        y: { from: 0, to: 1 },
-      };
+    end: (_, status) => {
+      visibleAction.set(undefined);
 
-      // this means the user tried to zoom in only one direction
-      for (const [axis, positions, axisSize] of [
-        ["x", xTransformPositions, overlayWidth] as const,
-        ["y", yTransformPositions, overlayHeight] as const,
-      ]) {
-        if (!positions || positions.from === positions.to) continue;
-
-        const [from, to] = (<const>["from", "to"])
-          .map((side) =>
-            axis === "x"
-              ? positions[side] / axisSize
-              : 1 - positions[side] / axisSize
-          )
-          .sort();
-
-        zoom[axis] = { from, to };
-      }
-
-      events("zoom", zoom);
-
-      xTransformPositions = undefined;
-      yTransformPositions = undefined;
-      zoomOrMove = "neither";
+      if (status.beyondThreshold("any")) events("zoom", status.relativeZoom);
     },
   };
 
-  function drawMove(xMovePosition?: Range, yMovePosition?: Range) {
+  function drawShift(shift: Shift) {
     ctx?.clearRect(0, 0, overlayWidth, overlayHeight);
     const wingLength = 20;
     const spreadRad = Math.PI / 5;
@@ -197,105 +138,68 @@
       lineWidth: 3,
     };
 
-    if (xMovePosition && yMovePosition) {
-      canvas.drawArrow(
-        ctx,
-        [xMovePosition.from, yMovePosition.from],
-        [xMovePosition.to, yMovePosition.to],
-        wingLength,
-        spreadRad,
-        arrowStyle
-      );
-    } else if (xMovePosition) {
-      canvas.drawSegment(
-        ctx,
-        [xMovePosition.from, 0],
-        [xMovePosition.from, overlayHeight],
-        lineStyle
-      );
-      canvas.drawSegment(
-        ctx,
-        [xMovePosition.to, 0],
-        [xMovePosition.to, overlayHeight],
-        lineStyle
-      );
-      canvas.drawArrow(
-        ctx,
-        [xMovePosition.from, overlayHeight / 2],
-        [xMovePosition.to, overlayHeight / 2],
-        wingLength,
-        spreadRad,
-        arrowStyle
-      );
-    } else if (yMovePosition) {
-      canvas.drawSegment(
-        ctx,
-        [0, yMovePosition.from],
-        [overlayWidth, yMovePosition.from],
-        lineStyle
-      );
-      canvas.drawSegment(
-        ctx,
-        [0, yMovePosition.to],
-        [overlayWidth, yMovePosition.to],
-        lineStyle
-      );
-      canvas.drawArrow(
-        ctx,
-        [overlayWidth / 2, yMovePosition.from],
-        [overlayWidth / 2, yMovePosition.to],
-        wingLength,
-        spreadRad,
-        arrowStyle
-      );
-    }
-  }
+    if (shift.dx && shift.dy) {
+      const fromX = shift.origin.x * overlayWidth;
+      const toX = (shift.origin.x + shift.dx) * overlayWidth;
+      const fromY = (1 - shift.origin.y) * overlayHeight;
+      const toY = (1 - shift.origin.y - shift.dy) * overlayHeight;
 
-  $: {
-    if (zoomOrMove === "move") {
-      drawMove(xTransformPositions, yTransformPositions);
+      canvas.drawArrow(
+        ctx,
+        [fromX, fromY],
+        [toX, toY],
+        wingLength,
+        spreadRad,
+        arrowStyle
+      );
+    } else if (shift.dx) {
+      const fromX = shift.origin.x * overlayWidth;
+      const toX = (shift.origin.x + shift.dx) * overlayWidth;
+
+      canvas.drawSegment(ctx, [fromX, 0], [fromX, overlayHeight], lineStyle);
+      canvas.drawSegment(ctx, [toX, 0], [toX, overlayHeight], lineStyle);
+      canvas.drawArrow(
+        ctx,
+        [fromX, (1 - shift.origin.y) * overlayHeight],
+        [toX, (1 - shift.origin.y) * overlayHeight],
+        wingLength,
+        spreadRad,
+        arrowStyle
+      );
+    } else if (shift.dy) {
+      const fromY = (1 - shift.origin.y) * overlayHeight;
+      const toY = (1 - shift.origin.y - shift.dy) * overlayHeight;
+
+      canvas.drawSegment(ctx, [0, fromY], [overlayWidth, fromY], lineStyle);
+      canvas.drawSegment(ctx, [0, toY], [overlayWidth, toY], lineStyle);
+      canvas.drawArrow(
+        ctx,
+        [shift.origin.x * overlayWidth, fromY],
+        [shift.origin.x * overlayWidth, toY],
+        wingLength,
+        spreadRad,
+        arrowStyle
+      );
     }
   }
 
   const rightDragCallbacks: MouseDragCallbacks = {
-    start: (e) => {
-      xTransformPositions = {
-        from: e.offsetX,
-        to: e.offsetX,
-      };
-      yTransformPositions = { from: e.offsetY, to: e.offsetY };
-      zoomOrMove = "move";
+    start: (e) => {},
+    move: (_, status) => {
+      visibleAction.set({
+        shift: status.relativeShift,
+      });
     },
-    move: (e) => {
-      xTransformPositions!.to = e.offsetX;
-      yTransformPositions!.to = e.offsetY;
-    },
-    end: (e) => {
-      if (zoomOrMove === "move") {
-        const shift = { dx: 0, dy: 0 };
-
-        for (const [key, range, axisSize] of [
-          ["dx", xTransformPositions, overlayWidth] as const,
-          ["dy", yTransformPositions, -overlayHeight] as const,
-        ]) {
-          if (!range) continue;
-
-          const diff = range.to - range.from;
-          shift[key] = -diff / axisSize;
-        }
-
-        events("shift", shift);
-      }
-
-      xTransformPositions = undefined;
-      yTransformPositions = undefined;
-      zoomOrMove = "neither";
+    end: (_, status) => {
+      visibleAction.set(undefined);
+      events("shift", status.relativeShift);
     },
   };
 
   // FIXME DEbug
   import type { ContextItem } from "../contextMenu/contextMenu.ts";
   import GenericContextMenu from "../contextMenu/GenericContextMenu.svelte";
+  import type { Writable } from "svelte/store";
   let menu: any;
 
   const options: ContextItem[] = [
@@ -366,22 +270,20 @@
 <div
   class="container"
   role="region"
-  on:dblclick={() => events("reset", {})}
-  use:rightMouseClick={(e) => {
-    menu.open({ x: e.pageX, y: e.pageY });
-  }}
+  on:dblclick={() => events("reset")}
   bind:clientWidth={overlayWidth}
   bind:clientHeight={overlayHeight}
   on:contextmenu|preventDefault
+  use:mouseDrag={{
+    ...leftDragCallbacks,
+    button: MouseButtons.Left,
+    threshold: oneDZoomWindow,
+  }}
+  use:mouseDrag={{ ...rightDragCallbacks, button: MouseButtons.Right }}
+  use:rightMouseClick={(e) => {
+    menu.open({ x: e.pageX, y: e.pageY });
+  }}
 >
-  <div
-    class="OverChartSelector"
-    use:mouseDrag={{ ...leftDragCallbacks, button: MouseButtons.Left }}
-    use:mouseDrag={{ ...rightDragCallbacks, button: MouseButtons.Right }}
-  >
-    <slot name="chart" class="chart" />
-  </div>
-
   <canvas bind:this={canvasRef} width={overlayWidth} height={overlayHeight} />
 </div>
 
@@ -390,11 +292,6 @@
     position: absolute;
     inset: 0;
 
-    width: 100%;
-    height: 100%;
-  }
-
-  .OverChartSelector {
     width: 100%;
     height: 100%;
   }

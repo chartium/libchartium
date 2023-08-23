@@ -5,6 +5,8 @@
   import { MouseButtons, mouseDrag } from "../../utils/mouseGestures";
   import type { MouseDragCallbacks } from "../../utils/mouseGestures";
   import type { Range, Shift, Tick } from "../types";
+  import type { Writable } from "svelte/store";
+  import type { VisibleAction } from "./ChartOverlay.svelte";
 
   export const events = createEventDispatcher<{
     shift: Shift;
@@ -15,63 +17,37 @@
   /** Ticks on the axis. Position is to be between 0 and 1 */
   export let ticks: Tick[];
 
-  export let dragAction: "move" | "zoom" | "none" = "none";
-
   /** Coordinate of where dragging and ended for this axis */
-  export let transformPosition: Range | undefined;
+  // export let transformPosition: Range | undefined;
   /** Value of where dragging started and ended. Linearly interpolated from ticks */
-  export let transformValue: Range | undefined;
+  // export let transformValue: Range | undefined;
 
-  $: {
-    // FIXME this should prolly be in chart and the axis should only return values for the positions
-    if (
-      dragAction === "move" &&
-      transformPosition !== undefined &&
-      transformPosition.from !== transformPosition.to
-    ) {
-      const delta =
-        getAxisValueFromPosition(transformPosition.from) -
-        getAxisValueFromPosition(transformPosition.to);
-      const min = ticks[0].value;
-      const max = (ticks.at(-1) ?? ticks[0]).value;
-      transformValue = { from: min + delta, to: max + delta };
-    }
-  }
-
-  /** linearly interpolates value from coordinate along this axis */
-  function getAxisValueFromPosition(positionCoordinate: number) {
-    const alongAxis =
-      axis === "x"
-        ? positionCoordinate / axisWidth
-        : 1 - positionCoordinate / axisHeight;
-    return (
-      alongAxis * ((ticks.at(-1) ?? ticks[0]).value - ticks[0].value) +
-      ticks[0].value
-    );
-    // TODO: this is linear interpolation. For more complicated graphs this has to be overhauled
-  }
+  export let visibleAction: Writable<VisibleAction | undefined>;
 
   const dragCallbacks: MouseDragCallbacks = {
-    start: (e) => {
-      const from = axis === "x" ? e.offsetX : e.offsetY;
-      transformPosition = { from, to: from };
-    },
-    move: (e) => {
-      dragAction = "move";
-      transformPosition!.to = axis === "x" ? e.offsetX : e.offsetY;
-    },
-    end: (e) => {
-      if (transformPosition && dragAction === "move") {
-        const diff = transformPosition.to - transformPosition.from;
-        const axisSize = axis === "x" ? axisWidth : -axisHeight;
+    start: (e) => {},
+    move: (_, status) => {
+      const shift = status.relativeShift;
 
-        events("shift", {
-          [`d${axis}`]: -diff / axisSize,
-        });
+      if (axis === "x") {
+        shift.origin.y = 0.5;
+        delete shift.dy;
+      }
+      if (axis === "y") {
+        shift.origin.x = 0.5;
+        delete shift.dx;
       }
 
-      dragAction = "none";
-      transformPosition = undefined;
+      visibleAction.set({ shift });
+    },
+    end: (_, status) => {
+      const shift = status.relativeShift;
+
+      if (axis === "x") delete shift.dy;
+      if (axis === "y") delete shift.dx;
+
+      events("shift", shift);
+      visibleAction.set(undefined);
     },
   };
 
@@ -89,7 +65,7 @@
   bind:clientHeight={axisHeight}
 >
   <!-- tooltip -->
-  {#if transformPosition !== undefined && transformPosition.from !== transformPosition.to}
+  <!-- {#if transformPosition !== undefined && transformPosition.from !== transformPosition.to}
     {@const prop = axis === "x" ? "left" : "top"}
     <div class="tooltip" style="{prop}={transformPosition.from}px">
       {transformValue?.from.toFixed(3)}
@@ -97,7 +73,7 @@
     <div class="tooltip" style="{prop}={transformPosition.to}px">
       {transformValue?.to.toFixed(3)}
     </div>
-  {/if}
+  {/if} -->
 
   <div class="ticks">
     {#each ticks as tick}

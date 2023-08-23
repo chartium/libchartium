@@ -30,33 +30,6 @@
   /** Call Chart's change range */
   export let updateRange: () => void;
 
-  $: {
-    // FIXME this should prolly be in chart and the axis should only return values for the positions
-    if (
-      zoomOrMove === "move" &&
-      transformPosition !== undefined &&
-      transformPosition.from !== transformPosition.to
-    ) {
-      const delta =
-        getAxisValueFromPosition(transformPosition.from) -
-        getAxisValueFromPosition(transformPosition.to);
-      const min = ticks[0].value;
-      const max = (ticks.at(-1) ?? ticks[0]).value;
-      transformValue = { from: min + delta, to: max + delta };
-      zoomOrMove = "move";
-    }
-    if (
-      zoomOrMove === "zoom" &&
-      transformPosition !== undefined &&
-      transformPosition.from !== transformPosition.to
-    ) {
-      const from = getAxisValueFromPosition(transformPosition.from);
-      const to = getAxisValueFromPosition(transformPosition.to);
-      transformValue = { from, to };
-      zoomOrMove = "zoom";
-    }
-  }
-
   /** linearly interpolates value from coordinate along this axis */
   function getAxisValueFromPosition(positionCoordinate: number) {
     const alongAxis =

@@ -1,18 +1,14 @@
 <script lang="ts">
-  import { type Remote } from "comlink";
   import type { ChartiumController } from "../data-worker";
   import type { Range, Shift, Tick, Zoom } from "../types";
-
-  import { Chart } from "./chart";
-  import ChartOverlay from "./ChartOverlay.svelte";
-  import ChartAxis from "./ChartAxis.svelte";
-  import { onMount } from "svelte";
-
-  import ChartLegend from "./ChartLegend.svelte";
-  import type { ReadableSignal } from "../../utils/signal";
   import type { TraceList } from "../data-worker/trace-list";
+
+  import { onMount } from "svelte";
+  import { Chart } from "./chart";
+  import ChartOverlay, { type VisibleAction } from "./ChartOverlay.svelte";
   import ChartGrid from "./ChartGrid.svelte";
   import AxisTicks from "./AxisTicks.svelte";
+  import { writable } from "svelte/store";
 
   /** Height of only the chart are without axis */
   export let chartHeight: number;
@@ -30,6 +26,7 @@
   export let yLabel: string = "";
 
   const chart = new Chart(controller, traces);
+  const visibleAction = writable<VisibleAction | undefined>(undefined);
 
   $: xTicks = [] as Tick[];
   $: yTicks = [] as Tick[];
@@ -57,23 +54,9 @@
 
   $: (window as any).chart = chart; // FIXME DEBUG
 
-  let zoomOrMove: "zoom" | "move" | "neither" = "neither";
-
-  // for data
-  /** new border values of y range */
-  let yTransformValues: Range | undefined;
-  /** new border values of x range */
-  let xTransformValues: Range | undefined;
-
-  // for drawing
-  /** new border values of y range */
-  let yTransformPositions: Range | undefined;
-  /** new border values of x range */
-  let xTransformPositions: Range | undefined;
-
   function shiftRange({ detail: shift }: { detail: Shift }) {
     if (chart.xRange && shift.dx) {
-      const delta = (chart.xRange.to - chart.xRange.from) * shift.dx;
+      const delta = (chart.xRange.to - chart.xRange.from) * -shift.dx;
       chart.xRange = {
         from: chart.xRange.from + delta,
         to: chart.xRange.to + delta,
@@ -81,7 +64,7 @@
     }
 
     if (chart.yRange && shift.dy) {
-      const delta = (chart.yRange.to - chart.yRange.from) * shift.dy;
+      const delta = (chart.yRange.to - chart.yRange.from) * -shift.dy;
       chart.yRange = {
         from: chart.yRange.from + delta,
         to: chart.yRange.to + delta,
@@ -98,6 +81,8 @@
 
       const d = range.to - range.from;
 
+      if (zoom.to - zoom.from <= 0) continue;
+
       chart[rangeName] = {
         from: range.from + d * zoom.from,
         to: range.from + d * zoom.to,
@@ -109,11 +94,6 @@
     // FIXME this should pull data from controller
     chart.xRange = { from: 0, to: 1000 };
     chart.yRange = { from: -10, to: 200 };
-
-    xTransformPositions = undefined;
-    yTransformPositions = undefined;
-    xTransformValues = undefined;
-    yTransformValues = undefined;
   }
 
   let contentSize: [number, number] = [1, 1];
@@ -145,18 +125,16 @@
       slot="yticks"
       axis="y"
       ticks={yTicks ?? []}
+      {visibleAction}
       on:shift={shiftRange}
-      bind:transformPosition={yTransformPositions}
-      bind:transformValue={yTransformValues}
     />
 
     <AxisTicks
       slot="xticks"
       axis="x"
       ticks={xTicks ?? []}
+      {visibleAction}
       on:shift={shiftRange}
-      bind:transformPosition={xTransformPositions}
-      bind:transformValue={xTransformValues}
     />
 
     <canvas bind:this={canvas} on:contextmenu|preventDefault />
@@ -165,9 +143,7 @@
       on:reset={resetRange}
       on:zoom={zoomRange}
       on:shift={shiftRange}
-      bind:xTransformPositions
-      bind:yTransformPositions
-      bind:zoomOrMove
+      {visibleAction}
     />
   </ChartGrid>
 </div>

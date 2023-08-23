@@ -36,6 +36,8 @@ export interface Range {
 export interface Shift {
   dx?: number;
   dy?: number;
+
+  origin: Point;
 }
 
 export interface Zoom {
