@@ -10,11 +10,6 @@
   import AxisTicks from "./AxisTicks.svelte";
   import { writable } from "svelte/store";
 
-  /** Height of only the chart are without axis */
-  export let chartHeight: number;
-  /** Height of only the x axis, its width is automatically == chart width */
-  /** Width of only the chart are without axis */
-  export let chartWidth: number;
   export let controller: ChartiumController;
   export let traces: TraceList;
 
@@ -39,7 +34,7 @@
     mounted = true;
 
     chart.traces = await traces;
-    chart.xType = "u32";
+    chart.xType = "f32";
     chart.xRange = { from: 0, to: 1000 };
     chart.yRange = { from: -10, to: 200 };
 
@@ -102,57 +97,108 @@
       contentSize[0] * devicePixelRatio,
       contentSize[1] * devicePixelRatio
     );
-    chart?.render();
+    chart.render();
   }
 </script>
 
-<div style="width:{chartWidth}px;height:{chartHeight}px">
-  <ChartGrid bind:contentSize>
-    <svelte:fragment slot="ylabel">
-      {yLabel}
-    </svelte:fragment>
-    <svelte:fragment slot="xlabel">
-      {xLabel}
-    </svelte:fragment>
-    <svelte:fragment slot="title">
-      {title}
-    </svelte:fragment>
-    <svelte:fragment slot="subtitle">
-      {subtitle}
-    </svelte:fragment>
+<ChartGrid bind:contentSize>
+  <svelte:fragment slot="ylabel">
+    {yLabel}
+  </svelte:fragment>
+  <svelte:fragment slot="xlabel">
+    {xLabel}
+  </svelte:fragment>
+  <svelte:fragment slot="title">
+    {title}
+  </svelte:fragment>
+  <svelte:fragment slot="subtitle">
+    {subtitle}
+  </svelte:fragment>
 
-    <AxisTicks
-      slot="yticks"
-      axis="y"
-      ticks={yTicks ?? []}
-      {visibleAction}
-      on:shift={shiftRange}
-    />
+  <AxisTicks
+    slot="yticks"
+    axis="y"
+    ticks={yTicks ?? []}
+    {visibleAction}
+    on:shift={shiftRange}
+  />
 
-    <AxisTicks
-      slot="xticks"
-      axis="x"
-      ticks={xTicks ?? []}
-      {visibleAction}
-      on:shift={shiftRange}
-    />
+  <AxisTicks
+    slot="xticks"
+    axis="x"
+    ticks={xTicks ?? []}
+    {visibleAction}
+    on:shift={shiftRange}
+  />
 
-    <canvas bind:this={canvas} on:contextmenu|preventDefault />
+  <canvas bind:this={canvas} on:contextmenu|preventDefault />
 
-    <ChartOverlay
-      on:reset={resetRange}
-      on:zoom={zoomRange}
-      on:shift={shiftRange}
-      {visibleAction}
-    />
-  </ChartGrid>
-</div>
+  {#if $$slots.infobox}
+    <div class="infobox">
+      <slot name="infobox" />
+    </div>
+  {/if}
 
-<style>
+  <ChartOverlay
+    on:reset={resetRange}
+    on:zoom={zoomRange}
+    on:shift={shiftRange}
+    {visibleAction}
+  />
+
+  <div class="toolbar" slot="overlay">
+    <slot name="toolbar" />
+  </div>
+</ChartGrid>
+
+<style lang="scss">
   canvas {
     position: absolute;
     inset: 0;
     width: 100%;
     height: 100%;
+  }
+
+  .infobox {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+
+    text-align: left;
+    padding: 0.25rem;
+
+    font-size: 0.8em;
+    max-width: 300px;
+    overflow-x: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+
+    background: rgba(255, 255, 255, 0.6);
+
+    :global(.dark) & {
+      background: rgba(70, 70, 70, 0.6);
+    }
+  }
+
+  .toolbar {
+    position: absolute;
+    right: 0;
+    top: 0;
+
+    display: flex;
+    flex-flow: row nowrap;
+    align-items: center;
+
+    opacity: 0.6;
+    transition: all 0.2s ease-in-out;
+
+    &:hover {
+      opacity: 0.9;
+      background-color: #ececec;
+
+      :global(.dark) & {
+        background-color: #505050;
+      }
+    }
   }
 </style>

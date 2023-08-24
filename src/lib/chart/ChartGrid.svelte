@@ -1,20 +1,5 @@
 <script lang="ts">
-  import { onMount } from "svelte";
-
   export let contentSize: [number, number] = [1, 1];
-
-  let contentElem: HTMLDivElement;
-  onMount(() => {
-    contentSize = [contentElem.clientWidth, contentElem.clientHeight];
-
-    const observer = new ResizeObserver(() => {
-      contentSize = [contentElem.clientWidth, contentElem.clientHeight];
-    });
-
-    observer.observe(contentElem);
-
-    return () => observer.disconnect();
-  });
 </script>
 
 <div class="graph-inner">
@@ -36,7 +21,11 @@
   <div class="xlabel">
     <slot name="xlabel" />
   </div>
-  <div class="content" bind:this={contentElem}>
+  <div
+    class="content"
+    bind:clientWidth={contentSize[0]}
+    bind:clientHeight={contentSize[1]}
+  >
     <slot />
   </div>
   <div class="right-legend">

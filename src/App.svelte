@@ -1,5 +1,6 @@
 <script lang="ts">
   import Chart from "./lib/chart/Chart.svelte";
+  import ToolbarButton from "./lib/chart/ToolbarButton.svelte";
   import { ChartiumController } from "./lib/data-worker";
 
   // autogenerate a lot of data
@@ -34,18 +35,28 @@
   });
 </script>
 
-<main>
+<main class="dark">
   <h1>Chartium test page</h1>
   {#await traces then traces}
-    <Chart
-      {controller}
-      {traces}
-      title="Titulek"
-      subtitle="Podtitulek"
-      xLabel="Time since I sagged yer mum [Days]"
-      yLabel="Mean color of balls [K]"
-      chartHeight={600}
-      chartWidth={800}
-    />
+    <div style="height:600px;width:800px;">
+      <Chart
+        {controller}
+        {traces}
+        title="Titulek"
+        subtitle="Podtitulek"
+        xLabel="Time since I sagged yer mum [Days]"
+        yLabel="Mean color of balls [K]"
+      >
+        <svelte:fragment slot="toolbar">
+          <ToolbarButton>Asd</ToolbarButton>
+        </svelte:fragment>
+
+        <svelte:fragment slot="infobox">
+          Nechci<br />
+          Takto<br />
+          Zit
+        </svelte:fragment>
+      </Chart>
+    </div>
   {/await}
 </main>
