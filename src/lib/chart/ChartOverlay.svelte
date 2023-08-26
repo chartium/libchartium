@@ -197,12 +197,14 @@
   };
 
   // FIXME DEbug
+  $: (window as any).options = options;
+  
   import type { ContextItem } from "../contextMenu/contextMenu.ts";
   import GenericContextMenu from "../contextMenu/GenericContextMenu.svelte";
   import type { Writable } from "svelte/store";
   let menu: any;
 
-  const options: ContextItem[] = [
+  let options: ContextItem<string>[] = [
     {
       type: "leaf",
       content: "First option",
@@ -252,9 +254,28 @@
       ],
     },
     {
+      type: "branch",
+      content: "even more options??",
+      children: [
+        {
+          type: "leaf",
+          content: "First option in submenu",
+          callback: () => console.log("First option in submenu clicked"),
+        },
+        {
+          type: "leaf",
+          content: "Second option in submenu",
+          callback: () => console.log("Second option in submenu clicked"),
+        },
+      ],
+    },
+  ];
+
+  const smallOptions: ContextItem<string>[] = [
+    {
       type: "leaf",
-      content: "Last option below Submenu",
-      callback: () => console.log("Last option clicked"),
+      content: "small option",
+      callback: () => console.log("small option clicked"),
     },
   ];
 
@@ -265,7 +286,7 @@
   let overlayHeight: number = 1;
 </script>
 
-<GenericContextMenu items={options} bind:this={menu} />
+<GenericContextMenu bind:items={options} bind:this={menu} />
 
 <div
   class="container"

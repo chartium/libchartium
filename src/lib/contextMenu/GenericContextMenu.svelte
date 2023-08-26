@@ -5,10 +5,8 @@
     openPositionNextToPoint,
     openPositionNextToRect,
     clickOutside,
-    genericKeydown
+    genericKeydown,
   } from "./contextMenu";
-
-  
 
   /** The only required input from outside, the content of the context menu */
   export let items: ContextItem<T>[];
@@ -19,14 +17,19 @@
   /** return focus to parent menu when left arrow is pressed */
   export let returnFocus: () => void = () => {};
 
+  /** surrenders focus in favor of currently selected submenu */
   function giveFocus() {
     if (currentlyFocusedIndex === -1) {
+      return;
+    }
+    if (items[currentlyFocusedIndex].type !== "branch") {
       return;
     }
     active = false;
     surrenderedFocus = true;
   }
 
+  /** takes back focus from submenu */
   function takeBackFocus() {
     active = true;
     surrenderedFocus = false;
@@ -41,6 +44,7 @@
   /** whether the menu was summoned by a right click */
   let opened: boolean = false;
 
+  /** position where to render self */
   let renderPosition: { x: number; y: number } | undefined = undefined;
 
   /** opens as main menu at the point positionRelativeToPage or if overflow will clamp to edges of viewport */
@@ -84,7 +88,7 @@
     }
   }
 
-  $: if (!(sourceActive || main)) {
+  $: if (!sourceActive && opened) {
     close();
   }
 
@@ -96,10 +100,13 @@
   let menuWidth: number;
   let menuHeight: number;
 
+  /** DOMRect of currently selected context item (submenu will open next to it) */
   let currentlySelectedRect: DOMRect | undefined = undefined;
 
+  /** Which item is currently focused */
   export let currentlyFocusedIndex: number = -1;
 
+  /** Whether a submenu took focus */
   let surrenderedFocus: boolean = false;
 
   function handleKeyboardNavigation(event: KeyboardEvent) {
@@ -161,19 +168,33 @@
         currentlySelectedRect = e.detail.rect;
       }}
       on:mouseover={(e) => {
-        currentlyFocusedIndex = index;
+        if (opened) {
+          currentlyFocusedIndex = index;
+          active = true;
+        }
       }}
       on:focus={(e) => {
-        currentlyFocusedIndex = index;
+        if (opened) {
+          currentlyFocusedIndex = index;
+          active = true;
+        }
       }}
     />
     {#if item.type === "branch"}
-      <div role="menu" tabindex="-1">
+      <div
+        role="menu"
+        tabindex="-1"
+        on:mouseover={giveFocus}
+        on:focus={giveFocus}
+      >
         <svelte:self
           items={item.children}
           main={false}
           active={currentlyFocusedIndex === index && surrenderedFocus}
-          currentlyFocusedIndex={currentlyFocusedIndex === index && surrenderedFocus ? 0 : -1}
+          currentlyFocusedIndex={currentlyFocusedIndex === index &&
+          surrenderedFocus
+            ? 0
+            : -1}
           sourceActive={currentlyFocusedIndex === index}
           sourceRect={currentlySelectedRect}
           returnFocus={takeBackFocus}

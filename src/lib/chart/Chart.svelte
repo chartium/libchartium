@@ -5,7 +5,9 @@
 
   import { onMount } from "svelte";
   import { Chart } from "./chart";
-  import ChartOverlay, { type VisibleAction } from "./ChartOverlay.svelte";
+  import ChartOverlay from "./ChartOverlay.svelte";
+  import type VisibleAction from "./ChartOverlay.svelte";
+
   import ChartGrid from "./ChartGrid.svelte";
   import AxisTicks from "./AxisTicks.svelte";
   import { writable } from "svelte/store";
