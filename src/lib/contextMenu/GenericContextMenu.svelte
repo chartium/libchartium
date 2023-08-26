@@ -1,40 +1,53 @@
-<svelte:options accessors />
-
-<script lang="ts">
+<script lang="ts" generics="T">
+  import ContextItemComponent from "./contextItemComponent.svelte";
   import type { ContextItem, Point } from "./contextMenu";
   import {
     openPositionNextToPoint,
     openPositionNextToRect,
     clickOutside,
+    genericKeydown
   } from "./contextMenu";
 
-  /** The only required input from outside, the content of the context menu */
-  export let items: ContextItem[];
-  $: itemsWithIDs = items.map((item, i) => ({ ...item, id: i }));
+  
 
-  /** dic of submenus enumerated by ID */
-  let submenus: { [key: number]: any } = {}; // TODO it should be something like { [key: number]: GenericContextMenu } or { [key: number]: typeof this }
+  /** The only required input from outside, the content of the context menu */
+  export let items: ContextItem<T>[];
 
   /** only the main menu stays shown when it nor its childern are howered */
   export let main: boolean = true;
 
-  /** Whether this menu is hovered */
-  export let thisHovered: boolean = false;
+  /** return focus to parent menu when left arrow is pressed */
+  export let returnFocus: () => void = () => {};
 
-  /** whether any of the submenus of this menu is hovered. */
-  export let submenusHovered: boolean = false;
+  function giveFocus() {
+    if (currentlyFocusedIndex === -1) {
+      return;
+    }
+    active = false;
+    surrenderedFocus = true;
+  }
+
+  function takeBackFocus() {
+    active = true;
+    surrenderedFocus = false;
+  }
+
+  /** Whether the menu is being selected from either by a mouse or a keyboard */
+  export let active: boolean = false;
 
   /** Whether the item that opens this (sub)menu is hovered */
-  export let sourceHovered: boolean = false;
+  export let sourceActive: boolean = false;
+
   /** whether the menu was summoned by a right click */
   let opened: boolean = false;
 
   let renderPosition: { x: number; y: number } | undefined = undefined;
 
-  /** opens at the point positionRelativeToPage or if overflow will clamp to edges of viewport */
+  /** opens as main menu at the point positionRelativeToPage or if overflow will clamp to edges of viewport */
   export function open(positionRelativeToPage: Point): void {
     opened = true;
-    sourceHovered = !main;
+    sourceActive = true;
+    active = true;
     renderPosition = openPositionNextToPoint(
       positionRelativeToPage,
       menuHeight,
@@ -42,24 +55,36 @@
     );
   }
 
+  /** Rect next to which a submenu should open */
+  export let sourceRect: DOMRect | undefined = undefined;
+
   /** opens on the right of this rect or, if there isnt enough space, on the left */
-  export function openNextToRect(rect: DOMRect): void {
+  export function openNextToSourceRect(): void {
+    if (sourceRect === undefined || sourceRect === undefined) {
+      return;
+    }
     opened = true;
-    sourceHovered = true;
-    renderPosition = openPositionNextToRect(rect, menuHeight, menuWidth);
+    sourceActive = true;
+    renderPosition = openPositionNextToRect(sourceRect, menuHeight, menuWidth);
+  }
+  $: if (sourceActive) {
+    setTimeout(() => {
+      openNextToSourceRect();
+    }, 10);
   }
 
   export function close(): void {
+    currentlyFocusedIndex = -1;
+    currentlySelectedRect = undefined;
+    active = false;
     opened = false;
     callPosition = undefined;
-  }
-  function closeIfNotHovered(): void {
-    if (!(thisHovered || sourceHovered || submenusHovered)) {
-      close();
+    if (!main) {
+      returnFocus();
     }
   }
 
-  $: if (!(main || thisHovered || sourceHovered || submenusHovered)) {
+  $: if (!(sourceActive || main)) {
     close();
   }
 
@@ -70,98 +95,93 @@
 
   let menuWidth: number;
   let menuHeight: number;
+
+  let currentlySelectedRect: DOMRect | undefined = undefined;
+
+  export let currentlyFocusedIndex: number = -1;
+
+  let surrenderedFocus: boolean = false;
+
+  function handleKeyboardNavigation(event: KeyboardEvent) {
+    if (event.key === "Escape") {
+      close();
+      return;
+    }
+    if (!active) {
+      return;
+    }
+    if (event.key === "ArrowDown") {
+      currentlyFocusedIndex++;
+      if (currentlyFocusedIndex >= items.length) {
+        currentlyFocusedIndex = 0;
+      }
+      if (items[currentlyFocusedIndex].type === "separator") {
+        currentlyFocusedIndex++;
+      }
+    } else if (event.key === "ArrowUp") {
+      currentlyFocusedIndex--;
+      if (currentlyFocusedIndex < 0) {
+        currentlyFocusedIndex = items.length - 1;
+      }
+      if (items[currentlyFocusedIndex].type === "separator") {
+        currentlyFocusedIndex--;
+      }
+    } else if (event.key === "ArrowLeft") {
+      if (!main && !surrenderedFocus) {
+        active = false;
+        currentlyFocusedIndex = -1;
+        setTimeout(() => {
+          returnFocus();
+        }, 10);
+      }
+    } else if (event.key === "ArrowRight") {
+      giveFocus();
+    }
+  }
 </script>
 
 <div
   class="context-menu"
   role="menu"
   tabindex="-1"
+  aria-hidden={visibility === "hidden"}
   style="visibility:{visibility}; position: fixed;
     left: {renderPosition?.x ?? 0}px;
     top:{renderPosition?.y ?? 0}px; z-index: 1; user-select: none;"
-  use:clickOutside={closeIfNotHovered}
+  use:clickOutside={close}
+  use:genericKeydown={handleKeyboardNavigation}
   bind:clientHeight={menuHeight}
   bind:clientWidth={menuWidth}
-  on:mouseover={() => {
-    thisHovered = true;
-  }}
-  on:focus={() => {
-    thisHovered = true;
-  }}
-  on:mouseleave={() => {
-    setTimeout(() => {
-      thisHovered = false;
-    }, 50);
-  }}
-  on:blur={() => {
-    thisHovered = false;
-  }}
 >
-  {#each itemsWithIDs as item}
-    {#if item.type === "leaf"}
-      <div class="context-item" on:click={item.callback} on:keypress|once>
-        {item.content}
-      </div>
-    {/if}
-    {#if item.type === "separator"}
-      <div class="context-separator">
-        <div
-          style="height: 5px; border-bottom: 1px solid rgb(131, 130, 130); margin-bottom: 5px;"
-        />
-      </div>
-    {/if}
+  {#each items as item, index}
+    <ContextItemComponent
+      {item}
+      focused={currentlyFocusedIndex === index && item.type !== "separator"}
+      on:select={(e) => {
+        currentlySelectedRect = e.detail.rect;
+      }}
+      on:mouseover={(e) => {
+        currentlyFocusedIndex = index;
+      }}
+      on:focus={(e) => {
+        currentlyFocusedIndex = index;
+      }}
+    />
     {#if item.type === "branch"}
-      <div
-        class="context-submenu context-item"
-        on:mouseover={(e) => {
-          // open the submenu on the right of submenu button
-          const rect = e.currentTarget.getBoundingClientRect();
-          submenus[item.id].openNextToRect(rect);
-        }}
-        on:focus={(e) => {
-          // open the submenu on the right of submenu button
-          const rect = e.currentTarget.getBoundingClientRect();
-          submenus[item.id].openNextToRect(rect);
-        }}
-        on:mouseout={() => {
-          setTimeout(() => {
-            submenus[item.id].sourceHovered = false;
-          }, 50);
-        }}
-        on:blur={() => {
-          setTimeout(() => {
-            submenus[item.id].sourceHovered = false;
-          }, 50);
-        }}
-      >
-        {item.content}
+      <div role="menu" tabindex="-1">
+        <svelte:self
+          items={item.children}
+          main={false}
+          active={currentlyFocusedIndex === index && surrenderedFocus}
+          currentlyFocusedIndex={currentlyFocusedIndex === index && surrenderedFocus ? 0 : -1}
+          sourceActive={currentlyFocusedIndex === index}
+          sourceRect={currentlySelectedRect}
+          returnFocus={takeBackFocus}
+        />
       </div>
     {/if}
   {/each}
 </div>
-
-<!-- these are separate from the tree so they can have their own position relative to screen and render
-their themselves corectly in case of overflow -->
-{#each itemsWithIDs as item}
-  {#if item.type === "branch"}
-    <div
-      on:mouseleave={() => {
-        setTimeout(() => {
-          submenusHovered = false;
-        }, 50);
-      }}
-      on:mouseenter={() => {
-        submenusHovered = true;
-      }}
-    >
-      <svelte:self
-        bind:this={submenus[item.id]}
-        items={item.children}
-        main={false}
-      />
-    </div>
-  {/if}
-{/each}
 
 <style>
   .context-menu {
@@ -170,16 +190,5 @@ their themselves corectly in case of overflow -->
     border-color: rgb(131, 130, 130);
     border-radius: 4px;
     background-color: rgb(17, 20, 37);
-  }
-
-  .context-item {
-    display: flex;
-    align-items: start;
-    padding: 5px;
-    padding-left: 10px;
-  }
-
-  .context-item:hover {
-    background-color: rgb(75, 75, 75);
   }
 </style>

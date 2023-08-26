@@ -1,16 +1,22 @@
-export interface ContextLeaf {
+export interface ContextLeaf<T> {
   type: "leaf";
   /** Content of the menu item, usually text, to be displayed */
-  content: any;
+  content: T;
+  /** Short description of this item's functionality. If kept undefined 
+   * will just reuse the content, which may be problematic if T isn't a type that has a reasonable print */
+  ariaLabel?: string;
   /** Callback to be called upon clicking this option */
-  callback: () => void;
+  callback?: () => void;
 }
-export interface ContextBranch {
+export interface ContextBranch<T> {
   type: "branch";
   /** Content of the menu item, usually text, to be displayed */
-  content: any;
+  content: T;
+  /** Short description of this item's functionality. If kept undefined 
+   * will just reuse the content, which may be problematic if T isn't a type that has a reasonable print */
+  ariaLabel?: string;
   /** The submenu */
-  children: ContextItem[];
+  children: ContextItem<T>[];
 }
 export interface ContextSeparator {
   type: "separator";
@@ -21,7 +27,7 @@ export interface ContextSeparator {
  * a branch, i.e. a submenu,
  * or a separator which is just a line
  */
-export type ContextItem = ContextLeaf | ContextBranch | ContextSeparator;
+export type ContextItem<T> = ContextLeaf<T> | ContextBranch<T> | ContextSeparator;
 
 export interface Point {
   x: number;
@@ -80,6 +86,24 @@ export function clickOutside(
   return {
     destroy() {
       document.removeEventListener("click", handleClick, true);
+    },
+  };
+}
+
+/** svelte action for keydown that doesn't require focus on the div component listening */
+export function genericKeydown(
+  node: HTMLElement,
+  callback: (event: KeyboardEvent) => void
+) {
+  const handleKeydown = (event: KeyboardEvent) => {
+    callback(event);
+  };
+
+  document.addEventListener("keydown", handleKeydown, true);
+
+  return {
+    destroy() {
+      document.removeEventListener("keydown", handleKeydown, true);
     },
   };
 }
