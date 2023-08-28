@@ -42,7 +42,7 @@ interface RawTraceStyle {
  */
 export function* computeStyles(
   stylesheet: TraceStylesheet,
-  traces: Uint32Array | TraceHandle[],
+  traces: Iterable<TraceHandle>,
   ids: Map<TraceHandle, string>
 ): Iterable<RawTraceStyle> {
   const baseStyle: TraceStyle = {
@@ -58,8 +58,7 @@ export function* computeStyles(
   );
 
   for (const handle of traces) {
-    const id =
-      ids.get(handle as TraceHandle) ?? yeet(UnknownTraceHandleError, handle);
+    const id = ids.get(handle) ?? yeet(UnknownTraceHandleError, handle);
 
     const { width, display, color } = resolvedStylesheet.get(id) ?? baseStyle;
 
@@ -87,14 +86,12 @@ export function* computeStyles(
 /** Remove styles that don't apply to any trace */
 export function reduceStylesheet(
   stylesheet: TraceStylesheet,
-  traces: Uint32Array | TraceHandle[],
+  traces: Iterable<TraceHandle>,
   ids: Map<TraceHandle, string>
 ): TraceStylesheet {
   const usedIds = new Set<string>();
   for (const handle of traces)
-    usedIds.add(
-      ids.get(handle as TraceHandle) ?? yeet(UnknownTraceHandleError, handle)
-    );
+    usedIds.add(ids.get(handle) ?? yeet(UnknownTraceHandleError, handle));
 
   return Object.fromEntries(
     Object.entries(stylesheet).filter(
@@ -116,7 +113,7 @@ const isEmptyStyle = (style: Partial<TraceStyle>) =>
 
 export function stylesheetNormalForm(
   stylesheet: TraceStylesheet,
-  traces: Uint32Array | TraceHandle[],
+  traces: Iterable<TraceHandle>,
   ids: Map<TraceHandle, string>
 ): string {
   stylesheet = reduceStylesheet(stylesheet, traces, ids);

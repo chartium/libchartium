@@ -1,6 +1,6 @@
 import type { Range, TraceHandle } from "../types";
 import { lib } from "./wasm";
-import type { TraceStylesheet } from "./trace-styles";
+import { computeStyles, type TraceStylesheet } from "./trace-styles";
 import { yeet } from "../../utils/yeet";
 import { UnknownTraceHandleError } from "../errors";
 import { traceIds } from "./controller";
@@ -11,12 +11,21 @@ import {
   map,
   reduce,
   unique,
+  zip,
 } from "../../utils/collection";
 import { merge } from "lodash-es";
 import { proxyMarker } from "comlink";
+import type { Color } from "../../utils/color";
 
 export const BUNDLES = Symbol("bundles");
 export const HANDLES = Symbol("handles");
+
+export interface StyledTrace {
+  id: string;
+  width: number;
+  color: Color;
+  display: "line" | "points";
+}
 
 export class TraceList {
   [proxyMarker] = true;
@@ -56,6 +65,22 @@ export class TraceList {
       const id = traceIds.get(handle as TraceHandle);
       yield id ?? yeet(UnknownTraceHandleError, handle);
     }
+  }
+
+  tracesWithStyles(): Iterable<StyledTrace> {
+    const ids = this.traces();
+    const styles = computeStyles(
+      this.#stylesheet,
+      this.#traceHandles,
+      traceIds
+    );
+
+    return map(zip(ids, styles), ([id, { color, width, points_mode }]) => ({
+      id,
+      color,
+      width,
+      display: points_mode ? "points" : "line",
+    }));
   }
 
   get [BUNDLES]() {

@@ -27,11 +27,16 @@
 
   // const controller = spawnChartiumWorker();
   const controller = ChartiumController.instantiateInThisThread();
-  $: traces = controller.addFromArrayBuffer({
+  const traces = controller.addFromArrayBuffer({
     ids: ["sin", "cos", "atan"],
     data: Float32Array.from(chartiumFriendlyTraceData),
     xType: "f32",
     yType: "f32",
+  });
+
+  // FIXME for debugging only
+  traces.then((traces) => {
+    for (const trace of traces.tracesWithStyles()) console.log(trace);
   });
 </script>
 

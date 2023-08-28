@@ -80,3 +80,17 @@ export function reduce<S, T>(
 
   return value;
 }
+
+export function* zip<S, T>(
+  iterable1: Iterable<S>,
+  iterable2: Iterable<T>
+): Iterable<[S, T]> {
+  const iter1 = iterable1[Symbol.iterator]();
+  const iter2 = iterable2[Symbol.iterator]();
+  while (true) {
+    const next1 = iter1.next();
+    const next2 = iter2.next();
+    if (next1.done || next2.done) return;
+    yield [next1.value, next2.value];
+  }
+}
