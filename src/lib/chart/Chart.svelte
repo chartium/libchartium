@@ -11,6 +11,7 @@
   import ChartGrid from "./ChartGrid.svelte";
   import AxisTicks from "./AxisTicks.svelte";
   import { writable } from "svelte/store";
+  import ChartLegend from "./ChartLegend.svelte";
 
   export let controller: ChartiumController;
   export let traces: TraceList;
@@ -151,6 +152,8 @@
   <div class="toolbar" slot="overlay">
     <slot name="toolbar" />
   </div>
+
+  <ChartLegend slot="right-legend" {traces} />
 </ChartGrid>
 
 <style lang="scss">
