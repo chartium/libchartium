@@ -2,6 +2,8 @@
   import Chart from "./lib/chart/Chart.svelte";
   import ToolbarButton from "./lib/chart/ToolbarButton.svelte";
   import { ChartiumController } from "./lib/data-worker";
+  import Fa from 'svelte-fa';
+  import { faArrowRight, faArrowLeft, faChartLine, faExpand, faCamera, faDownload, faUpDown, faUserClock } from '@fortawesome/free-solid-svg-icons'
 
   // autogenerate a lot of data
   const from = 0;
@@ -49,17 +51,31 @@
         {traces}
         title="Titulek"
         subtitle="Podtitulek"
-        xLabel="Time since I sagged yer mum [Days]"
-        yLabel="Mean color of balls [K]"
+        xLabel="Number of zines published"
+        yLabel="Prefiguration achieved [megatons]"
       >
         <svelte:fragment slot="toolbar">
-          <ToolbarButton>Asd</ToolbarButton>
+          <ToolbarButton>
+            <Fa icon={faExpand} />
+          </ToolbarButton>
+          <ToolbarButton>
+            <Fa icon={faCamera} />
+          </ToolbarButton>
+          <ToolbarButton>
+            <Fa icon={faDownload} />
+          </ToolbarButton>
+          <ToolbarButton>
+            <Fa icon={faUpDown} />
+          </ToolbarButton>
+          <ToolbarButton>
+            <Fa icon={faUserClock} />
+          </ToolbarButton>
         </svelte:fragment>
 
         <svelte:fragment slot="infobox">
-          Nechci<br />
-          Takto<br />
-          Zit
+          <Fa icon={faArrowRight} />&ensp;1<br />
+          <Fa icon={faArrowLeft} />&ensp;1000<br />
+          <Fa icon={faChartLine} />&ensp;3/3
         </svelte:fragment>
       </Chart>
     </div>

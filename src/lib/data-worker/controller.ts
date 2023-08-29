@@ -79,6 +79,7 @@ export class ChartiumController {
 
   private constructor(options: ChartiumControllerOptions = {}) {
     if (instance) {
+      window.location.reload(); // FIXME only for hot reload while debugging
       throw new Error(
         "There already is a ChartiumController instance running in this thread."
       );
