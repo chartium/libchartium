@@ -71,7 +71,6 @@
   }
 
   .ylabel,
-  .right-legend,
   .yticks > :global(span) {
     writing-mode: vertical-rl;
     text-orientation: mixed;

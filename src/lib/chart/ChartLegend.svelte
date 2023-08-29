@@ -10,8 +10,16 @@
   $: tracesWithStyles = Array.from(traces.tracesWithStyles()); // FIXME replace with first(traces, n)
 
   let canvasRefs: HTMLCanvasElement[] = [];
-  $: console.log("tracesWithStyles", tracesWithStyles);
+
+  let container: HTMLElement; // FIXME this is a lame workaround for the @container css query which for some reason (??) doesn't work in svelte altho the github issue says it is closed
+  let wide = false;
+
   onMount(() => {
+    if (container.clientWidth > 300) {
+      // FIXME delet when @container
+      wide = true;
+    }
+
     for (const [index, canvasRef] of canvasRefs.entries()) {
       const color = tracesWithStyles[index].color;
       const width = tracesWithStyles[index].width;
@@ -30,14 +38,14 @@
       };
 
       if (points) {
-        canvas.drawCircle(ctx, [previewSize-width, width], width, style);
+        canvas.drawCircle(ctx, [previewSize - width, width], width, style);
         canvas.drawCircle(
           ctx,
           [previewSize / 2, previewSize / 2],
           width,
           style
         );
-        canvas.drawCircle(ctx, [width, previewSize-width], width, style);
+        canvas.drawCircle(ctx, [width, previewSize - width], width, style);
       } else {
         canvas.drawSegment(ctx, [0, previewSize], [previewSize, 0], style);
       }
@@ -48,7 +56,11 @@
   const previewSize = 20;
 </script>
 
-<div class="legend-container">
+<div
+  class="legend-container"
+  bind:this={container}
+  style:flex-direction={wide ? "row" : "column"}
+>
   {#each tracesWithStyles as styledTrace, index}
     <div class="trace-legend">
       <div class="trace-preview">
@@ -66,7 +78,6 @@
 <style>
   .legend-container {
     display: flex;
-    flex-direction: row;
     justify-content: space-between;
     margin: 0.5rem;
   }
@@ -74,18 +85,11 @@
   .trace-preview {
     margin-left: 0.5rem;
     margin-right: 0.5rem;
-
   }
 
   .trace-legend {
     display: flex;
     flex-direction: row;
     align-items: start;
-  }
-
-  @media (max-width: 300px) {
-    .legend-container {
-      flex-direction: column;
-    }
   }
 </style>
