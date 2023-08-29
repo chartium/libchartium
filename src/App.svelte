@@ -2,8 +2,17 @@
   import Chart from "./lib/chart/Chart.svelte";
   import ToolbarButton from "./lib/chart/ToolbarButton.svelte";
   import { ChartiumController } from "./lib/data-worker";
-  import Fa from 'svelte-fa';
-  import { faArrowRight, faArrowLeft, faChartLine, faExpand, faCamera, faDownload, faUpDown, faUserClock } from '@fortawesome/free-solid-svg-icons'
+  import Fa from "svelte-fa";
+  import {
+    faArrowRight,
+    faArrowLeft,
+    faChartLine,
+    faExpand,
+    faCamera,
+    faDownload,
+    faUpDown,
+    faUserClock,
+  } from "@fortawesome/free-solid-svg-icons";
 
   // autogenerate a lot of data
   const from = 0;
@@ -36,16 +45,22 @@
     yType: "f32",
   });
 
-  // FIXME for debugging only
-  traces.then((traces) => {
-    for (const trace of traces.tracesWithStyles()) console.log(trace);
-  });
+  let wrapDiv: HTMLElement;
+  import domtoimage from 'dom-to-image-more';
+  const takeScreenshot = () => {
+    domtoimage.toPng(wrapDiv).then((url) => {
+      const link = document.createElement("a");
+      link.download = `graph.png`;
+      link.href = url;
+      link.click();
+    });
+  };
 </script>
 
 <main class="dark">
   <h1>Chartium test page</h1>
   {#await traces then traces}
-    <div style="height:600px;width:800px;">
+    <div style="height:600px;width:800px;" bind:this={wrapDiv}>
       <Chart
         {controller}
         {traces}
@@ -58,7 +73,7 @@
           <ToolbarButton>
             <Fa icon={faExpand} />
           </ToolbarButton>
-          <ToolbarButton>
+          <ToolbarButton on:click={takeScreenshot}>
             <Fa icon={faCamera} />
           </ToolbarButton>
           <ToolbarButton>

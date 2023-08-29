@@ -8,6 +8,9 @@ dependencies:
   '@fortawesome/free-solid-svg-icons':
     specifier: ^6.4.2
     version: 6.4.2
+  '@types/dom-to-image':
+    specifier: ^2.6.4
+    version: 2.6.4
   '@types/lodash-es':
     specifier: ^4.17.8
     version: 4.17.8
@@ -20,6 +23,9 @@ dependencies:
   comlink:
     specifier: ^4.4.1
     version: 4.4.1
+  dom-to-image-more:
+    specifier: ^3.1.6
+    version: 3.1.6
   lodash-es:
     specifier: ^4.17.21
     version: 4.17.21
@@ -372,6 +378,10 @@ packages:
     resolution: {integrity: sha512-BRbo1fOtyVbhfLyuCWw6wAWp+U8UQle+ZXu84MYYWzYSEB28dyfnRBIE99eoG+qdAC0po6L2ScIEivcT07UaMA==}
     dev: true
 
+  /@types/dom-to-image@2.6.4:
+    resolution: {integrity: sha512-UddUdGF1qulrSDulkz3K2Ypq527MR6ixlgAzqLbxSiQ0icx0XDlIV+h4+edmjq/1dqn0KgN0xGSe1kI9t+vGuw==}
+    dev: false
+
   /@types/estree@1.0.1:
     resolution: {integrity: sha512-LG4opVs2ANWZ1TJoKc937iMmNstM/d0ae1vNbnBvBhqCSezgVUOzcLCqbI5elV8Vy6WKwKjaqR+zO9VKirBBCA==}
     dev: true
@@ -519,6 +529,10 @@ packages:
     resolution: {integrity: sha512-reYkTUJAZb9gUuZ2RvVCNhVHdg62RHnJ7WJl8ftMi4diZ6NWlciOzQN88pUhSELEwflJht4oQDv0F0BMlwaYtA==}
     engines: {node: '>=8'}
     dev: true
+
+  /dom-to-image-more@3.1.6:
+    resolution: {integrity: sha512-VMO0jNme32T06mWtkOC9QXfj+1npoJxkaTFW0DCwBLguwBKMjqwndiDANxDnbZ0kvNEecwxkv0Zmgdr96cGtAA==}
+    dev: false
 
   /es6-promise@3.3.1:
     resolution: {integrity: sha512-SOp9Phqvqn7jtEUxPWdWfWoLmyt2VaJ6MpvP9Comy1MceMXqE6bxvaTu4iaxpYYPzhny28Lc+M87/c2cPK6lDg==}
