@@ -7,6 +7,7 @@
   import type { Range, Shift, Tick } from "../types";
   import type { Writable } from "svelte/store";
   import type { VisibleAction } from "./ChartOverlay.svelte";
+  import { observeResize } from "../../utils/actions";
 
   export const events = createEventDispatcher<{
     shift: Shift;
@@ -61,8 +62,10 @@
     ...dragCallbacks,
     button: MouseButtons.Left,
   }}
-  bind:clientWidth={axisWidth}
-  bind:clientHeight={axisHeight}
+  use:observeResize={([width, height]) => {
+    axisWidth = width;
+    axisHeight = height;
+  }}
 >
   <!-- tooltip -->
   <!-- {#if transformPosition !== undefined && transformPosition.from !== transformPosition.to}

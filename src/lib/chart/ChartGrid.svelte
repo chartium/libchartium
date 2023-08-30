@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { observeResize } from "../../utils/actions";
+
   export let contentSize: [number, number] = [1, 1];
 </script>
 
@@ -23,8 +25,9 @@
   </div>
   <div
     class="content"
-    bind:clientWidth={contentSize[0]}
-    bind:clientHeight={contentSize[1]}
+    use:observeResize={(size) => {
+      contentSize = size;
+    }}
   >
     <slot />
   </div>

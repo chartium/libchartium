@@ -1,4 +1,5 @@
 <script lang="ts" generics="T">
+  import { observeResize } from "../../utils/actions";
   import ContextItemComponent from "./contextItemComponent.svelte";
   import type { ContextItem, Point } from "./contextMenu";
   import {
@@ -152,13 +153,15 @@
   role="menu"
   tabindex="-1"
   aria-hidden={visibility === "hidden"}
-  style="visibility:{visibility}; position: fixed;
-    left: {renderPosition?.x ?? 0}px;
-    top:{renderPosition?.y ?? 0}px; z-index: 1; user-select: none;"
+  style="visibility:{visibility};
+    left:{renderPosition?.x ?? 0}px;
+    top:{renderPosition?.y ?? 0}px;"
   use:clickOutside={close}
   use:genericKeydown={handleKeyboardNavigation}
-  bind:clientHeight={menuHeight}
-  bind:clientWidth={menuWidth}
+  use:observeResize={([width, height]) => {
+    menuWidth = width;
+    menuHeight = height;
+  }}
 >
   {#each items as item, index}
     <ContextItemComponent
@@ -206,10 +209,12 @@
 
 <style>
   .context-menu {
-    border-width: 1px;
-    border-style: solid;
-    border-color: rgb(131, 130, 130);
+    border: 1px solid rgb(131, 130, 130);
     border-radius: 4px;
     background-color: rgb(17, 20, 37);
+
+    position: fixed;
+    user-select: none;
+    z-index: 1;
   }
 </style>

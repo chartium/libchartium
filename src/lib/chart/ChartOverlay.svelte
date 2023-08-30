@@ -18,7 +18,7 @@
   } from "../../utils/mouseGestures";
   import * as canvas from "./canvas";
   import type { MouseDragCallbacks } from "../../utils/mouseGestures";
-  import type { Point, Range, Shift, Zoom } from "../types";
+  import type { Shift, Zoom } from "../types";
 
   export const events = createEventDispatcher<{
     reset: undefined;
@@ -33,9 +33,6 @@
 
   onMount(() => {
     ctx = canvasRef.getContext("2d")!;
-    ctx.fillStyle = "green"; // FIXME DEBUG
-    ctx.strokeStyle = "green";
-    ctx.lineWidth = 1;
   });
 
   /** If the zoom rectangle has one side this big or smaller the zoom will be just 1D */
@@ -48,9 +45,14 @@
   $: {
     const current = $visibleAction;
 
+    ctx?.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
     clearCanvas();
 
-    if (current) {
+    if (current && ctx) {
+      ctx.fillStyle = "green";
+      ctx.strokeStyle = "green";
+      ctx.lineWidth = 1;
+
       if ("zoom" in current) {
         drawZoom(current.zoom);
       } else if ("shift" in current) {
@@ -128,14 +130,14 @@
   };
 
   function drawShift(shift: Shift) {
-    ctx?.clearRect(0, 0, overlayWidth, overlayHeight);
     const wingLength = 20;
     const spreadRad = Math.PI / 5;
     const lineStyle: canvas.DrawStyle = {
       dash: [10, 5],
     };
     const arrowStyle: canvas.DrawStyle = {
-      lineWidth: 3,
+      lineWidth: 1,
+      dash: [20, 5],
     };
 
     if (shift.dx && shift.dy) {
@@ -198,10 +200,11 @@
 
   // FIXME DEbug
   $: (window as any).options = options;
-  
+
   import type { ContextItem } from "../contextMenu/contextMenu.ts";
   import GenericContextMenu from "../contextMenu/GenericContextMenu.svelte";
   import type { Writable } from "svelte/store";
+  import { observeResize } from "../../utils/actions.ts";
   let menu: any;
 
   let options: ContextItem<string>[] = [
@@ -288,13 +291,17 @@
 
 <GenericContextMenu bind:items={options} bind:this={menu} />
 
-<div
-  class="container"
-  role="region"
+<canvas
+  bind:this={canvasRef}
+  width={Math.trunc(overlayWidth * devicePixelRatio)}
+  height={Math.trunc(overlayHeight * devicePixelRatio)}
   on:dblclick={() => events("reset")}
-  bind:clientWidth={overlayWidth}
-  bind:clientHeight={overlayHeight}
   on:contextmenu|preventDefault
+  use:observeResize={([width, height]) => {
+    console.log(width, height);
+    overlayWidth = width;
+    overlayHeight = height;
+  }}
   use:mouseDrag={{
     ...leftDragCallbacks,
     button: MouseButtons.Left,
@@ -304,23 +311,14 @@
   use:rightMouseClick={(e) => {
     menu.open({ x: e.pageX, y: e.pageY });
   }}
->
-  <canvas bind:this={canvasRef} width={overlayWidth} height={overlayHeight} />
-</div>
+/>
 
 <style>
-  .container {
+  canvas {
+    /* pointer-events: none; */
     position: absolute;
     inset: 0;
-
     width: 100%;
     height: 100%;
-  }
-
-  canvas {
-    pointer-events: none;
-    position: absolute;
-    top: 0;
-    left: 0;
   }
 </style>
