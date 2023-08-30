@@ -9,7 +9,4 @@ pub struct AxisTick {
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct RenderJobResult {
-    x_ticks: Box<[AxisTick]>,
-    y_ticks: Box<[AxisTick]>,
-}
+pub struct RenderJobResult {}

@@ -1,5 +1,5 @@
 import type { TraceList } from "../trace-list";
-import type { Range, Tick, TypeOfData } from "../../types";
+import type { Range, TypeOfData } from "../../types";
 
 export interface RenderingController {
   createRenderer(presentCanvas: OffscreenCanvas): Renderer;
@@ -22,7 +22,4 @@ export interface RenderJob {
   renderAxes?: boolean;
 }
 
-export interface RenderJobResult {
-  xTicks: Tick[];
-  yTicks: Tick[];
-}
+export interface RenderJobResult {}

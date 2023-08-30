@@ -9,6 +9,7 @@ import {
   type ReadableSignal,
 } from "../../utils/signal";
 import type { TraceList } from "../data-worker/trace-list";
+import { linearTicks } from "../../utils/ticks";
 
 /** Chartium render handler that is to be used by frontend svelte comonents to render charts
  * it autorenders when anything about the chart changes
@@ -91,8 +92,9 @@ export class Chart {
     };
 
     const renderResults = await this.#renderer.render(renderJob);
-    this.#xTicks?.set(renderResults.xTicks);
-    this.#yTicks?.set(renderResults.yTicks);
+
+    this.#xTicks?.set(linearTicks(this.xRange!));
+    this.#yTicks?.set(linearTicks(this.yRange!));
   }
 
   //SECTION - setters

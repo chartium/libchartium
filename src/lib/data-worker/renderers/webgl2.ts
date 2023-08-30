@@ -200,26 +200,8 @@ export class WebGL2Renderer implements Renderer {
 
     if (job.clear !== undefined) rj.clear = job.clear;
 
-    const result: {
-      x_ticks: {
-        val: number;
-        pos: number;
-      }[];
-      y_ticks: {
-        val: number;
-        pos: number;
-      }[];
-    } = this.#renderer.render(rj);
-    return {
-      xTicks: result.x_ticks.map(({ val, pos }) => ({
-        position: pos,
-        value: val,
-      })),
-      yTicks: result.y_ticks.map(({ val, pos }) => ({
-        position: pos,
-        value: val,
-      })),
-    };
+    this.#renderer.render(rj);
+    return {};
   }
 
   setSize(width: number, height: number) {

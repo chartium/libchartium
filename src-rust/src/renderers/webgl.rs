@@ -204,9 +204,6 @@ impl WebGlRenderer {
 
         let y_from = job.y_from as f32;
 
-        let x_ticks = webgl_utils::calc_ticks(job.x_from, job.x_to - job.x_from);
-        let y_ticks = webgl_utils::calc_ticks(job.y_from, job.y_to - job.y_from);
-
         if job.clear {
             self.clear();
         }
@@ -272,7 +269,7 @@ impl WebGlRenderer {
         // copy into the resulting bitmap present canvas
         render_between(&self.canvas, &self.present_canvas);
 
-        Ok(serde_wasm_bindgen::to_value(&RenderJobResult { x_ticks, y_ticks }).unwrap())
+        Ok(serde_wasm_bindgen::to_value(&RenderJobResult {}).unwrap())
     }
 
     pub fn set_size(&mut self, width: u32, height: u32) -> Result<(), JsValue> {
@@ -321,36 +318,5 @@ impl WebGlRenderer {
     pub fn clear(&self) {
         self.context.clear_color(0.0, 0.0, 0.0, 0.0);
         self.context.clear(WebGl2RenderingContext::COLOR_BUFFER_BIT);
-    }
-}
-
-mod webgl_utils {
-    use crate::renderers::AxisTick;
-
-    pub fn calc_ticks(start: f64, width: f64) -> Box<[AxisTick]> {
-        const SIZES: [f64; 4] = [1.0, 2.0, 5.0, 10.0];
-
-        let mut y0: f64 = 0.0;
-        let mut dy: f64 = 1.0;
-
-        {
-            let order = width.log10().floor() - 1.0;
-
-            for size in SIZES.iter() {
-                dy = 10.0_f64.powf(order) * size;
-                y0 = (start / dy).floor() * dy;
-
-                if (width + start - y0) / dy < 10.0 {
-                    break;
-                }
-            }
-        }
-
-        (1..=((width + start - y0) / dy).floor() as usize)
-            .map(|i| AxisTick {
-                val: y0 + dy * i as f64,
-                pos: (y0 + dy * i as f64 - start) / width,
-            })
-            .collect()
     }
 }
