@@ -69,17 +69,13 @@ export class WebGL2Controller implements RenderingController {
       traceSize,
       traceTransform,
     } = this.#initTraceProgram();
-    const { axisProgram, axisColor, axisResolution } = this.#initAxisProgram();
     this.#programs = new lib.WebGlPrograms(
       traceProgram,
       traceTransform,
       traceOrigin,
       traceSize,
       traceCsoffset,
-      traceColor,
-      axisProgram,
-      axisResolution,
-      axisColor
+      traceColor
     );
   }
 
@@ -147,42 +143,6 @@ export class WebGL2Controller implements RenderingController {
       traceColor,
     };
   }
-
-  #initAxisProgram() {
-    const gl = this.#context;
-
-    const vertShader = compileShader(
-      gl,
-      gl.VERTEX_SHADER,
-      `
-        attribute vec2 aVertexPosition;
-        uniform vec2 resolution;
-
-        void main() {
-            gl_Position = vec4(vec2(-1, -1) + vec2(2, 2) * aVertexPosition / resolution, 0, 1);
-        }
-      `
-    );
-
-    const fragShader = compileShader(
-      gl,
-      gl.FRAGMENT_SHADER,
-      `            
-        precision mediump float;
-        uniform vec4 color;
-
-        void main() {
-          gl_FragColor = color;
-        }
-      `
-    );
-
-    const axisProgram = linkProgram(gl, vertShader, fragShader);
-    const axisResolution = gl.getUniformLocation(axisProgram, "resolution")!;
-    const axisColor = gl.getUniformLocation(axisProgram, "color")!;
-
-    return { axisProgram, axisResolution, axisColor };
-  }
 }
 
 export class WebGL2Renderer implements Renderer {
@@ -239,9 +199,6 @@ export class WebGL2Renderer implements Renderer {
     }
 
     if (job.clear !== undefined) rj.clear = job.clear;
-    if (job.darkMode !== undefined) rj.dark_mode = job.darkMode;
-    if (job.renderAxes !== undefined) rj.render_axes = job.renderAxes;
-    if (job.renderGrid !== undefined) rj.render_grid = job.renderGrid;
 
     const result: {
       x_ticks: {

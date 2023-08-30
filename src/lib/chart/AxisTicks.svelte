@@ -6,7 +6,7 @@
   import type { MouseDragCallbacks } from "../../utils/mouseGestures";
   import type { Range, Shift, Tick } from "../types";
   import type { Writable } from "svelte/store";
-  import type { VisibleAction } from "./ChartOverlay.svelte";
+  import type { VisibleAction } from "./ActionsOverlay.svelte";
   import { observeResize } from "../../utils/actions";
 
   export const events = createEventDispatcher<{

@@ -2,16 +2,17 @@
   import type { ChartiumController } from "../data-worker";
   import type { Range, Shift, Tick, Zoom } from "../types";
   import type { TraceList } from "../data-worker/trace-list";
-  import type { VisibleAction } from "./ChartOverlay.svelte";
+  import type { VisibleAction } from "./ActionsOverlay.svelte";
 
   import { onMount } from "svelte";
   import { writable } from "svelte/store";
   import { Chart } from "./chart";
 
-  import ChartOverlay from "./ChartOverlay.svelte";
+  import ChartOverlay from "./ActionsOverlay.svelte";
   import ChartGrid from "./ChartGrid.svelte";
   import AxisTicks from "./AxisTicks.svelte";
-  import ChartLegend from "./ChartLegend.svelte";
+  import ChartLegend from "./Legend.svelte";
+  import Guidelines from "./Guidelines.svelte";
 
   export let controller: ChartiumController;
   export let traces: TraceList;
@@ -22,8 +23,6 @@
   export let xLabel: string = "";
   /** Label to be displayed next to y axis */
   export let yLabel: string = "";
-
-  export let darkMode: boolean = false;
 
   const chart = new Chart(controller, traces);
   const visibleAction = writable<VisibleAction | undefined>(undefined);
@@ -40,6 +39,7 @@
 
     chart.traces = await traces;
     chart.xType = "f32";
+    chart.renderAxes = true;
     chart.xRange = { from: 0, to: 1000 };
     chart.yRange = { from: -10, to: 200 };
 
@@ -102,7 +102,6 @@
       contentSize[0] * devicePixelRatio,
       contentSize[1] * devicePixelRatio
     );
-    chart.darkMode = darkMode;
     chart.render();
   }
 </script>
@@ -137,10 +136,11 @@
     on:shift={shiftRange}
   />
 
+  <Guidelines {xTicks} {yTicks} />
   <canvas bind:this={canvas} on:contextmenu|preventDefault />
 
   {#if $$slots.infobox}
-    <div class="infobox" class:dark={darkMode}>
+    <div class="infobox">
       <slot name="infobox" />
     </div>
   {/if}
@@ -152,7 +152,7 @@
     {visibleAction}
   />
 
-  <div class="toolbar" class:dark={darkMode} slot="overlay">
+  <div class="toolbar" slot="overlay">
     <slot name="toolbar" />
   </div>
 
@@ -183,7 +183,7 @@
 
     background: rgba(255, 255, 255, 0.6);
 
-    &.dark {
+    :global(.dark) & {
       background: rgba(70, 70, 70, 0.6);
     }
   }
@@ -205,7 +205,7 @@
       background-color: #ececec;
     }
 
-    &.dark:hover {
+    :global(.dark) &:hover {
       background-color: #505050;
     }
   }

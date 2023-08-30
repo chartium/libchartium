@@ -10,7 +10,7 @@ use crate::{
     trace::{extensions::PointIteratorExtension, BoxedBundle},
 };
 
-use super::{AxisTick, RenderJobResult};
+use super::RenderJobResult;
 
 #[wasm_bindgen(module = "/src/renderers/webgl.ts")]
 extern "C" {
@@ -64,10 +64,6 @@ pub struct WebGlRenderJob {
     pub y_from: f64,
     pub y_to: f64,
 
-    pub dark_mode: bool,
-    pub render_grid: bool,
-    pub render_axes: bool,
-
     traces: Vec<WebGlTrace>,
 }
 
@@ -84,10 +80,6 @@ impl WebGlRenderJob {
             x_to: 0.0,
             y_from: 0.0,
             y_to: 0.0,
-
-            dark_mode: false,
-            render_axes: true,
-            render_grid: true,
 
             traces: Vec::new(),
         }
@@ -142,10 +134,6 @@ pub struct WebGlPrograms {
     trace_size: WebGlUniformLocation,
     trace_csoffset: WebGlUniformLocation,
     trace_color: WebGlUniformLocation,
-
-    axis_program: WebGlProgram,
-    axis_resolution: WebGlUniformLocation,
-    axis_color: WebGlUniformLocation,
 }
 
 #[wasm_bindgen]
@@ -159,10 +147,6 @@ impl WebGlPrograms {
         trace_size: WebGlUniformLocation,
         trace_csoffset: WebGlUniformLocation,
         trace_color: WebGlUniformLocation,
-
-        axis_program: WebGlProgram,
-        axis_resolution: WebGlUniformLocation,
-        axis_color: WebGlUniformLocation,
     ) -> WebGlPrograms {
         WebGlPrograms {
             trace_program,
@@ -171,10 +155,6 @@ impl WebGlPrograms {
             trace_size,
             trace_csoffset,
             trace_color,
-
-            axis_program,
-            axis_resolution,
-            axis_color,
         }
     }
 }
@@ -188,8 +168,7 @@ pub struct WebGlRenderer {
     canvas: OffscreenCanvas,
     present_canvas: OffscreenCanvas,
     context: WebGl2RenderingContext,
-    trace_buffer: WebGlBuffer,
-
+    // trace_buffer: WebGlBuffer,
     programs: WebGlPrograms,
 }
 
@@ -215,7 +194,7 @@ impl WebGlRenderer {
 
             programs,
 
-            trace_buffer: context.create_buffer().unwrap(),
+            // trace_buffer: context.create_buffer().unwrap(),
             context,
         })
     }
@@ -230,14 +209,6 @@ impl WebGlRenderer {
 
         if job.clear {
             self.clear();
-        }
-
-        if job.render_axes {
-            self.render_axes(&job, &x_ticks[..], &y_ticks[..]);
-        }
-
-        if job.render_grid {
-            self.render_grid(&job, &x_ticks[..], &y_ticks[..]);
         }
 
         gl.viewport(0, 0, (self.width) as i32, (self.height) as i32);
@@ -350,157 +321,6 @@ impl WebGlRenderer {
     pub fn clear(&self) {
         self.context.clear_color(0.0, 0.0, 0.0, 0.0);
         self.context.clear(WebGl2RenderingContext::COLOR_BUFFER_BIT);
-    }
-
-    pub fn render_axes(&self, _job: &WebGlRenderJob, x_ticks: &[AxisTick], y_ticks: &[AxisTick]) {
-        let gl = &self.context;
-
-        gl.viewport(0, 0, self.width as i32, self.height as i32);
-
-        gl.use_program(Some(&self.programs.axis_program));
-        gl.uniform2f(
-            Some(&self.programs.axis_resolution),
-            self.width as f32,
-            self.height as f32,
-        );
-        gl.uniform4f(Some(&self.programs.axis_color), 0.3, 0.3, 0.3, 1.0);
-        gl.bind_buffer(
-            WebGl2RenderingContext::ARRAY_BUFFER,
-            Some(&self.trace_buffer),
-        );
-        gl.line_width(2.0);
-
-        let graph_left = 0f32;
-        let graph_bottom = 0f32;
-        let graph_top = self.height as f32;
-        let graph_right = self.width as f32;
-
-        unsafe {
-            let data: Vec<f32> = vec![
-                graph_left - 1.0,
-                graph_top,
-                graph_left - 1.0,
-                graph_bottom - 1.0,
-                graph_right,
-                graph_bottom - 1.0,
-            ];
-
-            let vert_array = js_sys::Float32Array::view(&data);
-
-            gl.buffer_data_with_array_buffer_view(
-                WebGl2RenderingContext::ARRAY_BUFFER,
-                &vert_array,
-                WebGl2RenderingContext::STATIC_DRAW,
-            );
-        }
-
-        gl.vertex_attrib_pointer_with_i32(0, 2, WebGl2RenderingContext::FLOAT, false, 0, 0);
-        gl.enable_vertex_attrib_array(0);
-        gl.draw_arrays(WebGl2RenderingContext::LINE_STRIP, 0, 3);
-
-        const TICK_LEN: f32 = 4.0;
-        let points = (x_ticks.len() + y_ticks.len()) * 2;
-
-        fn lerp(from: f32, to: f32, val: f32) -> f32 {
-            from + (to - from) * val
-        }
-
-        unsafe {
-            let mut data: Vec<f32> = Vec::with_capacity(2 * points);
-
-            for tick in x_ticks {
-                data.push(lerp(graph_left, graph_right, tick.pos as f32));
-                data.push(graph_bottom);
-                data.push(lerp(graph_left, graph_right, tick.pos as f32));
-                data.push(graph_bottom - TICK_LEN);
-            }
-
-            for tick in y_ticks {
-                data.push(graph_left);
-                data.push(lerp(graph_bottom, graph_top, tick.pos as f32));
-                data.push(graph_left - TICK_LEN);
-                data.push(lerp(graph_bottom, graph_top, tick.pos as f32));
-            }
-
-            let vert_array = js_sys::Float32Array::view(&data);
-
-            gl.buffer_data_with_array_buffer_view(
-                WebGl2RenderingContext::ARRAY_BUFFER,
-                &vert_array,
-                WebGl2RenderingContext::STATIC_DRAW,
-            );
-        }
-
-        gl.draw_arrays(WebGl2RenderingContext::LINES, 0, points as i32);
-    }
-
-    pub fn render_grid(&self, job: &WebGlRenderJob, x_ticks: &[AxisTick], y_ticks: &[AxisTick]) {
-        let gl = &self.context;
-
-        let width = self.width as i32;
-        let height = self.height as i32;
-
-        let data_width = job.x_to - job.x_from;
-        let data_height = job.y_to - job.y_from;
-
-        gl.viewport(0, 0, width, height);
-
-        gl.use_program(Some(&self.programs.trace_program));
-        gl.uniform2f(Some(&self.programs.trace_origin), 0.0, 0.0);
-        gl.uniform2f(Some(&self.programs.trace_size), width as f32, height as f32);
-        gl.uniform2f(Some(&self.programs.trace_transform), 1.0, 0.0);
-
-        if job.dark_mode {
-            gl.uniform4f(Some(&self.programs.trace_color), 0.3, 0.3, 0.3, 1.0);
-        } else {
-            gl.uniform4f(Some(&self.programs.trace_color), 0.85, 0.85, 0.85, 1.0);
-        }
-
-        gl.line_width(1.0);
-
-        gl.bind_buffer(
-            WebGl2RenderingContext::ARRAY_BUFFER,
-            Some(&self.trace_buffer),
-        );
-        let points = (x_ticks.len() + y_ticks.len()) * 2;
-
-        unsafe {
-            let mut data: Vec<f32> = Vec::with_capacity(2 * points);
-
-            for tick in x_ticks {
-                let x = ((width as f64 * (tick.val - job.x_from) / data_width) as f32 + 0.5)
-                    .round()
-                    - 0.5;
-
-                data.push(x);
-                data.push(0.0);
-                data.push(x);
-                data.push(height as f32);
-            }
-
-            for tick in y_ticks {
-                let y = ((height as f64 * (tick.val - job.y_from) / data_height) as f32 + 0.5)
-                    .round()
-                    - 0.5;
-
-                data.push(0.0);
-                data.push(y);
-                data.push(width as f32);
-                data.push(y);
-            }
-
-            let vert_array = js_sys::Float32Array::view(&data);
-
-            gl.buffer_data_with_array_buffer_view(
-                WebGl2RenderingContext::ARRAY_BUFFER,
-                &vert_array,
-                WebGl2RenderingContext::STATIC_DRAW,
-            );
-        }
-
-        gl.vertex_attrib_pointer_with_i32(0, 2, WebGl2RenderingContext::FLOAT, false, 0, 0);
-        gl.enable_vertex_attrib_array(0);
-        gl.draw_arrays(WebGl2RenderingContext::LINES, 0, points as i32);
     }
 }
 

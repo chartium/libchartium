@@ -25,9 +25,7 @@ export class Chart {
   #yRange?: Range;
 
   #clear?: boolean;
-  #darkMode?: boolean;
   #renderAxes?: boolean;
-  #renderGrid?: boolean;
 
   #xTicks?: WritableSignal<Tick[]>;
   #yTicks?: WritableSignal<Tick[]>;
@@ -89,9 +87,7 @@ export class Chart {
       yRange: this.#yRange,
 
       clear: this.#clear,
-      darkMode: this.#darkMode,
       renderAxes: this.#renderAxes,
-      renderGrid: this.#renderGrid,
     };
 
     const renderResults = await this.#renderer.render(renderJob);
@@ -125,16 +121,8 @@ export class Chart {
     this.#clear = value;
     this.render();
   }
-  set darkMode(value: boolean) {
-    this.#darkMode = value;
-    this.render();
-  }
   set renderAxes(value: boolean) {
     this.#renderAxes = value;
-    this.render();
-  }
-  set renderGrid(value: boolean) {
-    this.#renderGrid = value;
     this.render();
   }
 
@@ -164,14 +152,8 @@ export class Chart {
   get clear(): boolean | undefined {
     return this.#clear;
   }
-  get darkMode(): boolean | undefined {
-    return this.#darkMode;
-  }
   get renderAxes(): boolean | undefined {
     return this.#renderAxes;
-  }
-  get renderGrid(): boolean | undefined {
-    return this.#renderGrid;
   }
   get xTicks(): ReadableSignal<Tick[]> | undefined {
     return this.#xTicks?.toReadable();

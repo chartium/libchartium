@@ -19,9 +19,7 @@ export interface RenderJob {
   yRange?: Range;
 
   clear?: boolean;
-  darkMode?: boolean;
   renderAxes?: boolean;
-  renderGrid?: boolean;
 }
 
 export interface RenderJobResult {

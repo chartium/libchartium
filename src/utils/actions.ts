@@ -15,3 +15,17 @@ export const observeResize = (
     destroy: () => resizeObserver.disconnect(),
   } satisfies ActionReturn;
 };
+
+export const scaleCanvas = (
+  element: HTMLCanvasElement,
+  callback?: (size: [width: number, height: number]) => void
+) => {
+  return observeResize(element, (size) => {
+    size.forEach((v, i) => (size[i] = Math.trunc(v)));
+
+    element.width = size[0] * window.devicePixelRatio;
+    element.height = size[1] * window.devicePixelRatio;
+
+    if (callback) callback(size);
+  });
+};

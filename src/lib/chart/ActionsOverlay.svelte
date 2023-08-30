@@ -15,10 +15,10 @@
     MouseButtons,
     mouseDrag,
     rightMouseClick,
-  } from "../../utils/mouseGestures";
-  import * as canvas from "./canvas";
-  import type { MouseDragCallbacks } from "../../utils/mouseGestures";
-  import type { Shift, Zoom } from "../types";
+  } from "../../utils/mouseGestures.ts";
+  import * as canvas from "./canvas.ts";
+  import type { MouseDragCallbacks } from "../../utils/mouseGestures.ts";
+  import type { Shift, Zoom } from "../types.ts";
 
   export const events = createEventDispatcher<{
     reset: undefined;
@@ -204,7 +204,7 @@
   import type { ContextItem } from "../contextMenu/contextMenu.ts";
   import GenericContextMenu from "../contextMenu/GenericContextMenu.svelte";
   import type { Writable } from "svelte/store";
-  import { observeResize } from "../../utils/actions.ts";
+  import { scaleCanvas } from "../../utils/actions.ts";
   let menu: any;
 
   let options: ContextItem<string>[] = [
@@ -293,11 +293,9 @@
 
 <canvas
   bind:this={canvasRef}
-  width={overlayWidth * devicePixelRatio}
-  height={overlayHeight * devicePixelRatio}
   on:dblclick={() => events("reset")}
   on:contextmenu|preventDefault
-  use:observeResize={([width, height]) => {
+  use:scaleCanvas={([width, height]) => {
     overlayWidth = width;
     overlayHeight = height;
   }}
