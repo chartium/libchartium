@@ -18,7 +18,7 @@
   } from "../../utils/mouseGestures.ts";
   import * as canvas from "./canvas.ts";
   import type { MouseDragCallbacks } from "../../utils/mouseGestures.ts";
-  import type { Shift, Zoom } from "../types.ts";
+  import type { Point, Shift, Zoom } from "../types.ts";
 
   export const events = createEventDispatcher<{
     reset: undefined;
@@ -42,23 +42,53 @@
     ctx?.clearRect(0, 0, overlayWidth, overlayHeight);
   }
 
-  $: {
-    const current = $visibleAction;
+  onMount(() => {
+    const unbindA = visibleAction.subscribe(() => scheduleDraw());
+    const unbindB = mousePosition.subscribe(() => scheduleDraw());
 
-    ctx?.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
-    clearCanvas();
+    return () => {
+      unbindA();
+      unbindB();
+    };
+  });
 
-    if (current && ctx) {
-      ctx.fillStyle = "green";
-      ctx.strokeStyle = "green";
+  let _frame: number | undefined = undefined;
+  function scheduleDraw() {
+    function draw() {
+      const action = $visibleAction;
+
+      ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+      clearCanvas();
+
+      const color = getComputedStyle(canvasRef).color;
+      ctx.fillStyle = color;
+      ctx.strokeStyle = color;
       ctx.lineWidth = 1;
 
-      if ("zoom" in current) {
-        drawZoom(current.zoom);
-      } else if ("shift" in current) {
-        drawShift(current.shift);
+      if (action) {
+        if ("zoom" in action) {
+          drawZoom(action.zoom);
+        } else if ("shift" in action) {
+          drawShift(action.shift);
+        }
+      } else if ($mousePosition) {
+        // TODO: ruler
+        drawRuler(
+          {
+            x: $mousePosition[0] / overlayWidth,
+            y: 1 - $mousePosition[1] / overlayHeight,
+          },
+          false
+        );
       }
     }
+
+    if (_frame) return;
+
+    _frame = requestAnimationFrame(() => {
+      _frame = undefined;
+      draw();
+    });
   }
 
   function drawZoom(zoom: Zoom) {
@@ -117,6 +147,28 @@
     }
   }
 
+  function drawRuler(point: Point, xOnly: boolean) {
+    const style = {
+      dash: [9, 3],
+    };
+
+    canvas.drawSegment(
+      ctx,
+      [point.x * overlayWidth, 0],
+      [point.x * overlayWidth, overlayHeight],
+      style
+    );
+
+    if (!xOnly) {
+      canvas.drawSegment(
+        ctx,
+        [0, (1 - point.y) * overlayHeight],
+        [overlayWidth, (1 - point.y) * overlayHeight],
+        style
+      );
+    }
+  }
+
   const leftDragCallbacks: MouseDragCallbacks = {
     start: (_) => {},
     move: (_, status) => {
@@ -131,7 +183,7 @@
 
   function drawShift(shift: Shift) {
     const wingLength = 20;
-    const spreadRad = Math.PI / 5;
+    const spreadRad = shift.dx && shift.dy ? Math.PI / 5 : Math.PI * 0.4;
     const lineStyle: canvas.DrawStyle = {
       dash: [10, 5],
     };
@@ -158,8 +210,8 @@
       const fromX = shift.origin.x * overlayWidth;
       const toX = (shift.origin.x + shift.dx) * overlayWidth;
 
-      canvas.drawSegment(ctx, [fromX, 0], [fromX, overlayHeight], lineStyle);
-      canvas.drawSegment(ctx, [toX, 0], [toX, overlayHeight], lineStyle);
+      // canvas.drawSegment(ctx, [fromX, 0], [fromX, overlayHeight], lineStyle);
+      // canvas.drawSegment(ctx, [toX, 0], [toX, overlayHeight], lineStyle);
       canvas.drawArrow(
         ctx,
         [fromX, (1 - shift.origin.y) * overlayHeight],
@@ -172,8 +224,8 @@
       const fromY = (1 - shift.origin.y) * overlayHeight;
       const toY = (1 - shift.origin.y - shift.dy) * overlayHeight;
 
-      canvas.drawSegment(ctx, [0, fromY], [overlayWidth, fromY], lineStyle);
-      canvas.drawSegment(ctx, [0, toY], [overlayWidth, toY], lineStyle);
+      // canvas.drawSegment(ctx, [0, fromY], [overlayWidth, fromY], lineStyle);
+      // canvas.drawSegment(ctx, [0, toY], [overlayWidth, toY], lineStyle);
       canvas.drawArrow(
         ctx,
         [shift.origin.x * overlayWidth, fromY],
@@ -203,7 +255,7 @@
 
   import type { ContextItem } from "../contextMenu/contextMenu.ts";
   import GenericContextMenu from "../contextMenu/GenericContextMenu.svelte";
-  import type { Writable } from "svelte/store";
+  import { writable, type Writable } from "svelte/store";
   import { scaleCanvas } from "../../utils/actions.ts";
   let menu: any;
 
@@ -287,6 +339,9 @@
 
   let overlayWidth: number = 1;
   let overlayHeight: number = 1;
+
+  const mousePosition: Writable<[number, number] | undefined> =
+    writable(undefined);
 </script>
 
 <GenericContextMenu bind:items={options} bind:this={menu} />
@@ -295,6 +350,9 @@
   bind:this={canvasRef}
   on:dblclick={() => events("reset")}
   on:contextmenu|preventDefault
+  on:mousemove={(e) => ($mousePosition = [e.offsetX, e.offsetY])}
+  on:mouseout={() => ($mousePosition = undefined)}
+  on:blur={() => ($mousePosition = undefined)}
   use:scaleCanvas={([width, height]) => {
     overlayWidth = width;
     overlayHeight = height;
@@ -317,5 +375,11 @@
     inset: 0;
     width: 100%;
     height: 100%;
+
+    color: black;
+  }
+
+  :global(.dark) canvas {
+    color: #00bc8c;
   }
 </style>
