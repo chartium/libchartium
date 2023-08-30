@@ -38,12 +38,8 @@
   /** If the zoom rectangle has one side this big or smaller the zoom will be just 1D */
   const oneDZoomWindow = 20;
 
-  function clearCanvas() {
-    ctx?.clearRect(0, 0, overlayWidth, overlayHeight);
-  }
-
   $: $visibleAction, scheduleDraw();
-  $: $mousePosition, scheduleDraw();
+  $: mousePosition, scheduleDraw();
 
   let _frame: number | undefined = undefined;
   function scheduleDraw() {
@@ -51,7 +47,7 @@
       const action = $visibleAction;
 
       ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
-      clearCanvas();
+      ctx.clearRect(0, 0, overlayWidth, overlayHeight);
 
       const color = getComputedStyle(canvasRef).color;
       ctx.fillStyle = color;
@@ -64,16 +60,16 @@
         } else if ("shift" in action) {
           drawShift(action.shift);
         }
-      } else if ($mousePosition) {
-        // TODO: ruler
+      } else if (mousePosition) {
         drawRuler(
           {
-            x: $mousePosition[0] / overlayWidth,
-            y: 1 - $mousePosition[1] / overlayHeight,
+            x: mousePosition[0] / overlayWidth,
+            y: 1 - mousePosition[1] / overlayHeight,
           },
           false
         );
       }
+      // TODO: global ruler
     }
 
     if (_frame) return;
@@ -177,9 +173,9 @@
   function drawShift(shift: Shift) {
     const wingLength = 20;
     const spreadRad = shift.dx && shift.dy ? Math.PI / 5 : Math.PI * 0.4;
-    const lineStyle: canvas.DrawStyle = {
-      dash: [10, 5],
-    };
+    // const lineStyle: canvas.DrawStyle = {
+    //   dash: [10, 5],
+    // };
     const arrowStyle: canvas.DrawStyle = {
       lineWidth: 1,
       dash: [20, 5],
@@ -248,7 +244,7 @@
 
   import type { ContextItem } from "../contextMenu/contextMenu.ts";
   import GenericContextMenu from "../contextMenu/GenericContextMenu.svelte";
-  import { writable, type Writable } from "svelte/store";
+  import { type Writable } from "svelte/store";
   import { scaleCanvas } from "../../utils/actions.ts";
   let menu: any;
 
@@ -333,8 +329,7 @@
   let overlayWidth: number = 1;
   let overlayHeight: number = 1;
 
-  const mousePosition: Writable<[number, number] | undefined> =
-    writable(undefined);
+  let mousePosition: [number, number] | undefined = undefined;
 </script>
 
 <GenericContextMenu bind:items={options} bind:this={menu} />
@@ -343,9 +338,9 @@
   bind:this={canvasRef}
   on:dblclick={() => events("reset")}
   on:contextmenu|preventDefault
-  on:mousemove={(e) => ($mousePosition = [e.offsetX, e.offsetY])}
-  on:mouseout={() => ($mousePosition = undefined)}
-  on:blur={() => ($mousePosition = undefined)}
+  on:mousemove={(e) => (mousePosition = [e.offsetX, e.offsetY])}
+  on:mouseout={() => (mousePosition = undefined)}
+  on:blur={() => (mousePosition = undefined)}
   use:scaleCanvas={([width, height]) => {
     overlayWidth = width;
     overlayHeight = height;
