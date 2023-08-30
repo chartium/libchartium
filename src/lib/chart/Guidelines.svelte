@@ -39,9 +39,11 @@
     if (renderTicks) {
       const color = getComputedStyle(canvas).color;
 
+      ctx.save();
       ctx.fillStyle = color;
       ctx.strokeStyle = color;
       ctx.lineWidth = 0.5;
+      ctx.setLineDash([2, 2]);
 
       for (const tick of xTicks) {
         const position = Math.trunc(tick.position * canvasSize[0]);
@@ -60,6 +62,8 @@
         ctx.lineTo(canvasSize[0], position);
         ctx.stroke();
       }
+
+      ctx.restore();
     }
   }
 </script>
