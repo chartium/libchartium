@@ -42,15 +42,8 @@
     ctx?.clearRect(0, 0, overlayWidth, overlayHeight);
   }
 
-  onMount(() => {
-    const unbindA = visibleAction.subscribe(() => scheduleDraw());
-    const unbindB = mousePosition.subscribe(() => scheduleDraw());
-
-    return () => {
-      unbindA();
-      unbindB();
-    };
-  });
+  $: $visibleAction, scheduleDraw();
+  $: $mousePosition, scheduleDraw();
 
   let _frame: number | undefined = undefined;
   function scheduleDraw() {
