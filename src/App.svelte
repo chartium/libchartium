@@ -46,7 +46,7 @@
   });
 
   let wrapDiv: HTMLElement;
-  import domtoimage from 'dom-to-image-more';
+  import domtoimage from "dom-to-image-more";
   const takeScreenshot = () => {
     domtoimage.toPng(wrapDiv).then((url) => {
       const link = document.createElement("a");
@@ -57,13 +57,14 @@
   };
 </script>
 
-<main class="dark">
+<main>
   <h1>Chartium test page</h1>
   {#await traces then traces}
     <div style="height:600px;width:800px;" bind:this={wrapDiv}>
       <Chart
         {controller}
         {traces}
+        darkMode
         title="Titulek"
         subtitle="Podtitulek"
         xLabel="Number of zines published"

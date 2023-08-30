@@ -2,15 +2,15 @@
   import type { ChartiumController } from "../data-worker";
   import type { Range, Shift, Tick, Zoom } from "../types";
   import type { TraceList } from "../data-worker/trace-list";
+  import type { VisibleAction } from "./ChartOverlay.svelte";
 
   import { onMount } from "svelte";
+  import { writable } from "svelte/store";
   import { Chart } from "./chart";
-  import ChartOverlay from "./ChartOverlay.svelte";
-  import type VisibleAction from "./ChartOverlay.svelte";
 
+  import ChartOverlay from "./ChartOverlay.svelte";
   import ChartGrid from "./ChartGrid.svelte";
   import AxisTicks from "./AxisTicks.svelte";
-  import { writable } from "svelte/store";
   import ChartLegend from "./ChartLegend.svelte";
 
   export let controller: ChartiumController;
@@ -22,6 +22,8 @@
   export let xLabel: string = "";
   /** Label to be displayed next to y axis */
   export let yLabel: string = "";
+
+  export let darkMode: boolean = false;
 
   const chart = new Chart(controller, traces);
   const visibleAction = writable<VisibleAction | undefined>(undefined);
@@ -100,6 +102,7 @@
       contentSize[0] * devicePixelRatio,
       contentSize[1] * devicePixelRatio
     );
+    chart.darkMode = darkMode;
     chart.render();
   }
 </script>
@@ -137,7 +140,7 @@
   <canvas bind:this={canvas} on:contextmenu|preventDefault />
 
   {#if $$slots.infobox}
-    <div class="infobox">
+    <div class="infobox" class:dark={darkMode}>
       <slot name="infobox" />
     </div>
   {/if}
@@ -149,7 +152,7 @@
     {visibleAction}
   />
 
-  <div class="toolbar" slot="overlay">
+  <div class="toolbar" class:dark={darkMode} slot="overlay">
     <slot name="toolbar" />
   </div>
 
@@ -180,7 +183,7 @@
 
     background: rgba(255, 255, 255, 0.6);
 
-    :global(.dark) & {
+    &.dark {
       background: rgba(70, 70, 70, 0.6);
     }
   }
@@ -200,10 +203,10 @@
     &:hover {
       opacity: 0.9;
       background-color: #ececec;
+    }
 
-      :global(.dark) & {
-        background-color: #505050;
-      }
+    &.dark:hover {
+      background-color: #505050;
     }
   }
 </style>

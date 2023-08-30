@@ -293,12 +293,11 @@
 
 <canvas
   bind:this={canvasRef}
-  width={Math.trunc(overlayWidth * devicePixelRatio)}
-  height={Math.trunc(overlayHeight * devicePixelRatio)}
+  width={overlayWidth * devicePixelRatio}
+  height={overlayHeight * devicePixelRatio}
   on:dblclick={() => events("reset")}
   on:contextmenu|preventDefault
   use:observeResize={([width, height]) => {
-    console.log(width, height);
     overlayWidth = width;
     overlayHeight = height;
   }}
