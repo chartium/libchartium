@@ -1,3 +1,9 @@
+<!-- 
+  Generic context menu component. Since this component gets recursively nested, 
+  it exposes many variables the end user never has to worry about. It is not meant to be used directly.
+  ContextMenu.svelte wrapps this and exposes the only necessary input: the items.
+ -->
+
 <script lang="ts" generics="T">
   import { observeResize } from "../../utils/actions";
   import ContextItemComponent from "./contextItemComponent.svelte";
