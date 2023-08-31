@@ -1,4 +1,4 @@
-import type { Range, TraceHandle } from "../types";
+import type { Point, Range, TraceHandle } from "../types";
 import { lib } from "./wasm";
 import { computeStyles, type TraceStylesheet } from "./trace-styles";
 import { yeet } from "../../utils/yeet";
@@ -173,5 +173,91 @@ export class TraceList {
     const metas: lib.TraceMetas[] = counter.to_array();
     if (unfiltered) this.#metas = metas;
     return metas;
+  }
+
+  /** finds ya the trace with your id and returns styled trace based on it */
+  getTraceStyle(id: string): StyledTrace {
+    const handle = traceIds.getKey(id);
+    if (handle === undefined) {
+      yeet(`Unknown id ${id}`);
+    }
+    const rawStyle = Array.from(computeStyles(
+      this.#stylesheet,
+      [handle][Symbol.iterator](),
+      traceIds
+    ))[0]
+
+    return {
+      id,
+      width: rawStyle.width,
+      color: rawStyle.color,
+      display: rawStyle.points_mode ? "points" : "line",
+    }
+  }
+
+  /** Finds n traces that are the closest to input point */
+  findClosestTracesToPoint(point: Point, n: number):
+    | {
+        traceInfo: StyledTrace;
+        closestPoint: Point;
+      }[]
+    | undefined {
+    // FIXME make TraceList auto update its ranges based on ranges of bundles
+
+    interface FoundPoint {
+      handle: TraceHandle;
+      point: Point;
+      distance: number;
+    }
+
+    let closestPoints: FoundPoint[] = [];
+
+    for (const bundle of this.#bundles) {
+      const foundPoints = bundle.find_n_closest_points(
+        new Uint32Array(this.#traceHandles),
+        point.x,
+        point.y,
+        n
+      );
+
+      for (const foundPoint of foundPoints) {
+        const distance = Math.sqrt(
+          (foundPoint.x - point.x) ** 2 + (foundPoint.y - point.y) ** 2
+        );
+        closestPoints.push({
+          handle: foundPoint.handle as TraceHandle,
+          point: { x: foundPoint.x, y: foundPoint.y } as Point,
+          distance,
+        });
+      }
+
+      closestPoints.sort((a, b) => a.distance - b.distance);
+      closestPoints = closestPoints.slice(0, n);
+    }
+
+    if (closestPoints.length === 0) {
+      return undefined;
+    }
+
+    let results: {
+      traceInfo: StyledTrace;
+      closestPoint: Point;
+    }[] = [];
+
+    for (const closestPoint of closestPoints) {
+      const id = traceIds.get(closestPoint.handle as TraceHandle);
+      if (id === undefined) {
+        yeet(UnknownTraceHandleError, closestPoint.handle);
+      }
+      const styledTrace = this.getTraceStyle(id);
+      results.push({
+        traceInfo: styledTrace,
+        closestPoint: closestPoint.point,
+      });
+    }
+
+
+
+    return results;
   }
 }
