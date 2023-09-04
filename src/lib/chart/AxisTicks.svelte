@@ -24,6 +24,8 @@
   // export let transformValue: Range | undefined;
 
   export let visibleAction: Writable<VisibleAction | undefined>;
+  
+  $: console.log(visibleAction);
 
   const dragCallbacks: MouseDragCallbacks = {
     start: (e) => {},

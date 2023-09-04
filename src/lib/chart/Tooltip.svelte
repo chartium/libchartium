@@ -4,7 +4,7 @@
   import type { Point } from "../types";
   import { globalMouseMove } from "../../utils/mouseGestures";
 
-  export let header: string;
+  export let header: any;
   export let traceInfo: { traceId: string; value: string }[];
 
   export let show: boolean;
@@ -39,6 +39,7 @@
     display: flex;
     flex-direction: column;
     background-color: grey;
+    margin: 5px
   }
 
   .header {

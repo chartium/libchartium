@@ -105,7 +105,35 @@
     );
     chart.render();
   }
+
+  let showTooltip: boolean = false;
+  let hoverXValue: number = 0;
+  let hoverYValue: number = 0;
+  const howManyTracesShownInTooltip = 2;
+  $: closestTraces = traces.findClosestTracesToPoint({x: hoverXValue, y: hoverYValue}, howManyTracesShownInTooltip);
+  $: traceInfo = closestTraces?.map(trace => ({
+    traceId: trace.traceInfo.id,
+    value: trace.closestPoint.y.toFixed(3),
+  })) ?? [];
+  function updateHoverValues(e: MouseEvent) {
+    const xFraction = e.offsetX / canvas.clientWidth; // FIXME ew
+    const yFraction = e.offsetY / canvas.height; // FIXME ew
+
+    const { xRange, yRange } = chart;
+
+    if (!xRange || !yRange) return;
+
+    hoverXValue = xRange.from + (xRange.to - xRange.from) * xFraction;
+    hoverYValue = yRange.from + (yRange.to - yRange.from) * (1 - yFraction);
+  }
+  
 </script>
+
+<Tooltip
+  {traceInfo}
+  header={`x: ${hoverXValue.toFixed(3)}`}
+  show={showTooltip}
+/>
 
 <ChartGrid bind:contentSize>
   <svelte:fragment slot="ylabel">
@@ -151,6 +179,18 @@
     on:zoom={zoomRange}
     on:shift={shiftRange}
     {visibleAction}
+
+    on:mousemove={(e) => {
+      showTooltip = true;
+      updateHoverValues(e);
+    }}
+    on:mouseout={(e) => {
+      showTooltip = false;
+    }}
+    on:blur={(e) => {
+      showTooltip = false;
+    }}
+
   />
 
   <div class="toolbar" slot="overlay">

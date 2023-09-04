@@ -104,7 +104,7 @@
       canvas.drawSegment(ctx, [0, yTo], [overlayWidth, yTo], lineStyle);
     }
 
-    // The little windows
+    // The little 1D zoom windows
     if (zoom.y.from === zoom.y.to) {
       canvas.drawSegment(
         ctx,
@@ -239,16 +239,16 @@
     },
   };
 
-  // FIXME DEbug
-  $: (window as any).options = options;
+  import { type Writable } from "svelte/store";
+  import { scaleCanvas } from "../../utils/actions.ts";
+
+  let overlayWidth: number = 1;
+  let overlayHeight: number = 1;
+
+  let mousePosition: [number, number] | undefined = undefined;
 
   import type { ContextItem } from "../contextMenu/contextMenu.ts";
   import GenericContextMenu from "../contextMenu/GenericContextMenu.svelte";
-  import { type Writable } from "svelte/store";
-  import { scaleCanvas } from "../../utils/actions.ts";
-  import Tooltip from "./Tooltip.svelte";
-  let menu: any;
-
   let options: ContextItem<string>[] = [
     {
       type: "leaf",
@@ -315,42 +315,24 @@
       ],
     },
   ];
-
-  const smallOptions: ContextItem<string>[] = [
-    {
-      type: "leaf",
-      content: "small option",
-      callback: () => console.log("small option clicked"),
-    },
-  ];
-
-  // FIXME DEbug
-  $: (window as any).menu = menu;
-
-  let overlayWidth: number = 1;
-  let overlayHeight: number = 1;
-
-  let mousePosition: [number, number] | undefined = undefined;
+  let menu: any;
 </script>
 
 <GenericContextMenu bind:items={options} bind:this={menu} />
-<Tooltip
-  traceInfo={[
-    { traceId: "UwU", value: "13" },
-    { traceId: "oᵥo", value: "69" },
-    { traceId: "oᵥo", value: "69" },
-  ]}
-  header="gays"
-  show={true}
-/>
 
 <canvas
   bind:this={canvasRef}
   on:dblclick={() => events("reset")}
   on:contextmenu|preventDefault
+  use:rightMouseClick={(e) => {
+    menu.open(e);
+  }}
   on:mousemove={(e) => (mousePosition = [e.offsetX, e.offsetY])}
+  on:mousemove
   on:mouseout={() => (mousePosition = undefined)}
+  on:mouseout
   on:blur={() => (mousePosition = undefined)}
+  on:blur
   use:scaleCanvas={([width, height]) => {
     overlayWidth = width;
     overlayHeight = height;
@@ -361,9 +343,6 @@
     threshold: oneDZoomWindow,
   }}
   use:mouseDrag={{ ...rightDragCallbacks, button: MouseButtons.Right }}
-  use:rightMouseClick={(e) => {
-    menu.open({ x: e.pageX, y: e.pageY });
-  }}
 />
 
 <style>
