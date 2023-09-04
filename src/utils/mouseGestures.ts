@@ -1,6 +1,6 @@
-import type { Point, Shift, Size, Zoom } from "../lib/types";
-
 /** this file handles bunch of mouse gesture events you can use as svelte actions */
+
+import type { Point, Shift, Size, Zoom } from "../lib/types";
 
 export interface MouseDragCallbacks {
   start: (event: MouseEvent) => void;
@@ -196,3 +196,18 @@ export function clickOutside(
     },
   };
 }
+
+export function globalMouseMove(
+  node: HTMLElement,
+  callback: (event: MouseEvent) => void
+) {
+
+  document.addEventListener("mousemove", callback, true);
+
+  return {
+    destroy() {
+      document.removeEventListener("mousemove", callback, true);
+    },
+  };
+}
+

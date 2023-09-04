@@ -246,6 +246,7 @@
   import GenericContextMenu from "../contextMenu/GenericContextMenu.svelte";
   import { type Writable } from "svelte/store";
   import { scaleCanvas } from "../../utils/actions.ts";
+  import Tooltip from "./Tooltip.svelte";
   let menu: any;
 
   let options: ContextItem<string>[] = [
@@ -333,6 +334,15 @@
 </script>
 
 <GenericContextMenu bind:items={options} bind:this={menu} />
+<Tooltip
+  traceInfo={[
+    { traceId: "UwU", value: "13" },
+    { traceId: "oᵥo", value: "69" },
+    { traceId: "oᵥo", value: "69" },
+  ]}
+  header="gays"
+  show={true}
+/>
 
 <canvas
   bind:this={canvasRef}

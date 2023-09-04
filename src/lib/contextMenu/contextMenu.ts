@@ -47,8 +47,8 @@ export function openPositionNextToPoint(
   const rightOverflow = positionOfRightMenuBoundary - innerWidth;
   const bottomOverflow = positionOfBottomMenuBoundary - innerHeight;
   return {
-    x: rightOverflow > 0 ? x - rightOverflow : x,
-    y: bottomOverflow > 0 ? y - bottomOverflow : y,
+    x: rightOverflow > 0 ? x - menuWidth : x,
+    y: bottomOverflow > 0 ? y - menuHeight : y,
   };
 }
 

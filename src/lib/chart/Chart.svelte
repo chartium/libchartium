@@ -13,6 +13,7 @@
   import AxisTicks from "./AxisTicks.svelte";
   import ChartLegend from "./Legend.svelte";
   import Guidelines from "./Guidelines.svelte";
+  import Tooltip from "./Tooltip.svelte";
 
   export let controller: ChartiumController;
   export let traces: TraceList;
