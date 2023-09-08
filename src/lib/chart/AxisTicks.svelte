@@ -25,8 +25,6 @@
 
   export let visibleAction: Writable<VisibleAction | undefined>;
   
-  $: console.log(visibleAction);
-
   const dragCallbacks: MouseDragCallbacks = {
     start: (e) => {},
     move: (_, status) => {

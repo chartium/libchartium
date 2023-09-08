@@ -1,6 +1,12 @@
 <script lang="ts">
   import type { ChartiumController } from "../data-worker";
-  import type { Range, Shift, Tick, Zoom } from "../types";
+  import type {
+    HighlightPoint as HighlightedPoint,
+    Range,
+    Shift,
+    Tick,
+    Zoom,
+  } from "../types";
   import type { TraceList } from "../data-worker/trace-list";
   import type { VisibleAction } from "./ActionsOverlay.svelte";
 
@@ -14,6 +20,7 @@
   import ChartLegend from "./Legend.svelte";
   import Guidelines from "./Guidelines.svelte";
   import Tooltip from "./Tooltip.svelte";
+  import { norm } from "./position";
 
   export let controller: ChartiumController;
   export let traces: TraceList;
@@ -107,17 +114,85 @@
   }
 
   let showTooltip: boolean = false;
-  let hoverXValue: number = 0;
-  let hoverYValue: number = 0;
-  const howManyTracesShownInTooltip = 2;
-  $: closestTraces = traces.findClosestTracesToPoint({x: hoverXValue, y: hoverYValue}, howManyTracesShownInTooltip);
-  $: traceInfo = closestTraces?.map(trace => ({
-    traceId: trace.traceInfo.id,
-    value: trace.closestPoint.y.toFixed(3),
-  })) ?? [];
+  let hoverXValue: number = Infinity; // Silly goofy way to make it too far from everything on mount
+  let hoverYValue: number = Infinity;
+  const tracesShownInTooltip = 2;
+  $: closestTraces = traces.findClosestTracesToPoint(
+    { x: hoverXValue, y: hoverYValue },
+    tracesShownInTooltip
+  );
+  $: tracesInfo =
+    closestTraces?.map((trace) => ({
+      traceId: trace.traceInfo.id,
+      x: trace.closestPoint.x.toFixed(3),
+      y: trace.closestPoint.y.toFixed(3),
+    })) ?? [];
+
+  $: { // Highlighted points for the overlay
+  if (closestTraces === undefined) {
+    visibleAction.set({ highlightedPoints: [] });
+  } else if (chart.xRange !== undefined && chart.yRange !== undefined) {
+    const points = closestTraces.map((trace) => ({
+      xFraction: (trace.closestPoint.x - chart.xRange!.from) / (chart.xRange!.to - chart.xRange!.from),
+      yFraction: (trace.closestPoint.y - chart.yRange!.from) / (chart.yRange!.to - chart.yRange!.from),
+      color: trace.traceInfo.color,
+      radius: trace.traceInfo.width,
+    }));
+
+    visibleAction.update( (action) => ({ ...action, highlightedPoints: points }));
+  }
+}
+
+  /** How close to a trace is considered close enough to get only one trace info */
+  const closenessDistance = 6;
+  let selectedTrace:
+    | {
+        traceId: string;
+        x: string;
+        y: string;
+        min: string;
+        max: string;
+        avg: string;
+      }
+    | undefined = undefined;
+
+  // look for the closest trace to the mouse and if it's close enough, show more info
+  $: if (
+    closestTraces &&
+    closestTraces?.length != 0 &&
+    norm([
+      closestTraces[0].closestPoint.x - hoverXValue,
+      closestTraces[0].closestPoint.y - hoverYValue,
+    ]) < closenessDistance
+  ) {
+    const closestMeta = traces.calculateMetas({
+      traces: [closestTraces[0].traceInfo.id],
+      from: chart.xRange?.from,
+      to: chart.xRange?.to,
+    })[0];
+
+    selectedTrace = {
+      traceId: closestTraces[0].traceInfo.id,
+      x: closestTraces[0].closestPoint.x.toFixed(3),
+      y: closestTraces[0].closestPoint.y.toFixed(3),
+      min: closestMeta.min.toFixed(3),
+      max: closestMeta.max.toFixed(3),
+      avg: closestMeta.avg.toFixed(3),
+    };
+  } else {
+    selectedTrace = undefined;
+  }
+
+  $: if (selectedTrace !== undefined) {
+    // FIXME ew but im unsure to what style to put it
+    document.body.style.cursor = "crosshair";
+  } else {
+    document.body.style.cursor = "default";
+  }
+
   function updateHoverValues(e: MouseEvent) {
-    const xFraction = e.offsetX / canvas.clientWidth; // FIXME ew
-    const yFraction = e.offsetY / canvas.height; // FIXME ew
+    const xFraction = e.offsetX / canvas.clientWidth; // FIXME ew, this should be calculated somewhere smartly, its just lucky this canvas has the same size as the other one
+    const yFraction = e.offsetY / canvas.height; // FIXME ew, this should be calculated somewhere smartly, its just lucky this canvas has the same size as the other one
 
     const { xRange, yRange } = chart;
 
@@ -126,12 +201,11 @@
     hoverXValue = xRange.from + (xRange.to - xRange.from) * xFraction;
     hoverYValue = yRange.from + (yRange.to - yRange.from) * (1 - yFraction);
   }
-  
 </script>
 
 <Tooltip
-  {traceInfo}
-  header={`x: ${hoverXValue.toFixed(3)}`}
+  nearestTracesInfo={tracesInfo}
+  singleTraceInfo={selectedTrace}
   show={showTooltip}
 />
 
@@ -179,18 +253,17 @@
     on:zoom={zoomRange}
     on:shift={shiftRange}
     {visibleAction}
-
     on:mousemove={(e) => {
       showTooltip = true;
       updateHoverValues(e);
     }}
     on:mouseout={(e) => {
       showTooltip = false;
+      closestTraces = undefined;
     }}
     on:blur={(e) => {
       showTooltip = false;
     }}
-
   />
 
   <div class="toolbar" slot="overlay">

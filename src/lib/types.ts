@@ -1,3 +1,5 @@
+import type { Color } from "../utils/color";
+
 export type TypedArray =
   | Int8Array
   | Uint8Array
@@ -48,6 +50,13 @@ export interface Zoom {
 export interface Point {
   x: number;
   y: number;
+}
+
+export interface HighlightPoint{
+  xFraction: number;
+  yFraction: number;
+  color: Color;
+  radius: number;
 }
 
 type RawHandle<S extends string> = number & { __handleType: S };

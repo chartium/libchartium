@@ -6,6 +6,9 @@
       }
     | {
         shift: Shift;
+      }
+    | {
+        highlightedPoints: HighlightPoint[];
       };
 </script>
 
@@ -18,7 +21,7 @@
   } from "../../utils/mouseGestures.ts";
   import * as canvas from "./canvas.ts";
   import type { MouseDragCallbacks } from "../../utils/mouseGestures.ts";
-  import type { Point, Shift, Zoom } from "../types.ts";
+  import type { HighlightPoint, Point, Shift, Zoom } from "../types.ts";
 
   export const events = createEventDispatcher<{
     reset: undefined;
@@ -54,12 +57,15 @@
       ctx.strokeStyle = color;
       ctx.lineWidth = 1;
 
-      if (action) {
-        if ("zoom" in action) {
-          drawZoom(action.zoom);
-        } else if ("shift" in action) {
-          drawShift(action.shift);
+      if (action && "highlightedPoints" in action) {
+        for (const point of action.highlightedPoints) {
+          drawHighlightPoint(point);
         }
+      }
+      if (action && "zoom" in action) {
+        drawZoom(action.zoom);
+      } else if (action && "shift" in action) {
+        drawShift(action.shift);
       } else if (mousePosition) {
         drawRuler(
           {
@@ -78,6 +84,19 @@
       _frame = undefined;
       draw();
     });
+  }
+
+  function drawHighlightPoint(point: HighlightPoint) {
+    const style: canvas.DrawStyle = {
+      fillStyle: `rgb(${point.color[0]}, ${point.color[1]}, ${point.color[2]})`,
+      strokeStyle: `rgb(${point.color[0]}, ${point.color[1]}, ${point.color[2]})`,
+    };
+    canvas.drawCircle(
+      ctx,
+      [point.xFraction * overlayWidth, (1 - point.yFraction) * overlayHeight],
+      point.radius * 3,
+      style
+    );
   }
 
   function drawZoom(zoom: Zoom) {

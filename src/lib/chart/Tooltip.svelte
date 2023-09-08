@@ -4,8 +4,17 @@
   import type { Point } from "../types";
   import { globalMouseMove } from "../../utils/mouseGestures";
 
-  export let header: any;
-  export let traceInfo: { traceId: string; value: string }[];
+  export let nearestTracesInfo: { traceId: string; x: string; y: string }[];
+  export let singleTraceInfo:
+    | {
+        traceId: string;
+        x: string;
+        y: string;
+        min: string;
+        max: string;
+        avg: string;
+      }
+    | undefined;
 
   export let show: boolean;
 
@@ -19,17 +28,35 @@
 <div use:globalMouseMove={updateMousePosition}>
   <GenericTooltip position={show ? position : undefined}>
     <div class="tooltip-container">
-      <div class="header">
-        {header}
-      </div>
-      {#each traceInfo as trace}
-        <div class="trace-info">
-          <div class="trace-id">{trace.traceId}:</div>
-          <div class="trace-value">
-            {trace.value}
-          </div>
+      {#if singleTraceInfo !== undefined}
+        <div class="header">
+          {singleTraceInfo.traceId}
         </div>
-      {/each}
+        {#each Object.entries(singleTraceInfo) as [key, value]}
+          {#if key !== "traceId"}
+            <div class="trace-info">
+              <div class="value-name">{key}:</div>
+              <div class="value-value">
+                {value}
+              </div>
+            </div>
+          {/if}
+        {/each}
+      {:else}
+        <div class="header">
+          x: {nearestTracesInfo[0]?.x}
+        </div>
+        {#each nearestTracesInfo as trace}
+          <div class="trace-info">
+            <div class="value-name">
+              {trace.traceId}:
+            </div>
+            <div class="value-value">
+              {trace.y}
+            </div>
+          </div>
+        {/each}
+      {/if}
     </div>
   </GenericTooltip>
 </div>
@@ -39,7 +66,7 @@
     display: flex;
     flex-direction: column;
     background-color: grey;
-    margin: 5px
+    margin: 5px;
   }
 
   .header {
@@ -53,13 +80,13 @@
     justify-content: space-between;
   }
 
-  .trace-id {
+  .value-name {
     font-weight: 600;
     padding-left: 4px;
     padding-right: 4px;
   }
 
-  .trace-value {
+  .value-value {
     padding-left: 4px;
     padding-right: 4px;
   }

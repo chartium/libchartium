@@ -14,7 +14,7 @@
     | "top-left"
     | "bottom-right"
     | "top-right"
-    | "bottom-left" = "bottom-right";
+    | "bottom-left" = "top-right";
 
   $: top = preferedQuadrant.includes("top");
   $: left = preferedQuadrant.includes("left");
@@ -26,19 +26,20 @@
    * to avoid overflowing the page */
   export let avoidEdges: boolean = true;
 
-  let container: HTMLElement;
+  let containerHeight: number;
+  let containerWidth: number;
 
   $: if (position !== undefined) {
     if (avoidEdges) {
       renderPosition = repairedPosition(
         position,
-        container?.clientHeight,
-        container?.clientWidth
+        containerHeight,
+        containerWidth
       );
     } else {
       renderPosition = {
-        x: position.x + (left ? 0 : -container?.clientWidth),
-        y: position.y + (top ? 0 : -container?.clientHeight),
+        x: position.x + (left ? 0 : -containerWidth),
+        y: position.y + (top ? 0 : -containerHeight),
       };
     }
   }
@@ -57,20 +58,20 @@
     if (!left) {
       const positionOfRightMenuBoundary = x + tooltipWidth + 3;
       const rightOverflow = positionOfRightMenuBoundary - innerWidth;
-      toReturnX = rightOverflow > 0 ? x - container.clientWidth : x;
+      toReturnX = rightOverflow > 0 ? x - containerWidth : x;
     } else {
       const positionOfLeftMenuBoundary = x - tooltipWidth - 3;
       const leftOverflow = positionOfLeftMenuBoundary;
-      toReturnX = leftOverflow < 0 ? x : x - container.clientWidth;
+      toReturnX = leftOverflow < 0 ? x : x - containerWidth;
     }
     if (!top) {
       const positionOfBottomMenuBoundary = y + tooltipHeight + 3;
       const bottomOverflow = positionOfBottomMenuBoundary - innerHeight;
-      toReturnY = bottomOverflow > 0 ? y - container.clientHeight : y;
+      toReturnY = bottomOverflow > 0 ? y - containerHeight : y;
     } else {
       const positionOfTopMenuBoundary = y - tooltipHeight - 3;
       const topOverflow = positionOfTopMenuBoundary;
-      toReturnY = topOverflow < 0 ? y : y - container.clientHeight;
+      toReturnY = topOverflow < 0 ? y : y - containerHeight;
     }
     return {
       x: toReturnX,
@@ -80,7 +81,8 @@
 </script>
 
 <div
-  bind:this={container}
+  bind:clientHeight={containerHeight}
+  bind:clientWidth={containerWidth}
   style:visibility={position === undefined ? "hidden" : "visible"}
   style:top={renderPosition?.y + "px"}
   style:left={renderPosition?.x + "px"}
