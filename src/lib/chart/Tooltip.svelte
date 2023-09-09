@@ -3,11 +3,17 @@
   import GenericTooltip from "../GenericTooltip.svelte";
   import type { Point } from "../types";
   import { globalMouseMove } from "../../utils/mouseGestures";
+  import type { StyledTrace } from "../data-worker/trace-list";
+  import TracePreview from "./TracePreview.svelte";
 
-  export let nearestTracesInfo: { traceId: string; x: string; y: string }[];
+  export let nearestTracesInfo: {
+    styledTrace: StyledTrace;
+    x: string;
+    y: string;
+  }[];
   export let singleTraceInfo:
     | {
-        traceId: string;
+        styledTrace: StyledTrace;
         x: string;
         y: string;
         min: string;
@@ -30,10 +36,11 @@
     <div class="tooltip-container">
       {#if singleTraceInfo !== undefined}
         <div class="header">
-          {singleTraceInfo.traceId}
+            <TracePreview previewedTrace={singleTraceInfo.styledTrace} />
+           {singleTraceInfo.styledTrace.id}
         </div>
         {#each Object.entries(singleTraceInfo) as [key, value]}
-          {#if key !== "traceId"}
+          {#if key !== "styledTrace"}
             <div class="trace-info">
               <div class="value-name">{key}:</div>
               <div class="value-value">
@@ -49,7 +56,8 @@
         {#each nearestTracesInfo as trace}
           <div class="trace-info">
             <div class="value-name">
-              {trace.traceId}:
+                <TracePreview previewedTrace={trace.styledTrace} />
+                {trace.styledTrace.id}:
             </div>
             <div class="value-value">
               {trace.y}
@@ -65,13 +73,19 @@
   .tooltip-container {
     display: flex;
     flex-direction: column;
-    background-color: grey;
+    background-color: rgb(51, 51, 51);
     margin: 5px;
   }
 
   .header {
     font-size: larger;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-evenly;
+    padding-left: 20px;
+    padding-right: 20px;
     margin-bottom: 5px;
+    margin-top: 5px;
   }
 
   .trace-info {
@@ -81,6 +95,8 @@
   }
 
   .value-name {
+    display: flex;
+    flex-direction: row;
     font-weight: 600;
     padding-left: 4px;
     padding-right: 4px;

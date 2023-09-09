@@ -7,7 +7,7 @@
     Tick,
     Zoom,
   } from "../types";
-  import type { TraceList } from "../data-worker/trace-list";
+  import type { StyledTrace, TraceList } from "../data-worker/trace-list";
   import type { VisibleAction } from "./ActionsOverlay.svelte";
 
   import { onMount } from "svelte";
@@ -123,7 +123,7 @@
   );
   $: tracesInfo =
     closestTraces?.map((trace) => ({
-      traceId: trace.traceInfo.id,
+      styledTrace: trace.traceInfo,
       x: trace.closestPoint.x.toFixed(3),
       y: trace.closestPoint.y.toFixed(3),
     })) ?? [];
@@ -147,7 +147,7 @@
   const closenessDistance = 6;
   let selectedTrace:
     | {
-        traceId: string;
+        styledTrace: StyledTrace;
         x: string;
         y: string;
         min: string;
@@ -172,7 +172,7 @@
     })[0];
 
     selectedTrace = {
-      traceId: closestTraces[0].traceInfo.id,
+      styledTrace: closestTraces[0].traceInfo,
       x: closestTraces[0].closestPoint.x.toFixed(3),
       y: closestTraces[0].closestPoint.y.toFixed(3),
       min: closestMeta.min.toFixed(3),
