@@ -9,15 +9,22 @@
     position = undefined;
   }
 
-  /** In what quadrant relative to input position to open the tooltip */
-  export let preferedQuadrant:
+  /** In what position relative to input position to open the tooltip */
+  export let preferedPositioning:
+    | "center"
+    | "top"
+    | "bottom"
+    | "left"
+    | "right"
     | "top-left"
     | "bottom-right"
     | "top-right"
     | "bottom-left" = "top-right";
 
-  $: top = preferedQuadrant.includes("top");
-  $: left = preferedQuadrant.includes("left");
+  $: top = preferedPositioning.includes("top");
+  $: bottom = preferedPositioning.includes("bottom");
+  $: right = preferedPositioning.includes("right");
+  $: left = preferedPositioning.includes("left");
 
   /** Where the tooltip actually gets displayed */
   let renderPosition: { x: number; y: number } | undefined = undefined;
@@ -55,27 +62,30 @@
     let toReturnX;
     let toReturnY;
 
-    if (!left) {
+    if (right) {
       const positionOfRightMenuBoundary = x + tooltipWidth + 3;
       const rightOverflow = positionOfRightMenuBoundary - innerWidth;
       toReturnX = rightOverflow > 0 ? x - containerWidth : x;
-    } else {
+    } 
+    if (left) {
       const positionOfLeftMenuBoundary = x - tooltipWidth - 3;
       const leftOverflow = positionOfLeftMenuBoundary;
       toReturnX = leftOverflow < 0 ? x : x - containerWidth;
     }
-    if (!top) {
+    if (bottom) {
       const positionOfBottomMenuBoundary = y + tooltipHeight + 3;
       const bottomOverflow = positionOfBottomMenuBoundary - innerHeight;
       toReturnY = bottomOverflow > 0 ? y - containerHeight : y;
-    } else {
+    } 
+    if (top) {
       const positionOfTopMenuBoundary = y - tooltipHeight - 3;
       const topOverflow = positionOfTopMenuBoundary;
       toReturnY = topOverflow < 0 ? y : y - containerHeight;
     }
+
     return {
-      x: toReturnX,
-      y: toReturnY,
+      x: toReturnX ?? x - containerWidth / 2,
+      y: toReturnY ?? y - containerHeight / 2,
     };
   }
 </script>
