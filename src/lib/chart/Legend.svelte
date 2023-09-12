@@ -4,11 +4,14 @@
   import type { TraceList } from "../data-worker/trace-list";
   import * as canvas from "./canvas";
   import TracePreview from "./TracePreview.svelte";
+  import { map } from "../../utils/collection";
 
   export let numberOfShownTraces: number = 5;
 
   export let traces: TraceList;
-  $: tracesWithStyles = Array.from(traces.tracesWithStyles()); // FIXME replace with first(traces, n)
+  $: tracesWithStyles = Array.from(
+    map(traces.traces(), (t) => traces.getTraceInfo(t)) // FIXME replace with first(traces, n)
+  );
 
   let canvasRefs: HTMLCanvasElement[] = [];
 
@@ -62,14 +65,18 @@
   bind:this={container}
   style:flex-direction={wide ? "row" : "column"}
 >
-<!--
+  <!--
   {#each {length: numberOfShownTraces} as _, i} <!-- a lil trick ti break after numberOfShownTraces - ->
   {@const styledTrace = tracesWithStyles[i]}
 -->
-  {#each tracesWithStyles.slice(0, numberOfShownTraces) as styledTrace} 
+  {#each tracesWithStyles.slice(0, numberOfShownTraces) as styledTrace}
     <div class="trace-legend">
       <div class="trace-preview">
-        <TracePreview previewedTrace={styledTrace} previewHeight={previewSize} previewWidth={previewSize} />
+        <TracePreview
+          previewedTrace={styledTrace}
+          previewHeight={previewSize}
+          previewWidth={previewSize}
+        />
       </div>
       {styledTrace.id}
     </div>

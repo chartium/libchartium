@@ -38,15 +38,23 @@
 
   // const controller = spawnChartiumWorker();
   const controller = ChartiumController.instantiateInThisThread();
-  const traces = controller.addFromArrayBuffer({
-    ids: ["sin", "cos", "atan"],
-    data: Float32Array.from(chartiumFriendlyTraceData),
-    xType: "f32",
-    yType: "f32",
-  });
+  const traces = controller
+    .addFromArrayBuffer({
+      ids: ["sin", "cos", "atan"],
+      data: Float32Array.from(chartiumFriendlyTraceData),
+      xType: "f32",
+      yType: "f32",
+    })
+    .then((l) =>
+      l.withStyle({
+        "*": { width: 2 },
+        sin: { color: "red" },
+      })
+    );
 
   let wrapDiv: HTMLElement;
   import domtoimage from "dom-to-image-more";
+  import Unit from "./Unit.svelte";
   const takeScreenshot = () => {
     domtoimage.toPng(wrapDiv).then((url) => {
       const link = document.createElement("a");
@@ -95,4 +103,5 @@
       </Chart>
     </div>
   {/await}
+  <Unit />
 </main>

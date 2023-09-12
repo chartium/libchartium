@@ -8,6 +8,9 @@ dependencies:
   '@fortawesome/free-solid-svg-icons':
     specifier: ^6.4.2
     version: 6.4.2
+  '@m93a/unitlib':
+    specifier: ^0.4.0
+    version: 0.4.0
   '@types/dom-to-image':
     specifier: ^2.6.4
     version: 2.6.4
@@ -317,6 +320,12 @@ packages:
       '@jridgewell/sourcemap-codec': 1.4.15
     dev: true
 
+  /@m93a/unitlib@0.4.0:
+    resolution: {integrity: sha512-vvSpGPmrqaV1uIDcuSfXETN+dKQw9trd6lB5R/OrMls9xdSsUgGFR1jZTiLLWHvP4FpbVlHuiBZWU92XX6UbRA==}
+    dependencies:
+      fraction.js: 4.2.1
+    dev: false
+
   /@nodelib/fs.scandir@2.1.5:
     resolution: {integrity: sha512-vq24Bq3ym5HEQm2NKCr3yXDwjc7vTsEThRDnkp2DK9p1uqLR+DHurm/NOTo0KG7HYHU7eppKZj3MyqYuMBf62g==}
     engines: {node: '>= 8'}
@@ -596,6 +605,10 @@ packages:
     engines: {node: '>=8'}
     dependencies:
       to-regex-range: 5.0.1
+
+  /fraction.js@4.2.1:
+    resolution: {integrity: sha512-/KxoyCnPM0GwYI4NN0Iag38Tqt+od3/mLuguepLgCAKPn0ZhC544nssAW0tG2/00zXEYl9W+7hwAIpLHo6Oc7Q==}
+    dev: false
 
   /fs.realpath@1.0.0:
     resolution: {integrity: sha512-OO0pH2lK6a0hZnAdau5ItzHPI6pUlvI7jMVnxUQRtw4owF2wk8lOSabtGDCTP4Ggrg2MbGnWO9X8K1t4+fGMDw==}

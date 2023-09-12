@@ -1,10 +1,10 @@
 <!-- component for showing a bit of the trace for legends and tooltips and such -->
 <script lang="ts">
   import { onMount } from "svelte";
-  import type { StyledTrace } from "../data-worker/trace-list";
+  import type { TraceInfo } from "../data-worker/trace-list";
   import * as canvas from "./canvas";
 
-  export let previewedTrace: StyledTrace;
+  export let previewedTrace: TraceInfo;
 
   let canvasRef: HTMLCanvasElement;
   export let previewWidth: number = 20;
@@ -18,7 +18,7 @@
 
   $: drawPreview(previewedTrace, previewHeight, previewWidth);
 
-  function drawPreview(trace: StyledTrace, height: number, width: number) {
+  function drawPreview(trace: TraceInfo, height: number, width: number) {
     if (!ctx) {
       return;
     }

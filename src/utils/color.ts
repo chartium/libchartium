@@ -12,7 +12,7 @@ function colorStringToHexOrRgba(color: string): HexColor | RgbaColor {
   context.fillStyle = color;
   color = context.fillStyle;
 
-  if (!color.startsWith("#") || !color.startsWith("rgba")) {
+  if (!color.startsWith("#") && !color.startsWith("rgba")) {
     throw new TypeError(`Unsupported color: ${color}`);
   }
 
@@ -52,11 +52,18 @@ export function randomColor(seed?: string): Color {
   return [0, 0, 0].map(() => Math.floor(255 * rng())) as Color;
 }
 
-export function randomContrastingColor(seedOrRng?: string | (() => number), contrastWithLight = true, contrastWithDark = true): Color {
+export function randomContrastingColor(
+  seedOrRng?: string | (() => number),
+  contrastWithLight = true,
+  contrastWithDark = true
+): Color {
   // for a tutorial on custom probability distributions see:
   // https://programming.guide/generate-random-value-with-distribution.html
 
-  const rng = typeof seedOrRng === 'function' ? seedOrRng : random.clone(seedrandom(seedOrRng)).uniform();
+  const rng =
+    typeof seedOrRng === "function"
+      ? seedOrRng
+      : random.clone(seedrandom(seedOrRng)).uniform();
 
   const h = rng();
   const s = Math.sqrt(0.2 + rng() * 0.8);

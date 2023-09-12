@@ -31,6 +31,7 @@
     "random": "^4.1.0",
     "sass": "^1.66.1",
     "seedrandom": "^3.0.5",
-    "svelte-fa": "^3.0.4"
+    "svelte-fa": "^3.0.4",
+    "@m93a/unitlib": "^0.4.0"
   }
 }

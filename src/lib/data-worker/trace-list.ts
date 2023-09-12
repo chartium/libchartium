@@ -1,30 +1,40 @@
+import type { Unit as Unit_ } from "@m93a/unitlib";
+type Unit = Unit_<any, any, any>;
+
 import type { Point, Range, TraceHandle } from "../types";
 import { lib } from "./wasm";
-import { computeStyles, type TraceStylesheet } from "./trace-styles";
+import {
+  computeStyles,
+  computeTraceColor,
+  defaultStyle,
+  resolveTraceInfo,
+  type ResolvedTraceInfo,
+  type TraceStyle,
+  type TraceStylesheet,
+  type TraceDataUnits,
+  simplifyTraceInfo,
+} from "./trace-styles";
 import { yeet } from "../../utils/yeet";
 import { UnknownTraceHandleError } from "../errors";
 import { traceIds } from "./controller";
-import {
-  concat,
-  filter,
-  flatMap,
-  map,
-  reduce,
-  unique,
-  zip,
-} from "../../utils/collection";
+import { filter, flatMap, map, reduce, unique } from "../../utils/collection";
 import { merge } from "lodash-es";
 import { proxyMarker } from "comlink";
 import type { Color } from "../../utils/color";
 
 export const BUNDLES = Symbol("bundles");
 export const HANDLES = Symbol("handles");
+export const TRACE_INFO = Symbol("trace info");
 
-export interface StyledTrace {
+export interface TraceInfo {
   id: string;
+
   width: number;
   color: Color;
   display: "line" | "points";
+
+  xDataUnit: Unit | undefined;
+  yDataUnit: Unit | undefined;
 }
 
 export class TraceList {
@@ -33,27 +43,23 @@ export class TraceList {
   #traceHandles: TraceHandle[];
   #bundles: lib.BoxedBundle[];
   #metas: lib.TraceMetas[] | undefined;
-  #stylesheet: TraceStylesheet;
+  #traceInfo: ResolvedTraceInfo;
   #range: Range;
 
   constructor(
     handles: TraceHandle[],
     range: Range,
     bundles: lib.BoxedBundle[],
-    stylesheet: TraceStylesheet
+    traceInfo: ResolvedTraceInfo
   ) {
     this.#traceHandles = handles;
     this.#range = range;
     this.#bundles = bundles;
-    this.#stylesheet = stylesheet;
+    this.#traceInfo = traceInfo;
   }
 
   get range(): Range {
     return { ...this.#range };
-  }
-
-  get stylesheet(): TraceStylesheet {
-    return structuredClone(this.#stylesheet);
   }
 
   get traceCount(): number {
@@ -67,20 +73,17 @@ export class TraceList {
     }
   }
 
-  tracesWithStyles(): Iterable<StyledTrace> {
-    const ids = this.traces();
-    const styles = computeStyles(
-      this.#stylesheet,
-      this.#traceHandles,
-      traceIds
-    );
+  getTraceInfo(id: string): TraceInfo {
+    const info: TraceStyle & TraceDataUnits =
+      this.#traceInfo.find(([ids]) => ids.has(id))?.[1] ?? defaultStyle;
 
-    return map(zip(ids, styles), ([id, { color, width, points_mode }]) => ({
+    return {
       id,
-      color,
-      width,
-      display: points_mode ? "points" : "line",
-    }));
+      ...info,
+      xDataUnit: info.xDataUnit,
+      yDataUnit: info.yDataUnit,
+      color: computeTraceColor(id, info.color),
+    };
   }
 
   get [BUNDLES]() {
@@ -89,13 +92,38 @@ export class TraceList {
   get [HANDLES]() {
     return this.#traceHandles;
   }
+  get [TRACE_INFO]() {
+    return this.#traceInfo;
+  }
 
   withStyle(stylesheet: TraceStylesheet): TraceList {
+    return new TraceList(this.#traceHandles, this.#range, this.#bundles, [
+      ...resolveTraceInfo(stylesheet, this.#traceHandles, traceIds),
+    ]);
+  }
+
+  /**
+   * Set the units of all data in this trace list. This function doesn't do
+   * any unit conversions, nor does it modify the data – rather, it re-interprets
+   * the stored data as if it always had these units.
+   */
+  withDataUnits(newUnits: { x?: Unit; y?: Unit }) {
+    const traceInfo: ResolvedTraceInfo = this.#traceInfo.map(([key, info]) => [
+      key,
+      {
+        ...info,
+        ...Object.fromEntries([
+          ...("x" in newUnits ? [["xDataUnit", newUnits.x]] : []),
+          ...("y" in newUnits ? [["yDataUnit", newUnits.y]] : []),
+        ]),
+      },
+    ]);
+
     return new TraceList(
       this.#traceHandles,
       this.#range,
       this.#bundles,
-      merge(this.stylesheet, stylesheet)
+      traceInfo
     );
   }
 
@@ -109,7 +137,7 @@ export class TraceList {
     );
     const handles = this.#traceHandles.filter((t) => availableHandles.has(t));
 
-    return new TraceList(handles, { from, to }, bundles, this.#stylesheet);
+    return new TraceList(handles, { from, to }, bundles, this.#traceInfo);
   }
 
   withoutTraces(tracesToExclude: Iterable<string>) {
@@ -122,7 +150,7 @@ export class TraceList {
 
     const handles = this.#traceHandles.filter((h) => !exclude.has(h));
 
-    return new TraceList(handles, this.#range, this.#bundles, this.#stylesheet);
+    return new TraceList(handles, this.#range, this.#bundles, this.#traceInfo);
   }
 
   static union(...lists: TraceList[]): TraceList {
@@ -137,13 +165,13 @@ export class TraceList {
       map(bundles, (b) => b.to()),
       Math.max
     );
-
-    const stylesheet = reduce(
-      map(lists, (l) => l.stylesheet),
-      merge
+    const info = simplifyTraceInfo(
+      lists.flatMap((l) => l.#traceInfo),
+      handles,
+      traceIds
     );
 
-    return new TraceList(handles, { from, to }, bundles, stylesheet);
+    return new TraceList(handles, { from, to }, bundles, info);
   }
 
   calculateMetas({
@@ -175,33 +203,15 @@ export class TraceList {
     return metas;
   }
 
-  /** finds ya the trace with your id and returns styled trace based on it */
-  getTraceStyle(id: string): StyledTrace {
-    const handle = traceIds.getKey(id);
-    if (handle === undefined) {
-      yeet(`Unknown id ${id}`);
-    }
-    const rawStyle = Array.from(computeStyles(
-      this.#stylesheet,
-      [handle][Symbol.iterator](),
-      traceIds
-    ))[0]
-
-    return {
-      id,
-      width: rawStyle.width,
-      color: rawStyle.color,
-      display: rawStyle.points_mode ? "points" : "line",
-    }
-  }
-
   /** Finds n traces that are the closest to input point */
-  findClosestTracesToPoint(point: Point, n: number):
+  findClosestTracesToPoint(
+    point: Point,
+    n: number
+  ):
     | {
-        traceInfo: StyledTrace;
+        traceInfo: TraceInfo;
         closestPoint: Point;
-      }[]
-    | undefined {
+      }[] {
     // FIXME make TraceList auto update its ranges based on ranges of bundles
 
     interface FoundPoint {
@@ -236,27 +246,25 @@ export class TraceList {
     }
 
     if (closestPoints.length === 0) {
-      return undefined;
+      return [];
     }
 
     let results: {
-      traceInfo: StyledTrace;
+      traceInfo: TraceInfo;
       closestPoint: Point;
     }[] = [];
 
-    for (const closestPoint of closestPoints) {
-      const id = traceIds.get(closestPoint.handle as TraceHandle);
+    for (const { point, handle } of closestPoints) {
+      const id = traceIds.get(handle as TraceHandle);
       if (id === undefined) {
-        yeet(UnknownTraceHandleError, closestPoint.handle);
+        yeet(UnknownTraceHandleError, handle);
       }
-      const styledTrace = this.getTraceStyle(id);
+      const traceInfo = this.getTraceInfo(id);
       results.push({
-        traceInfo: styledTrace,
-        closestPoint: closestPoint.point,
+        traceInfo,
+        closestPoint: point,
       });
     }
-
-
 
     return results;
   }

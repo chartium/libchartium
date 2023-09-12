@@ -3,17 +3,17 @@
   import GenericTooltip from "../GenericTooltip.svelte";
   import type { Point } from "../types";
   import { globalMouseMove } from "../../utils/mouseGestures";
-  import type { StyledTrace } from "../data-worker/trace-list";
+  import type { TraceInfo } from "../data-worker/trace-list";
   import TracePreview from "./TracePreview.svelte";
 
   export let nearestTracesInfo: {
-    styledTrace: StyledTrace;
+    styledTrace: TraceInfo;
     x: string;
     y: string;
   }[];
   export let singleTraceInfo:
     | {
-        styledTrace: StyledTrace;
+        styledTrace: TraceInfo;
         x: string;
         y: string;
         min: string;
@@ -36,8 +36,8 @@
     <div class="tooltip-container">
       {#if singleTraceInfo !== undefined}
         <div class="header">
-            <TracePreview previewedTrace={singleTraceInfo.styledTrace} />
-           {singleTraceInfo.styledTrace.id}
+          <TracePreview previewedTrace={singleTraceInfo.styledTrace} />
+          {singleTraceInfo.styledTrace.id}
         </div>
         {#each Object.entries(singleTraceInfo) as [key, value]}
           {#if key !== "styledTrace"}
@@ -56,8 +56,8 @@
         {#each nearestTracesInfo as trace}
           <div class="trace-info">
             <div class="value-name">
-                <TracePreview previewedTrace={trace.styledTrace} />
-                {trace.styledTrace.id}:
+              <TracePreview previewedTrace={trace.styledTrace} />
+              {trace.styledTrace.id}:
             </div>
             <div class="value-value">
               {trace.y}

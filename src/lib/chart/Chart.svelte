@@ -7,7 +7,7 @@
     Tick,
     Zoom,
   } from "../types";
-  import type { StyledTrace, TraceList } from "../data-worker/trace-list";
+  import type { TraceInfo, TraceList } from "../data-worker/trace-list";
   import type { VisibleAction } from "./ActionsOverlay.svelte";
 
   import { onMount } from "svelte";
@@ -128,26 +128,34 @@
       y: trace.closestPoint.y.toFixed(3),
     })) ?? [];
 
-  $: { // Highlighted points for the overlay
-  if (closestTraces === undefined) {
-    visibleAction.set({ highlightedPoints: [] });
-  } else if (chart.xRange !== undefined && chart.yRange !== undefined) {
-    const points = closestTraces.map((trace) => ({
-      xFraction: (trace.closestPoint.x - chart.xRange!.from) / (chart.xRange!.to - chart.xRange!.from),
-      yFraction: (trace.closestPoint.y - chart.yRange!.from) / (chart.yRange!.to - chart.yRange!.from),
-      color: trace.traceInfo.color,
-      radius: trace.traceInfo.width,
-    }));
+  $: {
+    // Highlighted points for the overlay
+    if (closestTraces === undefined) {
+      visibleAction.set({ highlightedPoints: [] });
+    } else if (chart.xRange !== undefined && chart.yRange !== undefined) {
+      const points = closestTraces.map((trace) => ({
+        xFraction:
+          (trace.closestPoint.x - chart.xRange!.from) /
+          (chart.xRange!.to - chart.xRange!.from),
+        yFraction:
+          (trace.closestPoint.y - chart.yRange!.from) /
+          (chart.yRange!.to - chart.yRange!.from),
+        color: trace.traceInfo.color,
+        radius: trace.traceInfo.width,
+      }));
 
-    visibleAction.update( (action) => ({ ...action, highlightedPoints: points }));
+      visibleAction.update((action) => ({
+        ...action,
+        highlightedPoints: points,
+      }));
+    }
   }
-}
 
   /** How close to a trace is considered close enough to get only one trace info */
   const closenessDistance = 6;
   let selectedTrace:
     | {
-        styledTrace: StyledTrace;
+        styledTrace: TraceInfo;
         x: string;
         y: string;
         min: string;
@@ -259,7 +267,7 @@
     }}
     on:mouseout={(e) => {
       showTooltip = false;
-      closestTraces = undefined;
+      closestTraces = [];
     }}
     on:blur={(e) => {
       showTooltip = false;

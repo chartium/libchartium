@@ -7,7 +7,7 @@ import {
   type RenderingController,
 } from "./mod.js";
 import { proxyMarker } from "comlink";
-import { BUNDLES, HANDLES, TraceList } from "../trace-list.ts";
+import { BUNDLES, HANDLES, TRACE_INFO, TraceList } from "../trace-list.ts";
 import {
   concat,
   filter,
@@ -191,7 +191,7 @@ export class WebGL2Renderer implements Renderer {
           availableHandles.has(h)
         )
       );
-      const styles = computeStyles(traceList.stylesheet, handles, traceIds);
+      const styles = computeStyles(traceList[TRACE_INFO], handles, traceIds);
       const buffers = map(handles, (h) =>
         lib.WebGlRenderer.create_trace_buffer(this.#context, bundle, h)
       );

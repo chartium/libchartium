@@ -1,3 +1,8 @@
+import type { Unit as Unit_ } from "@m93a/unitlib";
+type Unit = Unit_<any, any, any>;
+
+import { omit } from "lodash-es";
+
 import {
   colorStringToColor,
   randomContrastingColor,
@@ -6,28 +11,41 @@ import {
 import { yeet } from "../../utils/yeet";
 import { UnknownTraceHandleError } from "../errors";
 import type { TraceHandle } from "../types";
-import { lib } from "./wasm";
+import { map } from "../../utils/collection";
 
 export interface TraceStyle {
   width: number;
-  color: TraceColor | string;
+  color: TraceColor | (string & {});
   display: "line" | "points";
+  xDisplayUnit: Unit | undefined;
+  yDisplayUnit: Unit | undefined;
 }
 
 export type TraceStylesheet = Record<string, Partial<TraceStyle>>;
 
+export interface TraceDataUnits {
+  xDataUnit?: Unit;
+  yDataUnit?: Unit;
+}
+
+export type ResolvedTraceInfo = Array<
+  [traces: Set<string>, info: TraceStyle & TraceDataUnits]
+>;
+
 // the `as any` casts guarantee that the `TraceColor | string`
 // type isn't automatically reduced to just `string`
 export enum TraceColor {
-  ContrastWithBoth = "contrast-with-both" as any,
-  ContrastWithLight = "contrast-with-light" as any,
-  ContrastWithDark = "contrast-with-dark" as any,
+  ContrastWithBoth = "contrast-with-both",
+  ContrastWithLight = "contrast-with-light",
+  ContrastWithDark = "contrast-with-dark",
 }
 
-const defaultStyle: TraceStyle = {
+export const defaultStyle: TraceStyle = {
   width: 1,
   color: TraceColor.ContrastWithBoth,
   display: "line",
+  xDisplayUnit: undefined,
+  yDisplayUnit: undefined,
 };
 
 interface RawTraceStyle {
@@ -38,42 +56,119 @@ interface RawTraceStyle {
 
 /**
  * Take a user-defined stylesheet, and apply it to
- * all the available traces, creating a list of TraceStyle's
+ * all the available traces, creating a list of TraceInfo
  */
-export function* computeStyles(
+export function resolveTraceInfo(
   stylesheet: TraceStylesheet,
-  traces: Iterable<TraceHandle>,
+  traceHandles: Iterable<TraceHandle>,
   ids: Map<TraceHandle, string>
-): Iterable<RawTraceStyle> {
-  const baseStyle: TraceStyle = {
+): ResolvedTraceInfo {
+  const traces = new Set(
+    map(
+      traceHandles,
+      (handle) => ids.get(handle) ?? yeet(UnknownTraceHandleError, handle)
+    )
+  );
+
+  const lowSpecificity: TraceStyle = {
     ...defaultStyle,
-    ...stylesheet?.["*"],
+    ...omit(stylesheet?.["*"], "xDataUnit", "yDataUnit"),
   };
 
-  const resolvedStylesheet = new Map(
+  const highSpecificity = new Map(
     Object.entries(stylesheet ?? {}).map(([t, s]): [string, TraceStyle] => [
       t,
-      { ...baseStyle, ...s },
+      { ...lowSpecificity, ...omit(s, "xDataUnit", "yDataUnit") },
     ])
   );
 
+  const resolved: ResolvedTraceInfo = [];
+
+  // highest specificity styles
+  for (const trace of traces) {
+    const style = highSpecificity.get(trace);
+    if (style === undefined) continue;
+
+    resolved.push([new Set([trace]), style]);
+    traces.delete(trace);
+  }
+
+  // lowest specificity styles
+  resolved.push([traces, lowSpecificity]);
+
+  return resolved;
+}
+
+export function simplifyTraceInfo(
+  traceInfo: ResolvedTraceInfo,
+  traceHandles: Iterable<TraceHandle>,
+  ids: Map<TraceHandle, string>
+): ResolvedTraceInfo {
+  const existingTraces = new Set(
+    map(
+      traceHandles,
+      (handle) => ids.get(handle) ?? yeet(UnknownTraceHandleError, handle)
+    )
+  );
+
+  const usedTraces = new Set<string>();
+  const newInfo = new Map<string, Set<string>>();
+
+  for (const [ts, info] of traceInfo) {
+    const serializedInfo = JSON.stringify({
+      color: info.color,
+      display: info.display,
+      width: info.width,
+      xDataUnit: info.xDataUnit,
+      yDataUnit: info.yDataUnit,
+      xDisplayUnit: info.xDataUnit,
+      yDisplayUnit: info.yDisplayUnit,
+    } satisfies TraceStyle & TraceDataUnits);
+
+    for (const t of ts) {
+      if (!existingTraces.has(t)) continue;
+      if (usedTraces.has(t)) continue;
+
+      let newTraces = newInfo.get(serializedInfo);
+      if (!newTraces) newInfo.set(serializedInfo, (newTraces = new Set()));
+
+      newTraces.add(t);
+    }
+  }
+
+  return Array.from(
+    map(newInfo, ([info, traces]) => [traces, JSON.parse(info)])
+  );
+}
+
+export function computeTraceColor(id: string, color: TraceStyle["color"]) {
+  switch (color) {
+    case TraceColor.ContrastWithBoth:
+      return randomContrastingColor(id, true, true);
+    case TraceColor.ContrastWithLight:
+      return randomContrastingColor(id, true, false);
+    case TraceColor.ContrastWithDark:
+      return randomContrastingColor(id, false, true);
+    default:
+      return colorStringToColor(color);
+  }
+}
+
+export function* computeStyles(
+  info: ResolvedTraceInfo,
+  traces: Iterable<TraceHandle>,
+  ids: Map<TraceHandle, string>
+): Iterable<RawTraceStyle> {
+  const getStyle = (id: string) => {
+    for (const [set, style] of info) if (set.has(id)) return style;
+    return undefined;
+  };
+
   for (const handle of traces) {
     const id = ids.get(handle) ?? yeet(UnknownTraceHandleError, handle);
+    const { width, display, color } = getStyle(id) ?? defaultStyle;
 
-    const { width, display, color } = resolvedStylesheet.get(id) ?? baseStyle;
-
-    let [r, g, b] = (() => {
-      switch (color) {
-        case TraceColor.ContrastWithBoth:
-          return randomContrastingColor(id, true, true);
-        case TraceColor.ContrastWithLight:
-          return randomContrastingColor(id, true, false);
-        case TraceColor.ContrastWithDark:
-          return randomContrastingColor(id, false, true);
-        default:
-          return colorStringToColor(color);
-      }
-    })();
+    let [r, g, b] = computeTraceColor(id, color);
 
     yield {
       width,
