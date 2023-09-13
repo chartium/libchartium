@@ -6,7 +6,7 @@
 
 <script lang="ts" generics="T">
   import { observeResize } from "../../utils/actions";
-  import ContextItemComponent from "./contextItemComponent.svelte";
+  import ContextItemComponent from "./ContextItemComponent.svelte";
   import type { ContextItem, Point } from "./contextMenu";
   import {
     openPositionNextToPoint,

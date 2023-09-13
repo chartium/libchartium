@@ -78,19 +78,19 @@
         yLabel="Prefiguration achieved [megatons]"
       >
         <svelte:fragment slot="toolbar">
-          <ToolbarButton>
+          <ToolbarButton title="Fullscreen">
             <Fa icon={faExpand} />
           </ToolbarButton>
-          <ToolbarButton on:click={takeScreenshot}>
+          <ToolbarButton on:click={takeScreenshot} title="Screenshot">
             <Fa icon={faCamera} />
           </ToolbarButton>
-          <ToolbarButton>
+          <ToolbarButton title="Download png">
             <Fa icon={faDownload} />
           </ToolbarButton>
-          <ToolbarButton>
+          <ToolbarButton title="Autoscale Y axis">
             <Fa icon={faUpDown} />
           </ToolbarButton>
-          <ToolbarButton>
+          <ToolbarButton title="Change timezones">
             <Fa icon={faUserClock} />
           </ToolbarButton>
         </svelte:fragment>

@@ -8,6 +8,8 @@
 
   export let numberOfShownTraces: number = 5;
 
+  export let previewType: "simplified" | "full";
+
   export let traces: TraceList;
   $: tracesWithStyles = Array.from(
     map(traces.traces(), (t) => traces.getTraceInfo(t)) // FIXME replace with first(traces, n)
@@ -76,6 +78,7 @@
           previewedTrace={styledTrace}
           previewHeight={previewSize}
           previewWidth={previewSize}
+          simplified={previewType === "simplified"}
         />
       </div>
       {styledTrace.id}

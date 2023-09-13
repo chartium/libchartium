@@ -35,6 +35,8 @@
 
   let containerHeight: number;
   let containerWidth: number;
+  let innerWidth: number;
+  let innerHeight: number;
 
   $: if (position !== undefined) {
     if (avoidEdges) {
@@ -58,7 +60,6 @@
     tooltipWidth: number
   ): { x: number; y: number } {
     const { x, y } = positionRelativeToPage;
-    const { innerWidth, innerHeight } = window;
     let toReturnX;
     let toReturnY;
 
@@ -90,9 +91,12 @@
   }
 </script>
 
+<svelte:window bind:innerHeight={innerHeight} bind:innerWidth={innerWidth} />
+
 <div
   bind:clientHeight={containerHeight}
   bind:clientWidth={containerWidth}
+  class="tooltip"
   style:visibility={position === undefined ? "hidden" : "visible"}
   style:top={renderPosition?.y + "px"}
   style:left={renderPosition?.x + "px"}

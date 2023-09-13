@@ -27,10 +27,63 @@
 
   export let title: string = "";
   export let subtitle: string = "";
-  /** Label to be displayed next to x axis */
+  /** Label to be displayed next to x axis. If empty label will be ommited */
   export let xLabel: string = "";
-  /** Label to be displayed next to y axis */
+  /** Label to be displayed next to y axis. If empty label will be ommited */
   export let yLabel: string = "";
+
+  // SECTION Props
+
+  /** Hides the thick line at the edge of the graph */
+  export let hideXAxisLine: boolean = false;
+  /** Hides the thick line at the edge of the graph */
+  export let hideYAxisLine: boolean = false;
+
+  /** Hides only the units on the lable, not the name */
+  export let hideXLabelUnits: boolean = false;
+  /** Hides only the units on the lable, not the name */
+  export let hideYLabelUnits: boolean = false; // TODO think more about situations with more x/y axis
+
+  /** Hides only the numbers */
+  export let hideXTicks: boolean = false;
+  /** Hides only the numbers */
+  export let hideYTicks: boolean = false;
+
+  /** Hides the background graph lines */
+  export let hideXGuidelines: boolean = false;
+  /** Hides the background graph lines */
+  export let hideYGruidelines: boolean = false;
+
+  /** Hides the lines shown upon mouse hover */
+  export let hideXRuler: boolean = false;
+  /** Hides the lines shown upon mouse hover */
+  export let hideYRuler: boolean = false;
+
+  /** Hides the tooltips shown next to cursor */
+  export let hideTooltip: boolean = false;
+  /** Sets the number of traces that are shown in the tooltip by users keyboard */
+  export let tooltipTracesShown: number | "all" = 2;
+  /** Hides the highlighted points on traces that the tooltip is showing info about */
+  export let hideHoverPoints: boolean = false;
+
+  export let legendPosition: "none" | "right" | "bottom" = "right";
+  /** Refers to the little trace sample, simplified just shows color, full shows real width and stroke style */
+  export let legendPreview: "simplified" | "full" = "simplified";
+  /** How many traces to show in the legend, the rest will be hidden behind a button */
+  export let legendTracesShown: number | "all" = "all";
+
+  /** Disables zooming and moving */ // TODO should this include context menu?
+  export let disableInteractivity: boolean = false;
+
+  /** Sets position of the lil infobox that shows number of traces and range */
+  export let infoboxPosition:
+    | "top-left"
+    | "top-right"
+    | "bottom-left"
+    | "bottom-right"
+    | "none" = "top-right";
+
+  //!SECTION
 
   const chart = new Chart(controller, traces);
   const visibleAction = writable<VisibleAction | undefined>(undefined);
@@ -116,10 +169,9 @@
   let showTooltip: boolean = false;
   let hoverXValue: number = Infinity; // Silly goofy way to make it too far from everything on mount
   let hoverYValue: number = Infinity;
-  const tracesShownInTooltip = 2;
   $: closestTraces = traces.findClosestTracesToPoint(
     { x: hoverXValue, y: hoverYValue },
-    tracesShownInTooltip
+    tooltipTracesShown === "all" ? traces.traceCount : tooltipTracesShown
   );
   $: tracesInfo =
     closestTraces?.map((trace) => ({
@@ -211,11 +263,13 @@
   }
 </script>
 
-<Tooltip
-  nearestTracesInfo={tracesInfo}
-  singleTraceInfo={selectedTrace}
-  show={showTooltip}
-/>
+{#if !hideTooltip}
+  <Tooltip
+    nearestTracesInfo={tracesInfo}
+    singleTraceInfo={selectedTrace}
+    show={showTooltip}
+  />
+{/if}
 
 <ChartGrid bind:contentSize>
   <svelte:fragment slot="ylabel">
@@ -236,6 +290,8 @@
     axis="y"
     ticks={yTicks ?? []}
     {visibleAction}
+    {disableInteractivity}
+    hideTicks={hideYTicks}
     on:shift={shiftRange}
   />
 
@@ -244,30 +300,48 @@
     axis="x"
     ticks={xTicks ?? []}
     {visibleAction}
+    {disableInteractivity}
+    hideTicks={hideXTicks}
     on:shift={shiftRange}
   />
 
-  <Guidelines {xTicks} {yTicks} />
+  <Guidelines
+    xTicks={hideXGuidelines ? [] : xTicks}
+    yTicks={hideYGruidelines ? [] : yTicks}
+    renderXAxis={!hideXAxisLine}
+    renderYAxis={!hideYAxisLine}
+  />
   <canvas bind:this={canvas} on:contextmenu|preventDefault />
 
-  {#if $$slots.infobox}
-    <div class="infobox">
+  {#if $$slots.infobox && infoboxPosition !== "none"}
+    <div
+      class="infobox"
+      style="{infoboxPosition.includes('top') ? 'top' : 'bottom'} : 0.5rem;
+      {infoboxPosition.includes('left') ? 'left' : 'right'} : 0.5rem; "
+    >
       <slot name="infobox" />
     </div>
   {/if}
 
   <ChartOverlay
+    {visibleAction}
+    {hideHoverPoints}
+    {hideXRuler}
+    {hideYRuler}
+    {disableInteractivity}
     on:reset={resetRange}
     on:zoom={zoomRange}
     on:shift={shiftRange}
-    {visibleAction}
     on:mousemove={(e) => {
       showTooltip = true;
       updateHoverValues(e);
     }}
     on:mouseout={(e) => {
+      console.log("uwu");
       showTooltip = false;
       closestTraces = [];
+      hoverXValue = Infinity;
+      hoverYValue = Infinity;
     }}
     on:blur={(e) => {
       showTooltip = false;
@@ -278,7 +352,28 @@
     <slot name="toolbar" />
   </div>
 
-  <ChartLegend slot="right-legend" {traces} />
+  <svelte:fragment slot="right-legend">
+    {#if legendPosition === "right"}
+      <ChartLegend
+        {traces}
+        previewType={legendPreview}
+        numberOfShownTraces={legendTracesShown === "all"
+          ? traces.traceCount
+          : legendTracesShown}
+      />
+    {/if}
+  </svelte:fragment>
+  <svelte:fragment slot="bottom-legend">
+    {#if legendPosition === "bottom"}
+      <ChartLegend
+        {traces}
+        previewType={legendPreview}
+        numberOfShownTraces={legendTracesShown === "all"
+          ? traces.traceCount
+          : legendTracesShown}
+      />
+    {/if}
+  </svelte:fragment>
 </ChartGrid>
 
 <style lang="scss">
@@ -291,8 +386,6 @@
 
   .infobox {
     position: absolute;
-    top: 0.5rem;
-    right: 0.5rem;
 
     text-align: left;
     padding: 0.25rem;

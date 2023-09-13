@@ -9,6 +9,9 @@
   let canvasRef: HTMLCanvasElement;
   export let previewWidth: number = 20;
   export let previewHeight: number = 20;
+
+  /** If true, will just show color of trace, otherwise also width */
+  export let simplified: boolean = false;
   let ctx: CanvasRenderingContext2D | null = null;
 
   onMount(() => {
@@ -22,14 +25,22 @@
     if (!ctx) {
       return;
     }
+    ctx.clearRect(0, 0, width, height);
     const color = trace.color;
     const traceWidth = trace.width;
     const points = trace.display === "points" ? true : false;
     const style: canvas.DrawStyle = {
       fillStyle: `rgb( ${color[0]}, ${color[1]}, ${color[2]} ) `,
       strokeStyle: `rgb( ${color[0]}, ${color[1]}, ${color[2]} ) `,
-      lineWidth: traceWidth,
     };
+
+    if (simplified) {
+      style.lineWidth = 7;
+      canvas.drawSegment(ctx, [width/2, height], [width/2, 0], style);
+      return;
+    }
+
+    style.lineWidth = traceWidth;
 
     if (points) {
       canvas.drawCircle(

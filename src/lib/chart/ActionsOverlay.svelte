@@ -31,6 +31,11 @@
 
   export let visibleAction: Writable<VisibleAction | undefined>;
 
+  export let hideHoverPoints: boolean;
+  export let hideXRuler: boolean;
+  export let hideYRuler: boolean;
+  export let disableInteractivity: boolean;
+
   let canvasRef: HTMLCanvasElement;
   let ctx: CanvasRenderingContext2D;
 
@@ -57,14 +62,14 @@
       ctx.strokeStyle = color;
       ctx.lineWidth = 1;
 
-      if (action && "highlightedPoints" in action) {
+      if (action && "highlightedPoints" in action && !hideHoverPoints) {
         for (const point of action.highlightedPoints) {
           drawHighlightPoint(point);
         }
       }
-      if (action && "zoom" in action) {
+      if (action && "zoom" in action && !disableInteractivity) {
         drawZoom(action.zoom);
-      } else if (action && "shift" in action) {
+      } else if (action && "shift" in action && !disableInteractivity) {
         drawShift(action.shift);
       } else if (mousePosition) {
         drawRuler(
@@ -94,7 +99,7 @@
     canvas.drawCircle(
       ctx,
       [point.xFraction * overlayWidth, (1 - point.yFraction) * overlayHeight],
-      point.radius * 3,
+      point.radius * 2.5,
       style
     );
   }
@@ -160,14 +165,16 @@
       dash: [9, 3],
     };
 
-    canvas.drawSegment(
-      ctx,
-      [point.x * overlayWidth, 0],
-      [point.x * overlayWidth, overlayHeight],
-      style
-    );
+    if (!hideYRuler) {
+      canvas.drawSegment(
+        ctx,
+        [point.x * overlayWidth, 0],
+        [point.x * overlayWidth, overlayHeight],
+        style
+      );
+    }
 
-    if (!xOnly) {
+    if (!xOnly && !hideXRuler) {
       canvas.drawSegment(
         ctx,
         [0, (1 - point.y) * overlayHeight],
@@ -180,11 +187,18 @@
   const leftDragCallbacks: MouseDragCallbacks = {
     start: (_) => {},
     move: (_, status) => {
+      if (disableInteractivity) {
+        console.log("Chart interactivity disabled!");
+        return;
+      }
       visibleAction.set({ zoom: status.relativeZoom });
     },
     end: (_, status) => {
+      if (disableInteractivity) {
+        console.log("Chart interactivity disabled!");
+        return;
+      }
       visibleAction.set(undefined);
-
       if (status.beyondThreshold("any")) events("zoom", status.relativeZoom);
     },
   };
@@ -248,11 +262,19 @@
   const rightDragCallbacks: MouseDragCallbacks = {
     start: (e) => {},
     move: (_, status) => {
+      if (disableInteractivity) {
+        console.log("Chart interactivity disabled!");
+        return;
+      }
       visibleAction.set({
         shift: status.relativeShift,
       });
     },
     end: (_, status) => {
+      if (disableInteractivity) {
+        console.log("Chart interactivity disabled!");
+        return;
+      }
       visibleAction.set(undefined);
       events("shift", status.relativeShift);
     },

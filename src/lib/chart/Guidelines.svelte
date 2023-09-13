@@ -6,8 +6,9 @@
   export let xTicks: Tick[];
   export let yTicks: Tick[];
 
-  export let renderTicks = true;
-  export let renderAxes = true;
+  //export let renderTicks = true;
+  export let renderXAxis: boolean;
+  export let renderYAxis: boolean;
 
   let canvas: HTMLCanvasElement;
   let ctx: CanvasRenderingContext2D;
@@ -21,7 +22,7 @@
     ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
     ctx.clearRect(0, 0, canvasSize[0], canvasSize[1]);
 
-    if (renderAxes) {
+    if (renderXAxis || renderYAxis) {
       const color = "rgb(76,76,76)";
       const width = 2;
 
@@ -30,13 +31,17 @@
       ctx.lineWidth = width;
 
       ctx.beginPath();
-      ctx.moveTo(width / 2, 0);
-      ctx.lineTo(width / 2, canvasSize[1] - width / 2);
-      ctx.lineTo(canvasSize[0], canvasSize[1] - width / 2);
+      if (renderXAxis) {
+        ctx.moveTo(0, canvasSize[1] - width / 2);
+        ctx.lineTo(canvasSize[0], canvasSize[1] - width / 2);
+      }
+      if (renderYAxis) {
+        ctx.moveTo(width / 2, 0);
+        ctx.lineTo(width / 2, canvasSize[1] - width / 2);
+      }
       ctx.stroke();
     }
-
-    if (renderTicks) {
+    //if (renderTicks) {
       const color = getComputedStyle(canvas).color;
 
       ctx.save();
@@ -64,7 +69,7 @@
       }
 
       ctx.restore();
-    }
+    //}
   }
 </script>
 

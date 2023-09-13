@@ -13,21 +13,21 @@
     shift: Shift;
   }>();
 
+  export let hideTicks: boolean;
+
   /** Whether the axis is for x or y. Determines label orientation and selection positions */
   export let axis: "x" | "y";
   /** Ticks on the axis. Position is to be between 0 and 1 */
   export let ticks: Tick[];
 
-  /** Coordinate of where dragging and ended for this axis */
-  // export let transformPosition: Range | undefined;
-  /** Value of where dragging started and ended. Linearly interpolated from ticks */
-  // export let transformValue: Range | undefined;
+  export let disableInteractivity: boolean;
 
   export let visibleAction: Writable<VisibleAction | undefined>;
-  
+
   const dragCallbacks: MouseDragCallbacks = {
     start: (e) => {},
     move: (_, status) => {
+      if (disableInteractivity) return;
       const shift = status.relativeShift;
 
       if (axis === "x") {
@@ -38,10 +38,10 @@
         shift.origin.x = 0.5;
         delete shift.dx;
       }
-
       visibleAction.set({ shift });
     },
     end: (_, status) => {
+      if (disableInteractivity) return;
       const shift = status.relativeShift;
 
       if (axis === "x") delete shift.dy;
@@ -67,28 +67,19 @@
     axisHeight = height;
   }}
 >
-  <!-- tooltip -->
-  <!-- {#if transformPosition !== undefined && transformPosition.from !== transformPosition.to}
-    {@const prop = axis === "x" ? "left" : "top"}
-    <div class="tooltip" style="{prop}={transformPosition.from}px">
-      {transformValue?.from.toFixed(3)}
+  {#if !hideTicks}
+    <div class="ticks">
+      {#each ticks as tick}
+        <span
+          style={axis === "x"
+            ? `left: ${(tick.position * 100).toFixed(2)}%`
+            : `top: ${((1 - tick.position) * 100).toFixed(2)}%`}
+        >
+          {tick.value.toFixed(2)}
+        </span>
+      {/each}
     </div>
-    <div class="tooltip" style="{prop}={transformPosition.to}px">
-      {transformValue?.to.toFixed(3)}
-    </div>
-  {/if} -->
-
-  <div class="ticks">
-    {#each ticks as tick}
-      <span
-        style={axis === "x"
-          ? `left: ${(tick.position * 100).toFixed(2)}%`
-          : `top: ${((1 - tick.position) * 100).toFixed(2)}%`}
-      >
-        {tick.value.toFixed(2)}
-      </span>
-    {/each}
-  </div>
+  {/if}
 </div>
 
 <style lang="scss">
