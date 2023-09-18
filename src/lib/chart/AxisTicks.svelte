@@ -8,6 +8,8 @@
   import type { Writable } from "svelte/store";
   import type { VisibleAction } from "./ActionsOverlay.svelte";
   import { observeResize } from "../../utils/actions";
+  import ContextMenu from "../contextMenu/ContextMenu.svelte";
+  import type { ContextItem } from "../contextMenu/contextMenu";
 
   export const events = createEventDispatcher<{
     shift: Shift;
@@ -54,7 +56,20 @@
 
   let axisWidth: number = 1;
   let axisHeight: number = 1;
+
+  type lmao = string;
+  let contextItems: ContextItem<lmao>[] = [
+    {
+      type: "leaf",
+      content: "xd",
+      callback: () => {
+        console.log("xd");
+      },
+    },
+  ];
 </script>
+
+<ContextMenu items={contextItems} />
 
 <div
   class="{axis} ticks-and-label"
