@@ -13,7 +13,13 @@
 import { BiMap } from "bim";
 import { wasmUrl, init, lib } from "./wasm.ts";
 
-import type { Size, TraceHandle, TypedArray, TypeOfData } from "../types.js";
+import type {
+  Size,
+  TraceHandle,
+  TypedArray,
+  TypeOfData,
+  Unit,
+} from "../types.js";
 import type { RenderingController } from "./renderers/mod.ts";
 import { WebGL2Controller } from "./renderers/webgl2.ts";
 import { proxyMarker } from "comlink";
@@ -147,6 +153,8 @@ export class ChartiumController {
     data: ArrayBuffer | TypedArray;
     xType: TypeOfData;
     yType: TypeOfData;
+    xUnit?: Unit;
+    yUnit?: Unit;
   }): Promise<TraceList> {
     await this.initialized;
 

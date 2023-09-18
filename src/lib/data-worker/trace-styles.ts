@@ -1,6 +1,3 @@
-import type { Unit as Unit_ } from "@m93a/unitlib";
-type Unit = Unit_<any, any, any>;
-
 import { omit } from "lodash-es";
 
 import {
@@ -10,7 +7,7 @@ import {
 } from "../../utils/color";
 import { yeet } from "../../utils/yeet";
 import { UnknownTraceHandleError } from "../errors";
-import type { TraceHandle } from "../types";
+import type { TraceHandle, Unit } from "../types";
 import { map } from "../../utils/collection";
 
 export interface TraceStyle {

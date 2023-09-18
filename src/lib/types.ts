@@ -1,5 +1,8 @@
 import type { Color } from "../utils/color";
 
+import type { Unit as Unit_ } from "@m93a/unitlib";
+export type Unit = Unit_<any, any, any>;
+
 export type TypedArray =
   | Int8Array
   | Uint8Array
@@ -52,7 +55,7 @@ export interface Point {
   y: number;
 }
 
-export interface HighlightPoint{
+export interface HighlightPoint {
   xFraction: number;
   yFraction: number;
   color: Color;
@@ -72,11 +75,13 @@ export interface TraceMetas {
   [key: string]: unknown;
 }
 
-/** Type for ticks used in graph axis. Position is expected to be between 0 and 1 and denotes at what
+/**
+ * Type for ticks used in graph axis. Position is expected to be between 0 and 1 and denotes at what
  * fraction of axis length/height the tick should be placed.
  */
 export interface Tick {
   value: number;
+  unit: Unit | undefined;
   position: number;
 }
 

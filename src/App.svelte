@@ -13,6 +13,7 @@
     faUpDown,
     faUserClock,
   } from "@fortawesome/free-solid-svg-icons";
+  import { SI, IEC } from "@m93a/unitlib/systems";
 
   // autogenerate a lot of data
   const from = 0;
@@ -46,10 +47,15 @@
       yType: "f32",
     })
     .then((l) =>
-      l.withStyle({
-        "*": { width: 2 },
-        sin: { color: "red" },
-      })
+      l
+        .withDataUnits({
+          x: SI.parseUnit("s"),
+          y: IEC.parseUnit("KiB"),
+        })
+        .withStyle({
+          "*": { width: 2 },
+          sin: { color: "red" },
+        })
     );
 
   let wrapDiv: HTMLElement;

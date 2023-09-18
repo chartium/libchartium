@@ -1,7 +1,4 @@
-import type { Unit as Unit_ } from "@m93a/unitlib";
-type Unit = Unit_<any, any, any>;
-
-import type { Point, Range, TraceHandle } from "../types";
+import type { Point, Range, TraceHandle, Unit } from "../types";
 import { lib } from "./wasm";
 import {
   computeStyles,
