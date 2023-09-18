@@ -1,15 +1,10 @@
 <!-- Chart overlay that draw rectangles and line segements on zoom -->
 <script lang="ts" context="module">
-  export type VisibleAction =
-    | {
-        zoom: Zoom;
-      }
-    | {
-        shift: Shift;
-      }
-    | {
-        highlightedPoints: HighlightPoint[];
-      };
+  export type VisibleAction = {
+    zoom?: Zoom;
+    shift?: Shift;
+    highlightedPoints?: HighlightPoint[];
+  };
 </script>
 
 <script lang="ts">
@@ -62,14 +57,14 @@
       ctx.strokeStyle = color;
       ctx.lineWidth = 1;
 
-      if (action && "highlightedPoints" in action && !hideHoverPoints) {
+      if (action && action.highlightedPoints && !hideHoverPoints) {
         for (const point of action.highlightedPoints) {
           drawHighlightPoint(point);
         }
       }
-      if (action && "zoom" in action && !disableInteractivity) {
+      if (action && action.zoom && !disableInteractivity) {
         drawZoom(action.zoom);
-      } else if (action && "shift" in action && !disableInteractivity) {
+      } else if (action && action.shift && !disableInteractivity) {
         drawShift(action.shift);
       } else if (mousePosition) {
         drawRuler(
@@ -191,14 +186,19 @@
         console.log("Chart interactivity disabled!");
         return;
       }
-      visibleAction.set({ zoom: status.relativeZoom });
+      visibleAction.update((action) => ({
+        ...action,
+        zoom: status.relativeZoom,
+      }));
     },
     end: (_, status) => {
       if (disableInteractivity) {
         console.log("Chart interactivity disabled!");
         return;
       }
-      visibleAction.set(undefined);
+      visibleAction.update((action) => ({
+        highlightedPoints: action?.highlightedPoints,
+      }));
       if (status.beyondThreshold("any")) events("zoom", status.relativeZoom);
     },
   };
@@ -266,16 +266,19 @@
         console.log("Chart interactivity disabled!");
         return;
       }
-      visibleAction.set({
+      visibleAction.update((action) => ({
+        ...action,
         shift: status.relativeShift,
-      });
+      }));
     },
     end: (_, status) => {
       if (disableInteractivity) {
         console.log("Chart interactivity disabled!");
         return;
       }
-      visibleAction.set(undefined);
+      visibleAction.update((action) => ({
+        highlightedPoints: action?.highlightedPoints,
+      }));
       events("shift", status.relativeShift);
     },
   };
