@@ -1,6 +1,6 @@
 import type { Color } from "../utils/color";
 
-import type { Unit as Unit_ } from "@m93a/unitlib";
+import type { Unit as Unit_ } from "unitlib";
 export type Unit = Unit_<any, any, any>;
 
 export type TypedArray =

@@ -8,9 +8,9 @@ dependencies:
   '@fortawesome/free-solid-svg-icons':
     specifier: ^6.4.2
     version: 6.4.2
-  '@m93a/unitlib':
-    specifier: ^0.4.0
-    version: 0.4.0
+  '@mod.js/signals':
+    specifier: ^0.0.1
+    version: 0.0.1
   '@types/dom-to-image':
     specifier: ^2.6.4
     version: 2.6.4
@@ -44,6 +44,9 @@ dependencies:
   svelte-fa:
     specifier: ^3.0.4
     version: 3.0.4
+  unitlib:
+    specifier: ^0.4.0
+    version: 0.4.0
 
 devDependencies:
   '@sveltejs/vite-plugin-svelte':
@@ -320,10 +323,8 @@ packages:
       '@jridgewell/sourcemap-codec': 1.4.15
     dev: true
 
-  /@m93a/unitlib@0.4.0:
-    resolution: {integrity: sha512-vvSpGPmrqaV1uIDcuSfXETN+dKQw9trd6lB5R/OrMls9xdSsUgGFR1jZTiLLWHvP4FpbVlHuiBZWU92XX6UbRA==}
-    dependencies:
-      fraction.js: 4.2.1
+  /@mod.js/signals@0.0.1:
+    resolution: {integrity: sha512-TyEWbu57yIHWPJsvj1Dpl/vyxf5KTzjrPtXY2G+GvDJ3/oxzxYNk0llX4nPpIjwuh+kK0sKs55JFmABSfywbkg==}
     dev: false
 
   /@nodelib/fs.scandir@2.1.5:
@@ -1038,6 +1039,12 @@ packages:
     engines: {node: '>=14.17'}
     hasBin: true
     dev: true
+
+  /unitlib@0.4.0:
+    resolution: {integrity: sha512-B6ZbVzvKf6Nkp3reAELu0RbuasH1MBjskJtXcXC06FZVeOVmtIQFYzpCpDcraktG3wSt1NyyH8pgqFMF4BnJrw==}
+    dependencies:
+      fraction.js: 4.2.1
+    dev: false
 
   /vite@4.4.9(sass@1.66.1):
     resolution: {integrity: sha512-2mbUn2LlUmNASWwSCNSJ/EG2HuSRTnVNaydp6vMCm5VIqJsjMfbIWtbH2kDuwUVW5mMUKKZvGPX/rqeqVvv1XA==}

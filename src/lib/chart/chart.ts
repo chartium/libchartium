@@ -3,11 +3,7 @@ import type { ChartiumController } from "../data-worker";
 import type { RenderJob, Renderer } from "../data-worker/renderers/mod";
 import { mapOpt } from "../../utils/mapOpt";
 import type { Range, Tick, TypeOfData, Unit } from "../types";
-import {
-  createWritableSignal,
-  type WritableSignal,
-  type ReadableSignal,
-} from "../../utils/signal";
+import { mut, type WritableSignal, type Signal } from "@mod.js/signals";
 import type { TraceList } from "../data-worker/trace-list";
 import { linearTicks } from "../../utils/ticks";
 
@@ -28,17 +24,17 @@ export class Chart {
 
   #renderAxes?: boolean;
 
-  readonly #xTicks = createWritableSignal<Tick[]>([]);
-  readonly #yTicks = createWritableSignal<Tick[]>([]);
-  readonly xTicks = this.#xTicks.toReadable();
-  readonly yTicks = this.#yTicks.toReadable();
+  readonly #xTicks = mut<Tick[]>([]);
+  readonly #yTicks = mut<Tick[]>([]);
+  readonly xTicks = this.#xTicks.toReadonly();
+  readonly yTicks = this.#yTicks.toReadonly();
 
   #xDataUnit: Unit | undefined;
   #yDataUnit: Unit | undefined;
-  readonly #xDisplayUnit = createWritableSignal<Unit>();
-  readonly #yDisplayUnit = createWritableSignal<Unit>();
-  readonly xDisplayUnit = this.#xDisplayUnit.toReadable();
-  readonly yDisplayUnit = this.#yDisplayUnit.toReadable();
+  readonly #xDisplayUnit = mut<Unit>();
+  readonly #yDisplayUnit = mut<Unit>();
+  readonly xDisplayUnit = this.#xDisplayUnit.toReadonly();
+  readonly yDisplayUnit = this.#yDisplayUnit.toReadonly();
 
   constructor(
     controller: ChartiumController | Remote<ChartiumController>,

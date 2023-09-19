@@ -13,7 +13,7 @@
     faUpDown,
     faUserClock,
   } from "@fortawesome/free-solid-svg-icons";
-  import { SI, IEC } from "@m93a/unitlib/systems";
+  import { SI, IEC } from "unitlib/systems";
 
   // autogenerate a lot of data
   const from = 0;
