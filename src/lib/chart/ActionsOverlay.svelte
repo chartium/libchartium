@@ -24,7 +24,7 @@
     shift: Shift;
   }>();
 
-  export let visibleAction: Writable<VisibleAction | undefined>;
+  export let visibleAction: WritableSignal<VisibleAction | undefined>;
 
   export let hideHoverPoints: boolean;
   export let hideXRuler: boolean;
@@ -283,7 +283,6 @@
     },
   };
 
-  import { type Writable } from "svelte/store";
   import { scaleCanvas } from "../../utils/actions.ts";
 
   let overlayWidth: number = 1;
@@ -293,6 +292,7 @@
 
   import type { ContextItem } from "../contextMenu/contextMenu.ts";
   import GenericContextMenu from "../contextMenu/GenericContextMenu.svelte";
+  import type { WritableSignal } from "@mod.js/signals";
   let options: ContextItem<string>[] = [
     {
       type: "leaf",

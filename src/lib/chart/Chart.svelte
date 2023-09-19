@@ -5,7 +5,6 @@
   import type { VisibleAction } from "./ActionsOverlay.svelte";
 
   import { onMount } from "svelte";
-  import { writable } from "svelte/store";
   import { Chart } from "./chart";
 
   import ChartOverlay from "./ActionsOverlay.svelte";
@@ -15,6 +14,7 @@
   import Guidelines from "./Guidelines.svelte";
   import Tooltip from "./Tooltip.svelte";
   import { norm } from "./position";
+  import { mut } from "@mod.js/signals";
 
   export let controller: ChartiumController;
   export let traces: TraceList;
@@ -82,7 +82,7 @@
   const chart = new Chart(controller, traces);
   const { xTicks, yTicks, xDisplayUnit, yDisplayUnit } = chart;
 
-  const visibleAction = writable<VisibleAction | undefined>(undefined);
+  const visibleAction = mut<VisibleAction | undefined>(undefined);
 
   let canvas: HTMLCanvasElement;
 

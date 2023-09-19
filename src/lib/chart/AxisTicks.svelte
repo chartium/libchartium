@@ -8,10 +8,10 @@
     type MouseDragCallbacks,
   } from "../../utils/mouseGestures";
   import type { Point, Range, Shift, Tick } from "../types";
-  import type { Writable } from "svelte/store";
   import type { VisibleAction } from "./ActionsOverlay.svelte";
   import { observeResize } from "../../utils/actions";
   import { type ContextItem, GenericContextMenu } from "../contextMenu";
+  import type { WritableSignal } from "@mod.js/signals";
 
   export const events = createEventDispatcher<{
     shift: Shift;
@@ -26,7 +26,7 @@
 
   export let disableInteractivity: boolean;
 
-  export let visibleAction: Writable<VisibleAction | undefined>;
+  export let visibleAction: WritableSignal<VisibleAction | undefined>;
 
   const dragCallbacks: MouseDragCallbacks = {
     start: (e) => {},
