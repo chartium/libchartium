@@ -324,7 +324,6 @@
       updateHoverValues(e);
     }}
     on:mouseout={(e) => {
-      console.log("uwu");
       showTooltip = false;
       closestTraces = [];
       hoverXValue = Infinity;

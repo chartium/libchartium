@@ -66,8 +66,6 @@ export class Chart {
       return a.isEqual(b);
     };
 
-    console.log(traces.getUnits());
-
     const {
       x: [newXUnit],
       y: [newYUnit],

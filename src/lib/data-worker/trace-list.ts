@@ -58,7 +58,6 @@ export class TraceList {
     this.#range = range;
     this.#bundles = bundles;
     this.#traceInfo = traceInfo ?? resolveTraceInfo({}, [], handles, traceIds);
-    console.log("new TraceList:", this);
   }
 
   get range(): Range {
@@ -79,8 +78,6 @@ export class TraceList {
   getTraceInfo(id: string): TraceInfo {
     const info: TraceStyle & TraceDataUnits =
       this.#traceInfo.find(([ids]) => ids.has(id))?.[1] ?? defaultStyle;
-
-    console.log(info);
 
     return {
       id,
@@ -128,8 +125,6 @@ export class TraceList {
         ]),
       },
     ]);
-
-    console.log("units", traceInfo);
 
     return new TraceList(
       this.#traceHandles,
@@ -248,7 +243,6 @@ export class TraceList {
 
     for (const trace of this.traces()) {
       const { xDataUnit, yDataUnit } = this.getTraceInfo(trace);
-      console.log(xDataUnit, yDataUnit);
       addUnique(xUnits, xDataUnit);
       addUnique(yUnits, yDataUnit);
     }

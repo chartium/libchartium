@@ -60,7 +60,6 @@
 
   let wrapDiv: HTMLElement;
   import domtoimage from "dom-to-image-more";
-  import Unit from "./Unit.svelte";
   const takeScreenshot = () => {
     domtoimage.toPng(wrapDiv).then((url) => {
       const link = document.createElement("a");
@@ -109,5 +108,4 @@
       </Chart>
     </div>
   {/await}
-  <Unit />
 </main>
