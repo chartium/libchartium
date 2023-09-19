@@ -1,12 +1,6 @@
 <script lang="ts">
   import type { ChartiumController } from "../data-worker";
-  import type {
-    HighlightPoint as HighlightedPoint,
-    Range,
-    Shift,
-    Tick,
-    Zoom,
-  } from "../types";
+  import type { Range, Shift, Zoom } from "../types";
   import type { TraceInfo, TraceList } from "../data-worker/trace-list";
   import type { VisibleAction } from "./ActionsOverlay.svelte";
 
@@ -100,8 +94,6 @@
     chart.traces = await traces;
     chart.xType = "f32";
     chart.renderAxes = true;
-    chart.xRange = { from: 0, to: 1000 };
-    chart.yRange = { from: -10, to: 200 };
   });
 
   $: (window as any).chart = chart; // FIXME DEBUG

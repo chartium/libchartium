@@ -94,22 +94,12 @@ export class Chart {
       this.#xType = "f32";
     }
 
-    // if the ranges are not set, estimate them from ranges of the first trace
-    // FIXME This doesnt work, but @m93a will add a function to the controller to help
-    const bottomLeft = /*(await this.#controller.findClosestPointOfTrace(
-      this.#includedTraces[0].handle,
-      { x: -Infinity, y: -Infinity }
-    )) ??*/ { x: 0, y: 0 };
-    const topRight = /*(await this.#controller.findClosestPointOfTrace(
-      this.#includedTraces[0].handle,
-      { x: Infinity, y: Infinity }
-    )) ??*/ { x: 0, y: 0 };
     if (this.#xRange === undefined) {
-      this.#xRange = { from: bottomLeft.x, to: topRight.x };
+      this.#xRange = this.traces.range;
     }
 
     if (this.#yRange === undefined) {
-      this.#yRange = { from: bottomLeft.y, to: topRight.y };
+      this.#yRange = this.traces.getYRange();
     }
 
     const renderJob: RenderJob = {

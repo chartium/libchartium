@@ -68,6 +68,9 @@
       link.click();
     });
   };
+
+  (window as any).SI = SI;
+  (window as any).IEC = IEC;
 </script>
 
 <main class="dark">

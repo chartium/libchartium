@@ -9,8 +9,8 @@ dependencies:
     specifier: ^6.4.2
     version: 6.4.2
   '@mod.js/signals':
-    specifier: ^0.0.1
-    version: 0.0.1
+    specifier: ^0.0.3
+    version: 0.0.3
   '@types/dom-to-image':
     specifier: ^2.6.4
     version: 2.6.4
@@ -323,8 +323,8 @@ packages:
       '@jridgewell/sourcemap-codec': 1.4.15
     dev: true
 
-  /@mod.js/signals@0.0.1:
-    resolution: {integrity: sha512-TyEWbu57yIHWPJsvj1Dpl/vyxf5KTzjrPtXY2G+GvDJ3/oxzxYNk0llX4nPpIjwuh+kK0sKs55JFmABSfywbkg==}
+  /@mod.js/signals@0.0.3:
+    resolution: {integrity: sha512-dM7TYPNuDXERxxvWcXGIS/uTvQ4T+yn57S8R29WtqBjgRVbuYUPWA5jAro09ngKzqtOW8M7EJWFO7GFFsil2gQ==}
     dev: false
 
   /@nodelib/fs.scandir@2.1.5:
