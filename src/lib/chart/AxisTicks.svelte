@@ -3,13 +3,15 @@
 <script lang="ts">
   import { createEventDispatcher } from "svelte";
   import { MouseButtons, mouseDrag } from "../../utils/mouseGestures";
-  import type { MouseDragCallbacks } from "../../utils/mouseGestures";
-  import type { Range, Shift, Tick } from "../types";
+  import {
+    rightMouseClick,
+    type MouseDragCallbacks,
+  } from "../../utils/mouseGestures";
+  import type { Point, Range, Shift, Tick } from "../types";
   import type { Writable } from "svelte/store";
   import type { VisibleAction } from "./ActionsOverlay.svelte";
   import { observeResize } from "../../utils/actions";
-  import ContextMenu from "../contextMenu/ContextMenu.svelte";
-  import type { ContextItem } from "../contextMenu/contextMenu";
+  import { type ContextItem, GenericContextMenu } from "../contextMenu";
 
   export const events = createEventDispatcher<{
     shift: Shift;
@@ -57,19 +59,20 @@
   let axisWidth: number = 1;
   let axisHeight: number = 1;
 
-  type lmao = string;
-  let contextItems: ContextItem<lmao>[] = [
+  let contextItems: ContextItem<string>[] = [
     {
       type: "leaf",
-      content: "xd",
+      content: "tvoje máma",
       callback: () => {
         console.log("xd");
       },
     },
   ];
+
+  let menu: { open(p: Point): void };
 </script>
 
-<ContextMenu items={contextItems} />
+<GenericContextMenu items={contextItems} bind:this={menu} />
 
 <div
   class="{axis} ticks-and-label"
@@ -81,6 +84,9 @@
     axisWidth = width;
     axisHeight = height;
   }}
+  role="presentation"
+  on:contextmenu|preventDefault
+  use:rightMouseClick={(e) => menu.open(e)}
 >
   {#if !hideTicks}
     <div class="ticks">

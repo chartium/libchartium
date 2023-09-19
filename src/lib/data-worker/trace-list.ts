@@ -1,7 +1,6 @@
 import type { Point, Range, TraceHandle, Unit } from "../types";
 import { lib } from "./wasm";
 import {
-  computeStyles,
   computeTraceColor,
   defaultStyle,
   resolveTraceInfo,
@@ -14,8 +13,14 @@ import {
 import { yeet } from "../../utils/yeet";
 import { UnknownTraceHandleError } from "../errors";
 import { traceIds } from "./controller";
-import { filter, flatMap, map, reduce, unique } from "../../utils/collection";
-import { merge } from "lodash-es";
+import {
+  filter,
+  flatMap,
+  map,
+  reduce,
+  some,
+  unique,
+} from "../../utils/collection";
 import { proxyMarker } from "comlink";
 import type { Color } from "../../utils/color";
 
@@ -47,12 +52,13 @@ export class TraceList {
     handles: TraceHandle[],
     range: Range,
     bundles: lib.BoxedBundle[],
-    traceInfo: ResolvedTraceInfo
+    traceInfo: ResolvedTraceInfo | null
   ) {
     this.#traceHandles = handles;
     this.#range = range;
     this.#bundles = bundles;
-    this.#traceInfo = traceInfo;
+    this.#traceInfo = traceInfo ?? resolveTraceInfo({}, [], handles, traceIds);
+    console.log("new TraceList:", this);
   }
 
   get range(): Range {
@@ -73,6 +79,8 @@ export class TraceList {
   getTraceInfo(id: string): TraceInfo {
     const info: TraceStyle & TraceDataUnits =
       this.#traceInfo.find(([ids]) => ids.has(id))?.[1] ?? defaultStyle;
+
+    console.log(info);
 
     return {
       id,
@@ -95,7 +103,12 @@ export class TraceList {
 
   withStyle(stylesheet: TraceStylesheet): TraceList {
     return new TraceList(this.#traceHandles, this.#range, this.#bundles, [
-      ...resolveTraceInfo(stylesheet, this.#traceHandles, traceIds),
+      ...resolveTraceInfo(
+        stylesheet,
+        this.#traceInfo,
+        this.#traceHandles,
+        traceIds
+      ),
     ]);
   }
 
@@ -115,6 +128,8 @@ export class TraceList {
         ]),
       },
     ]);
+
+    console.log("units", traceInfo);
 
     return new TraceList(
       this.#traceHandles,
@@ -200,15 +215,56 @@ export class TraceList {
     return metas;
   }
 
+  #yRange: Range | undefined;
+  getYRange(): Range {
+    if (this.#yRange) return this.#yRange;
+    const metas = this.calculateMetas();
+    return {
+      from: metas.reduce(
+        (prev, { min: curr }) => Math.min(prev, curr),
+        metas[0].min
+      ),
+      to: metas.reduce(
+        (prev, { max: curr }) => Math.max(prev, curr),
+        metas[0].max
+      ),
+    };
+  }
+
+  #units: ReturnType<typeof this.getUnits> | undefined;
+  getUnits(): { x: (Unit | undefined)[]; y: (Unit | undefined)[] } {
+    if (this.#units) return this.#units;
+    const xUnits = new Set<Unit | undefined>();
+    const yUnits = new Set<Unit | undefined>();
+
+    const addUnique = (
+      set: Set<Unit | undefined>,
+      value: Unit | undefined
+    ): void => {
+      if (!value) return void set.add(value);
+      if (some(set, (u) => u?.isEqual(value) ?? false)) return;
+      set.add(value);
+    };
+
+    for (const trace of this.traces()) {
+      const { xDataUnit, yDataUnit } = this.getTraceInfo(trace);
+      console.log(xDataUnit, yDataUnit);
+      addUnique(xUnits, xDataUnit);
+      addUnique(yUnits, yDataUnit);
+    }
+
+    this.#units = { x: Array.from(xUnits), y: Array.from(yUnits) };
+    return this.#units;
+  }
+
   /** Finds n traces that are the closest to input point */
   findClosestTracesToPoint(
     point: Point,
     n: number
-  ):
-    | {
-        traceInfo: TraceInfo;
-        closestPoint: Point;
-      }[] {
+  ): {
+    traceInfo: TraceInfo;
+    closestPoint: Point;
+  }[] {
     // FIXME make TraceList auto update its ranges based on ranges of bundles
 
     interface FoundPoint {

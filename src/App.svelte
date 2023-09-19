@@ -80,8 +80,8 @@
         {traces}
         title="Titulek"
         subtitle="Podtitulek"
-        xLabel="Number of zines published"
-        yLabel="Prefiguration achieved [megatons]"
+        xLabel="Time"
+        yLabel="Amount"
       >
         <svelte:fragment slot="toolbar">
           <ToolbarButton title="Fullscreen">

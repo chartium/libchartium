@@ -35,7 +35,7 @@
     on:mouseover
     on:focus
   >
-    {item.content}
+    <slot />
   </div>
 {:else if item.type === "branch"}
   <div
@@ -48,7 +48,7 @@
     on:mouseover
     on:focus
   >
-    {item.content}
+    <slot />
   </div>
 {:else if item.type === "separator"}
   <div class="context-separator" role="separator" bind:this={boundingDiv}>

@@ -186,7 +186,7 @@ export class ChartiumController {
       handles,
       { from: bundle.from(), to: bundle.to() },
       [bundle],
-      []
+      null
     );
   }
 }

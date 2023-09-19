@@ -39,10 +39,10 @@
   /** Hides the thick line at the edge of the graph */
   export let hideYAxisLine: boolean = false;
 
-  /** Hides only the units on the lable, not the name */
+  /** Hides only the units on the label, not the name */
   export let hideXLabelUnits: boolean = false;
-  /** Hides only the units on the lable, not the name */
-  export let hideYLabelUnits: boolean = false; // TODO think more about situations with more x/y axis
+  /** Hides only the units on the label, not the name */
+  export let hideYLabelUnits: boolean = false;
 
   /** Hides only the numbers */
   export let hideXTicks: boolean = false;
@@ -86,10 +86,9 @@
   //!SECTION
 
   const chart = new Chart(controller, traces);
-  const visibleAction = writable<VisibleAction | undefined>(undefined);
+  const { xTicks, yTicks, xDisplayUnit, yDisplayUnit } = chart;
 
-  $: xTicks = [] as Tick[];
-  $: yTicks = [] as Tick[];
+  const visibleAction = writable<VisibleAction | undefined>(undefined);
 
   let canvas: HTMLCanvasElement;
 
@@ -103,14 +102,6 @@
     chart.renderAxes = true;
     chart.xRange = { from: 0, to: 1000 };
     chart.yRange = { from: -10, to: 200 };
-
-    chart.xTicks?.subscribe((ticks) => {
-      xTicks = ticks;
-    });
-
-    chart.yTicks?.subscribe((ticks) => {
-      yTicks = ticks;
-    });
   });
 
   $: (window as any).chart = chart; // FIXME DEBUG
@@ -149,12 +140,6 @@
         to: range.from + d * zoom.to,
       };
     }
-  }
-
-  function resetRange() {
-    // FIXME this should pull data from controller
-    chart.xRange = { from: 0, to: 1000 };
-    chart.yRange = { from: -10, to: 200 };
   }
 
   let contentSize: [number, number] = [1, 1];
@@ -274,9 +259,11 @@
 <ChartGrid bind:contentSize>
   <svelte:fragment slot="ylabel">
     {yLabel}
+    {#if !hideYLabelUnits && $yDisplayUnit}[{$yDisplayUnit.toString()}]{/if}
   </svelte:fragment>
   <svelte:fragment slot="xlabel">
     {xLabel}
+    {#if !hideXLabelUnits && $xDisplayUnit}[{$xDisplayUnit.toString()}]{/if}
   </svelte:fragment>
   <svelte:fragment slot="title">
     {title}
@@ -288,7 +275,7 @@
   <AxisTicks
     slot="yticks"
     axis="y"
-    ticks={yTicks ?? []}
+    ticks={$yTicks ?? []}
     {visibleAction}
     {disableInteractivity}
     hideTicks={hideYTicks}
@@ -298,7 +285,7 @@
   <AxisTicks
     slot="xticks"
     axis="x"
-    ticks={xTicks ?? []}
+    ticks={$xTicks ?? []}
     {visibleAction}
     {disableInteractivity}
     hideTicks={hideXTicks}
@@ -306,8 +293,8 @@
   />
 
   <Guidelines
-    xTicks={hideXGuidelines ? [] : xTicks}
-    yTicks={hideYGruidelines ? [] : yTicks}
+    xTicks={hideXGuidelines ? [] : $xTicks}
+    yTicks={hideYGruidelines ? [] : $yTicks}
     renderXAxis={!hideXAxisLine}
     renderYAxis={!hideYAxisLine}
   />
@@ -329,7 +316,7 @@
     {hideXRuler}
     {hideYRuler}
     {disableInteractivity}
-    on:reset={resetRange}
+    on:reset={() => chart.resetZoom()}
     on:zoom={zoomRange}
     on:shift={shiftRange}
     on:mousemove={(e) => {

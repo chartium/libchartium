@@ -201,7 +201,6 @@ export function globalMouseMove(
   node: HTMLElement,
   callback: (event: MouseEvent) => void
 ) {
-
   document.addEventListener("mousemove", callback, true);
 
   return {
@@ -210,4 +209,3 @@ export function globalMouseMove(
     },
   };
 }
-

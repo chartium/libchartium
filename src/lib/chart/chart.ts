@@ -2,7 +2,7 @@ import { transfer, type Remote } from "comlink";
 import type { ChartiumController } from "../data-worker";
 import type { RenderJob, Renderer } from "../data-worker/renderers/mod";
 import { mapOpt } from "../../utils/mapOpt";
-import type { Range, Tick, TypeOfData } from "../types";
+import type { Range, Tick, TypeOfData, Unit } from "../types";
 import {
   createWritableSignal,
   type WritableSignal,
@@ -11,34 +11,41 @@ import {
 import type { TraceList } from "../data-worker/trace-list";
 import { linearTicks } from "../../utils/ticks";
 
-/** Chartium render handler that is to be used by frontend svelte comonents to render charts
- * it autorenders when anything about the chart changes
+/**
+ * Chartium render handler that is to be used by frontend svelte comonents to render charts.
+ * It automatically re-renders when anything about the chart changes.
  */
 export class Chart {
   #controller: ChartiumController | Remote<ChartiumController>;
   #canvas?: HTMLCanvasElement;
   #renderer?: Renderer;
-  #traces: TraceList;
+  #traces!: TraceList;
 
   #xType?: TypeOfData;
 
   #xRange?: Range;
   #yRange?: Range;
 
-  #clear?: boolean;
   #renderAxes?: boolean;
 
-  #xTicks?: WritableSignal<Tick[]>;
-  #yTicks?: WritableSignal<Tick[]>;
+  readonly #xTicks = createWritableSignal<Tick[]>([]);
+  readonly #yTicks = createWritableSignal<Tick[]>([]);
+  readonly xTicks = this.#xTicks.toReadable();
+  readonly yTicks = this.#yTicks.toReadable();
+
+  #xDataUnit: Unit | undefined;
+  #yDataUnit: Unit | undefined;
+  readonly #xDisplayUnit = createWritableSignal<Unit>();
+  readonly #yDisplayUnit = createWritableSignal<Unit>();
+  readonly xDisplayUnit = this.#xDisplayUnit.toReadable();
+  readonly yDisplayUnit = this.#yDisplayUnit.toReadable();
 
   constructor(
     controller: ChartiumController | Remote<ChartiumController>,
     traces: TraceList
   ) {
     this.#controller = controller;
-    this.#xTicks = createWritableSignal([]);
-    this.#yTicks = createWritableSignal([]);
-    this.#traces = traces;
+    this.#updateTraces(traces);
   }
 
   /** assign a canvas to this render handler and prepares the renderer */
@@ -50,9 +57,39 @@ export class Chart {
     );
   }
 
-  /** Render the chart. This gets called automatically if you use any of the setters.
-   *  Autocalculates the ranges and estimates type if undefined */
-  async render() {
+  #updateTraces(traces: TraceList) {
+    const areUnitsEqual = (
+      a: Unit | undefined,
+      b: Unit | undefined
+    ): boolean => {
+      if (!a || !b) return a === b;
+      return a.isEqual(b);
+    };
+
+    console.log(traces.getUnits());
+
+    const {
+      x: [newXUnit],
+      y: [newYUnit],
+    } = traces.getUnits();
+    if (!areUnitsEqual(newXUnit, this.#xDataUnit)) {
+      this.#xDataUnit = newXUnit;
+      this.#xDisplayUnit.set(newXUnit);
+    }
+    if (!areUnitsEqual(newYUnit, this.#yDataUnit)) {
+      this.#yDataUnit = newYUnit;
+      this.#yDisplayUnit.set(newYUnit);
+    }
+
+    this.#traces = traces;
+    return this.tryRender();
+  }
+
+  /**
+   * Render the chart. This gets called automatically if you use any of the setters.
+   *  Autocalculates the ranges and estimates type if undefined
+   */
+  render() {
     if (this.#renderer === undefined) {
       // renderer gets initialized when canvas is assigned
       throw new Error("Canvas not assigned");
@@ -87,48 +124,37 @@ export class Chart {
       xRange: this.#xRange,
       yRange: this.#yRange,
 
-      clear: this.#clear,
+      clear: true,
       renderAxes: this.#renderAxes,
     };
 
-    const renderResults = await this.#renderer.render(renderJob);
+    this.#renderer.render(renderJob);
 
-    this.#xTicks?.set(linearTicks(this.xRange!));
-    this.#yTicks?.set(linearTicks(this.yRange!));
+    this.#updateTicks();
   }
 
-  //SECTION - setters
-
-  set traces(t: TraceList) {
-    this.#traces = t;
-    this.render();
+  tryRender(): boolean {
+    if (this.#renderer) {
+      this.render();
+      return true;
+    }
+    return false;
   }
 
-  set xType(type: TypeOfData) {
-    this.#xType = type;
-    this.render();
+  #updateTicks() {
+    this.#xTicks?.set(
+      linearTicks(this.xRange!, this.#xDataUnit, this.#xDisplayUnit.get())
+    );
+    this.#yTicks?.set(
+      linearTicks(this.yRange!, this.#yDataUnit, this.#yDisplayUnit.get())
+    );
   }
 
-  set xRange(range: Range) {
-    this.#xRange = range;
-    this.render();
+  resetZoom() {
+    this.#xRange = this.traces.range;
+    this.#yRange = this.traces.getYRange();
+    return this.tryRender();
   }
-
-  set yRange(range: Range) {
-    this.#yRange = range;
-    this.render();
-  }
-
-  set clear(value: boolean) {
-    this.#clear = value;
-    this.render();
-  }
-  set renderAxes(value: boolean) {
-    this.#renderAxes = value;
-    this.render();
-  }
-
-  //SECTION - getters
 
   get controller() {
     return this.#controller;
@@ -139,28 +165,43 @@ export class Chart {
   get renderer() {
     return this.#renderer;
   }
+
   get traces() {
     return this.#traces;
   }
+  set traces(t: TraceList) {
+    this.#updateTraces(t);
+  }
+
   get xType(): TypeOfData | undefined {
     return this.#xType;
   }
+  set xType(type: TypeOfData) {
+    this.#xType = type;
+    this.tryRender();
+  }
+
   get xRange(): Range | undefined {
     return this.#xRange;
   }
+  set xRange(range: Range) {
+    this.#xRange = range;
+    this.tryRender();
+  }
+
   get yRange(): Range | undefined {
     return this.#yRange;
   }
-  get clear(): boolean | undefined {
-    return this.#clear;
+  set yRange(range: Range) {
+    this.#yRange = range;
+    this.tryRender();
   }
+
   get renderAxes(): boolean | undefined {
     return this.#renderAxes;
   }
-  get xTicks(): ReadableSignal<Tick[]> | undefined {
-    return this.#xTicks?.toReadable();
-  }
-  get yTicks(): ReadableSignal<Tick[]> | undefined {
-    return this.#yTicks?.toReadable();
+  set renderAxes(value: boolean) {
+    this.#renderAxes = value;
+    this.tryRender();
   }
 }

@@ -14,8 +14,6 @@ export interface TraceStyle {
   width: number;
   color: TraceColor | (string & {});
   display: "line" | "points";
-  xDisplayUnit: Unit | undefined;
-  yDisplayUnit: Unit | undefined;
 }
 
 export type TraceStylesheet = Record<string, Partial<TraceStyle>>;
@@ -41,8 +39,6 @@ export const defaultStyle: TraceStyle = {
   width: 1,
   color: TraceColor.ContrastWithBoth,
   display: "line",
-  xDisplayUnit: undefined,
-  yDisplayUnit: undefined,
 };
 
 interface RawTraceStyle {
@@ -57,6 +53,7 @@ interface RawTraceStyle {
  */
 export function resolveTraceInfo(
   stylesheet: TraceStylesheet,
+  currentStyles: ResolvedTraceInfo,
   traceHandles: Iterable<TraceHandle>,
   ids: Map<TraceHandle, string>
 ): ResolvedTraceInfo {
@@ -67,15 +64,19 @@ export function resolveTraceInfo(
     )
   );
 
-  const lowSpecificity: TraceStyle = {
-    ...defaultStyle,
+  const lowSpecificity: Partial<TraceStyle> = {
     ...omit(stylesheet?.["*"], "xDataUnit", "yDataUnit"),
   };
 
   const highSpecificity = new Map(
     Object.entries(stylesheet ?? {}).map(([t, s]): [string, TraceStyle] => [
       t,
-      { ...lowSpecificity, ...omit(s, "xDataUnit", "yDataUnit") },
+      {
+        ...defaultStyle,
+        ...currentStyles.find(([ts]) => ts.has(t))?.[1],
+        ...lowSpecificity,
+        ...omit(s, "xDataUnit", "yDataUnit"),
+      },
     ])
   );
 
@@ -91,7 +92,13 @@ export function resolveTraceInfo(
   }
 
   // lowest specificity styles
-  resolved.push([traces, lowSpecificity]);
+  resolved.push([
+    traces,
+    {
+      ...defaultStyle,
+      ...lowSpecificity,
+    },
+  ]);
 
   return resolved;
 }
@@ -118,8 +125,6 @@ export function simplifyTraceInfo(
       width: info.width,
       xDataUnit: info.xDataUnit,
       yDataUnit: info.yDataUnit,
-      xDisplayUnit: info.xDataUnit,
-      yDisplayUnit: info.yDisplayUnit,
     } satisfies TraceStyle & TraceDataUnits);
 
     for (const t of ts) {

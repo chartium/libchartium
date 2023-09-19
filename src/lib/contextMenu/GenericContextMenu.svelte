@@ -188,7 +188,13 @@
           active = true;
         }
       }}
-    />
+    >
+      {#if item.type !== "separator"}
+        <slot {item}>
+          {item.content}
+        </slot>
+      {/if}
+    </ContextItemComponent>
     {#if item.type === "branch"}
       <div
         role="menu"

@@ -95,6 +95,26 @@ export function* zip<S, T>(
   }
 }
 
+export function some<T>(
+  iterable: Iterable<T>,
+  predicate: (value: T) => boolean
+): boolean {
+  for (const value of iterable) {
+    if (predicate(value)) return true;
+  }
+  return false;
+}
+
+export function every<T>(
+  iterable: Iterable<T>,
+  predicate: (value: T) => boolean
+): boolean {
+  for (const value of iterable) {
+    if (!predicate(value)) return false;
+  }
+  return true;
+}
+
 export function weakSetUnion<T extends object>(
   a: WeakSet<T>,
   b: WeakSet<T>

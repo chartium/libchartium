@@ -1,8 +1,12 @@
-import type { Range, Tick } from "../lib/types";
+import type { Range, Tick, Unit } from "../lib/types";
 
 const boxes: number[] = [1, 2, 5, 10];
 
-export const linearTicks = ({ from, to }: Range): Tick[] => {
+export const linearTicks = (
+  { from, to }: Range,
+  dataUnit: Unit | undefined,
+  displayUnit: Unit | undefined
+): Tick[] => {
   const width = to - from;
   let firstTick: number = 0.0;
   let ticksDist: number = 1.0;
@@ -21,11 +25,14 @@ export const linearTicks = ({ from, to }: Range): Tick[] => {
   }
 
   const result: Tick[] = [];
+  const factor = dataUnit ? displayUnit?.divide(dataUnit) : undefined;
 
   for (let i = 1; i <= Math.floor((to - firstTick) / ticksDist); ++i) {
+    const value = firstTick + ticksDist * i;
     result.push({
-      value: firstTick + ticksDist * i,
+      value: factor ? factor.multiplyValueByFactor(value) : value,
       position: (firstTick + ticksDist * i - from) / width,
+      unit: factor ? displayUnit : undefined,
     });
   }
 
