@@ -91,46 +91,47 @@
     await chart.assignCanvas(canvas!);
     mounted = true;
 
-    chart.traces = await traces;
-    chart.xType = "f32";
-    chart.renderAxes = true;
+    chart.traces.set(await traces);
   });
 
   $: (window as any).chart = chart; // FIXME DEBUG
 
   function shiftRange({ detail: shift }: { detail: Shift }) {
-    if (chart.xRange && shift.dx) {
-      const delta = (chart.xRange.to - chart.xRange.from) * -shift.dx;
-      chart.xRange = {
-        from: chart.xRange.from + delta,
-        to: chart.xRange.to + delta,
-      };
+    {
+      const { from, to } = chart.xRange.get();
+      if (shift.dx) {
+        const delta = (to - from) * -shift.dx;
+        chart.xRange.set({
+          from: from + delta,
+          to: to + delta,
+        });
+      }
     }
-
-    if (chart.yRange && shift.dy) {
-      const delta = (chart.yRange.to - chart.yRange.from) * -shift.dy;
-      chart.yRange = {
-        from: chart.yRange.from + delta,
-        to: chart.yRange.to + delta,
-      };
+    {
+      const { from, to } = chart.yRange.get();
+      if (shift.dy) {
+        const delta = (to - from) * -shift.dy;
+        chart.yRange.set({
+          from: from + delta,
+          to: to + delta,
+        });
+      }
     }
   }
 
   function zoomRange({ detail }: { detail: Zoom }) {
     for (const [axis, zoom] of Object.entries(detail) as [string, Range][]) {
       const rangeName = `${axis}Range` as "xRange" | "yRange";
-      const range = chart[rangeName];
-
-      if (!range) continue;
+      const range = chart[rangeName].get();
 
       const d = range.to - range.from;
 
       if (zoom.to - zoom.from <= 0) continue;
 
-      chart[rangeName] = {
+      chart[rangeName].set({
         from: range.from + d * zoom.from,
         to: range.from + d * zoom.to,
-      };
+      });
     }
   }
 
@@ -159,16 +160,17 @@
 
   $: {
     // Highlighted points for the overlay
+    const xRange = chart.xRange.get();
+    const yRange = chart.yRange.get();
+
     if (closestTraces === undefined) {
       visibleAction.set({ highlightedPoints: [] });
-    } else if (chart.xRange !== undefined && chart.yRange !== undefined) {
+    } else {
       const points = closestTraces.map((trace) => ({
         xFraction:
-          (trace.closestPoint.x - chart.xRange!.from) /
-          (chart.xRange!.to - chart.xRange!.from),
+          (trace.closestPoint.x - xRange.from) / (xRange.to - xRange.from),
         yFraction:
-          (trace.closestPoint.y - chart.yRange!.from) /
-          (chart.yRange!.to - chart.yRange!.from),
+          (trace.closestPoint.y - yRange.from) / (yRange.to - yRange.from),
         color: trace.traceInfo.color,
         radius: trace.traceInfo.width,
       }));
@@ -202,10 +204,11 @@
       closestTraces[0].closestPoint.y - hoverYValue,
     ]) < closenessDistance
   ) {
+    const { from, to } = chart.xRange.get();
     const closestMeta = traces.calculateMetas({
       traces: [closestTraces[0].traceInfo.id],
-      from: chart.xRange?.from,
-      to: chart.xRange?.to,
+      from,
+      to,
     })[0];
 
     selectedTrace = {
@@ -231,9 +234,8 @@
     const xFraction = e.offsetX / canvas.clientWidth; // FIXME ew, this should be calculated somewhere smartly, its just lucky this canvas has the same size as the other one
     const yFraction = e.offsetY / canvas.height; // FIXME ew, this should be calculated somewhere smartly, its just lucky this canvas has the same size as the other one
 
-    const { xRange, yRange } = chart;
-
-    if (!xRange || !yRange) return;
+    const xRange = chart.xRange.get();
+    const yRange = chart.yRange.get();
 
     hoverXValue = xRange.from + (xRange.to - xRange.from) * xFraction;
     hoverYValue = yRange.from + (yRange.to - yRange.from) * (1 - yFraction);

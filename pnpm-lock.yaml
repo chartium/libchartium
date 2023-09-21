@@ -9,8 +9,8 @@ dependencies:
     specifier: ^6.4.2
     version: 6.4.2
   '@mod.js/signals':
-    specifier: ^0.0.3
-    version: 0.0.3
+    specifier: ^0.0.5
+    version: 0.0.5
   '@types/dom-to-image':
     specifier: ^2.6.4
     version: 2.6.4
@@ -45,8 +45,8 @@ dependencies:
     specifier: ^3.0.4
     version: 3.0.4
   unitlib:
-    specifier: ^0.4.0
-    version: 0.4.0
+    specifier: ^0.4.2
+    version: 0.4.2
 
 devDependencies:
   '@sveltejs/vite-plugin-svelte':
@@ -323,8 +323,8 @@ packages:
       '@jridgewell/sourcemap-codec': 1.4.15
     dev: true
 
-  /@mod.js/signals@0.0.3:
-    resolution: {integrity: sha512-dM7TYPNuDXERxxvWcXGIS/uTvQ4T+yn57S8R29WtqBjgRVbuYUPWA5jAro09ngKzqtOW8M7EJWFO7GFFsil2gQ==}
+  /@mod.js/signals@0.0.5:
+    resolution: {integrity: sha512-3HdyyPjN2l0gw5qnwFLb/o39KQ8rZnY430lbouDkogwj8IgUJjOKe1HAKsoxtRF4HeoN8+EqX2vJZ2OaYtI2Fg==}
     dev: false
 
   /@nodelib/fs.scandir@2.1.5:
@@ -1040,8 +1040,8 @@ packages:
     hasBin: true
     dev: true
 
-  /unitlib@0.4.0:
-    resolution: {integrity: sha512-B6ZbVzvKf6Nkp3reAELu0RbuasH1MBjskJtXcXC06FZVeOVmtIQFYzpCpDcraktG3wSt1NyyH8pgqFMF4BnJrw==}
+  /unitlib@0.4.2:
+    resolution: {integrity: sha512-/cuzKNEMQCGifIuVA7PxZpbrm0MFT5sCwp1ty0hb0Ct8n6z0NCxvYwrZt94K6JWpnLFKW00tXHW612SSudxHRg==}
     dependencies:
       fraction.js: 4.2.1
     dev: false

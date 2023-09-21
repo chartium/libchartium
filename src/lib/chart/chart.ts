@@ -3,9 +3,34 @@ import type { ChartiumController } from "../data-worker";
 import type { RenderJob, Renderer } from "../data-worker/renderers/mod";
 import { mapOpt } from "../../utils/mapOpt";
 import type { Range, Tick, TypeOfData, Unit } from "../types";
-import { mut, type WritableSignal, type Signal } from "@mod.js/signals";
 import type { TraceList } from "../data-worker/trace-list";
 import { linearTicks } from "../../utils/ticks";
+
+import { mut } from "@mod.js/signals";
+import type {
+  Signal,
+  Subscriber,
+  SignalValue,
+  WritableSignal,
+} from "@mod.js/signals";
+
+const withSubscriber = <S extends Signal<any>>(
+  signal: S,
+  sub: Subscriber<SignalValue<S>>
+) => {
+  signal.subscribe(sub);
+  return signal;
+};
+const withEffect = <S extends Signal<any>>(
+  signal: S,
+  sub: Subscriber<SignalValue<S>>
+) => {
+  let firstCall = true;
+  return withSubscriber(signal, (value, params) => {
+    if (firstCall) firstCall = false;
+    else sub(value, params);
+  });
+};
 
 /**
  * Chartium render handler that is to be used by frontend svelte comonents to render charts.
@@ -13,21 +38,19 @@ import { linearTicks } from "../../utils/ticks";
  */
 export class Chart {
   #controller: ChartiumController | Remote<ChartiumController>;
+  get controller() {
+    return this.#controller;
+  }
+
   #canvas?: HTMLCanvasElement;
+  get canvas() {
+    return this.#canvas;
+  }
+
   #renderer?: Renderer;
-  #traces!: TraceList;
-
-  #xType?: TypeOfData;
-
-  #xRange?: Range;
-  #yRange?: Range;
-
-  #renderAxes?: boolean;
-
-  readonly #xTicks = mut<Tick[]>([]);
-  readonly #yTicks = mut<Tick[]>([]);
-  readonly xTicks = this.#xTicks.toReadonly();
-  readonly yTicks = this.#yTicks.toReadonly();
+  get renderer() {
+    return this.#renderer;
+  }
 
   #xDataUnit: Unit | undefined;
   #yDataUnit: Unit | undefined;
@@ -36,12 +59,33 @@ export class Chart {
   readonly xDisplayUnit = this.#xDisplayUnit.toReadonly();
   readonly yDisplayUnit = this.#yDisplayUnit.toReadonly();
 
+  readonly traces: WritableSignal<TraceList>;
+
+  readonly xType: WritableSignal<TypeOfData>;
+  readonly xRange: WritableSignal<Range>;
+  readonly yRange: WritableSignal<Range>;
+
+  readonly renderAxes: WritableSignal<boolean>;
+
   constructor(
     controller: ChartiumController | Remote<ChartiumController>,
     traces: TraceList
   ) {
     this.#controller = controller;
     this.#updateTraces(traces);
+
+    this.renderAxes = withEffect(mut(true), this.scheduleRender);
+
+    // TODO estimate xType
+    this.xType = withEffect(mut("f32"), this.scheduleRender);
+
+    this.traces = withEffect(mut(traces), (t) => {
+      this.#updateTraces(t);
+      this.scheduleRender();
+    });
+
+    this.xRange = withEffect(mut(traces.range), this.scheduleRender);
+    this.yRange = withEffect(mut(traces.getYRange()), this.scheduleRender);
   }
 
   /** assign a canvas to this render handler and prepares the renderer */
@@ -74,9 +118,6 @@ export class Chart {
       this.#yDataUnit = newYUnit;
       this.#yDisplayUnit.set(newYUnit);
     }
-
-    this.#traces = traces;
-    return this.tryRender();
   }
 
   /**
@@ -89,27 +130,14 @@ export class Chart {
       throw new Error("Canvas not assigned");
     }
 
-    if (this.#xType === undefined) {
-      // TODO estimate xType
-      this.#xType = "f32";
-    }
-
-    if (this.#xRange === undefined) {
-      this.#xRange = this.traces.range;
-    }
-
-    if (this.#yRange === undefined) {
-      this.#yRange = this.traces.getYRange();
-    }
-
     const renderJob: RenderJob = {
-      xType: this.#xType,
-      traces: this.#traces,
-      xRange: this.#xRange,
-      yRange: this.#yRange,
+      traces: this.traces.get(),
+      xType: this.xType.get(),
+      xRange: this.xRange.get(),
+      yRange: this.yRange.get(),
 
       clear: true,
-      renderAxes: this.#renderAxes,
+      renderAxes: this.renderAxes.get(),
     };
 
     this.#renderer.render(renderJob);
@@ -118,74 +146,44 @@ export class Chart {
   }
 
   tryRender(): boolean {
-    if (this.#renderer) {
+    if (this.#renderer && this.traces.get()) {
       this.render();
       return true;
     }
     return false;
   }
 
+  scheduleRender = () => {
+    // TODO deduplicate renders
+    requestAnimationFrame(() => {
+      this.tryRender();
+    });
+  };
+
+  readonly #xTicks = mut<Tick[]>([]);
+  readonly #yTicks = mut<Tick[]>([]);
+  readonly xTicks = this.#xTicks.toReadonly();
+  readonly yTicks = this.#yTicks.toReadonly();
+
   #updateTicks() {
-    this.#xTicks?.set(
-      linearTicks(this.xRange!, this.#xDataUnit, this.#xDisplayUnit.get())
-    );
-    this.#yTicks?.set(
-      linearTicks(this.yRange!, this.#yDataUnit, this.#yDisplayUnit.get())
-    );
+    const xRange = this.xRange.get();
+    if (xRange) {
+      this.#xTicks?.set(
+        linearTicks(xRange, this.#xDataUnit, this.#xDisplayUnit.get())
+      );
+    }
+
+    const yRange = this.yRange.get();
+    if (yRange) {
+      this.#yTicks?.set(
+        linearTicks(yRange, this.#yDataUnit, this.#yDisplayUnit.get())
+      );
+    }
   }
 
   resetZoom() {
-    this.#xRange = this.traces.range;
-    this.#yRange = this.traces.getYRange();
-    return this.tryRender();
-  }
-
-  get controller() {
-    return this.#controller;
-  }
-  get canvas() {
-    return this.#canvas;
-  }
-  get renderer() {
-    return this.#renderer;
-  }
-
-  get traces() {
-    return this.#traces;
-  }
-  set traces(t: TraceList) {
-    this.#updateTraces(t);
-  }
-
-  get xType(): TypeOfData | undefined {
-    return this.#xType;
-  }
-  set xType(type: TypeOfData) {
-    this.#xType = type;
-    this.tryRender();
-  }
-
-  get xRange(): Range | undefined {
-    return this.#xRange;
-  }
-  set xRange(range: Range) {
-    this.#xRange = range;
-    this.tryRender();
-  }
-
-  get yRange(): Range | undefined {
-    return this.#yRange;
-  }
-  set yRange(range: Range) {
-    this.#yRange = range;
-    this.tryRender();
-  }
-
-  get renderAxes(): boolean | undefined {
-    return this.#renderAxes;
-  }
-  set renderAxes(value: boolean) {
-    this.#renderAxes = value;
-    this.tryRender();
+    this.xRange.set(this.traces.get().range);
+    this.yRange.set(this.traces.get().getYRange());
+    return this.scheduleRender();
   }
 }
