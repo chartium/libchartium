@@ -137,11 +137,10 @@
 
   let contentSize: [number, number] = [1, 1];
   $: if (chart && mounted && contentSize) {
-    chart.renderer?.setSize(
-      contentSize[0] * devicePixelRatio,
-      contentSize[1] * devicePixelRatio
-    );
-    chart.render();
+    chart.size.set({
+      width: contentSize[0] * devicePixelRatio,
+      height: contentSize[1] * devicePixelRatio,
+    });
   }
 
   let showTooltip: boolean = false;

@@ -13,6 +13,7 @@ import type {
   SignalValue,
   WritableSignal,
 } from "@mod.js/signals";
+import { nextAnimationFrame } from "../../utils/promise";
 
 const withSubscriber = <S extends Signal<any>>(
   signal: S,
@@ -66,6 +67,7 @@ export class Chart {
   readonly yRange: WritableSignal<Range>;
 
   readonly renderAxes: WritableSignal<boolean>;
+  readonly size: WritableSignal<{ width: number; height: number }>;
 
   constructor(
     controller: ChartiumController | Remote<ChartiumController>,
@@ -73,8 +75,6 @@ export class Chart {
   ) {
     this.#controller = controller;
     this.#updateTraces(traces);
-
-    this.renderAxes = withEffect(mut(true), this.scheduleRender);
 
     // TODO estimate xType
     this.xType = withEffect(mut("f32"), this.scheduleRender);
@@ -86,6 +86,15 @@ export class Chart {
 
     this.xRange = withEffect(mut(traces.range), this.scheduleRender);
     this.yRange = withEffect(mut(traces.getYRange()), this.scheduleRender);
+
+    this.renderAxes = withEffect(mut(true), this.scheduleRender);
+    this.size = withEffect(
+      mut({ width: NaN, height: NaN }),
+      ({ width, height }) => {
+        this.#renderer?.setSize(width, height);
+        this.scheduleRender();
+      }
+    );
   }
 
   /** assign a canvas to this render handler and prepares the renderer */
@@ -125,6 +134,8 @@ export class Chart {
    *  Autocalculates the ranges and estimates type if undefined
    */
   render() {
+    console.log("render");
+
     if (this.#renderer === undefined) {
       // renderer gets initialized when canvas is assigned
       throw new Error("Canvas not assigned");
@@ -146,6 +157,8 @@ export class Chart {
   }
 
   tryRender(): boolean {
+    console.log("try render");
+
     if (this.#renderer && this.traces.get()) {
       this.render();
       return true;
@@ -153,11 +166,17 @@ export class Chart {
     return false;
   }
 
-  scheduleRender = () => {
-    // TODO deduplicate renders
-    requestAnimationFrame(() => {
-      this.tryRender();
-    });
+  #renderScheduled = false;
+  scheduleRender = async () => {
+    console.log("schedule render");
+
+    // render already scheduled
+    if (this.#renderScheduled) return;
+
+    this.#renderScheduled = true;
+    await nextAnimationFrame();
+    this.#renderScheduled = false;
+    this.tryRender();
   };
 
   readonly #xTicks = mut<Tick[]>([]);
