@@ -273,6 +273,8 @@
     {disableInteractivity}
     hideTicks={hideYTicks}
     on:shift={shiftRange}
+    raiseFactor={chart.raiseYFactorAction}
+    lowerFactor={chart.lowerYFactorAction}
   />
 
   <AxisTicks
@@ -283,6 +285,8 @@
     {disableInteractivity}
     hideTicks={hideXTicks}
     on:shift={shiftRange}
+    raiseFactor={chart.raiseXFactorAction}
+    lowerFactor={chart.lowerXFactorAction}
   />
 
   <Guidelines

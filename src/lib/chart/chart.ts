@@ -2,7 +2,7 @@ import { transfer, type Remote } from "comlink";
 import type { ChartiumController } from "../data-worker";
 import type { RenderJob, Renderer } from "../data-worker/renderers/mod";
 import { mapOpt } from "../../utils/mapOpt";
-import type { Range, Tick, TypeOfData, Unit } from "../types";
+import type { Range, Tick, Unit } from "../types";
 import type { TraceList } from "../data-worker/trace-list";
 import { linearTicks } from "../../utils/ticks";
 
@@ -14,6 +14,7 @@ import type {
   WritableSignal,
 } from "@mod.js/signals";
 import { nextAnimationFrame } from "../../utils/promise";
+import type { FactorDefinition } from "unitlib";
 
 const withSubscriber = <S extends Signal<any>>(
   signal: S,
@@ -62,7 +63,6 @@ export class Chart {
 
   readonly traces: WritableSignal<TraceList>;
 
-  readonly xType: WritableSignal<TypeOfData>;
   readonly xRange: WritableSignal<Range>;
   readonly yRange: WritableSignal<Range>;
 
@@ -75,9 +75,6 @@ export class Chart {
   ) {
     this.#controller = controller;
     this.#updateTraces(traces);
-
-    // TODO estimate xType
-    this.xType = withEffect(mut("f32"), this.scheduleRender);
 
     this.traces = withEffect(mut(traces), (t) => {
       this.#updateTraces(t);
@@ -143,7 +140,9 @@ export class Chart {
 
     const renderJob: RenderJob = {
       traces: this.traces.get(),
-      xType: this.xType.get(),
+
+      // TODO read xType
+      xType: "f32",
       xRange: this.xRange.get(),
       yRange: this.yRange.get(),
 
@@ -205,4 +204,50 @@ export class Chart {
     this.yRange.set(this.traces.get().getYRange());
     return this.scheduleRender();
   }
+
+  readonly raiseXFactorAction = changeFactorAction("raise", this.#xDisplayUnit);
+  readonly lowerXFactorAction = changeFactorAction("lower", this.#xDisplayUnit);
+  readonly raiseYFactorAction = changeFactorAction("raise", this.#yDisplayUnit);
+  readonly lowerYFactorAction = changeFactorAction("lower", this.#yDisplayUnit);
 }
+
+const changeFactorAction = (
+  direction: "raise" | "lower",
+  unit: WritableSignal<Unit | undefined>
+) =>
+  unit.map(($unit) => {
+    if (!$unit) return;
+
+    const factorsEqual = (a: FactorDefinition, b: FactorDefinition) =>
+      a.mul === b.mul && a.base === b.base && a.exp === b.exp;
+
+    const factors = Object.entries<FactorDefinition>($unit.unitSystem.factors);
+
+    // add prefix-less factor
+    factors.push(["(unitless)", { mul: 1, base: 1, exp: 1 }]);
+
+    // if the current factor is non-standard, add it to the list
+    if (!factors.find(([_, f]) => factorsEqual($unit.factor, f))) {
+      factors.push(["(current)", $unit.factor]);
+    }
+
+    // sort by value
+    factors.sort(
+      ([_, a], [__, b]) => a.mul * a.base ** a.exp - b.mul * b.base ** b.exp
+    );
+
+    const currentIndex = factors.findIndex(([_, f]) =>
+      factorsEqual($unit.factor, f)
+    );
+
+    const newIndex = currentIndex + (direction === "raise" ? 1 : -1);
+    if (newIndex < 0 || newIndex >= factors.length) return;
+
+    const newFactor = factors[newIndex][1];
+    const newUnit = $unit.withFactor(newFactor);
+
+    return {
+      unit: newUnit,
+      callback: () => unit.set(newUnit),
+    };
+  });

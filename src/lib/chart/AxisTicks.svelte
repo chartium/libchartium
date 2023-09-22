@@ -7,11 +7,15 @@
     rightMouseClick,
     type MouseDragCallbacks,
   } from "../../utils/mouseGestures";
-  import type { Point, Range, Shift, Tick } from "../types";
+  import type { Point, Range, Shift, Tick, Unit } from "../types";
   import type { VisibleAction } from "./ActionsOverlay.svelte";
   import { observeResize } from "../../utils/actions";
   import { type ContextItem, GenericContextMenu } from "../contextMenu";
-  import type { WritableSignal } from "@mod.js/signals";
+  import {
+    ZippedSignal,
+    type Signal,
+    type WritableSignal,
+  } from "@mod.js/signals";
 
   export const events = createEventDispatcher<{
     shift: Shift;
@@ -27,6 +31,10 @@
   export let disableInteractivity: boolean;
 
   export let visibleAction: WritableSignal<VisibleAction | undefined>;
+
+  type UnitAction = Signal<{ unit: Unit; callback: () => void } | undefined>;
+  export let raiseFactor: UnitAction;
+  export let lowerFactor: UnitAction;
 
   const dragCallbacks: MouseDragCallbacks = {
     start: (e) => {},
@@ -59,20 +67,31 @@
   let axisWidth: number = 1;
   let axisHeight: number = 1;
 
-  let contextItems: ContextItem<string>[] = [
-    {
-      type: "leaf",
-      content: "tvoje máma",
-      callback: () => {
-        console.log("xd");
-      },
-    },
-  ];
+  const contextItems = ZippedSignal(
+    raiseFactor.map(($v) => {
+      if (!$v) return;
+      const { unit, callback } = $v;
+      return <const>{
+        type: "leaf",
+        content: `Raise unit to ${unit.toString()}`,
+        callback,
+      };
+    }),
+    lowerFactor.map(($v) => {
+      if (!$v) return;
+      const { unit, callback } = $v;
+      return <const>{
+        type: "leaf",
+        content: `Lower unit to ${unit.toString()}`,
+        callback,
+      };
+    })
+  ).map((arr) => arr.filter((x) => x) as ContextItem<string>[]);
 
   let menu: { open(p: Point): void };
 </script>
 
-<GenericContextMenu items={contextItems} bind:this={menu} />
+<GenericContextMenu items={$contextItems} bind:this={menu} />
 
 <div
   class="{axis} ticks-and-label"
