@@ -15,6 +15,7 @@
     ZippedSignal,
     type Signal,
     type WritableSignal,
+    mut,
   } from "@mod.js/signals";
 
   export const events = createEventDispatcher<{
@@ -35,6 +36,12 @@
   type UnitAction = Signal<{ unit: Unit; callback: () => void } | undefined>;
   export let raiseFactor: UnitAction;
   export let lowerFactor: UnitAction;
+
+  // flatten the mutable prop containing a store into a store
+  const raiseFactor$ = mut($raiseFactor);
+  $: raiseFactor$.set($raiseFactor);
+  const lowerFactor$ = mut($lowerFactor);
+  $: lowerFactor$.set($lowerFactor);
 
   const dragCallbacks: MouseDragCallbacks = {
     start: (e) => {},
@@ -68,27 +75,33 @@
   let axisHeight: number = 1;
 
   const contextItems = ZippedSignal(
-    raiseFactor.map(($v) => {
+    raiseFactor$.map(($v) => {
       if (!$v) return;
       const { unit, callback } = $v;
       return <const>{
         type: "leaf",
         content: `Raise unit to ${unit.toString()}`,
-        callback,
+        callback() {
+          callback();
+          menu.close();
+        },
       };
     }),
-    lowerFactor.map(($v) => {
+    lowerFactor$.map(($v) => {
       if (!$v) return;
       const { unit, callback } = $v;
       return <const>{
         type: "leaf",
         content: `Lower unit to ${unit.toString()}`,
-        callback,
+        callback() {
+          callback();
+          menu.close();
+        },
       };
     })
   ).map((arr) => arr.filter((x) => x) as ContextItem<string>[]);
 
-  let menu: { open(p: Point): void };
+  let menu: { open(p: Point): void; close(): void };
 </script>
 
 <GenericContextMenu items={$contextItems} bind:this={menu} />

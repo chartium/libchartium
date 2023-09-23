@@ -21,7 +21,6 @@
   },
   "dependencies": {
     "@fortawesome/free-solid-svg-icons": "^6.4.2",
-    "unitlib": "^0.4.3",
     "@mod.js/signals": "^0.0.6",
     "@types/dom-to-image": "^2.6.4",
     "@types/lodash-es": "^4.17.9",
@@ -33,6 +32,7 @@
     "random": "^4.1.0",
     "sass": "^1.68.0",
     "seedrandom": "^3.0.5",
-    "svelte-fa": "^3.0.4"
+    "svelte-fa": "^3.0.4",
+    "unitlib": "^0.4.4"
   }
 }

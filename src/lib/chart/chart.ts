@@ -100,14 +100,10 @@ export class Chart {
     public readonly canvas: HTMLCanvasElement,
     traces?: TraceList
   ) {
+    // signals
     traces ??= TraceList.empty();
 
-    this.#updateTraces(traces);
-
-    this.traces = withEffect(mut(traces), (t) => {
-      this.#updateTraces(t);
-      this.scheduleRender();
-    });
+    this.traces = withSubscriber(mut(traces), (t) => this.#updateTraces(t));
 
     this.xRange = withEffect(mut(traces.range), this.scheduleRender);
     this.yRange = withEffect(mut(traces.getYRange()), this.scheduleRender);
@@ -120,6 +116,10 @@ export class Chart {
       }
     );
 
+    withEffect(this.#xDisplayUnit, () => this.#updateTicks());
+    withEffect(this.#yDisplayUnit, () => this.#updateTicks());
+
+    // canvas & renderer
     const offscreen = canvas.transferControlToOffscreen();
     this.controller
       .createRenderer(transfer(offscreen, [offscreen]))
@@ -150,6 +150,8 @@ export class Chart {
       this.#yDataUnit = newYUnit;
       this.#yDisplayUnit.set(newYUnit);
     }
+
+    this.scheduleRender();
   }
 
   /**

@@ -130,4 +130,9 @@
   .bottom-legend {
     grid-area: bl;
   }
+
+  .xticks,
+  .yticks {
+    overflow: visible;
+  }
 </style>

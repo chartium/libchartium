@@ -25,7 +25,7 @@ export const linearTicks = (
   }
 
   const result: Tick[] = [];
-  const factor = dataUnit ? displayUnit?.divide(dataUnit) : undefined;
+  const factor = displayUnit ? dataUnit?.divide(displayUnit) : undefined;
 
   for (let i = 1; i <= Math.floor((to - firstTick) / ticksDist); ++i) {
     const value = firstTick + ticksDist * i;
