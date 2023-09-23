@@ -45,8 +45,8 @@ dependencies:
     specifier: ^3.0.4
     version: 3.0.4
   unitlib:
-    specifier: ^0.4.4
-    version: 0.4.4
+    specifier: ^0.4.5
+    version: 0.4.5
 
 devDependencies:
   '@sveltejs/vite-plugin-svelte':
@@ -1040,8 +1040,8 @@ packages:
     hasBin: true
     dev: true
 
-  /unitlib@0.4.4:
-    resolution: {integrity: sha512-FIy5/xH5FV+xETFuLmKDB6aOOjOf46wM0Vgxj8CIiNAi4HP0wAREtiwrxHRuLa4uw0Sw+7gi3y/jAuYDLF2nxg==}
+  /unitlib@0.4.5:
+    resolution: {integrity: sha512-rWhJYynZHbDUOUrJ+dMFQFMwBP9763DWLnnnd+EPxLqY1QrP1oy2vRycoVnihMV1tlm3Lomxlpw0RI0Zzp/3iQ==}
     dependencies:
       fraction.js: 4.2.1
     dev: false

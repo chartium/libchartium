@@ -33,6 +33,6 @@
     "sass": "^1.68.0",
     "seedrandom": "^3.0.5",
     "svelte-fa": "^3.0.4",
-    "unitlib": "^0.4.4"
+    "unitlib": "^0.4.5"
   }
 }
