@@ -19,7 +19,6 @@ export interface RenderJob {
   yRange?: Range;
 
   clear?: boolean;
-  renderAxes?: boolean;
 }
 
 export interface RenderJobResult {}

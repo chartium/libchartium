@@ -174,7 +174,7 @@ export class WebGL2Renderer implements Renderer {
 
     // prettier-ignore
     const yRange = job.yRange ?? (() => {
-      const metas = traceList.calculateMetas(xRange);
+      const metas = traceList.calculateStatistics(xRange);
       const from = reduce(map(metas, (m) => m.min), Math.min);
       const to = reduce(map(metas, (m) => m.max), Math.max);
       return { from, to };

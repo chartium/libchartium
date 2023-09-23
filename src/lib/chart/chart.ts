@@ -3,7 +3,7 @@ import type { ChartiumController } from "../data-worker";
 import type { RenderJob, Renderer } from "../data-worker/renderers/mod";
 import { mapOpt } from "../../utils/mapOpt";
 import type { Range, Tick, Unit } from "../types";
-import type { TraceList } from "../data-worker/trace-list";
+import { TraceList } from "../data-worker/trace-list";
 import { linearTicks } from "../../utils/ticks";
 
 import { mut } from "@mod.js/signals";
@@ -16,6 +16,14 @@ import type {
 import { nextAnimationFrame } from "../../utils/promise";
 import type { FactorDefinition } from "unitlib";
 
+/**
+ * A helper method that takes a signal, adds a
+ * subscriber to it, and returns that signal.
+ *
+ * **FOOTGUN WARNING**: There is no way to
+ * unsubscribe that subscriber. Beware memory
+ * leaks.
+ */
 const withSubscriber = <S extends Signal<any>>(
   signal: S,
   sub: Subscriber<SignalValue<S>>
@@ -23,6 +31,18 @@ const withSubscriber = <S extends Signal<any>>(
   signal.subscribe(sub);
   return signal;
 };
+
+/**
+ * A helper method, similar to withSubscriber,
+ * which takes a signal, adds a subscriber to it,
+ * and returns that signal. However, the callback
+ * will not be called immediately, only with
+ * subsequent changes.
+ *
+ * **FOOTGUN WARNING**: There is no way to
+ * unsubscribe that subscriber. Beware memory
+ * leaks.
+ */
 const withEffect = <S extends Signal<any>>(
   signal: S,
   sub: Subscriber<SignalValue<S>>
@@ -39,16 +59,6 @@ const withEffect = <S extends Signal<any>>(
  * It automatically re-renders when anything about the chart changes.
  */
 export class Chart {
-  #controller: ChartiumController | Remote<ChartiumController>;
-  get controller() {
-    return this.#controller;
-  }
-
-  #canvas?: HTMLCanvasElement;
-  get canvas() {
-    return this.#canvas;
-  }
-
   #renderer?: Renderer;
   get renderer() {
     return this.#renderer;
@@ -61,19 +71,37 @@ export class Chart {
   readonly xDisplayUnit = this.#xDisplayUnit.toReadonly();
   readonly yDisplayUnit = this.#yDisplayUnit.toReadonly();
 
+  /**
+   * The list of traces to be rendered in this chart.
+   */
   readonly traces: WritableSignal<TraceList>;
 
+  /**
+   * The visible range of the x axis, changes with user interaction
+   * (eg. zooming and panning). To reset both axes to fit the data,
+   * use the `resetZoom` method.
+   */
   readonly xRange: WritableSignal<Range>;
+
+  /**
+   * The visible range of the y axis, changes with user interaction
+   * (eg. zooming and panning). To reset both axes to fit the data,
+   * use the `resetZoom` method.
+   */
   readonly yRange: WritableSignal<Range>;
 
-  readonly renderAxes: WritableSignal<boolean>;
+  /**
+   * The dimensions of this chart in pixels.
+   */
   readonly size: WritableSignal<{ width: number; height: number }>;
 
   constructor(
-    controller: ChartiumController | Remote<ChartiumController>,
-    traces: TraceList
+    public readonly controller: ChartiumController | Remote<ChartiumController>,
+    public readonly canvas: HTMLCanvasElement,
+    traces?: TraceList
   ) {
-    this.#controller = controller;
+    traces ??= TraceList.empty();
+
     this.#updateTraces(traces);
 
     this.traces = withEffect(mut(traces), (t) => {
@@ -84,7 +112,6 @@ export class Chart {
     this.xRange = withEffect(mut(traces.range), this.scheduleRender);
     this.yRange = withEffect(mut(traces.getYRange()), this.scheduleRender);
 
-    this.renderAxes = withEffect(mut(true), this.scheduleRender);
     this.size = withEffect(
       mut({ width: NaN, height: NaN }),
       ({ width, height }) => {
@@ -92,15 +119,14 @@ export class Chart {
         this.scheduleRender();
       }
     );
-  }
 
-  /** assign a canvas to this render handler and prepares the renderer */
-  async assignCanvas(canvas: HTMLCanvasElement) {
-    this.#canvas = canvas;
-    let offscreen = this.#canvas?.transferControlToOffscreen();
-    this.#renderer = await mapOpt(offscreen, (c) =>
-      this.#controller.createRenderer(transfer(c, [c]))
-    );
+    const offscreen = canvas.transferControlToOffscreen();
+    this.controller
+      .createRenderer(transfer(offscreen, [offscreen]))
+      .then((r) => {
+        this.#renderer = r;
+        this.scheduleRender();
+      });
   }
 
   #updateTraces(traces: TraceList) {
@@ -147,7 +173,6 @@ export class Chart {
       yRange: this.yRange.get(),
 
       clear: true,
-      renderAxes: this.renderAxes.get(),
     };
 
     this.#renderer.render(renderJob);
@@ -158,7 +183,7 @@ export class Chart {
   tryRender(): boolean {
     console.log("try render");
 
-    if (this.#renderer && this.traces.get()) {
+    if (this.#renderer) {
       this.render();
       return true;
     }
@@ -211,6 +236,11 @@ export class Chart {
   readonly lowerYFactorAction = changeFactorAction("lower", this.#yDisplayUnit);
 }
 
+/**
+ * A signal that corresponds to the context menu options "Raise unit to..."
+ * and "Lower unit to...", it contains the unit to be changed to, and a
+ * callback that actually performs the change
+ */
 const changeFactorAction = (
   direction: "raise" | "lower",
   unit: WritableSignal<Unit | undefined>

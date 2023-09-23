@@ -14,7 +14,7 @@
   import Guidelines from "./Guidelines.svelte";
   import Tooltip from "./Tooltip.svelte";
   import { norm } from "./position";
-  import { mut } from "@mod.js/signals";
+  import { cons, mut } from "@mod.js/signals";
 
   export let controller: ChartiumController;
   export let traces: TraceList;
@@ -79,24 +79,21 @@
 
   //!SECTION
 
-  const chart = new Chart(controller, traces);
-  const { xTicks, yTicks, xDisplayUnit, yDisplayUnit } = chart;
-
-  const visibleAction = mut<VisibleAction | undefined>(undefined);
-
   let canvas: HTMLCanvasElement;
 
-  let mounted = false;
-  onMount(async () => {
-    await chart.assignCanvas(canvas!);
-    mounted = true;
+  $: chart = canvas ? new Chart(controller, canvas, traces) : undefined;
+  $: xTicks = chart?.xTicks;
+  $: yTicks = chart?.yTicks;
+  $: xDisplayUnit = chart?.xDisplayUnit;
+  $: yDisplayUnit = chart?.yDisplayUnit;
 
-    chart.traces.set(await traces);
-  });
+  const visibleAction = mut<VisibleAction | undefined>(undefined);
 
   $: (window as any).chart = chart; // FIXME DEBUG
 
   function shiftRange({ detail: shift }: { detail: Shift }) {
+    if (!chart) return;
+
     {
       const { from, to } = chart.xRange.get();
       if (shift.dx) {
@@ -120,6 +117,8 @@
   }
 
   function zoomRange({ detail }: { detail: Zoom }) {
+    if (!chart) return;
+
     for (const [axis, zoom] of Object.entries(detail) as [string, Range][]) {
       const rangeName = `${axis}Range` as "xRange" | "yRange";
       const range = chart[rangeName].get();
@@ -136,7 +135,7 @@
   }
 
   let contentSize: [number, number] = [1, 1];
-  $: if (chart && mounted && contentSize) {
+  $: if (chart) {
     chart.size.set({
       width: contentSize[0] * devicePixelRatio,
       height: contentSize[1] * devicePixelRatio,
@@ -157,7 +156,7 @@
       y: trace.closestPoint.y.toFixed(3),
     })) ?? [];
 
-  $: {
+  $: if (chart) {
     // Highlighted points for the overlay
     const xRange = chart.xRange.get();
     const yRange = chart.yRange.get();
@@ -196,6 +195,7 @@
 
   // look for the closest trace to the mouse and if it's close enough, show more info
   $: if (
+    chart &&
     closestTraces &&
     closestTraces?.length != 0 &&
     norm([
@@ -204,7 +204,7 @@
     ]) < closenessDistance
   ) {
     const { from, to } = chart.xRange.get();
-    const closestMeta = traces.calculateMetas({
+    const closestMeta = traces.calculateStatistics({
       traces: [closestTraces[0].traceInfo.id],
       from,
       to,
@@ -230,6 +230,8 @@
   }
 
   function updateHoverValues(e: MouseEvent) {
+    if (!chart) return;
+
     const xFraction = e.offsetX / canvas.clientWidth; // FIXME ew, this should be calculated somewhere smartly, its just lucky this canvas has the same size as the other one
     const yFraction = e.offsetY / canvas.height; // FIXME ew, this should be calculated somewhere smartly, its just lucky this canvas has the same size as the other one
 
@@ -273,8 +275,8 @@
     {disableInteractivity}
     hideTicks={hideYTicks}
     on:shift={shiftRange}
-    raiseFactor={chart.raiseYFactorAction}
-    lowerFactor={chart.lowerYFactorAction}
+    raiseFactor={chart?.raiseYFactorAction ?? cons(undefined)}
+    lowerFactor={chart?.lowerYFactorAction ?? cons(undefined)}
   />
 
   <AxisTicks
@@ -285,16 +287,17 @@
     {disableInteractivity}
     hideTicks={hideXTicks}
     on:shift={shiftRange}
-    raiseFactor={chart.raiseXFactorAction}
-    lowerFactor={chart.lowerXFactorAction}
+    raiseFactor={chart?.raiseXFactorAction ?? cons(undefined)}
+    lowerFactor={chart?.lowerXFactorAction ?? cons(undefined)}
   />
 
   <Guidelines
-    xTicks={hideXGuidelines ? [] : $xTicks}
-    yTicks={hideYGruidelines ? [] : $yTicks}
+    xTicks={hideXGuidelines ? [] : $xTicks ?? []}
+    yTicks={hideYGruidelines ? [] : $yTicks ?? []}
     renderXAxis={!hideXAxisLine}
     renderYAxis={!hideYAxisLine}
   />
+
   <canvas bind:this={canvas} on:contextmenu|preventDefault />
 
   {#if $$slots.infobox && infoboxPosition !== "none"}
@@ -313,7 +316,7 @@
     {hideXRuler}
     {hideYRuler}
     {disableInteractivity}
-    on:reset={() => chart.resetZoom()}
+    on:reset={() => chart?.resetZoom()}
     on:zoom={zoomRange}
     on:shift={shiftRange}
     on:mousemove={(e) => {

@@ -6,8 +6,6 @@
  * in the worker. It is responsible for the inicialization
  * of the WebAssembly part of the codebase, and provides a
  * higher level abstraction above it.
- *
- * Data ownership schema in controller.excalidraw
  */
 
 import { BiMap } from "bim";
@@ -67,7 +65,14 @@ export class ChartiumController {
         height: innerHeight * devicePixelRatio,
       };
 
-      // FIXME: don't forget to destroy this listener when the worker is destroyed
+      /**
+       * FIXME currently, the canvas reflects the screen size. this means
+       * that the worker is coupled with the browser window, and that it's
+       * impossible to draw a chart that is larger than the window (this
+       * causes problems when the user zooms in, for example).
+       *
+       * instead, we should scale the canvas to fit the largest renderer
+       */
       window.addEventListener(
         "resize",
         () =>
@@ -116,6 +121,7 @@ export class ChartiumController {
     return wasmMemory?.buffer.byteLength ?? 0;
   }
 
+  /** FIXME remove */
   get screenSize(): Size {
     const t = this;
     return {
@@ -138,11 +144,21 @@ export class ChartiumController {
     this.#canvas.height = height;
   }
 
+  /**
+   * Creates a low level chart renderer. For a more high level approach
+   * to rendering, use the Chart component.
+   */
   public async createRenderer(presentCanvas: OffscreenCanvas) {
     await this.initialized;
     return this.#renderingController.createRenderer(presentCanvas);
   }
 
+  // TODO add better documentation
+  // TODO add a function to upload transposed (horizontal) data
+  // TODO add a function for streamed upload
+  /**
+   * Upload new trace data in the "vertical" order, ie. `[ x[0], y1[0], y2[0], ... x[1], y1[1], y2[1], ...]`.
+   */
   public async addFromArrayBuffer({
     ids,
     data,

@@ -44,7 +44,7 @@ export class TraceList {
 
   #traceHandles: TraceHandle[];
   #bundles: lib.BoxedBundle[];
-  #metas: lib.TraceMetas[] | undefined;
+  #statistics: lib.TraceMetas[] | undefined;
   #traceInfo: ResolvedTraceInfo;
   #range: Range;
 
@@ -60,14 +60,27 @@ export class TraceList {
     this.#traceInfo = traceInfo ?? resolveTraceInfo({}, [], handles, traceIds);
   }
 
+  static empty() {
+    return new TraceList([], { from: 0, to: 0 }, [], []);
+  }
+
+  /**
+   * The x axis range this trace list is limited to.
+   */
   get range(): Range {
     return { ...this.#range };
   }
 
+  /**
+   * The number of traces in this trace list.
+   */
   get traceCount(): number {
     return this.#traceHandles.length;
   }
 
+  /**
+   * An iterable containing all the trace ids of this list.
+   */
   *traces(): Iterable<string> {
     for (const handle of this.#traceHandles) {
       const id = traceIds.get(handle as TraceHandle);
@@ -75,6 +88,9 @@ export class TraceList {
     }
   }
 
+  /**
+   * Returns basic information about the trace, like its style and units.
+   */
   getTraceInfo(id: string): TraceInfo {
     const info: TraceStyle & TraceDataUnits =
       this.#traceInfo.find(([ids]) => ids.has(id))?.[1] ?? defaultStyle;
@@ -98,6 +114,9 @@ export class TraceList {
     return this.#traceInfo;
   }
 
+  /**
+   * Create a new trace list with the same traces and identical range, but modified styles.
+   */
   withStyle(stylesheet: TraceStylesheet): TraceList {
     return new TraceList(this.#traceHandles, this.#range, this.#bundles, [
       ...resolveTraceInfo(
@@ -134,6 +153,12 @@ export class TraceList {
     );
   }
 
+  /**
+   * Create a new trace list with the same traces and styles, but limited to
+   * the range provided. Traces and datapoints that are outside the range may
+   * or may not be deleted – if you narrow down the range of a trace list and
+   * than expand it again, don't expect you'll get back all the data.
+   */
   withRange({ from, to }: Range): TraceList {
     const bundles = this.#bundles.filter((bundle) =>
       bundle.intersects(from, to)
@@ -147,6 +172,10 @@ export class TraceList {
     return new TraceList(handles, { from, to }, bundles, this.#traceInfo);
   }
 
+  /**
+   * Creates a new trace list with the same range and styles, but excluding
+   * traces with the provided ids.
+   */
   withoutTraces(tracesToExclude: Iterable<string>) {
     const exclude = new Set(
       filter(
@@ -160,6 +189,12 @@ export class TraceList {
     return new TraceList(handles, this.#range, this.#bundles, this.#traceInfo);
   }
 
+  /**
+   * Creates a new trace list by concatenating the provided trace lists together.
+   * The resulting range will be a bounding interval of all the individual lists'
+   * ranges. Each trace's style will be preserved – if a trace is present in multiple
+   * lists, style of its first occurence will be preserved.
+   */
   static union(...lists: TraceList[]): TraceList {
     const bundles = Array.from(unique(flatMap(lists, (l) => l[BUNDLES])));
     const handles = Array.from(unique(flatMap(lists, (l) => l[HANDLES])));
@@ -181,7 +216,12 @@ export class TraceList {
     return new TraceList(handles, { from, to }, bundles, info);
   }
 
-  calculateMetas({
+  /**
+   * Calculate the statistics (like the maximum, minimum and average value)
+   * for the provided traces on the provided range. If parameters are ommited,
+   * it will use all traces and the entire range of this trace list.
+   */
+  calculateStatistics({
     traces,
     from,
     to,
@@ -189,7 +229,7 @@ export class TraceList {
     const unfiltered =
       from === undefined && to === undefined && traces === undefined;
 
-    if (unfiltered && this.#metas) return this.#metas;
+    if (unfiltered && this.#statistics) return this.#statistics;
 
     const handles = traces
       ? Uint32Array.from(traces.map((id) => traceIds.getKey(id)!))
@@ -206,14 +246,17 @@ export class TraceList {
     }
 
     const metas: lib.TraceMetas[] = counter.to_array();
-    if (unfiltered) this.#metas = metas;
+    if (unfiltered) this.#statistics = metas;
     return metas;
   }
 
   #yRange: Range | undefined;
+  /**
+   * Calculate the y axis range of this trace list.
+   */
   getYRange(): Range {
     if (this.#yRange) return this.#yRange;
-    const metas = this.calculateMetas();
+    const metas = this.calculateStatistics();
     return {
       from: metas.reduce(
         (prev, { min: curr }) => Math.min(prev, curr),
@@ -227,6 +270,16 @@ export class TraceList {
   }
 
   #units: ReturnType<typeof this.getUnits> | undefined;
+  /**
+   * List all the data units present in this trace list.
+   *
+   * By default, uploaded data have no units (`undefined`), however you can
+   * set them using the `withDataUnits` method. If you make a union of
+   * trace lists with different units, you will get a mixed units list.
+   *
+   * Take care when rendering a trace list with mixed units – if you
+   * aren't intentional with it, you may get unexpected results.
+   */
   getUnits(): { x: (Unit | undefined)[]; y: (Unit | undefined)[] } {
     if (this.#units) return this.#units;
     const xUnits = new Set<Unit | undefined>();
@@ -251,10 +304,16 @@ export class TraceList {
     return this.#units;
   }
 
-  /** Finds n traces that are the closest to input point */
+  /**
+   * Finds the specified number of traces that are the closest to input point.
+   * By default, the distance is measured only in the vertical direction (ie. you'll
+   * only get trace points which are exactly below or above the reference point).
+   *
+   * TODO add a more precise euclidean distance mode
+   */
   findClosestTracesToPoint(
     point: Point,
-    n: number
+    howMany: number
   ): {
     traceInfo: TraceInfo;
     closestPoint: Point;
@@ -274,7 +333,7 @@ export class TraceList {
         new Uint32Array(this.#traceHandles),
         point.x,
         point.y,
-        n
+        howMany
       );
 
       for (const foundPoint of foundPoints) {
@@ -289,7 +348,7 @@ export class TraceList {
       }
 
       closestPoints.sort((a, b) => a.distance - b.distance);
-      closestPoints = closestPoints.slice(0, n);
+      closestPoints = closestPoints.slice(0, howMany);
     }
 
     if (closestPoints.length === 0) {
