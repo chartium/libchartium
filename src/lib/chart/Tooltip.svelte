@@ -6,6 +6,11 @@
   import type { TraceInfo } from "../data-worker/trace-list";
   import TracePreview from "./TracePreview.svelte";
 
+  /** The tooltip will try its best to not be in this rectangle */
+  export let forbiddenRectangle:
+    | { x: number; y: number; width: number; height: number }
+    | undefined = undefined;
+
   export let nearestTracesInfo: {
     styledTrace: TraceInfo;
     x: string;
@@ -26,12 +31,51 @@
 
   let position: Point;
 
+  let boundingDiv: HTMLDivElement;
+
+  function repairedPosition(
+    positionRelativeToPage: Point,
+    forbiddenRectangle:
+      | {
+          x: number;
+          y: number;
+          width: number;
+          height: number;
+        }
+      | undefined
+  ): Point {
+    if (forbiddenRectangle === undefined) {
+      return positionRelativeToPage;
+    }
+
+    const tooltipXright = positionRelativeToPage.x;
+    const tooltipYbottom = positionRelativeToPage.y;
+
+    const forbiddenXright = forbiddenRectangle.x + forbiddenRectangle.width;
+    const forbiddenYtop = forbiddenRectangle.y;
+
+    console.log(forbiddenYtop);
+
+    if (tooltipYbottom > forbiddenYtop && tooltipXright < forbiddenXright) {
+      //in rect
+      return {
+        x: forbiddenXright,
+        y: forbiddenYtop,
+      };
+    }
+
+    return positionRelativeToPage;
+  }
+
   function updateMousePosition(event: MouseEvent) {
-    position = { x: event.clientX, y: event.clientY };
+    position = repairedPosition(
+      { x: event.clientX, y: event.clientY },
+      forbiddenRectangle
+    );
   }
 </script>
 
-<div use:globalMouseMove={updateMousePosition}>
+<div use:globalMouseMove={updateMousePosition} bind:this={boundingDiv}>
   <GenericTooltip position={show ? position : undefined}>
     <div class="tooltip-container">
       {#if singleTraceInfo !== undefined}

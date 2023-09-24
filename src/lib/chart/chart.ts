@@ -2,7 +2,8 @@ import { transfer, type Remote } from "comlink";
 import type { ChartiumController } from "../data-worker";
 import type { RenderJob, Renderer } from "../data-worker/renderers/mod";
 import { mapOpt } from "../../utils/mapOpt";
-import type { Range, Tick, Unit } from "../types";
+import type { Point, Range, Tick, TypeOfData, Unit } from "../types";
+import { Quantity } from "../types";
 import { TraceList } from "../data-worker/trace-list";
 import { linearTicks } from "../../utils/ticks";
 
@@ -230,6 +231,70 @@ export class Chart {
     this.xRange.set(this.traces.get().range);
     this.yRange.set(this.traces.get().getYRange());
     return this.scheduleRender();
+  }
+
+  /** Transforms x, y fraction of canvas size into chart quantity (or unitless number) */
+  fractionsToQuantities(fraction: number, axis: "x" | "y"): Quantity | number {
+    const range = axis === "x" ? this.xRange.get() : this.yRange.get();
+    if (!range) throw new Error(`${axis} range is undefined`);
+
+    const value =
+      range.from +
+      (axis === "x" ? fraction : 1 - fraction) * (range.to - range.from);
+    const unit =
+      axis === "x" ? this.#xDisplayUnit.get() : this.#yDisplayUnit.get();
+
+    return unit === undefined ? value : new Quantity(value, unit);
+  }
+
+  /** Transforms x, y of chart quantity (or unitless number) into fraction of canvas size */
+  quantitiesToFractions(quantity: Quantity | number, axis: "x" | "y"): number {
+    const range = axis === "x" ? this.xRange.get() : this.yRange.get();
+    if (!range) throw new Error(`${axis} range is undefined`);
+
+    const value = typeof quantity === "number" ? quantity : quantity.value;
+    const fraction = (value - range.from) / (range.to - range.from);
+
+    return fraction;
+  }
+
+  /** Transforms x, y pixel coordinates (relative to chart canvas) of a point into the x, y quantities or numbers */
+  coordinatesToQuantities(
+    coordinateInPx: number,
+    axis: "x" | "y"
+  ): Quantity | number {
+    const range = axis === "x" ? this.xRange.get() : this.yRange.get();
+
+    if (!range) throw new Error("xRange or yRange is undefined");
+
+    const value =
+      range.from +
+      (axis === "x"
+        ? coordinateInPx / this.canvas!.width
+        : 1 - coordinateInPx / this.canvas!.height) *
+        (range.to - range.from);
+
+    const unit =
+      axis === "x" ? this.#xDisplayUnit.get() : this.#yDisplayUnit.get();
+
+    return unit === undefined ? value : new Quantity(value, unit);
+  }
+
+  /** Transforms a point represented by data values and units (if aplicable) into pixel coordinates relative to chart canvas */
+  quantityToCoordinate(quantity: Quantity | number, axis: "x" | "y"): number {
+    const range = axis === "x" ? this.xRange.get() : this.yRange.get();
+
+    if (range === undefined) throw new Error(`${axis} range is undefined`);
+
+    const value = typeof quantity === "number" ? quantity : quantity.value;
+
+    const coordinate =
+      axis === "x"
+        ? ((value - range.from) / (range.to - range.from)) * this.canvas!.width
+        : ((value - range.from) / (range.to - range.from)) *
+          this.canvas!.height;
+
+    return coordinate;
   }
 
   readonly raiseXFactorAction = changeFactorAction("raise", this.#xDisplayUnit);

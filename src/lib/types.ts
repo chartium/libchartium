@@ -3,6 +3,10 @@ import type { Color } from "../utils/color";
 import type { Unit as Unit_ } from "unitlib";
 export type Unit = Unit_<any, any, any>;
 
+import { Quantity as Quantity_ } from "unitlib";
+export type Quantity = Quantity_<any, any, any>;
+export const Quantity = Quantity_;
+
 export type TypedArray =
   | Int8Array
   | Uint8Array

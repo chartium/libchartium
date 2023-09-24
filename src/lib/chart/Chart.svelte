@@ -1,10 +1,11 @@
 <script lang="ts">
   import type { ChartiumController } from "../data-worker";
   import type { Range, Shift, Zoom } from "../types";
+  import type { Quantity } from "../types";
   import type { TraceInfo, TraceList } from "../data-worker/trace-list";
   import type { VisibleAction } from "./ActionsOverlay.svelte";
 
-  import { onMount } from "svelte";
+  import { onDestroy, onMount } from "svelte";
   import { Chart } from "./chart";
 
   import ChartOverlay from "./ActionsOverlay.svelte";
@@ -143,10 +144,19 @@
   }
 
   let showTooltip: boolean = false;
-  let hoverXValue: number = Infinity; // Silly goofy way to make it too far from everything on mount
-  let hoverYValue: number = Infinity;
+  let hoverXQuantity: number | Quantity = Infinity; // Silly goofy way to make it too far from everything on mount
+  let hoverYQuantity: number | Quantity = Infinity;
   $: closestTraces = traces.findClosestTracesToPoint(
-    { x: hoverXValue, y: hoverYValue },
+    {
+      x:
+        typeof hoverXQuantity == "number"
+          ? hoverXQuantity
+          : hoverXQuantity.value,
+      y:
+        typeof hoverYQuantity == "number"
+          ? hoverYQuantity
+          : hoverYQuantity.value,
+    }, // FIXME fix after units are implemented
     tooltipTracesShown === "all" ? traces.traceCount : tooltipTracesShown
   );
   $: tracesInfo =
@@ -156,19 +166,13 @@
       y: trace.closestPoint.y.toFixed(3),
     })) ?? [];
 
-  $: if (chart) {
-    // Highlighted points for the overlay
-    const xRange = chart.xRange.get();
-    const yRange = chart.yRange.get();
-
+  $: {
     if (closestTraces === undefined) {
       visibleAction.set({ highlightedPoints: [] });
     } else {
       const points = closestTraces.map((trace) => ({
-        xFraction:
-          (trace.closestPoint.x - xRange.from) / (xRange.to - xRange.from),
-        yFraction:
-          (trace.closestPoint.y - yRange.from) / (yRange.to - yRange.from),
+        xFraction: chart?.quantitiesToFractions(trace.closestPoint.x, "x") ?? 0, // TODO good idea?
+        yFraction: chart?.quantitiesToFractions(trace.closestPoint.y, "y") ?? 0, // TODO good idea?
         color: trace.traceInfo.color,
         radius: trace.traceInfo.width,
       }));
@@ -199,8 +203,14 @@
     closestTraces &&
     closestTraces?.length != 0 &&
     norm([
-      closestTraces[0].closestPoint.x - hoverXValue,
-      closestTraces[0].closestPoint.y - hoverYValue,
+      closestTraces[0].closestPoint.x -
+        (typeof hoverXQuantity == "number"
+          ? hoverXQuantity
+          : hoverXQuantity.value), // FIXME fix after units are introduced
+      closestTraces[0].closestPoint.y -
+        (typeof hoverYQuantity == "number"
+          ? hoverYQuantity
+          : hoverYQuantity.value), // FIXME fix after units are introduced
     ]) < closenessDistance
   ) {
     const { from, to } = chart.xRange.get();
@@ -230,21 +240,46 @@
   }
 
   function updateHoverValues(e: MouseEvent) {
-    if (!chart) return;
+    const xFraction = e.offsetX / canvas.clientWidth;
+    const yFraction = e.offsetY / canvas.height;
 
-    const xFraction = e.offsetX / canvas.clientWidth; // FIXME ew, this should be calculated somewhere smartly, its just lucky this canvas has the same size as the other one
-    const yFraction = e.offsetY / canvas.height; // FIXME ew, this should be calculated somewhere smartly, its just lucky this canvas has the same size as the other one
-
-    const xRange = chart.xRange.get();
-    const yRange = chart.yRange.get();
-
-    hoverXValue = xRange.from + (xRange.to - xRange.from) * xFraction;
-    hoverYValue = yRange.from + (yRange.to - yRange.from) * (1 - yFraction);
+    hoverXQuantity = chart?.fractionsToQuantities(xFraction, "x") ?? Infinity;
+    hoverYQuantity = chart?.fractionsToQuantities(yFraction, "y") ?? Infinity;
   }
+
+  let forbiddenRectangle:
+    | {
+        x: number;
+        y: number;
+        width: number;
+        height: number;
+      }
+    | undefined = undefined;
+
+  onDestroy(
+    visibleAction.subscribe((action) => {
+      if (!chart) return;
+      if (action?.zoom) {
+        const canvasRect = chart.canvas!.getBoundingClientRect();
+        const offsetX = canvasRect.x;
+        const offsetY = canvasRect.y;
+        forbiddenRectangle = {
+          x: action.zoom.x.from * chart.canvas!.width + offsetX,
+          y: (1 - action.zoom.y.from) * chart.canvas!.height + offsetY,
+          width: (action.zoom.x.to - action.zoom.x.from) * chart.canvas!.width,
+          height:
+            (action.zoom.y.to - action.zoom.y.from) * chart.canvas!.height,
+        };
+      } else {
+        forbiddenRectangle = undefined;
+      }
+    })
+  );
 </script>
 
 {#if !hideTooltip}
   <Tooltip
+    {forbiddenRectangle}
     nearestTracesInfo={tracesInfo}
     singleTraceInfo={selectedTrace}
     show={showTooltip}
@@ -326,8 +361,8 @@
     on:mouseout={(e) => {
       showTooltip = false;
       closestTraces = [];
-      hoverXValue = Infinity;
-      hoverYValue = Infinity;
+      hoverXQuantity = Infinity;
+      hoverYQuantity = Infinity;
     }}
     on:blur={(e) => {
       showTooltip = false;
