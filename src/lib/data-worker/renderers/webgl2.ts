@@ -8,15 +8,9 @@ import {
 } from "./mod.js";
 import { proxyMarker } from "comlink";
 import { BUNDLES, HANDLES, TRACE_INFO, TraceList } from "../trace-list.ts";
-import {
-  concat,
-  filter,
-  map,
-  reduce,
-  unique,
-} from "../../../utils/collection.ts";
+import { filter, map, reduce } from "../../../utils/collection.ts";
 import { computeStyles } from "../trace-styles.ts";
-import { traceIds } from "../controller.js";
+import { traceIds } from "../controller.ts";
 import type { BoxedBundle } from "../../../../src-rust/pkg/libchartium.ts";
 import type { TraceHandle } from "../../types.ts";
 

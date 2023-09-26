@@ -18,6 +18,12 @@
   import type { MouseDragCallbacks } from "../../utils/mouseGestures.ts";
   import type { HighlightPoint, Point, Shift, Zoom } from "../types.ts";
 
+  import { scaleCanvas } from "../../utils/actions.ts";
+
+  import type { ContextItem } from "../contextMenu/contextMenu";
+  import GenericContextMenu from "../contextMenu/GenericContextMenu.svelte";
+  import type { WritableSignal } from "@mod.js/signals";
+
   export const events = createEventDispatcher<{
     reset: undefined;
     zoom: Zoom;
@@ -283,16 +289,11 @@
     },
   };
 
-  import { scaleCanvas } from "../../utils/actions.ts";
-
   let overlayWidth: number = 1;
   let overlayHeight: number = 1;
 
   let mousePosition: [number, number] | undefined = undefined;
 
-  import type { ContextItem } from "../contextMenu/contextMenu.ts";
-  import GenericContextMenu from "../contextMenu/GenericContextMenu.svelte";
-  import type { WritableSignal } from "@mod.js/signals";
   let options: ContextItem<string>[] = [
     {
       type: "leaf",

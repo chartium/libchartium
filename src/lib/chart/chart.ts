@@ -1,11 +1,12 @@
 import { transfer, type Remote } from "comlink";
 import type { ChartiumController } from "../data-worker";
 import type { RenderJob, Renderer } from "../data-worker/renderers/mod";
-import { mapOpt } from "../../utils/mapOpt";
-import type { Point, Range, Tick, TypeOfData, Unit } from "../types";
+import type { Range, Tick, Unit } from "../types";
 import { Quantity } from "../types";
 import { TraceList } from "../data-worker/trace-list";
 import { linearTicks } from "../../utils/ticks";
+import { nextAnimationFrame } from "../../utils/promise";
+import type { FactorDefinition } from "unitlib";
 
 import { mut } from "@mod.js/signals";
 import type {
@@ -14,8 +15,7 @@ import type {
   SignalValue,
   WritableSignal,
 } from "@mod.js/signals";
-import { nextAnimationFrame } from "../../utils/promise";
-import type { FactorDefinition } from "unitlib";
+export type { Signal, WritableSignal };
 
 /**
  * A helper method that takes a signal, adds a
