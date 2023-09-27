@@ -85,8 +85,18 @@
   $: chart = canvas ? new Chart(controller, canvas, traces) : undefined;
   $: xTicks = chart?.xTicks;
   $: yTicks = chart?.yTicks;
-  $: xDisplayUnit = chart?.xDisplayUnit;
-  $: yDisplayUnit = chart?.yDisplayUnit;
+  let xDisplayUnit: Unit | undefined;
+  let yDisplayUnit: Unit | undefined;
+  chart?.xRange.subscribe(
+    (range) =>
+      (xDisplayUnit =
+        range.from instanceof Quantity ? range.from.unit : undefined)
+  );
+  chart?.yRange.subscribe(
+    (range) =>
+      (yDisplayUnit =
+        range.from instanceof Quantity ? range.from.unit : undefined)
+  );
 
   const visibleAction = mut<VisibleAction | undefined>(undefined);
 
@@ -96,23 +106,29 @@
     if (!chart) return;
 
     {
-      const { from, to } = chart.xRange.get();
+      const xRange = chart.xRange.get();
+      const xUnits = chart.xDataUnit.get();
+      const from = toNumeric(xRange.from, xUnits);
+      const to = toNumeric(xRange.to, xUnits);
       if (shift.dx) {
         const delta = (to - from) * -shift.dx;
         chart.xRange.set({
-          from: from + delta,
-          to: to + delta,
-        });
+          from: toQuantity(from + delta, xUnits),
+          to: toQuantity(to + delta, xUnits),
+        } as Range);
       }
     }
     {
-      const { from, to } = chart.yRange.get();
+      const yRange = chart.yRange.get();
+      const yUnits = chart.yDataUnit.get();
+      const from = toNumeric(yRange.from, yUnits);
+      const to = toNumeric(yRange.to, yUnits);
       if (shift.dy) {
         const delta = (to - from) * -shift.dy;
         chart.yRange.set({
-          from: from + delta,
-          to: to + delta,
-        });
+          from: toQuantity(from + delta, yUnits),
+          to: toQuantity(to + delta, yUnits),
+        } as Range);
       }
     }
   }
@@ -120,18 +136,23 @@
   function zoomRange({ detail }: { detail: Zoom }) {
     if (!chart) return;
 
-    for (const [axis, zoom] of Object.entries(detail) as [string, Range][]) {
+    for (const [axis, zoom] of Object.entries(detail) as [
+      string,
+      NumericRange
+    ][]) {
       const rangeName = `${axis}Range` as "xRange" | "yRange";
       const range = chart[rangeName].get();
+      const unit =
+        rangeName === "xRange" ? chart.xDataUnit.get() : chart.yDataUnit.get();
 
-      const d = range.to - range.from;
+      const d = toNumeric(range.to, unit) - toNumeric(range.from, unit);
 
       if (zoom.to - zoom.from <= 0) continue;
 
       chart[rangeName].set({
-        from: range.from + d * zoom.from,
-        to: range.from + d * zoom.to,
-      });
+        from: toQuantity(toNumeric(range.from, unit) + d * zoom.from, unit),
+        to: toQuantity(toNumeric(range.from, unit) + d * zoom.to, unit),
+      } as Range);
     }
   }
 
@@ -144,35 +165,32 @@
   }
 
   let showTooltip: boolean = false;
-  let hoverXQuantity: number | Quantity = Infinity; // Silly goofy way to make it too far from everything on mount
-  let hoverYQuantity: number | Quantity = Infinity;
-  $: closestTraces = traces.findClosestTracesToPoint(
-    {
-      x:
-        typeof hoverXQuantity == "number"
-          ? hoverXQuantity
-          : hoverXQuantity.value,
-      y:
-        typeof hoverYQuantity == "number"
-          ? hoverYQuantity
-          : hoverYQuantity.value,
-    }, // FIXME fix after units are implemented
-    tooltipTracesShown === "all" ? traces.traceCount : tooltipTracesShown
-  );
+  let hoverXQuantity: number | Quantity; // Silly goofy way to make it too far from everything on mount
+  let hoverYQuantity: number | Quantity;
+  $: closestTraces =
+    chart && hoverXQuantity && hoverYQuantity
+      ? traces.findClosestTracesToPoint(
+          {
+            x: toNumeric(hoverXQuantity, chart?.xDataUnit.get()),
+            y: toNumeric(hoverYQuantity, chart?.yDataUnit.get()),
+          },
+          tooltipTracesShown === "all" ? traces.traceCount : tooltipTracesShown
+        )
+      : undefined;
   $: tracesInfo =
     closestTraces?.map((trace) => ({
       styledTrace: trace.traceInfo,
-      x: trace.closestPoint.x.toFixed(3),
-      y: trace.closestPoint.y.toFixed(3),
+      x: toQuantity(trace.closestPoint.x, chart?.xDataUnit.get()),
+      y: toQuantity(trace.closestPoint.y, chart?.xDataUnit.get()),
     })) ?? [];
 
   $: {
-    if (closestTraces === undefined) {
+    if (closestTraces === undefined || chart === undefined) {
       visibleAction.set({ highlightedPoints: [] });
     } else {
       const points = closestTraces.map((trace) => ({
-        xFraction: chart?.quantitiesToFractions(trace.closestPoint.x, "x") ?? 0, // TODO good idea?
-        yFraction: chart?.quantitiesToFractions(trace.closestPoint.y, "y") ?? 0, // TODO good idea?
+        xFraction: chart!.quantitiesToFractions(trace.closestPoint.x, "x"),
+        yFraction: chart!.quantitiesToFractions(trace.closestPoint.y, "y"),
         color: trace.traceInfo.color,
         radius: trace.traceInfo.width,
       }));
@@ -189,44 +207,48 @@
   let selectedTrace:
     | {
         styledTrace: TraceInfo;
-        x: string;
-        y: string;
-        min: string;
-        max: string;
-        avg: string;
+        x: Quantity | number;
+        y: Quantity | number;
+        min: Quantity | number;
+        max: Quantity | number;
+        avg: Quantity | number;
       }
     | undefined = undefined;
+
+  let traceCloseEnough: boolean;
+
+  $: if (chart && closestTraces && closestTraces?.length !== 0) {
+    traceCloseEnough =
+      norm([
+        closestTraces[0].closestPoint.x -
+          toNumeric(hoverXQuantity, chart.xDataUnit.get()),
+        closestTraces[0].closestPoint.y -
+          toNumeric(hoverYQuantity, chart.yDataUnit.get()),
+      ]) < closenessDistance;
+  }
 
   // look for the closest trace to the mouse and if it's close enough, show more info
   $: if (
     chart &&
-    closestTraces &&
-    closestTraces?.length != 0 &&
-    norm([
-      closestTraces[0].closestPoint.x -
-        (typeof hoverXQuantity == "number"
-          ? hoverXQuantity
-          : hoverXQuantity.value), // FIXME fix after units are introduced
-      closestTraces[0].closestPoint.y -
-        (typeof hoverYQuantity == "number"
-          ? hoverYQuantity
-          : hoverYQuantity.value), // FIXME fix after units are introduced
-    ]) < closenessDistance
+    closestTraces !== undefined &&
+    closestTraces?.length !== 0 &&
+    traceCloseEnough
   ) {
     const { from, to } = chart.xRange.get();
     const closestMeta = traces.calculateStatistics({
       traces: [closestTraces[0].traceInfo.id],
-      from,
-      to,
+      from: toNumeric(from, chart.xDataUnit.get()), // FIXME move the unit logic a bit deeper int othe traces as well
+      to: toNumeric(to, chart.xDataUnit.get()), // FIXME move the unit logic a bit deeper int othe traces as well
     })[0];
 
     selectedTrace = {
+      // FIXME move unit logic to rust?
       styledTrace: closestTraces[0].traceInfo,
-      x: closestTraces[0].closestPoint.x.toFixed(3),
-      y: closestTraces[0].closestPoint.y.toFixed(3),
-      min: closestMeta.min.toFixed(3),
-      max: closestMeta.max.toFixed(3),
-      avg: closestMeta.avg.toFixed(3),
+      x: toQuantity(closestTraces[0].closestPoint.x, chart.xDataUnit.get()),
+      y: toQuantity(closestTraces[0].closestPoint.y, chart.yDataUnit.get()),
+      min: toQuantity(closestMeta.min, chart.yDataUnit.get()),
+      max: toQuantity(closestMeta.max, chart.yDataUnit.get()),
+      avg: toQuantity(closestMeta.avg, chart.yDataUnit.get()),
     };
   } else {
     selectedTrace = undefined;
@@ -243,8 +265,8 @@
     const xFraction = e.offsetX / canvas.clientWidth;
     const yFraction = e.offsetY / canvas.height;
 
-    hoverXQuantity = chart?.fractionsToQuantities(xFraction, "x") ?? Infinity;
-    hoverYQuantity = chart?.fractionsToQuantities(yFraction, "y") ?? Infinity;
+    hoverXQuantity = chart?.fractionsToQuantities(xFraction, "x") ?? 0;
+    hoverYQuantity = chart?.fractionsToQuantities(yFraction, "y") ?? 0;
   }
 
   let forbiddenRectangle:
@@ -289,11 +311,11 @@
 <ChartGrid bind:contentSize>
   <svelte:fragment slot="ylabel">
     {yLabel}
-    {#if !hideYLabelUnits && $yDisplayUnit}[{$yDisplayUnit.toString()}]{/if}
+    {#if !hideYLabelUnits && yDisplayUnit}[{yDisplayUnit.toString()}]{/if}
   </svelte:fragment>
   <svelte:fragment slot="xlabel">
     {xLabel}
-    {#if !hideXLabelUnits && $xDisplayUnit}[{$xDisplayUnit.toString()}]{/if}
+    {#if !hideXLabelUnits && xDisplayUnit}[{xDisplayUnit.toString()}]{/if}
   </svelte:fragment>
   <svelte:fragment slot="title">
     {title}
@@ -361,8 +383,10 @@
     on:mouseout={(e) => {
       showTooltip = false;
       closestTraces = [];
-      hoverXQuantity = Infinity;
-      hoverYQuantity = Infinity;
+      visibleAction.update((action) => ({
+        ...action,
+        highlightedPoints: [],
+      }));
     }}
     on:blur={(e) => {
       showTooltip = false;

@@ -46,11 +46,11 @@ export class TraceList {
   #bundles: lib.BoxedBundle[];
   #statistics: lib.TraceMetas[] | undefined;
   #traceInfo: ResolvedTraceInfo;
-  #range: Range;
+  #range: NumericRange;
 
   constructor(
     handles: TraceHandle[],
-    range: Range,
+    range: NumericRange,
     bundles: lib.BoxedBundle[],
     traceInfo: ResolvedTraceInfo | null
   ) {
@@ -67,7 +67,7 @@ export class TraceList {
   /**
    * The x axis range this trace list is limited to.
    */
-  get range(): Range {
+  get range(): NumericRange {
     return { ...this.#range };
   }
 
@@ -159,7 +159,8 @@ export class TraceList {
    * or may not be deleted – if you narrow down the range of a trace list and
    * than expand it again, don't expect you'll get back all the data.
    */
-  withRange({ from, to }: Range): TraceList {
+  withRange({ from, to }: NumericRange): TraceList {
+    // TODO change to Range in the future?
     const bundles = this.#bundles.filter((bundle) =>
       bundle.intersects(from, to)
     );
@@ -250,11 +251,11 @@ export class TraceList {
     return metas;
   }
 
-  #yRange: Range | undefined;
+  #yRange: NumericRange | undefined;
   /**
    * Calculate the y axis range of this trace list.
    */
-  getYRange(): Range {
+  getYRange(): NumericRange {
     if (this.#yRange) return this.#yRange;
     const metas = this.calculateStatistics();
     return {
@@ -306,6 +307,7 @@ export class TraceList {
 
   /**
    * Finds the specified number of traces that are the closest to input point.
+   * The point has to be im data's natural units
    * By default, the distance is measured only in the vertical direction (ie. you'll
    * only get trace points which are exactly below or above the reference point).
    *

@@ -16,6 +16,11 @@ import type {
   WritableSignal,
 } from "@mod.js/signals";
 export type { Signal, WritableSignal };
+import {
+  toNumeric,
+  toNumericRange,
+  toQuantity,
+} from "../../utils/quantityHelpers.js";
 
 /**
  * A helper method that takes a signal, adds a
@@ -65,12 +70,13 @@ export class Chart {
     return this.#renderer;
   }
 
-  #xDataUnit: Unit | undefined;
-  #yDataUnit: Unit | undefined;
+  #xDataUnit = mut<Unit>();
+  #yDataUnit = mut<Unit>();
+  readonly xDataUnit = this.#xDataUnit.toReadonly();
+  readonly yDataUnit = this.#yDataUnit.toReadonly();
+
   readonly #xDisplayUnit = mut<Unit>();
   readonly #yDisplayUnit = mut<Unit>();
-  readonly xDisplayUnit = this.#xDisplayUnit.toReadonly();
-  readonly yDisplayUnit = this.#yDisplayUnit.toReadonly();
 
   /**
    * The list of traces to be rendered in this chart.
@@ -78,15 +84,15 @@ export class Chart {
   readonly traces: WritableSignal<TraceList>;
 
   /**
-   * The visible range of the x axis, changes with user interaction
-   * (eg. zooming and panning). To reset both axes to fit the data,
+   * The visible range (in display units) of the x axis, changes with user
+   * interaction (eg. zooming and panning). To reset both axes to fit the data,
    * use the `resetZoom` method.
    */
   readonly xRange: WritableSignal<Range>;
 
   /**
-   * The visible range of the y axis, changes with user interaction
-   * (eg. zooming and panning). To reset both axes to fit the data,
+   * The visible range (in display units) of the y axis, changes with user
+   * interaction (eg. zooming and panning). To reset both axes to fit the data,
    * use the `resetZoom` method.
    */
   readonly yRange: WritableSignal<Range>;
@@ -143,12 +149,12 @@ export class Chart {
       x: [newXUnit],
       y: [newYUnit],
     } = traces.getUnits();
-    if (!areUnitsEqual(newXUnit, this.#xDataUnit)) {
-      this.#xDataUnit = newXUnit;
+    if (!areUnitsEqual(newXUnit, this.#xDataUnit.get())) {
+      this.#xDataUnit.set(newXUnit);
       this.#xDisplayUnit.set(newXUnit);
     }
-    if (!areUnitsEqual(newYUnit, this.#yDataUnit)) {
-      this.#yDataUnit = newYUnit;
+    if (!areUnitsEqual(newYUnit, this.#yDataUnit.get())) {
+      this.#yDataUnit.set(newYUnit);
       this.#yDisplayUnit.set(newYUnit);
     }
 
@@ -172,8 +178,8 @@ export class Chart {
 
       // TODO read xType
       xType: "f32",
-      xRange: this.xRange.get(),
-      yRange: this.yRange.get(),
+      xRange: toNumericRange(this.xRange.get(), this.#xDataUnit.get()),
+      yRange: toNumericRange(this.yRange.get(), this.#yDataUnit.get()),
 
       clear: true,
     };
@@ -215,14 +221,14 @@ export class Chart {
     const xRange = this.xRange.get();
     if (xRange) {
       this.#xTicks?.set(
-        linearTicks(xRange, this.#xDataUnit, this.#xDisplayUnit.get())
+        linearTicks(xRange, this.#xDataUnit.get(), this.#xDisplayUnit.get())
       );
     }
 
     const yRange = this.yRange.get();
     if (yRange) {
       this.#yTicks?.set(
-        linearTicks(yRange, this.#yDataUnit, this.#yDisplayUnit.get())
+        linearTicks(yRange, this.#yDataUnit.get(), this.#yDisplayUnit.get())
       );
     }
   }
@@ -237,23 +243,25 @@ export class Chart {
   fractionsToQuantities(fraction: number, axis: "x" | "y"): Quantity | number {
     const range = axis === "x" ? this.xRange.get() : this.yRange.get();
     if (!range) throw new Error(`${axis} range is undefined`);
-
+    const unit = axis === "x" ? this.#xDataUnit.get() : this.#yDataUnit.get(); // NOTE i sure do hope using the data unit is the corret one
     const value =
-      range.from +
-      (axis === "x" ? fraction : 1 - fraction) * (range.to - range.from);
-    const unit =
-      axis === "x" ? this.#xDisplayUnit.get() : this.#yDisplayUnit.get();
+      toNumeric(range.from, unit) +
+      (axis === "x" ? fraction : 1 - fraction) *
+        (toNumeric(range.to, unit) - toNumeric(range.from, unit));
 
-    return unit === undefined ? value : new Quantity(value, unit);
+    return toQuantity(value, unit);
   }
 
   /** Transforms x, y of chart quantity (or unitless number) into fraction of canvas size */
   quantitiesToFractions(quantity: Quantity | number, axis: "x" | "y"): number {
     const range = axis === "x" ? this.xRange.get() : this.yRange.get();
     if (!range) throw new Error(`${axis} range is undefined`);
+    const unit =
+      axis === "x" ? this.#xDisplayUnit.get() : this.#yDisplayUnit.get();
 
-    const value = typeof quantity === "number" ? quantity : quantity.value;
-    const fraction = (value - range.from) / (range.to - range.from);
+    const fraction =
+      (toNumeric(quantity, unit) - toNumeric(range.from, unit)) /
+      (toNumeric(range.to) - toNumeric(range.from));
 
     return fraction;
   }
@@ -264,35 +272,47 @@ export class Chart {
     axis: "x" | "y"
   ): Quantity | number {
     const range = axis === "x" ? this.xRange.get() : this.yRange.get();
+    const displayUnit =
+      axis === "x" ? this.#xDisplayUnit.get() : this.#yDisplayUnit.get();
 
     if (!range) throw new Error("xRange or yRange is undefined");
 
     const value =
-      range.from +
+      toNumeric(range.from, displayUnit) +
       (axis === "x"
         ? coordinateInPx / this.canvas!.width
         : 1 - coordinateInPx / this.canvas!.height) *
-        (range.to - range.from);
+        (toNumeric(range.to, displayUnit) - toNumeric(range.from, displayUnit));
 
-    const unit =
-      axis === "x" ? this.#xDisplayUnit.get() : this.#yDisplayUnit.get();
-
-    return unit === undefined ? value : new Quantity(value, unit);
+    return toQuantity(value, displayUnit);
   }
 
   /** Transforms a point represented by data values and units (if aplicable) into pixel coordinates relative to chart canvas */
   quantityToCoordinate(quantity: Quantity | number, axis: "x" | "y"): number {
     const range = axis === "x" ? this.xRange.get() : this.yRange.get();
 
+    if (
+      typeof range.from !== typeof quantity &&
+      typeof range.to !== typeof quantity
+    ) {
+      throw new Error(
+        "Either range is numeric and you passed a quantity, or vice versa"
+      );
+    }
+
+    const displayUnit =
+      axis === "x" ? this.#xDisplayUnit.get() : this.#yDisplayUnit.get();
+
     if (range === undefined) throw new Error(`${axis} range is undefined`);
 
-    const value = typeof quantity === "number" ? quantity : quantity.value;
+    const minusFromOverRange = (q: Quantity | number) =>
+      (toNumeric(q, displayUnit) - toNumeric(range.from, displayUnit)) /
+      (toNumeric(range.to, displayUnit) - toNumeric(range.from, displayUnit));
 
     const coordinate =
       axis === "x"
-        ? ((value - range.from) / (range.to - range.from)) * this.canvas!.width
-        : ((value - range.from) / (range.to - range.from)) *
-          this.canvas!.height;
+        ? minusFromOverRange(quantity) * this.canvas!.width
+        : minusFromOverRange(quantity) * this.canvas!.height; // FIXME shouldnt this be 1-...?
 
     return coordinate;
   }
