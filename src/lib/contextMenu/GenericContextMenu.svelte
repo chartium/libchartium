@@ -71,7 +71,7 @@
 
   /** opens on the right of this rect or, if there isnt enough space, on the left */
   export function openNextToSourceRect(): void {
-    if (sourceRect === undefined || sourceRect === undefined) {
+    if (sourceRect === undefined) {
       return;
     }
     opened = true;

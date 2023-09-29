@@ -2,7 +2,7 @@ export interface ContextLeaf<T> {
   type: "leaf";
   /** Content of the menu item, usually text, to be displayed */
   content: T;
-  /** Short description of this item's functionality. If kept undefined 
+  /** Short description of this item's functionality. If kept undefined
    * will just reuse the content, which may be problematic if T isn't a type that has a reasonable print */
   ariaLabel?: string;
   /** Callback to be called upon clicking this option */
@@ -12,7 +12,7 @@ export interface ContextBranch<T> {
   type: "branch";
   /** Content of the menu item, usually text, to be displayed */
   content: T;
-  /** Short description of this item's functionality. If kept undefined 
+  /** Short description of this item's functionality. If kept undefined
    * will just reuse the content, which may be problematic if T isn't a type that has a reasonable print */
   ariaLabel?: string;
   /** The submenu */
@@ -27,7 +27,10 @@ export interface ContextSeparator {
  * a branch, i.e. a submenu,
  * or a separator which is just a line
  */
-export type ContextItem<T> = ContextLeaf<T> | ContextBranch<T> | ContextSeparator;
+export type ContextItem<T> =
+  | ContextLeaf<T>
+  | ContextBranch<T>
+  | ContextSeparator;
 
 export interface Point {
   x: number;
@@ -55,17 +58,26 @@ export function openPositionNextToPoint(
 /** returns opening position next to a DOMRect in such a way that the opened menu will fit on the page
  * by default opens to the right of the rect, if there is not enough space, opens to the left
  */
-export function openPositionNextToRect(rect: DOMRect, menuHeight: number, menuWidth: number): Point {
+export function openPositionNextToRect(
+  rect: DOMRect,
+  menuHeight: number,
+  menuWidth: number
+): Point {
   const x = rect.right + window.scrollX;
   const y = rect.top + window.scrollY;
-  const { innerWidth, innerHeight } = window;
+  const { innerWidth, innerHeight, scrollX, scrollY } = window;
   const positionOfRightMenuBoundary = x + menuWidth + 3;
   const positionOfBottomMenuBoundary = y + menuHeight + 3;
-  const rightOverflow = positionOfRightMenuBoundary - innerWidth;
-  const bottomOverflow = positionOfBottomMenuBoundary - innerHeight;
+  const rightOverflow =
+    positionOfRightMenuBoundary - innerWidth - window.scrollX;
+  const bottomOverflow =
+    positionOfBottomMenuBoundary - innerHeight - window.scrollY;
   return {
-    x: rightOverflow > 0 ? x - rect.width - menuWidth - 3 : x,
-    y: bottomOverflow > 0 ? y - bottomOverflow : y,
+    x:
+      rightOverflow > 0
+        ? x - rect.width - menuWidth - scrollX - 3
+        : x - scrollX,
+    y: bottomOverflow > 0 ? y - bottomOverflow - scrollY : y - scrollY,
   };
 }
 
