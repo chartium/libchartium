@@ -1,10 +1,10 @@
 <script lang="ts">
   import { onMount } from "svelte";
 
-  import type { TraceList } from "../data-worker/trace-list";
-  import * as canvas from "./canvas";
+  import type { TraceList } from "../data-worker/trace-list.js";
+  import * as canvas from "./canvas.js";
   import TracePreview from "./TracePreview.svelte";
-  import { map } from "../../utils/collection";
+  import { map } from "../../utils/collection.js";
 
   export let numberOfShownTraces: number = 5;
 

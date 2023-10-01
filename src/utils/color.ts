@@ -1,5 +1,5 @@
-import { startsWith } from "./string";
-import random, { Random } from "random";
+import { startsWith } from "./string.js";
+import random from "random";
 import seedrandom from "seedrandom";
 
 export type HexColor = `#${string}`;

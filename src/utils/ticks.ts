@@ -1,4 +1,4 @@
-import type { Range, Tick, Unit } from "../lib/types";
+import type { Range, Tick, Unit } from "../lib/types.js";
 
 const boxes: number[] = [1, 2, 5, 10];
 

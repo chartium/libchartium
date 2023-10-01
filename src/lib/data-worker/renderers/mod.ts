@@ -1,5 +1,5 @@
-import type { TraceList } from "../trace-list";
-import type { Range, TypeOfData } from "../../types";
+import type { TraceList } from "../trace-list.js";
+import type { Range, TypeOfData } from "../../types.js";
 
 export interface RenderingController {
   createRenderer(presentCanvas: OffscreenCanvas): Renderer;

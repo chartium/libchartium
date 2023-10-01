@@ -1,9 +1,9 @@
 <!-- Component for displaying a lil tooltip by the cursor that shows info about nearby traces -->
 <script lang="ts">
   import GenericTooltip from "../GenericTooltip.svelte";
-  import type { Point } from "../types";
-  import { globalMouseMove } from "../../utils/mouseGestures";
-  import type { TraceInfo } from "../data-worker/trace-list";
+  import type { Point } from "../types.js";
+  import { globalMouseMove } from "../../utils/mouseGestures.js";
+  import type { TraceInfo } from "../data-worker/trace-list.js";
   import TracePreview from "./TracePreview.svelte";
 
   /** The tooltip will try its best to not be in this rectangle */

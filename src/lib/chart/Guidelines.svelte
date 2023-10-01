@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { scaleCanvas } from "../../utils/actions";
-  import type { Tick } from "../types";
+  import { scaleCanvas } from "../../utils/actions.js";
+  import type { Tick } from "../types.js";
 
   export let xTicks: Tick[];
   export let yTicks: Tick[];
@@ -42,33 +42,33 @@
       ctx.stroke();
     }
     //if (renderTicks) {
-      const color = getComputedStyle(canvas).color;
+    const color = getComputedStyle(canvas).color;
 
-      ctx.save();
-      ctx.fillStyle = color;
-      ctx.strokeStyle = color;
-      ctx.lineWidth = 0.5;
-      ctx.setLineDash([2, 2]);
+    ctx.save();
+    ctx.fillStyle = color;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 0.5;
+    ctx.setLineDash([2, 2]);
 
-      for (const tick of xTicks) {
-        const position = Math.trunc(tick.position * canvasSize[0]);
+    for (const tick of xTicks) {
+      const position = Math.trunc(tick.position * canvasSize[0]);
 
-        ctx.beginPath();
-        ctx.moveTo(position, 0);
-        ctx.lineTo(position, canvasSize[1]);
-        ctx.stroke();
-      }
+      ctx.beginPath();
+      ctx.moveTo(position, 0);
+      ctx.lineTo(position, canvasSize[1]);
+      ctx.stroke();
+    }
 
-      for (const tick of yTicks) {
-        const position = Math.trunc((1 - tick.position) * canvasSize[1]);
+    for (const tick of yTicks) {
+      const position = Math.trunc((1 - tick.position) * canvasSize[1]);
 
-        ctx.beginPath();
-        ctx.moveTo(0, position);
-        ctx.lineTo(canvasSize[0], position);
-        ctx.stroke();
-      }
+      ctx.beginPath();
+      ctx.moveTo(0, position);
+      ctx.lineTo(canvasSize[0], position);
+      ctx.stroke();
+    }
 
-      ctx.restore();
+    ctx.restore();
     //}
   }
 </script>

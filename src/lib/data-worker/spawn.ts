@@ -1,5 +1,5 @@
-import Worker from "./worker.ts?worker";
-import { importControllerFromWorker } from "./comlink.ts";
+import Worker from "./worker.js?worker";
+import { importControllerFromWorker } from "./comlink.js";
 
 export function spawnChartiumWorker() {
   return importControllerFromWorker(Worker);

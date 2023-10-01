@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { observeResize } from "../../utils/actions";
+  import { observeResize } from "../../utils/actions.js";
 
   export let contentSize: [number, number] = [1, 1];
 </script>

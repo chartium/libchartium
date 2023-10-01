@@ -1,2 +1,2 @@
-export * from "./data-worker/index";
-export * from "./chart/index";
+export * from "./data-worker/index.js";
+export * from "./chart/index.js";

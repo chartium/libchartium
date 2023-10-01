@@ -1,8 +1,8 @@
 <!-- component for showing a bit of the trace for legends and tooltips and such -->
 <script lang="ts">
   import { onMount } from "svelte";
-  import type { TraceInfo } from "../data-worker/trace-list";
-  import * as canvas from "./canvas";
+  import type { TraceInfo } from "../data-worker/trace-list.js";
+  import * as canvas from "./canvas.js";
 
   export let previewedTrace: TraceInfo;
 
@@ -36,7 +36,7 @@
 
     if (simplified) {
       style.lineWidth = 7;
-      canvas.drawSegment(ctx, [width/2, height], [width/2, 0], style);
+      canvas.drawSegment(ctx, [width / 2, height], [width / 2, 0], style);
       return;
     }
 

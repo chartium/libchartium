@@ -1,8 +1,8 @@
 <script lang="ts">
   import Chart from "./lib/chart/Chart.svelte";
   import ToolbarButton from "./lib/chart/ToolbarButton.svelte";
-  import { ChartiumController } from "./lib/data-worker";
-  import Fa from "svelte-fa";
+  import { ChartiumController } from "./lib/data-worker/index.js";
+  import { Fa } from "svelte-fa";
   import {
     faArrowRight,
     faArrowLeft,
@@ -59,9 +59,11 @@
     );
 
   let wrapDiv: HTMLElement;
-  import domtoimage from "dom-to-image-more";
+  import domtoimage, { DomToImage } from "dom-to-image-more";
+  const dti: DomToImage = domtoimage as any;
+
   const takeScreenshot = () => {
-    domtoimage.toPng(wrapDiv).then((url) => {
+    dti.toPng(wrapDiv).then((url) => {
       const link = document.createElement("a");
       link.download = `graph.png`;
       link.href = url;

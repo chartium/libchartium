@@ -1,7 +1,7 @@
 <!-- an item of context menu -->
 
 <script lang="ts" generics="T">
-  import type { ContextItem } from "./contextMenu";
+  import type { ContextItem } from "./contextMenu.js";
   import { createEventDispatcher } from "svelte";
   const dispatch = createEventDispatcher();
   let boundingDiv: HTMLDivElement;

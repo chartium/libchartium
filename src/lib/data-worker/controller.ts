@@ -9,7 +9,7 @@
  */
 
 import { BiMap } from "bim";
-import { wasmUrl, init, lib } from "./wasm.ts";
+import { wasmUrl, init, lib } from "./wasm.js";
 
 import type {
   Size,
@@ -18,10 +18,10 @@ import type {
   TypeOfData,
   Unit,
 } from "../types.js";
-import type { RenderingController } from "./renderers/mod.ts";
-import { WebGL2Controller } from "./renderers/webgl2.ts";
+import type { RenderingController } from "./renderers/mod.js";
+import { WebGL2Controller } from "./renderers/webgl2.js";
 import { proxyMarker } from "comlink";
-import { TraceList } from "./trace-list.ts";
+import { TraceList } from "./trace-list.js";
 
 let wasmMemory: WebAssembly.Memory | undefined;
 

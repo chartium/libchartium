@@ -1,12 +1,11 @@
 <script lang="ts">
-  import type { ChartiumController } from "../data-worker";
-  import type { Range, Shift, Zoom } from "../types";
-  import type { Quantity } from "../types";
-  import type { TraceInfo, TraceList } from "../data-worker/trace-list";
+  import type { ChartiumController } from "../data-worker/index.js";
+  import type { Range, Shift, Quantity, Zoom } from "../types.js";
+  import type { TraceInfo, TraceList } from "../data-worker/trace-list.js";
   import type { VisibleAction } from "./ActionsOverlay.svelte";
 
   import { onDestroy, onMount } from "svelte";
-  import { Chart } from "./chart";
+  import { Chart } from "./chart.js";
 
   import ChartOverlay from "./ActionsOverlay.svelte";
   import ChartGrid from "./ChartGrid.svelte";
@@ -14,10 +13,11 @@
   import ChartLegend from "./Legend.svelte";
   import Guidelines from "./Guidelines.svelte";
   import Tooltip from "./Tooltip.svelte";
-  import { norm } from "./position";
+  import { norm } from "./position.js";
   import { cons, mut } from "@mod.js/signals";
+  import type { Remote } from "comlink";
 
-  export let controller: ChartiumController;
+  export let controller: ChartiumController | Remote<ChartiumController>;
   export let traces: TraceList;
 
   export let title: string = "";

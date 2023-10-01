@@ -1,11 +1,11 @@
 import { transfer, type Remote } from "comlink";
-import type { ChartiumController } from "../data-worker";
-import type { RenderJob, Renderer } from "../data-worker/renderers/mod";
-import type { Range, Tick, Unit } from "../types";
-import { Quantity } from "../types";
-import { TraceList } from "../data-worker/trace-list";
-import { linearTicks } from "../../utils/ticks";
-import { nextAnimationFrame } from "../../utils/promise";
+import type { ChartiumController } from "../data-worker/index.js";
+import type { RenderJob, Renderer } from "../data-worker/renderers/mod.js";
+import type { Range, Tick, Unit } from "../types.js";
+import { Quantity } from "../types.js";
+import { TraceList } from "../data-worker/trace-list.js";
+import { linearTicks } from "../../utils/ticks.js";
+import { nextAnimationFrame } from "../../utils/promise.js";
 import type { FactorDefinition } from "unitlib";
 
 import { mut } from "@mod.js/signals";

@@ -2,15 +2,18 @@
 
 <script lang="ts">
   import { createEventDispatcher } from "svelte";
-  import { MouseButtons, mouseDrag } from "../../utils/mouseGestures";
+  import { MouseButtons, mouseDrag } from "../../utils/mouseGestures.js";
   import {
     rightMouseClick,
     type MouseDragCallbacks,
-  } from "../../utils/mouseGestures";
-  import type { Point, Range, Shift, Tick, Unit } from "../types";
+  } from "../../utils/mouseGestures.js";
+  import type { Point, Range, Shift, Tick, Unit } from "../types.js";
   import type { VisibleAction } from "./ActionsOverlay.svelte";
-  import { observeResize } from "../../utils/actions";
-  import { type ContextItem, GenericContextMenu } from "../contextMenu";
+  import { observeResize } from "../../utils/actions.js";
+  import {
+    type ContextItem,
+    GenericContextMenu,
+  } from "../contextMenu/index.js";
   import {
     ZippedSignal,
     type Signal,

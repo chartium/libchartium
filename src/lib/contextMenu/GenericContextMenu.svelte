@@ -5,15 +5,15 @@
  -->
 
 <script lang="ts" generics="T">
-  import { observeResize } from "../../utils/actions";
+  import { observeResize } from "../../utils/actions.js";
   import ContextItemComponent from "./ContextItemComponent.svelte";
-  import type { ContextItem, Point } from "./contextMenu";
+  import type { ContextItem, Point } from "./contextMenu.js";
   import {
     openPositionNextToPoint,
     openPositionNextToRect,
     clickOutside,
     genericKeydown,
-  } from "./contextMenu";
+  } from "./contextMenu.js";
 
   /** The only required input from outside, the content of the context menu */
   export let items: ContextItem<T>[];

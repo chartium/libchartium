@@ -1,5 +1,5 @@
-import type { Point, Range, TraceHandle, Unit } from "../types";
-import { lib } from "./wasm";
+import type { Point, Range, TraceHandle, Unit } from "../types.js";
+import { lib } from "./wasm.js";
 import {
   computeTraceColor,
   defaultStyle,
@@ -9,10 +9,10 @@ import {
   type TraceStylesheet,
   type TraceDataUnits,
   simplifyTraceInfo,
-} from "./trace-styles";
-import { yeet } from "../../utils/yeet";
-import { UnknownTraceHandleError } from "../errors";
-import { traceIds } from "./controller";
+} from "./trace-styles.js";
+import { yeet } from "../../utils/yeet.js";
+import { UnknownTraceHandleError } from "../errors.js";
+import { traceIds } from "./controller.js";
 import {
   filter,
   flatMap,
@@ -20,9 +20,9 @@ import {
   reduce,
   some,
   unique,
-} from "../../utils/collection";
+} from "../../utils/collection.js";
 import { proxyMarker } from "comlink";
-import type { Color } from "../../utils/color";
+import type { Color } from "../../utils/color.js";
 
 export const BUNDLES = Symbol("bundles");
 export const HANDLES = Symbol("handles");

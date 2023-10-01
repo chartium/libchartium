@@ -1,6 +1,6 @@
 import { expose, wrap, transfer, type Remote } from "comlink";
-import type { ChartiumController } from "./controller.ts";
-import { asMap } from "../../utils/object.ts";
+import type { ChartiumController } from "./controller.js";
+import { asMap } from "../../utils/object.js";
 
 export function exportControllerFromWorker(
   controller: ChartiumController
