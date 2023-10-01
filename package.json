@@ -1,13 +1,13 @@
 {
   "name": "libchartium",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "type": "module",
   "files": [
     "dist"
   ],
   "exports": {
     ".": {
-      "types": "./dist/main.d.ts",
+      "types": "./dist/lib/index.d.ts",
       "import": "./dist/main.js"
     }
   },
