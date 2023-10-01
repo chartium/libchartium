@@ -1,16 +1,12 @@
 {
   "name": "libchartium",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "type": "module",
   "files": [
     "dist"
   ],
-  "exports": {
-    ".": {
-      "types": "./dist/lib/index.d.ts",
-      "import": "./dist/main.js"
-    }
-  },
+  "module": "dist/main.js",
+  "types": "dist/lib/index.d.ts",
   "scripts": {
     "dev": "pnpm build-wasm && vite",
     "build": "pnpm build-wasm && vite build",
