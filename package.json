@@ -5,18 +5,19 @@
   "files": [
     "dist"
   ],
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "module": "./dist/lib/index.js",
+  "types": "./dist/lib/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "svelte": "./dist/index.js"
+      "types": "./dist/lib/index.d.ts",
+      "svelte": "./dist/lib/index.js"
     }
   },
   "scripts": {
     "dev": "pnpm build-wasm && vite",
-    "build": "pnpm build-wasm && svelte-package -i src/lib -o dist && rm -rf src/utils/*.d.ts",
+    "build": "sh ./build.sh",
     "build-wasm": "sh ./build-wasm.sh",
+    "clean": "sh ./clean.sh",
     "preview": "vite preview",
     "check": "svelte-check --tsconfig ./tsconfig.json"
   },

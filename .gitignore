@@ -10,5 +10,6 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+dist-rust
 *.local
 .svelte-kit

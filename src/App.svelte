@@ -2,7 +2,6 @@
   import Chart from "./lib/chart/Chart.svelte";
   import ToolbarButton from "./lib/chart/ToolbarButton.svelte";
   import { ChartiumController } from "./lib/data-worker/index.js";
-  import { Fa } from "svelte-fa";
   import {
     faArrowRight,
     faArrowLeft,
@@ -14,6 +13,10 @@
     faUserClock,
   } from "@fortawesome/free-solid-svg-icons";
   import { SI, IEC } from "unitlib/systems";
+
+  // weird hack to import svelte-fa bc of NodeNext module resolution
+  import { default as Fa_1, type Fa as Fa_2 } from "svelte-fa";
+  const Fa = Fa_1 as any as typeof Fa_2;
 
   // autogenerate a lot of data
   const from = 0;
