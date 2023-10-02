@@ -1,4 +1,4 @@
-import type { Color } from "../utils/color.js";
+import type { Color } from "./utils/color.js";
 
 import type { Unit as Unit_ } from "unitlib";
 export type Unit = Unit_<any, any, any>;

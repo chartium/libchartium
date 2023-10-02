@@ -1,6 +1,6 @@
 {
   "name": "libchartium",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "type": "module",
   "files": [
     "dist"
@@ -15,7 +15,7 @@
   },
   "scripts": {
     "dev": "pnpm build-wasm && vite",
-    "build": "sh ./build.sh",
+    "build": "pnpm build-wasm && svelte-package -i src/lib -o dist/lib",
     "build-wasm": "sh ./build-wasm.sh",
     "clean": "sh ./clean.sh",
     "preview": "vite preview",

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { scaleCanvas } from "../../utils/actions.js";
+  import { scaleCanvas } from "../utils/actions.js";
   import type { Tick } from "../types.js";
 
   export let xTicks: Tick[];

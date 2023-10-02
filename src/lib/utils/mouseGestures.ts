@@ -1,6 +1,6 @@
 /** this file handles bunch of mouse gesture events you can use as svelte actions */
 
-import type { Point, Shift, Size, Zoom } from "../lib/types.js";
+import type { Point, Shift, Size, Zoom } from "../types.js";
 
 export interface MouseDragCallbacks {
   start: (event: MouseEvent) => void;

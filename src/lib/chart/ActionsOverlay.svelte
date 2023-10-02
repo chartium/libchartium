@@ -13,12 +13,12 @@
     MouseButtons,
     mouseDrag,
     rightMouseClick,
-  } from "../../utils/mouseGestures.js";
+  } from "../utils/mouseGestures.js";
   import * as canvas from "./canvas.js";
-  import type { MouseDragCallbacks } from "../../utils/mouseGestures.js";
+  import type { MouseDragCallbacks } from "../utils/mouseGestures.js";
   import type { HighlightPoint, Point, Shift, Zoom } from "../types.js";
 
-  import { scaleCanvas } from "../../utils/actions.js";
+  import { scaleCanvas } from "../utils/actions.js";
 
   import type { ContextItem } from "../contextMenu/contextMenu.js";
   import GenericContextMenu from "../contextMenu/GenericContextMenu.svelte";

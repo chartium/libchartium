@@ -4,11 +4,11 @@ import {
   colorStringToColor,
   randomContrastingColor,
   type Color,
-} from "../../utils/color.js";
-import { yeet } from "../../utils/yeet.js";
+} from "../utils/color.js";
+import { yeet } from "../utils/yeet.js";
 import { UnknownTraceHandleError } from "../errors.js";
 import type { TraceHandle, Unit } from "../types.js";
-import { map } from "../../utils/collection.js";
+import { map } from "../utils/collection.js";
 
 export interface TraceStyle {
   width: number;

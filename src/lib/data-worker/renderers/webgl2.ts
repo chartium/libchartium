@@ -1,5 +1,5 @@
 import { lib } from "../wasm.js";
-import { yeet } from "../../../utils/yeet.js";
+import { yeet } from "../../utils/yeet.js";
 import {
   type RenderJob,
   type RenderJobResult,
@@ -8,7 +8,7 @@ import {
 } from "./mod.js";
 import { proxyMarker } from "comlink";
 import { BUNDLES, HANDLES, TRACE_INFO, TraceList } from "../trace-list.js";
-import { filter, map, reduce } from "../../../utils/collection.js";
+import { filter, map, reduce } from "../../utils/collection.js";
 import { computeStyles } from "../trace-styles.js";
 import { traceIds } from "../controller.js";
 import type { BoxedBundle } from "../../../../src-rust/pkg/libchartium.js";

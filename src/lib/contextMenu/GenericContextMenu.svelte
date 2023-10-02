@@ -5,7 +5,7 @@
  -->
 
 <script lang="ts" generics="T">
-  import { observeResize } from "../../utils/actions.js";
+  import { observeResize } from "../utils/actions.js";
   import ContextItemComponent from "./ContextItemComponent.svelte";
   import type { ContextItem, Point } from "./contextMenu.js";
   import {

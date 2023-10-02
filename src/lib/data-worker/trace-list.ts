@@ -10,7 +10,7 @@ import {
   type TraceDataUnits,
   simplifyTraceInfo,
 } from "./trace-styles.js";
-import { yeet } from "../../utils/yeet.js";
+import { yeet } from "../utils/yeet.js";
 import { UnknownTraceHandleError } from "../errors.js";
 import { traceIds } from "./controller.js";
 import {
@@ -20,9 +20,9 @@ import {
   reduce,
   some,
   unique,
-} from "../../utils/collection.js";
+} from "../utils/collection.js";
 import { proxyMarker } from "comlink";
-import type { Color } from "../../utils/color.js";
+import type { Color } from "../utils/color.js";
 
 export const BUNDLES = Symbol("bundles");
 export const HANDLES = Symbol("handles");
