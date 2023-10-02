@@ -70,13 +70,8 @@ export class Chart {
     return this.#renderer;
   }
 
-  #xDataUnit = mut<Unit>();
-  #yDataUnit = mut<Unit>();
-  readonly xDataUnit = this.#xDataUnit.toReadonly();
-  readonly yDataUnit = this.#yDataUnit.toReadonly();
-
-  readonly #xDisplayUnit = mut<Unit>();
-  readonly #yDisplayUnit = mut<Unit>();
+  readonly xDisplayUnit = mut<Unit>();
+  readonly yDisplayUnit = mut<Unit>();
 
   /**
    * The list of traces to be rendered in this chart.
@@ -112,8 +107,14 @@ export class Chart {
 
     this.traces = withSubscriber(mut(traces), (t) => this.#updateTraces(t));
 
-    this.xRange = withEffect(mut(traces.range), this.scheduleRender);
-    this.yRange = withEffect(mut(traces.getYRange()), this.scheduleRender);
+    this.xRange = withEffect(
+      mut(toRange(traces.range, this.xDisplayUnit.get())), // FIXME move units to traces?
+      this.scheduleRender
+    );
+    this.yRange = withEffect(
+      mut(toRange(traces.getYRange(), this.yDisplayUnit.get())), // FIXME move units to traces?
+      this.scheduleRender
+    );
 
     this.size = withEffect(
       mut({ width: NaN, height: NaN }),
@@ -123,8 +124,8 @@ export class Chart {
       }
     );
 
-    withEffect(this.#xDisplayUnit, () => this.#updateTicks());
-    withEffect(this.#yDisplayUnit, () => this.#updateTicks());
+    withEffect(this.xDisplayUnit, () => this.#updateTicks());
+    withEffect(this.yDisplayUnit, () => this.#updateTicks());
 
     // canvas & renderer
     const offscreen = canvas.transferControlToOffscreen();
@@ -134,6 +135,11 @@ export class Chart {
         this.#renderer = r;
         this.scheduleRender();
       });
+
+    this.raiseXFactorAction = changeFactorAction("raise", this.xRange);
+    this.lowerXFactorAction = changeFactorAction("lower", this.xRange);
+    this.raiseYFactorAction = changeFactorAction("raise", this.yRange);
+    this.lowerYFactorAction = changeFactorAction("lower", this.yRange);
   }
 
   #updateTraces(traces: TraceList) {
@@ -149,13 +155,14 @@ export class Chart {
       x: [newXUnit],
       y: [newYUnit],
     } = traces.getUnits();
-    if (!areUnitsEqual(newXUnit, this.#xDataUnit.get())) {
-      this.#xDataUnit.set(newXUnit);
-      this.#xDisplayUnit.set(newXUnit);
+    if (!areUnitsEqual(newXUnit, this.xDisplayUnit.get())) {
+      // FIXME this will be redundant once there is a way to find the best default unit
+      this.xDisplayUnit.set(newXUnit);
     }
-    if (!areUnitsEqual(newYUnit, this.#yDataUnit.get())) {
-      this.#yDataUnit.set(newYUnit);
-      this.#yDisplayUnit.set(newYUnit);
+    if (!areUnitsEqual(newYUnit, this.yDisplayUnit.get())) {
+      // FIXME this will be redundant once there is a way to find the best default unit
+      // FIXME also what does it actually do?
+      this.yDisplayUnit.set(newYUnit);
     }
 
     this.scheduleRender();
@@ -173,18 +180,28 @@ export class Chart {
       throw new Error("Canvas not assigned");
     }
 
-    const renderJob: RenderJob = {
-      traces: this.traces.get(),
-
-      // TODO read xType
+    // clear canvas FIXME just clear it normally u dummy
+    const clearJob: RenderJob = {
       xType: "f32",
-      xRange: toNumericRange(this.xRange.get(), this.#xDataUnit.get()),
-      yRange: toNumericRange(this.yRange.get(), this.#yDataUnit.get()),
-
+      traces: TraceList.empty(),
       clear: true,
     };
+    this.#renderer.render(clearJob);
 
-    this.#renderer.render(renderJob);
+    for (const [units, traces] of this.traces.get().getUnitsToTraceMap()) {
+      const renderJob: RenderJob = {
+        traces: traces,
+
+        // TODO read xType
+        xType: "f32",
+        xRange: toNumericRange(this.xRange.get(), units.x),
+        yRange: toNumericRange(this.yRange.get(), units.y),
+
+        clear: false,
+      };
+
+      this.#renderer.render(renderJob);
+    }
 
     this.#updateTicks();
   }
@@ -220,30 +237,41 @@ export class Chart {
   #updateTicks() {
     const xRange = this.xRange.get();
     if (xRange) {
-      this.#xTicks?.set(
-        linearTicks(xRange, this.#xDataUnit.get(), this.#xDisplayUnit.get())
-      );
+      this.#xTicks?.set(linearTicks(xRange));
     }
 
     const yRange = this.yRange.get();
     if (yRange) {
-      this.#yTicks?.set(
-        linearTicks(yRange, this.#yDataUnit.get(), this.#yDisplayUnit.get())
-      );
+      this.#yTicks?.set(linearTicks(yRange));
     }
   }
 
   resetZoom() {
-    this.xRange.set(this.traces.get().range);
-    this.yRange.set(this.traces.get().getYRange());
+    const units = this.bestDisplayUnits();
+    this.xRange.set(toRange(this.traces.get().range, units.xUnit));
+    this.yRange.set(toRange(this.traces.get().getYRange(), units.yUnit));
+    this.xDisplayUnit.set(units.xUnit);
+    this.yDisplayUnit.set(units.yUnit);
     return this.scheduleRender();
+  }
+
+  bestDisplayUnits(): { xUnit: Unit | undefined; yUnit: Unit | undefined } {
+    // FIXME make smarter choice
+    const units = this.traces.get().getUnits();
+    return {
+      xUnit: units[0].x,
+      yUnit: units[0].y,
+    };
   }
 
   /** Transforms x, y fraction of canvas size into chart quantity (or unitless number) */
   fractionsToQuantities(fraction: number, axis: "x" | "y"): Quantity | number {
     const range = axis === "x" ? this.xRange.get() : this.yRange.get();
     if (!range) throw new Error(`${axis} range is undefined`);
-    const unit = axis === "x" ? this.#xDataUnit.get() : this.#yDataUnit.get(); // NOTE i sure do hope using the data unit is the corret one
+    const unit =
+      axis === "x"
+        ? this.bestDisplayUnits().xUnit
+        : this.bestDisplayUnits().yUnit;
     const value =
       toNumeric(range.from, unit) +
       (axis === "x" ? fraction : 1 - fraction) *
@@ -257,7 +285,7 @@ export class Chart {
     const range = axis === "x" ? this.xRange.get() : this.yRange.get();
     if (!range) throw new Error(`${axis} range is undefined`);
     const unit =
-      axis === "x" ? this.#xDisplayUnit.get() : this.#yDisplayUnit.get();
+      axis === "x" ? this.xDisplayUnit.get() : this.yDisplayUnit.get();
 
     const fraction =
       (toNumeric(quantity, unit) - toNumeric(range.from, unit)) /
@@ -273,7 +301,7 @@ export class Chart {
   ): Quantity | number {
     const range = axis === "x" ? this.xRange.get() : this.yRange.get();
     const displayUnit =
-      axis === "x" ? this.#xDisplayUnit.get() : this.#yDisplayUnit.get();
+      axis === "x" ? this.xDisplayUnit.get() : this.yDisplayUnit.get();
 
     if (!range) throw new Error("xRange or yRange is undefined");
 
@@ -301,7 +329,7 @@ export class Chart {
     }
 
     const displayUnit =
-      axis === "x" ? this.#xDisplayUnit.get() : this.#yDisplayUnit.get();
+      axis === "x" ? this.xDisplayUnit.get() : this.yDisplayUnit.get();
 
     if (range === undefined) throw new Error(`${axis} range is undefined`);
 
@@ -312,15 +340,14 @@ export class Chart {
     const coordinate =
       axis === "x"
         ? minusFromOverRange(quantity) * this.canvas!.width
-        : minusFromOverRange(quantity) * this.canvas!.height; // FIXME shouldnt this be 1-...?
-
+        : (1 - minusFromOverRange(quantity)) * this.canvas!.height;
     return coordinate;
   }
 
-  readonly raiseXFactorAction = changeFactorAction("raise", this.#xDisplayUnit);
-  readonly lowerXFactorAction = changeFactorAction("lower", this.#xDisplayUnit);
-  readonly raiseYFactorAction = changeFactorAction("raise", this.#yDisplayUnit);
-  readonly lowerYFactorAction = changeFactorAction("lower", this.#yDisplayUnit);
+  readonly raiseXFactorAction: ReturnType<typeof changeFactorAction>;
+  readonly lowerXFactorAction: ReturnType<typeof changeFactorAction>;
+  readonly raiseYFactorAction: ReturnType<typeof changeFactorAction>;
+  readonly lowerYFactorAction: ReturnType<typeof changeFactorAction>;
 }
 
 /**
@@ -330,22 +357,24 @@ export class Chart {
  */
 const changeFactorAction = (
   direction: "raise" | "lower",
-  unit: WritableSignal<Unit | undefined>
+  range: WritableSignal<Range>
 ) =>
-  unit.map(($unit) => {
-    if (!$unit) return;
+  range.map(($range) => {
+    if (!$range) return;
+    const unit = $range.from instanceof Quantity ? $range.from.unit : undefined;
+    if (!unit) return;
 
     const factorsEqual = (a: FactorDefinition, b: FactorDefinition) =>
       a.mul === b.mul && a.base === b.base && a.exp === b.exp;
 
-    const factors = Object.entries<FactorDefinition>($unit.unitSystem.factors);
+    const factors = Object.entries<FactorDefinition>(unit.unitSystem.factors);
 
     // add prefix-less factor
     factors.push(["(unitless)", { mul: 1, base: 1, exp: 1 }]);
 
     // if the current factor is non-standard, add it to the list
-    if (!factors.find(([_, f]) => factorsEqual($unit.factor, f))) {
-      factors.push(["(current)", $unit.factor]);
+    if (!factors.find(([_, f]) => factorsEqual(unit.factor, f))) {
+      factors.push(["(current)", unit.factor]);
     }
 
     // sort by value
@@ -354,17 +383,17 @@ const changeFactorAction = (
     );
 
     const currentIndex = factors.findIndex(([_, f]) =>
-      factorsEqual($unit.factor, f)
+      factorsEqual(unit.factor, f)
     );
 
     const newIndex = currentIndex + (direction === "raise" ? 1 : -1);
     if (newIndex < 0 || newIndex >= factors.length) return;
 
     const newFactor = factors[newIndex][1];
-    const newUnit = $unit.withFactor(newFactor);
+    const newUnit = unit.withFactor(newFactor);
 
     return {
       unit: newUnit,
-      callback: () => unit.set(newUnit),
+      callback: () => range.set(toRange($range, newUnit)),
     };
   });
