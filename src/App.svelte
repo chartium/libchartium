@@ -1,5 +1,6 @@
 <script lang="ts">
   import Chart from "./lib/chart/Chart.svelte";
+  import wasmUrl from "../dist/wasm/libchartium.wasm?url";
   import ToolbarButton from "./lib/chart/ToolbarButton.svelte";
   import { ChartiumController } from "./lib/data-worker/index.js";
   import {
@@ -41,7 +42,7 @@
   ]);
 
   // const controller = spawnChartiumWorker();
-  const controller = ChartiumController.instantiateInThisThread();
+  const controller = ChartiumController.instantiateInThisThread({ wasmUrl });
   const traces = controller
     .addFromArrayBuffer({
       ids: ["sin", "cos", "atan"],

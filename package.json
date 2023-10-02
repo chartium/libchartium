@@ -1,6 +1,6 @@
 {
   "name": "libchartium",
-  "version": "0.0.11",
+  "version": "0.0.12",
   "type": "module",
   "files": [
     "dist"
@@ -11,6 +11,14 @@
     ".": {
       "types": "./dist/lib/index.d.ts",
       "svelte": "./dist/lib/index.js"
+    },
+    "./worker": {
+      "types": "./dist/lib/data-worker/worker.js",
+      "import": "./dist/lib/data-worker/worker.d.ts"
+    },
+    "./wasm": {
+      "types": "./dist/wasm/libchartium.wasm.d.ts",
+      "import": "./dist/wasm/libchartium.wasm"
     }
   },
   "scripts": {

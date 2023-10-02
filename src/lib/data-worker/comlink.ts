@@ -9,13 +9,15 @@ export function exportControllerFromWorker(
 }
 
 export function importControllerFromWorker(
-  w: Worker | { new (): Worker } | string
+  w: Worker | { new (): Worker } | URL | string
 ): Remote<ChartiumController> {
   w =
     typeof w === "function"
       ? new w()
       : typeof w === "string"
       ? new Worker(w)
+      : w instanceof URL
+      ? new Worker(w.href)
       : w;
 
   const remote = wrap<ChartiumController>(w);

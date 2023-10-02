@@ -9,7 +9,7 @@
  */
 
 import { BiMap } from "bim";
-import { wasmUrl, init, lib } from "./wasm.js";
+import { init, lib } from "./wasm.js";
 
 import type {
   Size,
@@ -37,6 +37,11 @@ export const traceIds = new BiMap<TraceHandle, string>();
 
 export interface ChartiumControllerOptions {
   /**
+   * Path to libchartium/wasm.
+   */
+  wasmUrl: URL | string;
+
+  /**
    * So far, only WebGL 2 is supported. We will add a WebGPU mode in the future.
    * It is also not impossible that we will introduce a 2D mode for legacy platforms.
    */
@@ -55,7 +60,7 @@ export class ChartiumController {
   #renderingController!: RenderingController;
 
   static instantiateInThisThread(
-    options: ChartiumControllerOptions = {}
+    options: ChartiumControllerOptions
   ): ChartiumController {
     const ctl = new ChartiumController(options);
 
@@ -88,7 +93,7 @@ export class ChartiumController {
 
   public initialized: Promise<true> | true;
 
-  private constructor(options: ChartiumControllerOptions = {}) {
+  private constructor(options: ChartiumControllerOptions) {
     if (instance) {
       window.location.reload(); // FIXME only for hot reload while debugging
       throw new Error(
@@ -98,7 +103,7 @@ export class ChartiumController {
     instance = this;
 
     this.initialized = (async () => {
-      wasmMemory = (await init(wasmUrl)).memory;
+      wasmMemory = (await init(options.wasmUrl)).memory;
       lib.set_panic_hook();
 
       console.log(
