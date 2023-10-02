@@ -5,10 +5,23 @@ import seedrandom from "seedrandom";
 export type HexColor = `#${string}`;
 export type RgbaColor = `rgba(${number}, ${number}, ${number}, ${number})`;
 
-const canvas = new OffscreenCanvas(0, 0);
-const context = canvas.getContext("2d")!;
+// Wrap OffscreenCanvas use, so that it doesn't throw in SSR
+const get2DContext = (() => {
+  let canvas: OffscreenCanvas;
+  let context: OffscreenCanvasRenderingContext2D | undefined;
+  return () => {
+    if (context) return context;
+    if (typeof OffscreenCanvas === "undefined") return;
+    canvas = new OffscreenCanvas(0, 0);
+    context = canvas.getContext("2d") ?? undefined;
+    return context;
+  };
+})();
 
 function colorStringToHexOrRgba(color: string): HexColor | RgbaColor {
+  const context = get2DContext();
+  if (!context) return color as any;
+
   context.fillStyle = color;
   color = context.fillStyle;
 
