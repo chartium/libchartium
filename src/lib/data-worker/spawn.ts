@@ -1,6 +1,8 @@
-export const WORKER_URL = import.meta.resolve(
-  "/dist/lib/data-worker/worker.js"
-);
+export const WORKER_URL = new URL(
+  "../../../dist/lib/data-worker/worker.js",
+  import.meta.url
+).href;
+
 import { importControllerFromWorker } from "./comlink.js";
 
 export function spawnChartiumWorker() {
