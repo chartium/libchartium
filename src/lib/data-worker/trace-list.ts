@@ -1,4 +1,4 @@
-import type { Point, Range, TraceHandle, Unit } from "../types.js";
+import type { Point, Quantity, Range, TraceHandle, Unit } from "../types.js";
 import { lib } from "./wasm.js";
 import {
   computeTraceColor,
@@ -23,6 +23,7 @@ import {
 } from "../utils/collection.js";
 import { proxyMarker } from "comlink";
 import type { Color } from "../utils/color.js";
+import { toNumeric, toNumericRange } from "../utils/quantityHelpers.js";
 
 export const BUNDLES = Symbol("bundles");
 export const HANDLES = Symbol("handles");

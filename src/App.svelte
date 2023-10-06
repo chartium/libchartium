@@ -2,7 +2,7 @@
   import Chart from "./lib/chart/Chart.svelte";
   import wasmUrl from "../dist/wasm/libchartium.wasm?url";
   import ToolbarButton from "./lib/chart/ToolbarButton.svelte";
-  import { ChartiumController } from "./lib/data-worker/index.js";
+  import { ChartiumController, TraceList } from "./lib/data-worker/index.js";
   import {
     faArrowRight,
     faArrowLeft,

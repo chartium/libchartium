@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { ChartiumController } from "../data-worker/index.js";
-  import type { Range, Shift, Quantity, Zoom } from "../types.js";
+  import type { Range, Shift, Quantity, Zoom, NumericRange } from "../types.js";
   import type { TraceInfo, TraceList } from "../data-worker/trace-list.js";
   import type { VisibleAction } from "./ActionsOverlay.svelte";
 
@@ -16,6 +16,7 @@
   import { norm } from "./position.js";
   import { cons, mut } from "@mod.js/signals";
   import type { Remote } from "comlink";
+  import { toNumeric, toQuantity } from "../utils/quantityHelpers.js";
 
   export let controller: ChartiumController | Remote<ChartiumController>;
   export let traces: TraceList;

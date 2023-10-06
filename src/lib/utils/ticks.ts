@@ -1,12 +1,14 @@
 import type { Range, Tick, Unit } from "../types.js";
+import { toNumericRange } from "./quantityHelpers.js";
 
 const boxes: number[] = [1, 2, 5, 10];
 
 export const linearTicks = (
-  { from, to }: Range,
-  dataUnit: Unit | undefined,
-  displayUnit: Unit | undefined
+  range: Range,
+  dataUnit?: Unit,
+  displayUnit?: Unit
 ): Tick[] => {
+  const { from, to } = toNumericRange(range, dataUnit);
   const width = to - from;
   let firstTick: number = 0.0;
   let ticksDist: number = 1.0;

@@ -1,7 +1,11 @@
 /** THelper functions to make the code shorter */
 
-import { Quantity, type Unit } from "../lib/types.js";
-import type { Range, NumericRange } from "../lib/types.js";
+import {
+  Quantity,
+  type NumericRange,
+  type Unit,
+  type Range,
+} from "../types.js";
 
 /** Transforms quantity to just numeric part in selected units. If units === undefined, will return x.value */
 export function toNumeric(x: Quantity | number, units?: Unit): number {

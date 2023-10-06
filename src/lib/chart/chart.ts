@@ -20,7 +20,8 @@ import {
   toNumeric,
   toNumericRange,
   toQuantity,
-} from "../../utils/quantityHelpers.js";
+  toRange,
+} from "../utils/quantityHelpers.js";
 
 /**
  * A helper method that takes a signal, adds a
