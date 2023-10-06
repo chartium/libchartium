@@ -46,11 +46,11 @@ export class TraceList {
   #bundles: lib.BoxedBundle[];
   #statistics: lib.TraceMetas[] | undefined;
   #traceInfo: ResolvedTraceInfo;
-  #range: NumericRange;
+  #range: Range;
 
   constructor(
     handles: TraceHandle[],
-    range: NumericRange,
+    range: Range,
     bundles: lib.BoxedBundle[],
     traceInfo: ResolvedTraceInfo | null
   ) {
@@ -67,7 +67,7 @@ export class TraceList {
   /**
    * The x axis range this trace list is limited to.
    */
-  get range(): NumericRange {
+  get range(): Range {
     return { ...this.#range };
   }
 
@@ -115,9 +115,30 @@ export class TraceList {
   }
 
   /**
+   * Returns units that traces of input bundle use
+   */
+  getBundleUnits(bundle: lib.BoxedBundle): {
+    x: Unit | undefined;
+    y: Unit | undefined;
+  } {
+    const traceId = traceIds.get(bundle.traces()[0] as TraceHandle)!;
+    const { xDataUnit, yDataUnit } = this.getTraceInfo(traceId);
+    return { x: xDataUnit, y: yDataUnit };
+  }
+
+  /**
    * Create a new trace list with the same traces and identical range, but modified styles.
    */
   withStyle(stylesheet: TraceStylesheet): TraceList {
+    console.log("from this.#traceInfo", this.#traceInfo);
+    console.log("from ...resolveTraceInfo(this.#traceInfo)", [
+      ...resolveTraceInfo(
+        stylesheet,
+        this.#traceInfo,
+        this.#traceHandles,
+        traceIds
+      ),
+    ]);
     return new TraceList(this.#traceHandles, this.#range, this.#bundles, [
       ...resolveTraceInfo(
         stylesheet,
@@ -159,18 +180,22 @@ export class TraceList {
    * or may not be deleted – if you narrow down the range of a trace list and
    * than expand it again, don't expect you'll get back all the data.
    */
-  withRange({ from, to }: NumericRange): TraceList {
-    // TODO change to Range in the future?
-    const bundles = this.#bundles.filter((bundle) =>
-      bundle.intersects(from, to)
-    );
+  withRange(range: Range): TraceList {
+    let bundles: lib.BoxedBundle[] = [];
+    for (const [units, traces] of this.getUnitsToTraceMap()) {
+      const { from, to } = toNumericRange(range, units.x);
+      const theseBundles = traces.#bundles;
+      bundles.push(
+        ...theseBundles.filter((bundle) => bundle.intersects(from, to))
+      );
+    }
 
     const availableHandles = new Set(
       flatMap(bundles, (b) => b.traces() as Iterable<TraceHandle>)
     );
     const handles = this.#traceHandles.filter((t) => availableHandles.has(t));
 
-    return new TraceList(handles, { from, to }, bundles, this.#traceInfo);
+    return new TraceList(handles, range, bundles, this.#traceInfo);
   }
 
   /**
@@ -186,6 +211,23 @@ export class TraceList {
     );
 
     const handles = this.#traceHandles.filter((h) => !exclude.has(h));
+
+    return new TraceList(handles, this.#range, this.#bundles, this.#traceInfo);
+  }
+
+  /**
+   * Creates a new trace list with the same range and styles that
+   * only contains traces with the provided ids.
+   */
+  withTraces(tracesToInclude: Iterable<string>) {
+    const include = new Set(
+      filter(
+        map(tracesToInclude, (id) => traceIds.getKey(id)),
+        (n): n is TraceHandle => n !== undefined
+      )
+    );
+
+    const handles = this.#traceHandles.filter((h) => include.has(h));
 
     return new TraceList(handles, this.#range, this.#bundles, this.#traceInfo);
   }
@@ -226,7 +268,11 @@ export class TraceList {
     traces,
     from,
     to,
-  }: Partial<{ traces: string[]; from: number; to: number }> = {}) {
+  }: Partial<{
+    traces: string[];
+    from: number | Quantity;
+    to: number | Quantity;
+  }> = {}) {
     const unfiltered =
       from === undefined && to === undefined && traces === undefined;
 
@@ -239,8 +285,12 @@ export class TraceList {
     const counter = new lib.MetaCounter(handles.length);
 
     for (const bundle of this.#bundles) {
-      const a = Math.max(from ?? bundle.from(), bundle.from());
-      const b = Math.min(to ?? bundle.to(), bundle.to());
+      const xUnit = this.getBundleUnits(bundle).x;
+      const a = Math.max(
+        from ? toNumeric(from, xUnit) : bundle.from(),
+        bundle.from()
+      );
+      const b = Math.min(to ? toNumeric(to, xUnit) : bundle.to(), bundle.to());
       if (a >= b) continue;
 
       counter.add_bundle(bundle, handles, a, b);
@@ -251,28 +301,28 @@ export class TraceList {
     return metas;
   }
 
-  #yRange: NumericRange | undefined;
+  #yRange: Range | undefined;
   /**
    * Calculate the y axis range of this trace list.
    */
-  getYRange(): NumericRange {
+  getYRange(): Range {
     if (this.#yRange) return this.#yRange;
     const metas = this.calculateStatistics();
     return {
       from: metas.reduce(
         (prev, { min: curr }) => Math.min(prev, curr),
-        metas[0].min
+        metas[0].min // FIXME needs uuuns (units)
       ),
       to: metas.reduce(
         (prev, { max: curr }) => Math.max(prev, curr),
-        metas[0].max
+        metas[0].max // FIXME needs uuuns (units)
       ),
     };
   }
 
   #units: ReturnType<typeof this.getUnits> | undefined;
   /**
-   * List all the data units present in this trace list.
+   * List all the data unit pairs present in this trace list.
    *
    * By default, uploaded data have no units (`undefined`), however you can
    * set them using the `withDataUnits` method. If you make a union of
@@ -281,28 +331,76 @@ export class TraceList {
    * Take care when rendering a trace list with mixed units – if you
    * aren't intentional with it, you may get unexpected results.
    */
-  getUnits(): { x: (Unit | undefined)[]; y: (Unit | undefined)[] } {
+  getUnits(): { x: Unit | undefined; y: Unit | undefined }[] {
     if (this.#units) return this.#units;
-    const xUnits = new Set<Unit | undefined>();
-    const yUnits = new Set<Unit | undefined>();
+    const units = new Set<{ x: Unit | undefined; y: Unit | undefined }>();
 
     const addUnique = (
-      set: Set<Unit | undefined>,
-      value: Unit | undefined
+      set: Set<{ x: Unit | undefined; y: Unit | undefined }>,
+      value: { x: Unit | undefined; y: Unit | undefined }
     ): void => {
-      if (!value) return void set.add(value);
-      if (some(set, (u) => u?.isEqual(value) ?? false)) return;
+      const alreadyRecorded = some(set, (u) => {
+        console.log("u.x", u.x);
+        console.log("u.x?.isEqual");
+        const xMatch =
+          value.x !== undefined
+            ? u.x?.isEqual(value.x) ?? false
+            : value.x === u.x;
+        const yMatch =
+          value.y !== undefined
+            ? u.y?.isEqual(value.y) ?? false
+            : value.y === u.y;
+
+        return xMatch && yMatch;
+      });
+      if (alreadyRecorded) return;
       set.add(value);
     };
 
-    for (const trace of this.traces()) {
-      const { xDataUnit, yDataUnit } = this.getTraceInfo(trace);
-      addUnique(xUnits, xDataUnit);
-      addUnique(yUnits, yDataUnit);
+    for (const bundle of this.#bundles) {
+      const { x, y } = this.getBundleUnits(bundle);
+      addUnique(units, { x, y });
     }
 
-    this.#units = { x: Array.from(xUnits), y: Array.from(yUnits) };
+    this.#units = Array.from(units);
     return this.#units;
+  }
+
+  #unitsToTraceMap: ReturnType<typeof this.getUnitsToTraceMap> | undefined;
+
+  /**
+   * @returns Returns a map of all the units present in this trace list to
+   * the traces that use them.
+   */
+  getUnitsToTraceMap(): Map<
+    { x: Unit | undefined; y: Unit | undefined },
+    TraceList // FIXME do we want tracelist here or ids?
+  > {
+    if (this.#unitsToTraceMap) return this.#unitsToTraceMap;
+
+    let toReturn = new Map<
+      { x: Unit | undefined; y: Unit | undefined },
+      TraceList
+    >();
+    for (const bundle of this.#bundles) {
+      const { x, y } = this.getBundleUnits(bundle);
+      const newTraceList = new TraceList(
+        Array.from(bundle.traces()) as TraceHandle[],
+        this.#range,
+        [bundle],
+        this.#traceInfo
+      );
+      if (toReturn.has({ x, y })) {
+        toReturn.set(
+          { x, y },
+          TraceList.union(toReturn.get({ x, y })!, newTraceList)
+        );
+      } else toReturn.set({ x, y }, newTraceList);
+    }
+
+    this.#unitsToTraceMap = toReturn;
+    if (!this.#units) this.#units = Array.from(toReturn.keys());
+    return toReturn;
   }
 
   /**
@@ -356,7 +454,7 @@ export class TraceList {
     if (closestPoints.length === 0) {
       return [];
     }
-
+    0;
     let results: {
       traceInfo: TraceInfo;
       closestPoint: Point;

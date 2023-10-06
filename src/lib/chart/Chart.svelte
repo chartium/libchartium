@@ -85,18 +85,8 @@
   $: chart = canvas ? new Chart(controller, canvas, traces) : undefined;
   $: xTicks = chart?.xTicks;
   $: yTicks = chart?.yTicks;
-  let xDisplayUnit: Unit | undefined;
-  let yDisplayUnit: Unit | undefined;
-  chart?.xRange.subscribe(
-    (range) =>
-      (xDisplayUnit =
-        range.from instanceof Quantity ? range.from.unit : undefined)
-  );
-  chart?.yRange.subscribe(
-    (range) =>
-      (yDisplayUnit =
-        range.from instanceof Quantity ? range.from.unit : undefined)
-  );
+  $: xDisplayUnit = chart?.xDisplayUnit;
+  $: yDisplayUnit = chart?.yDisplayUnit;
 
   const visibleAction = mut<VisibleAction | undefined>(undefined);
 
@@ -107,7 +97,7 @@
 
     {
       const xRange = chart.xRange.get();
-      const xUnits = chart.xDataUnit.get();
+      const xUnits = xDisplayUnit?.get();
       const from = toNumeric(xRange.from, xUnits);
       const to = toNumeric(xRange.to, xUnits);
       if (shift.dx) {
@@ -120,7 +110,7 @@
     }
     {
       const yRange = chart.yRange.get();
-      const yUnits = chart.yDataUnit.get();
+      const yUnits = yDisplayUnit?.get();
       const from = toNumeric(yRange.from, yUnits);
       const to = toNumeric(yRange.to, yUnits);
       if (shift.dy) {
@@ -143,7 +133,7 @@
       const rangeName = `${axis}Range` as "xRange" | "yRange";
       const range = chart[rangeName].get();
       const unit =
-        rangeName === "xRange" ? chart.xDataUnit.get() : chart.yDataUnit.get();
+        rangeName === "xRange" ? xDisplayUnit?.get() : yDisplayUnit?.get();
 
       const d = toNumeric(range.to, unit) - toNumeric(range.from, unit);
 
@@ -165,14 +155,14 @@
   }
 
   let showTooltip: boolean = false;
-  let hoverXQuantity: number | Quantity; // Silly goofy way to make it too far from everything on mount
+  let hoverXQuantity: number | Quantity;
   let hoverYQuantity: number | Quantity;
   $: closestTraces =
     chart && hoverXQuantity && hoverYQuantity
       ? traces.findClosestTracesToPoint(
           {
-            x: toNumeric(hoverXQuantity, chart?.xDataUnit.get()),
-            y: toNumeric(hoverYQuantity, chart?.yDataUnit.get()),
+            x: toNumeric(hoverXQuantity, $xDisplayUnit), // FIXME may be redundant once tracelist knows about units
+            y: toNumeric(hoverYQuantity, $yDisplayUnit), // FIXME may be redundant once tracelist knows about units
           },
           tooltipTracesShown === "all" ? traces.traceCount : tooltipTracesShown
         )
@@ -180,8 +170,8 @@
   $: tracesInfo =
     closestTraces?.map((trace) => ({
       styledTrace: trace.traceInfo,
-      x: toQuantity(trace.closestPoint.x, chart?.xDataUnit.get()),
-      y: toQuantity(trace.closestPoint.y, chart?.xDataUnit.get()),
+      x: toQuantity(trace.closestPoint.x, $xDisplayUnit), // FIXME will be redundant once traces know their units
+      y: toQuantity(trace.closestPoint.y, $yDisplayUnit), // FIXME will be redundant once traces know their units
     })) ?? [];
 
   $: {
@@ -218,12 +208,13 @@
   let traceCloseEnough: boolean;
 
   $: if (chart && closestTraces && closestTraces?.length !== 0) {
+    // FIXME rethink this, this is ew
     traceCloseEnough =
       norm([
         closestTraces[0].closestPoint.x -
-          toNumeric(hoverXQuantity, chart.xDataUnit.get()),
+          toNumeric(hoverXQuantity, $xDisplayUnit),
         closestTraces[0].closestPoint.y -
-          toNumeric(hoverYQuantity, chart.yDataUnit.get()),
+          toNumeric(hoverYQuantity, $yDisplayUnit),
       ]) < closenessDistance;
   }
 
@@ -235,20 +226,20 @@
     traceCloseEnough
   ) {
     const { from, to } = chart.xRange.get();
-    const closestMeta = traces.calculateStatistics({
+    const statsOfClosest = traces.calculateStatistics({
       traces: [closestTraces[0].traceInfo.id],
-      from: toNumeric(from, chart.xDataUnit.get()), // FIXME move the unit logic a bit deeper int othe traces as well
-      to: toNumeric(to, chart.xDataUnit.get()), // FIXME move the unit logic a bit deeper int othe traces as well
+      from: toNumeric(from, $xDisplayUnit), // FIXME move the unit logic a bit deeper int othe traces as well
+      to: toNumeric(to, $xDisplayUnit), // FIXME move the unit logic a bit deeper int othe traces as well
     })[0];
 
     selectedTrace = {
       // FIXME move unit logic to rust?
       styledTrace: closestTraces[0].traceInfo,
-      x: toQuantity(closestTraces[0].closestPoint.x, chart.xDataUnit.get()),
-      y: toQuantity(closestTraces[0].closestPoint.y, chart.yDataUnit.get()),
-      min: toQuantity(closestMeta.min, chart.yDataUnit.get()),
-      max: toQuantity(closestMeta.max, chart.yDataUnit.get()),
-      avg: toQuantity(closestMeta.avg, chart.yDataUnit.get()),
+      x: toQuantity(closestTraces[0].closestPoint.x, $xDisplayUnit),
+      y: toQuantity(closestTraces[0].closestPoint.y, $yDisplayUnit),
+      min: toQuantity(statsOfClosest.min, $yDisplayUnit),
+      max: toQuantity(statsOfClosest.max, $yDisplayUnit),
+      avg: toQuantity(statsOfClosest.avg, $yDisplayUnit),
     };
   } else {
     selectedTrace = undefined;
@@ -261,14 +252,12 @@
     document.body.style.cursor = "default";
   }
 
-  function updateHoverValues(e: MouseEvent) {
-    const xFraction = e.offsetX / canvas.clientWidth;
-    const yFraction = e.offsetY / canvas.height;
-
-    hoverXQuantity = chart?.fractionsToQuantities(xFraction, "x") ?? 0;
-    hoverYQuantity = chart?.fractionsToQuantities(yFraction, "y") ?? 0;
+  function updateHoverQuantities(e: MouseEvent) {
+    hoverXQuantity = chart?.coordinatesToQuantities(e.offsetX, "x") ?? 0;
+    hoverYQuantity = chart?.coordinatesToQuantities(e.offsetY, "y") ?? 0;
   }
 
+  // forbidden rectangle for tooltip to avoid
   let forbiddenRectangle:
     | {
         x: number;
@@ -277,7 +266,7 @@
         height: number;
       }
     | undefined = undefined;
-
+  // and subscribing it to the zoom action
   onDestroy(
     visibleAction.subscribe((action) => {
       if (!chart) return;
@@ -311,11 +300,11 @@
 <ChartGrid bind:contentSize>
   <svelte:fragment slot="ylabel">
     {yLabel}
-    {#if !hideYLabelUnits && yDisplayUnit}[{yDisplayUnit.toString()}]{/if}
+    {#if !hideYLabelUnits && $yDisplayUnit}[{$yDisplayUnit.toString()}]{/if}
   </svelte:fragment>
   <svelte:fragment slot="xlabel">
     {xLabel}
-    {#if !hideXLabelUnits && xDisplayUnit}[{xDisplayUnit.toString()}]{/if}
+    {#if !hideXLabelUnits && $xDisplayUnit}[{$xDisplayUnit.toString()}]{/if}
   </svelte:fragment>
   <svelte:fragment slot="title">
     {title}
@@ -378,7 +367,7 @@
     on:shift={shiftRange}
     on:mousemove={(e) => {
       showTooltip = true;
-      updateHoverValues(e);
+      updateHoverQuantities(e);
     }}
     on:mouseout={(e) => {
       showTooltip = false;

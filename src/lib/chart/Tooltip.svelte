@@ -13,17 +13,17 @@
 
   export let nearestTracesInfo: {
     styledTrace: TraceInfo;
-    x: string;
-    y: string;
+    x: Quantity | number;
+    y: Quantity | number;
   }[];
   export let singleTraceInfo:
     | {
         styledTrace: TraceInfo;
-        x: string;
-        y: string;
-        min: string;
-        max: string;
-        avg: string;
+        x: Quantity | number;
+        y: Quantity | number;
+        min: Quantity | number;
+        max: Quantity | number;
+        avg: Quantity | number;
       }
     | undefined;
 
@@ -88,14 +88,14 @@
             <div class="trace-info">
               <div class="value-name">{key}:</div>
               <div class="value-value">
-                {value}
+                {value.toString()}
               </div>
             </div>
           {/if}
         {/each}
       {:else}
         <div class="header">
-          x: {nearestTracesInfo[0]?.x}
+          x: {nearestTracesInfo[0]?.x.toString()}
         </div>
         {#each nearestTracesInfo as trace}
           <div class="trace-info">
@@ -104,7 +104,7 @@
               {trace.styledTrace.id}:
             </div>
             <div class="value-value">
-              {trace.y}
+              {trace.y.toString()}
             </div>
           </div>
         {/each}

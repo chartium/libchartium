@@ -37,11 +37,21 @@ export interface Size {
   height: number;
 }
 
-export interface Range {
+export type NumericRange = {
   from: number;
   to: number;
-}
+};
 
+export type QuantityRange = {
+  from: Quantity;
+  to: Quantity;
+};
+
+export type Range = NumericRange | QuantityRange;
+
+/** Shift of ranges as a fraction of the range
+ * i.e. moving the [0, 5] by dx = 0.5 would result in [2.5, 7.5]
+ */
 export interface Shift {
   dx?: number;
   dy?: number;
@@ -49,9 +59,10 @@ export interface Shift {
   origin: Point;
 }
 
+/** Ranges x and y are fractions of the full range */
 export interface Zoom {
-  x: Range;
-  y: Range;
+  x: NumericRange;
+  y: NumericRange;
 }
 
 export interface Point {

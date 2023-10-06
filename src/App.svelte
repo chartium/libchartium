@@ -41,8 +41,24 @@
     y3s[index],
   ]);
 
+  const secondTraces = xs.flatMap((x, index) => [x, y1s[index] * -1 + 100]);
+
   // const controller = spawnChartiumWorker();
   const controller = ChartiumController.instantiateInThisThread({ wasmUrl });
+  const otherTraces = controller
+    .addFromArrayBuffer({
+      ids: ["sin2"],
+      data: Float32Array.from(secondTraces),
+      xType: "f32",
+      yType: "f32",
+    })
+    .then((l) =>
+      l.withDataUnits({
+        x: SI.parseUnit("s"),
+        y: IEC.parseUnit("GiB"),
+      })
+    );
+
   const traces = controller
     .addFromArrayBuffer({
       ids: ["sin", "cos", "atan"],
@@ -52,15 +68,21 @@
     })
     .then((l) =>
       l
-        .withDataUnits({
-          x: SI.parseUnit("s"),
-          y: IEC.parseUnit("KiB"),
-        })
         .withStyle({
           "*": { width: 2 },
           sin: { color: "red" },
         })
+        .withDataUnits({
+          x: SI.parseUnit("s"),
+          y: IEC.parseUnit("KiB"),
+        })
     );
+
+  const combinedTraces = Promise.all([traces, otherTraces]).then(
+    ([traces, otherTraces]) => TraceList.union(traces, otherTraces)
+  );
+
+  $: (window as any).combinedTraces = combinedTraces;
 
   let wrapDiv: HTMLElement;
   import domtoimage, { DomToImage } from "dom-to-image-more";
