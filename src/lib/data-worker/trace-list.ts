@@ -309,6 +309,8 @@ export class TraceList {
   getYRange(): Range {
     if (this.#yRange) return this.#yRange;
     const metas = this.calculateStatistics();
+    if (metas.length === 0) return { from: 0, to: 1 };
+
     return {
       from: metas.reduce(
         (prev, { min: curr }) => Math.min(prev, curr),
