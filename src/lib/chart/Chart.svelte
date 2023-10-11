@@ -83,7 +83,10 @@
 
   let canvas: HTMLCanvasElement;
 
-  $: chart = canvas ? new Chart(controller, canvas, traces) : undefined;
+  $: offscreenCanvas = canvas ? canvas.transferControlToOffscreen() : undefined;
+  $: chart = offscreenCanvas
+    ? new Chart(controller, offscreenCanvas, traces)
+    : undefined;
   $: xTicks = chart?.xTicks;
   $: yTicks = chart?.yTicks;
   $: xDisplayUnit = chart?.xDisplayUnit;
@@ -272,7 +275,7 @@
     visibleAction.subscribe((action) => {
       if (!chart) return;
       if (action?.zoom) {
-        const canvasRect = chart.canvas!.getBoundingClientRect();
+        const canvasRect = canvas.getBoundingClientRect();
         const offsetX = canvasRect.x;
         const offsetY = canvasRect.y;
         forbiddenRectangle = {

@@ -100,7 +100,7 @@ export class Chart {
 
   constructor(
     public readonly controller: ChartiumController | Remote<ChartiumController>,
-    public readonly canvas: HTMLCanvasElement,
+    public readonly canvas: OffscreenCanvas,
     traces?: TraceList
   ) {
     // signals
@@ -122,13 +122,10 @@ export class Chart {
     withEffect(this.yDisplayUnit, () => this.#updateTicks());
 
     // canvas & renderer
-    const offscreen = canvas.transferControlToOffscreen();
-    this.controller
-      .createRenderer(transfer(offscreen, [offscreen]))
-      .then((r) => {
-        this.#renderer = r;
-        this.scheduleRender();
-      });
+    this.controller.createRenderer(transfer(canvas, [canvas])).then((r) => {
+      this.#renderer = r;
+      this.scheduleRender();
+    });
 
     this.raiseXFactorAction = changeFactorAction(
       "raise",

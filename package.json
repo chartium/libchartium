@@ -1,6 +1,6 @@
 {
   "name": "libchartium",
-  "version": "0.0.14",
+  "version": "0.0.15",
   "type": "module",
   "files": [
     "dist"
@@ -54,6 +54,6 @@
     "seedrandom": "^3.0.5",
     "svelte": "^4.2.1",
     "svelte-fa": "^3.0.4",
-    "unitlib": "^0.4.5"
+    "unitlib": "^0.4.7"
   }
 }
