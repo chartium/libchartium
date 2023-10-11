@@ -154,8 +154,8 @@ export class Chart {
 
   #updateTraces(traces: TraceList) {
     const someUnits = traces.getUnits()[0];
-    this.xDisplayUnit.set(someUnits.x);
-    this.yDisplayUnit.set(someUnits.y);
+    this.xDisplayUnit.set(someUnits?.x);
+    this.yDisplayUnit.set(someUnits?.y);
     this.scheduleRender(); // FIXME check that this is good
   }
 
@@ -250,8 +250,8 @@ export class Chart {
     // FIXME make smarter choice
     const units = this.traces.get().getUnits();
     return {
-      x: units[0].x,
-      y: units[0].y,
+      x: units[0]?.x,
+      y: units[0]?.y,
     };
   }
 
