@@ -126,6 +126,7 @@ impl WebGlRenderJob {
     }
 }
 
+#[derive(Clone)]
 #[wasm_bindgen]
 pub struct WebGlPrograms {
     trace_program: WebGlProgram,
@@ -178,7 +179,7 @@ impl WebGlRenderer {
     pub fn new(
         shared_canvas: OffscreenCanvas,
         context: WebGl2RenderingContext,
-        programs: WebGlPrograms,
+        programs: &WebGlPrograms,
         present_canvas: OffscreenCanvas,
     ) -> Result<WebGlRenderer, JsValue> {
         let width_range = context
@@ -192,7 +193,7 @@ impl WebGlRenderer {
             present_canvas,
             line_width_limit: width_range.get_index(1),
 
-            programs,
+            programs: programs.clone(),
 
             // trace_buffer: context.create_buffer().unwrap(),
             context,

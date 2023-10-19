@@ -11,7 +11,7 @@ import { BUNDLES, HANDLES, TRACE_INFO, TraceList } from "../trace-list.js";
 import { filter, map, reduce } from "../../utils/collection.js";
 import { computeStyles } from "../trace-styles.js";
 import { traceIds } from "../controller.js";
-import type { BoxedBundle } from "../../../../src-rust/pkg/libchartium.js";
+import type { BoxedBundle } from "../../../../dist/wasm/libchartium.js";
 import type { TraceHandle } from "../../types.js";
 
 function compileShader(
@@ -174,10 +174,10 @@ export class WebGL2Renderer implements Renderer {
       return { from, to };
     })();
 
-    rj.x_from = xRange.from;
-    rj.x_to = xRange.to;
-    rj.y_from = yRange.from;
-    rj.y_to = yRange.to;
+    rj.x_from = +xRange.from;
+    rj.x_to = +xRange.to;
+    rj.y_from = +yRange.from;
+    rj.y_to = +yRange.to;
 
     for (const bundle of traceList[BUNDLES]) {
       const handles = Array.from(
