@@ -1,3 +1,4 @@
+import type dayjs from "dayjs";
 import type { Color } from "./utils/color.js";
 
 import type { Unit as Unit_ } from "unitlib";
@@ -47,7 +48,12 @@ export type QuantityRange = {
   to: Quantity;
 };
 
-export type Range = NumericRange | QuantityRange;
+export type DateRange = {
+  from: dayjs.Dayjs;
+  to: dayjs.Dayjs;
+};
+
+export type Range = NumericRange | QuantityRange | DateRange;
 
 /** Shift of ranges as a fraction of the range
  * i.e. moving the [0, 5] by dx = 0.5 would result in [2.5, 7.5]
@@ -95,7 +101,8 @@ export interface TraceMetas {
  * fraction of axis length/height the tick should be placed.
  */
 export interface Tick {
-  value: number;
+  value: number | string;
+  subvalue?: number | string;
   unit: Unit | undefined;
   position: number;
 }

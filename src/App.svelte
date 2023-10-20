@@ -21,7 +21,7 @@
 
   // autogenerate a lot of data
   const from = 0;
-  const to = 1000;
+  const to = 3000;
   const numSteps = to;
   const stepSize = (to - from) / numSteps;
 
@@ -54,7 +54,7 @@
     })
     .then((l) =>
       l.withDataUnits({
-        x: SI.parseUnit("s"),
+        x: "date",
         y: IEC.parseUnit("GiB"),
       })
     );
@@ -73,7 +73,7 @@
           sin: { color: "red" },
         })
         .withDataUnits({
-          x: SI.parseUnit("s"),
+          x: "date",
           y: IEC.parseUnit("KiB"),
         })
     );

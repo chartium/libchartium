@@ -1,7 +1,7 @@
 <!-- Component creating both the X and Y axis -->
 
 <script lang="ts">
-  import { createEventDispatcher } from "svelte";
+  import { createEventDispatcher, tick } from "svelte";
   import { MouseButtons, mouseDrag } from "../utils/mouseGestures.js";
   import {
     rightMouseClick,
@@ -20,6 +20,7 @@
     type WritableSignal,
     mut,
   } from "@mod.js/signals";
+  import { zip } from "../utils/collection.js";
 
   export const events = createEventDispatcher<{
     shift: Shift;
@@ -110,7 +111,7 @@
 <GenericContextMenu items={$contextItems} bind:this={menu} />
 
 <div
-  class="{axis} ticks-and-label"
+  class="ticks-container"
   use:mouseDrag={{
     ...dragCallbacks,
     button: MouseButtons.Left,
@@ -124,14 +125,19 @@
   use:rightMouseClick={(e) => menu.open(e)}
 >
   {#if !hideTicks}
-    <div class="ticks">
+    <div class="{axis} ticks">
       {#each ticks as tick}
         <span
           style={axis === "x"
             ? `left: ${(tick.position * 100).toFixed(2)}%`
             : `top: ${((1 - tick.position) * 100).toFixed(2)}%`}
         >
-          {tick.value.toFixed(2)}
+          {tick.value}
+          {#if tick.subvalue}
+            <div class="subtick">
+              {tick.subvalue}
+            </div>
+          {/if}
         </span>
       {/each}
     </div>
@@ -139,32 +145,26 @@
 </div>
 
 <style lang="scss">
-  .ticks-and-label {
-    align-items: stretch;
-    position: relative;
-  }
-
   .y {
     writing-mode: sideways-lr;
-    width: 4rem;
     height: 100%;
+    width: 1.5rem;
   }
 
   .x {
     writing-mode: horizontal-tb;
     width: 100%;
-    height: 1rem;
+    height: 1.5rem;
   }
 
   .ticks {
     position: relative;
 
-    width: 100%;
-    height: 100%;
-
     > span {
       position: absolute;
       line-height: 1;
+      display: flex;
+      flex-direction: column;
 
       .x & {
         top: 0;
@@ -176,6 +176,12 @@
         transform: translateY(-50%);
       }
     }
+  }
+  .ticks.x {
+    padding-top: 4px;
+  }
+  .ticks.y {
+    padding-left: 4px;
   }
 
   span,

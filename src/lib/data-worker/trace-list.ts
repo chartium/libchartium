@@ -155,7 +155,7 @@ export class TraceList {
    * any unit conversions, nor does it modify the data – rather, it re-interprets
    * the stored data as if it always had these units.
    */
-  withDataUnits(newUnits: { x?: Unit; y?: Unit }) {
+  withDataUnits(newUnits: { x?: Unit | "date"; y?: Unit | "date" }) {
     const traceInfo: ResolvedTraceInfo = this.#traceInfo.map(([key, info]) => [
       key,
       {

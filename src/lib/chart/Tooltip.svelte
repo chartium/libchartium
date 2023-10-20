@@ -5,6 +5,7 @@
   import { globalMouseMove } from "../utils/mouseGestures.js";
   import type { TraceInfo } from "../data-worker/trace-list.js";
   import TracePreview from "./TracePreview.svelte";
+  import type dayjs from "dayjs";
 
   /** The tooltip will try its best to not be in this rectangle */
   export let forbiddenRectangle:
@@ -13,17 +14,17 @@
 
   export let nearestTracesInfo: {
     styledTrace: TraceInfo;
-    x: Quantity | number;
-    y: Quantity | number;
+    x: Quantity | dayjs.Dayjs | number;
+    y: Quantity | dayjs.Dayjs | number;
   }[];
   export let singleTraceInfo:
     | {
         styledTrace: TraceInfo;
-        x: Quantity | number;
-        y: Quantity | number;
-        min: Quantity | number;
-        max: Quantity | number;
-        avg: Quantity | number;
+        x: Quantity | dayjs.Dayjs | number;
+        y: Quantity | dayjs.Dayjs | number;
+        min: Quantity | dayjs.Dayjs | number;
+        max: Quantity | dayjs.Dayjs | number;
+        avg: Quantity | dayjs.Dayjs | number;
       }
     | undefined;
 

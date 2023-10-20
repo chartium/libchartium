@@ -1,17 +1,31 @@
 /** THelper functions to make the code shorter */
 
+import dayjs from "dayjs";
 import {
   Quantity,
   type NumericRange,
   type Unit,
   type Range,
+  type QuantityRange,
+  type DateRange,
 } from "../types.js";
 
-/** Transforms quantity to just numeric part in selected units. If units === undefined, will return x.value */
-export function toNumeric(x: Quantity | number, units?: Unit): number {
+/** Transforms quantity to just numeric part in selected units. If units === undefined, will return x.value. If input is Date, will return unix minutes */
+export function toNumeric(
+  x: Quantity | number | dayjs.Dayjs,
+  units?: Unit | "date"
+): number {
+  if (x instanceof dayjs) return (x as dayjs.Dayjs).unix() / 60; // NOTE rust works in unix *minutes*
+  if (units === "date") {
+    if (x instanceof Quantity)
+      throw new Error(
+        "Can't convert quantity to numeric when units are 'date'"
+      );
+    return x as number;
+  }
   if (typeof x === "number") return x;
-  if (units) return x.inUnits(units).value;
-  else return x.value;
+  if (units) return (x as Quantity).inUnits(units).value;
+  else return (x as Quantity).value;
 }
 
 /** Transforms range to numeric range in selected units. If units === undefined, will return range of from.value to.value */
@@ -19,6 +33,18 @@ export function toNumericRange(range: Range, units?: Unit): NumericRange {
   return {
     from: toNumeric(range.from, units),
     to: toNumeric(range.to, units),
+  };
+}
+
+export function toDayjs(x: dayjs.Dayjs | number): dayjs.Dayjs {
+  if (typeof x === "number") return dayjs.unix(x * 60);
+  else return x;
+}
+
+export function toDateRange(range: NumericRange | DateRange): DateRange {
+  return {
+    from: toDayjs(range.from),
+    to: toDayjs(range.to),
   };
 }
 
@@ -36,7 +62,10 @@ export function toQuantity(
 }
 
 /** Returns range in units if defined, otherwise returns numeric range */
-export function toRange(range: Range, units?: Unit): Range {
+export function toQuantityRange(
+  range: NumericRange | QuantityRange,
+  units?: Unit
+): Range {
   return {
     from: toQuantity(range.from, units),
     to: toQuantity(range.to, units),

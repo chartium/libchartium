@@ -51,8 +51,7 @@
       "a b xlabel c" auto
       "bl bl bl bl" auto / auto auto 1fr auto;
 
-    gap: 0.5rem;
-
+    /* gap: 0.5rem;  <- exchanged for padding so the "gap" is still clickable*/
     /* -        -        Title      -        */
     /* -        -        Subtitle   -        */
     /* YLabel | YTicks | graph    | (legend) */
@@ -87,19 +86,16 @@
     line-height: 1;
   }
 
-  .xticks,
-  .yticks {
-    overflow: hidden;
-  }
-
   .title {
     grid-area: title;
     font-size: 1.25em;
     font-weight: bold;
+    padding-bottom: 0.5rem;
   }
 
   .subtitle {
     grid-area: subtitle;
+    padding-bottom: 0.5rem;
   }
 
   .ylabel {

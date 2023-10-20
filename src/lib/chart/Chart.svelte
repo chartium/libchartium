@@ -16,7 +16,13 @@
   import { norm } from "./position.js";
   import { cons, mut } from "@mod.js/signals";
   import type { Remote } from "comlink";
-  import { toNumeric, toQuantity } from "../utils/quantityHelpers.js";
+  import {
+    toDateRange,
+    toDayjs,
+    toNumeric,
+    toQuantity,
+  } from "../utils/quantityHelpers.js";
+  import type dayjs from "dayjs";
 
   export let controller: ChartiumController | Remote<ChartiumController>;
   export let traces: TraceList;
@@ -106,10 +112,18 @@
       const to = toNumeric(xRange.to, xUnits);
       if (shift.dx) {
         const delta = (to - from) * -shift.dx;
-        chart.xRange.set({
-          from: toQuantity(from + delta, xUnits),
-          to: toQuantity(to + delta, xUnits),
-        } as Range);
+        chart.xRange.set(
+          // FIXME this shouldnt be necessary; the moment unit is "date", range will turn into DateRange and vice versa
+          xUnits === "date"
+            ? {
+                from: toDayjs(from + delta),
+                to: toDayjs(to + delta),
+              }
+            : ({
+                from: toQuantity(from + delta, xUnits),
+                to: toQuantity(to + delta, xUnits),
+              } as Range)
+        );
       }
     }
     {
@@ -119,10 +133,18 @@
       const to = toNumeric(yRange.to, yUnits);
       if (shift.dy) {
         const delta = (to - from) * -shift.dy;
-        chart.yRange.set({
-          from: toQuantity(from + delta, yUnits),
-          to: toQuantity(to + delta, yUnits),
-        } as Range);
+        chart.yRange.set(
+          // FIXME this shouldnt be necessary; the moment unit is "date", range will turn into DateRange and vice versa
+          yUnits === "date"
+            ? {
+                from: toDayjs(from + delta),
+                to: toDayjs(to + delta),
+              }
+            : ({
+                from: toQuantity(from + delta, yUnits),
+                to: toQuantity(to + delta, yUnits),
+              } as Range)
+        );
       }
     }
   }
@@ -143,10 +165,21 @@
 
       if (zoom.to - zoom.from <= 0) continue;
 
-      chart[rangeName].set({
-        from: toQuantity(toNumeric(range.from, unit) + d * zoom.from, unit),
-        to: toQuantity(toNumeric(range.from, unit) + d * zoom.to, unit),
-      } as Range);
+      chart[rangeName].set(
+        // FIXME this shouldnt be necessary; the moment unit is "date", range will turn into DateRange and vice versa
+        unit === "date"
+          ? {
+              from: toDayjs(toNumeric(range.from, unit) + d * zoom.from),
+              to: toDayjs(toNumeric(range.from, unit) + d * zoom.to),
+            }
+          : ({
+              from: toQuantity(
+                toNumeric(range.from, unit) + d * zoom.from,
+                unit
+              ),
+              to: toQuantity(toNumeric(range.from, unit) + d * zoom.to, unit),
+            } as Range)
+      );
     }
   }
 
@@ -159,8 +192,8 @@
   }
 
   let showTooltip: boolean = false;
-  let hoverXQuantity: number | Quantity;
-  let hoverYQuantity: number | Quantity;
+  let hoverXQuantity: number | dayjs.Dayjs | Quantity;
+  let hoverYQuantity: number | dayjs.Dayjs | Quantity;
   $: closestTraces =
     chart && hoverXQuantity && hoverYQuantity
       ? traces.findClosestTracesToPoint(
@@ -174,8 +207,16 @@
   $: tracesInfo =
     closestTraces?.map((trace) => ({
       styledTrace: trace.traceInfo,
-      x: toQuantity(trace.closestPoint.x, $xDisplayUnit), // FIXME will be redundant once traces know their units
-      y: toQuantity(trace.closestPoint.y, $yDisplayUnit), // FIXME will be redundant once traces know their units
+      x:
+        $xDisplayUnit === "date"
+          ? // FIXME this shouldnt be necessary; the moment unit is "date", range will turn into DateRange and vice versa
+            toDayjs(trace.closestPoint.x)
+          : toQuantity(trace.closestPoint.x, $xDisplayUnit), // FIXME will be redundant once traces know their units
+      y:
+        $yDisplayUnit === "date"
+          ? // FIXME this shouldnt be necessary; the moment unit is "date", range will turn into DateRange and vice versa
+            toDayjs(trace.closestPoint.y)
+          : toQuantity(trace.closestPoint.y, $yDisplayUnit), // FIXME will be redundant once traces know their units
     })) ?? [];
 
   $: {
@@ -201,11 +242,11 @@
   let selectedTrace:
     | {
         styledTrace: TraceInfo;
-        x: Quantity | number;
-        y: Quantity | number;
-        min: Quantity | number;
-        max: Quantity | number;
-        avg: Quantity | number;
+        x: Quantity | dayjs.Dayjs | number;
+        y: Quantity | dayjs.Dayjs | number;
+        min: Quantity | dayjs.Dayjs | number;
+        max: Quantity | dayjs.Dayjs | number;
+        avg: Quantity | dayjs.Dayjs | number;
       }
     | undefined = undefined;
 
@@ -239,11 +280,27 @@
     selectedTrace = {
       // FIXME move unit logic to rust?
       styledTrace: closestTraces[0].traceInfo,
-      x: toQuantity(closestTraces[0].closestPoint.x, $xDisplayUnit),
-      y: toQuantity(closestTraces[0].closestPoint.y, $yDisplayUnit),
-      min: toQuantity(statsOfClosest.min, $yDisplayUnit),
-      max: toQuantity(statsOfClosest.max, $yDisplayUnit),
-      avg: toQuantity(statsOfClosest.avg, $yDisplayUnit),
+      // FIXME this shouldnt be necessary; the moment unit is "date", range will turn into DateRange and vice versa
+      x:
+        $xDisplayUnit === "date"
+          ? toDayjs(closestTraces[0].closestPoint.x)
+          : toQuantity(closestTraces[0].closestPoint.x, $xDisplayUnit),
+      y:
+        $yDisplayUnit === "date"
+          ? toDayjs(closestTraces[0].closestPoint.y)
+          : toQuantity(closestTraces[0].closestPoint.y, $yDisplayUnit),
+      min:
+        $yDisplayUnit === "date"
+          ? toDayjs(statsOfClosest.min)
+          : toQuantity(statsOfClosest.min, $yDisplayUnit),
+      max:
+        $yDisplayUnit === "date"
+          ? toDayjs(statsOfClosest.max)
+          : toQuantity(statsOfClosest.max, $yDisplayUnit),
+      avg:
+        $yDisplayUnit === "date"
+          ? toDayjs(statsOfClosest.avg)
+          : toQuantity(statsOfClosest.avg, $yDisplayUnit),
     };
   } else {
     selectedTrace = undefined;
