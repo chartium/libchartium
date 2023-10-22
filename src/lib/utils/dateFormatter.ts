@@ -20,17 +20,17 @@ export function getRangeSpan(
   const from = dayjs(range.from);
   const to = dayjs(range.to);
 
-  if (from.diff(to, "year") > shortWindow) {
+  if (to.diff(from, "year") > shortWindow) {
     return "years";
-  } else if (from.diff(to, "month") > shortWindow) {
+  } else if (to.diff(from, "month") > shortWindow) {
     return "months";
-  } else if (from.diff(to, "day") > shortWindow) {
+  } else if (to.diff(from, "day") > shortWindow) {
     return "days";
-  } else if (from.diff(to, "hour") > shortWindow) {
+  } else if (to.diff(from, "hour") > shortWindow) {
     return "hours";
-  } else if (from.diff(to, "minute") > shortWindow) {
+  } else if (to.diff(from, "minute") > shortWindow) {
     return "minutes";
-  } else if (from.diff(to, "second") > shortWindow) {
+  } else if (to.diff(from, "second") > shortWindow) {
     return "seconds";
   } else {
     return "milliseconds";
@@ -86,3 +86,27 @@ export function formatInEra(
       return date.format("HH:mm:ss.SSS");
   }
 }
+
+/** just like dayjs.get() but returns a float
+ * @example getFloatDayjsValue(dayjs(new Date(2001, 9, 11)), "month") // 9.333333333333334 becuase 10/30 is 0.33
+ */
+export function getFloatDayjsValue(
+  date: dayjs.Dayjs,
+  unit: DateRangeSpan
+): number {
+  const start = date.startOf(unit);
+  const fract = date.diff(start, unit, true);
+
+  return start.get(unit === "days" ? "date" : unit) + fract;
+}
+
+function test() {
+  const from = dayjs().subtract(3, "days");
+  const to = dayjs();
+
+  console.log(to.diff(from, "days"));
+
+  console.log(getRangeSpan({ from, to }));
+}
+
+test();

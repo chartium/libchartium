@@ -7,14 +7,19 @@ import type {
   Tick,
   Unit,
 } from "../types.js";
-import { formatInEra, getLargerEra, getRangeSpan } from "./dateFormatter.js";
+import {
+  formatInEra,
+  getFloatDayjsValue,
+  getLargerEra,
+  getRangeSpan,
+} from "./dateFormatter.js";
 import { toNumericRange } from "./quantityHelpers.js";
 
 const boxes: number[] = [1, 2, 5, 10];
 
 /** Returs position of the first tick and distance inbetween ticks for linear tick generation */
 function getTickPlaceAndDist(range: NumericRange): {
-  firstTick: number;
+  firstTickValue: number;
   ticksDist: number;
 } {
   const { from, to } = toNumericRange(range);
@@ -34,7 +39,7 @@ function getTickPlaceAndDist(range: NumericRange): {
     }
   }
 
-  return { firstTick, ticksDist };
+  return { firstTickValue: firstTick, ticksDist };
 }
 
 export const linearQuantityTicks = (
@@ -45,7 +50,9 @@ export const linearQuantityTicks = (
 ): Tick[] => {
   const { from, to } = toNumericRange(range);
   const width = to - from;
-  const { firstTick, ticksDist } = getTickPlaceAndDist(toNumericRange(range));
+  const { firstTickValue: firstTick, ticksDist } = getTickPlaceAndDist(
+    toNumericRange(range)
+  );
 
   const result: Tick[] = [];
 
@@ -74,12 +81,17 @@ export function linearDateTicks(range: DateRange): Tick[] {
 
   const rangeWidth = dRange.to.diff(dRange.from, rangeUnits, true);
 
-  const { firstTick, ticksDist } = getTickPlaceAndDist({
-    from: 0,
-    to: rangeWidth,
+  const from = getFloatDayjsValue(dRange.from, rangeUnits);
+  const to = from + dRange.to.diff(dRange.from, rangeUnits, true);
+  const { firstTickValue, ticksDist } = getTickPlaceAndDist({
+    from,
+    to,
   });
 
-  let currentTick = dRange.from.add(firstTick, rangeUnits);
+  let currentTick = dayjs(range.from).add(
+    firstTickValue - from + ticksDist,
+    rangeUnits
+  );
   const toReturn: Tick[] = [];
 
   while (currentTick.isBefore(dRange.to)) {
@@ -91,9 +103,9 @@ export function linearDateTicks(range: DateRange): Tick[] {
       position,
       value: formatInEra(currentTick, rangeUnits),
       unit: undefined,
-      subvalue: toReturn.some((tick) => tick.subvalue !== largerEra)
-        ? largerEra
-        : undefined,
+      subvalue: toReturn.some((tick) => tick.subvalue === largerEra)
+        ? undefined
+        : largerEra,
     };
 
     toReturn.push(thisTick);
