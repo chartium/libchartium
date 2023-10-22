@@ -159,24 +159,25 @@
 
   .ticks {
     position: relative;
-
-    > span {
-      position: absolute;
-      line-height: 1;
-      display: flex;
-      flex-direction: column;
-
-      .x & {
-        top: 0;
-        transform: translateX(-50%);
-      }
-
-      .y & {
-        right: 0;
-        transform: translateY(-50%);
-      }
-    }
   }
+  .x.ticks > span {
+    position: absolute;
+    line-height: 1;
+    width: max-content;
+    display: flex;
+    flex-direction: column;
+    transform: translateX(-50%);
+  }
+
+  .y.ticks > span {
+    position: absolute;
+    line-height: 1;
+    width: max-content;
+    display: flex;
+    flex-direction: column;
+    transform: translateY(-50%);
+  }
+
   .ticks.x {
     padding-top: 4px;
   }
