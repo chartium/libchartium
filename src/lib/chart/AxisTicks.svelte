@@ -125,7 +125,14 @@
   use:rightMouseClick={(e) => menu.open(e)}
 >
   {#if !hideTicks}
-    <div class="{axis} ticks">
+    <div
+      class="{axis} ticks"
+      style="{axis === `x` ? `height` : `width`}: {ticks.some(
+        (tick) => tick.subvalue !== undefined
+      )
+        ? `2.5em`
+        : `1.5em`}"
+    >
       {#each ticks as tick}
         <span
           style={axis === "x"
@@ -134,9 +141,8 @@
         >
           {tick.value}
           {#if tick.subvalue}
-            <div class="subtick">
-              {tick.subvalue}
-            </div>
+            <br />
+            {tick.subvalue}
           {/if}
         </span>
       {/each}
@@ -148,13 +154,11 @@
   .y {
     writing-mode: sideways-lr;
     height: 100%;
-    width: 1.5rem;
   }
 
   .x {
     writing-mode: horizontal-tb;
     width: 100%;
-    height: 1.5rem;
   }
 
   .ticks {
