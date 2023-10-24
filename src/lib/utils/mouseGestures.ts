@@ -104,18 +104,16 @@ export const mouseDrag = (
   };
 
   const onMove = (event: MouseEvent) => {
-    if (event.target !== elem) return;
     if (!status) return;
     event.preventDefault();
 
-    status.to.x = event.offsetX;
-    status.to.y = event.offsetY;
+    status.to.x += event.movementX;
+    status.to.y += event.movementY;
 
     params.move(event, status);
   };
 
   const onEnd = (event: MouseEvent) => {
-    if (event.target !== elem) return;
     if (!status) return;
 
     status.extents.width = elem.clientWidth;
@@ -167,12 +165,12 @@ export function rightMouseClick(
   };
 
   node.addEventListener("mousedown", handleMouseDown, true);
-  node.addEventListener("mouseup", handleMouseUp, true);
+  window.addEventListener("mouseup", handleMouseUp, true);
 
   return {
     destroy() {
       node.removeEventListener("mouseup", handleMouseUp, true);
-      node.removeEventListener("mousedown", handleMouseDown, true);
+      window.removeEventListener("mousedown", handleMouseDown, true);
     },
   };
 }
@@ -188,11 +186,11 @@ export function clickOutside(
     }
   };
 
-  document.addEventListener("click", handleClick, true);
+  window.addEventListener("click", handleClick, true);
 
   return {
     destroy() {
-      document.removeEventListener("click", handleClick, true);
+      window.removeEventListener("click", handleClick, true);
     },
   };
 }

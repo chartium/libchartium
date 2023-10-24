@@ -89,7 +89,6 @@ export function mouseDownOutside(
   const handleClick = (event: MouseEvent) => {
     if (!(event.target instanceof Node)) return;
     if (!node.contains(event.target)) {
-      console.log("uwu");
       callback(event);
     }
   };
