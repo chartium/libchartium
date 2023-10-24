@@ -21,7 +21,7 @@
 
   // autogenerate a lot of data
   const from = 0;
-  const to = 3000;
+  const to = 6000;
   const numSteps = to;
   const stepSize = (to - from) / numSteps;
 

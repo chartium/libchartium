@@ -25,21 +25,21 @@ function getTickPlaceAndDist(range: NumericRange): {
   const { from, to } = toNumericRange(range);
   const width = to - from;
 
-  let firstTick: number = 0.0;
+  let firstTickValue: number = 0.0;
   let ticksDist: number = 1.0;
 
   let order = Math.floor(Math.log10(width)) - 1;
 
   for (const size of boxes) {
     ticksDist = Math.pow(10, order) * size;
-    firstTick = Math.floor(from / ticksDist) * ticksDist;
+    firstTickValue = Math.floor(from / ticksDist) * ticksDist;
 
-    if ((to - firstTick) / ticksDist < 10) {
+    if ((to - firstTickValue) / ticksDist < 10) {
       break;
     }
   }
 
-  return { firstTickValue: firstTick, ticksDist };
+  return { firstTickValue, ticksDist };
 }
 
 export const linearQuantityTicks = (
@@ -50,7 +50,7 @@ export const linearQuantityTicks = (
 ): Tick[] => {
   const { from, to } = toNumericRange(range);
   const width = to - from;
-  const { firstTickValue: firstTick, ticksDist } = getTickPlaceAndDist(
+  const { firstTickValue, ticksDist } = getTickPlaceAndDist(
     toNumericRange(range)
   );
 
@@ -58,11 +58,11 @@ export const linearQuantityTicks = (
 
   const factor = displayUnit ? dataUnit?.divide(displayUnit) : undefined;
 
-  for (let i = 1; i <= Math.floor((to - firstTick) / ticksDist); ++i) {
-    const value = firstTick + ticksDist * i;
+  for (let i = 1; i <= Math.floor((to - firstTickValue) / ticksDist); ++i) {
+    const value = firstTickValue + ticksDist * i;
     result.push({
       value: factor ? factor.multiplyValueByFactor(value) : value,
-      position: (firstTick + ticksDist * i - from) / width,
+      position: (firstTickValue + ticksDist * i - from) / width,
       unit: factor ? displayUnit : undefined,
     });
   }
@@ -88,10 +88,9 @@ export function linearDateTicks(range: DateRange): Tick[] {
     to,
   });
 
-  let currentTick = dayjs(range.from).add(
-    firstTickValue - from + ticksDist,
-    rangeUnits
-  );
+  let currentTick = dayjs(range.from)
+    .startOf(rangeUnits)
+    .add(firstTickValue % 1, rangeUnits);
   const toReturn: Tick[] = [];
 
   while (currentTick.isBefore(dRange.to)) {
@@ -108,7 +107,9 @@ export function linearDateTicks(range: DateRange): Tick[] {
         : largerEra,
     };
 
-    toReturn.push(thisTick);
+    if (position >= 0 && position <= 1) {
+      toReturn.push(thisTick);
+    }
     currentTick = currentTick.add(ticksDist, rangeUnits);
   }
 
