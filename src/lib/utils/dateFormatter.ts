@@ -63,10 +63,7 @@ export function getLargerEra(
  * @example formatInEra(new Date(2020, 0, 1), "days") === "Jan 1"
  * @example formatInEra(new Date(2020, 0, 1), "hours") === "00:00"
  */
-export function formatInEra(
-  date: dayjs.Dayjs | Date,
-  era: DateRangeSpan
-): string {
+export function formatInEra(date: dayjs.Dayjs, era: DateRangeSpan): string {
   date = dayjs(date);
 
   switch (era) {

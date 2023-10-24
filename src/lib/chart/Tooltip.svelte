@@ -1,11 +1,11 @@
 <!-- Component for displaying a lil tooltip by the cursor that shows info about nearby traces -->
 <script lang="ts">
   import GenericTooltip from "../GenericTooltip.svelte";
-  import type { Point, Quantity } from "../types.js";
+  import type { Point, Quantity, Range } from "../types.js";
   import { globalMouseMove } from "../utils/mouseGestures.js";
   import type { TraceInfo } from "../data-worker/trace-list.js";
   import TracePreview from "./TracePreview.svelte";
-  import type dayjs from "dayjs";
+  import dayjs from "dayjs";
 
   /** The tooltip will try its best to not be in this rectangle */
   export let forbiddenRectangle:
@@ -34,6 +34,8 @@
 
   let boundingDiv: HTMLDivElement;
 
+  const dateFormat = "MMM DD YYYY, hh:mm:ss";
+
   function repairedPosition(
     positionRelativeToPage: Point,
     forbiddenRectangle:
@@ -54,8 +56,6 @@
 
     const forbiddenXright = forbiddenRectangle.x + forbiddenRectangle.width;
     const forbiddenYtop = forbiddenRectangle.y;
-
-    console.log(forbiddenYtop);
 
     if (tooltipYbottom > forbiddenYtop && tooltipXright < forbiddenXright) {
       //in rect
@@ -89,23 +89,31 @@
             <div class="trace-info">
               <div class="value-name">{key}:</div>
               <div class="value-value">
-                {value.toString()}
+                {dayjs.isDayjs(value)
+                  ? value.format(dateFormat)
+                  : value.toString()}
               </div>
             </div>
           {/if}
         {/each}
       {:else}
+        {@const first = nearestTracesInfo[0]}
+
         <div class="header">
-          x: {nearestTracesInfo[0]?.x.toString()}
+          x: {dayjs.isDayjs(first?.x)
+            ? first.x.format(dateFormat)
+            : first?.x.toString()}
         </div>
-        {#each nearestTracesInfo as trace}
+        {#each nearestTracesInfo as info}
           <div class="trace-info">
             <div class="value-name">
-              <TracePreview previewedTrace={trace.styledTrace} />
-              {trace.styledTrace.id}:
+              <TracePreview previewedTrace={info.styledTrace} />
+              {info.styledTrace.id}:
             </div>
             <div class="value-value">
-              {trace.y.toString()}
+              {dayjs.isDayjs(info.y)
+                ? info.y.format(dateFormat)
+                : info.y.toString()}
             </div>
           </div>
         {/each}
