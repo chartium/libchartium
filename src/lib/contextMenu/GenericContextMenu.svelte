@@ -11,7 +11,7 @@
   import {
     openPositionNextToPoint,
     openPositionNextToRect,
-    clickOutside,
+    mouseDownOutside,
     genericKeydown,
   } from "./contextMenu.js";
 
@@ -162,7 +162,7 @@
   style="visibility:{visibility};
     left:{renderPosition?.x ?? 0}px;
     top:{renderPosition?.y ?? 0}px;"
-  use:clickOutside={close}
+  use:mouseDownOutside={close}
   use:genericKeydown={handleKeyboardNavigation}
   use:observeResize={([width, height]) => {
     menuWidth = width;

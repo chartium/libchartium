@@ -82,22 +82,23 @@ export function openPositionNextToRect(
 }
 
 /** svelte action for adding a click outside event on an element */
-export function clickOutside(
+export function mouseDownOutside(
   node: HTMLElement,
   callback: (event: MouseEvent) => void
 ) {
   const handleClick = (event: MouseEvent) => {
     if (!(event.target instanceof Node)) return;
     if (!node.contains(event.target)) {
+      console.log("uwu");
       callback(event);
     }
   };
 
-  document.addEventListener("click", handleClick, true);
+  document.addEventListener("mousedown", handleClick, true);
 
   return {
     destroy() {
-      document.removeEventListener("click", handleClick, true);
+      document.removeEventListener("mousedown", handleClick, true);
     },
   };
 }
