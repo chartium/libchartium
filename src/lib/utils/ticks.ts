@@ -1,11 +1,12 @@
 import dayjs from "dayjs";
-import type {
-  DateRange,
-  NumericRange,
-  QuantityRange,
-  Range,
-  Tick,
-  Unit,
+import {
+  Quantity,
+  type DateRange,
+  type NumericRange,
+  type QuantityRange,
+  type Range,
+  type Tick,
+  type Unit,
 } from "../types.js";
 import {
   formatInEra,
@@ -13,7 +14,7 @@ import {
   getLargerEra,
   getRangeSpan,
 } from "./dateFormatter.js";
-import { toNumericRange } from "./quantityHelpers.js";
+import { toDateRange, toNumericRange } from "./quantityHelpers.js";
 
 const boxes: number[] = [1, 2, 5, 10];
 
@@ -42,8 +43,21 @@ function getTickPlaceAndDist(range: NumericRange): {
   return { firstTickValue, ticksDist };
 }
 
+export function linearTicks(
+  range: Range,
+  displayUnit?: Unit | "date",
+  dataUnit?: Unit | "date"
+): Tick[] {
+  if (dataUnit === "date" || displayUnit === "date") {
+    if (range.from instanceof Quantity || range.to instanceof Quantity) {
+      throw new Error("Range contains quantities but you assume date");
+    }
+    return linearDateTicks(toDateRange(range as DateRange | NumericRange));
+  } else
+    return linearQuantityTicks(range as QuantityRange, displayUnit, dataUnit);
+}
+
 export const linearQuantityTicks = (
-  // TODO make a function that does both quantity and date
   range: NumericRange | QuantityRange,
   dataUnit?: Unit,
   displayUnit?: Unit

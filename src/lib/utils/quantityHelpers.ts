@@ -52,23 +52,28 @@ export function toDateRange(range: NumericRange | DateRange): DateRange {
  *
  * if input is quantity, will convert units
  */
-export function toQuantity(
-  x: number | Quantity,
-  units?: Unit
-): Quantity | number {
+export function toQuantOrDay(
+  x: number | Quantity | dayjs.Dayjs,
+  units?: Unit | "date"
+): Quantity | dayjs.Dayjs | number {
+  if (dayjs.isDayjs(x) || units === "date") {
+    if (x instanceof Quantity)
+      throw new Error("Can't convert quantity to date");
+    return toDayjs(x);
+  }
   if (x instanceof Quantity && units) return x.inUnits(units);
   if (typeof x === "number" && units) return new Quantity(x, units);
   else return x;
 }
 
 /** Returns range in units if defined, otherwise returns numeric range */
-export function toQuantityRange(
-  range: NumericRange | QuantityRange,
-  units?: Unit
+export function toRange(
+  range: NumericRange | QuantityRange | DateRange,
+  units?: Unit | "date"
 ): Range {
   return {
-    from: toQuantity(range.from, units),
-    to: toQuantity(range.to, units),
+    from: toQuantOrDay(range.from, units),
+    to: toQuantOrDay(range.to, units),
   } as Range;
 }
 

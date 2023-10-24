@@ -31,9 +31,7 @@
   );
   const y1s = xs.map((x) => 100 + 100 * Math.sin((x / to) * 2 * Math.PI));
   const y2s = xs.map((x) => 100 + 100 * Math.cos((x / to) * 2 * Math.PI));
-  const y3s = xs.map(
-    (x) => 100 + 100 * Math.tanh((x / to - 0.5) * 2 * Math.PI)
-  );
+  const y3s = xs.map((x) => 75 + 75 * Math.tanh((x / to - 0.5) * 2 * Math.PI));
   const chartiumFriendlyTraceData = xs.flatMap((x, index) => [
     x,
     y1s[index],

@@ -76,6 +76,11 @@ export interface Point {
   y: number;
 }
 
+export interface GeneralizedPoint {
+  x: number | Quantity | dayjs.Dayjs;
+  y: number | Quantity | dayjs.Dayjs;
+}
+
 export interface HighlightPoint {
   xFraction: number;
   yFraction: number;

@@ -11,7 +11,11 @@ import type {
 } from "../types.js";
 import { Quantity } from "../types.js";
 import { TraceList } from "../data-worker/trace-list.js";
-import { linearDateTicks, linearQuantityTicks } from "../utils/ticks.js";
+import {
+  linearDateTicks,
+  linearQuantityTicks,
+  linearTicks,
+} from "../utils/ticks.js";
 import { nextAnimationFrame } from "../utils/promise.js";
 import type { FactorDefinition } from "unitlib";
 
@@ -28,8 +32,8 @@ import {
   toDayjs,
   toNumeric,
   toNumericRange,
-  toQuantity,
-  toQuantityRange,
+  toQuantOrDay,
+  toRange,
 } from "../utils/quantityHelpers.js";
 import dayjs, { Dayjs } from "dayjs";
 
@@ -236,61 +240,20 @@ export class Chart {
     const xRange = this.xRange.get();
     if (xRange) {
       const unit = this.xDisplayUnit.get();
-      if (xRange.from instanceof dayjs || unit === "date") {
-        // FIXME this shouldnt be necessary; the moment unit is "date", range will turn into DateRange and vice versa
-        this.#xTicks.set(
-          linearDateTicks(toDateRange(xRange as NumericRange | DateRange))
-        );
-      } else {
-        this.#xTicks?.set(
-          linearQuantityTicks(
-            xRange as NumericRange | QuantityRange,
-            undefined,
-            unit
-          )
-        );
-      }
+      this.#xTicks.set(linearTicks(xRange, unit, undefined));
     }
 
     const yRange = this.yRange.get();
     if (yRange) {
       const unit = this.yDisplayUnit.get();
-      if (yRange.from instanceof dayjs || unit === "date") {
-        // FIXME this shouldnt be necessary; the moment unit is "date", range will turn into DateRange and vice versa
-        this.#yTicks.set(
-          linearDateTicks(toDateRange(yRange as NumericRange | DateRange))
-        );
-      } else {
-        this.#yTicks?.set(
-          linearQuantityTicks(
-            yRange as NumericRange | QuantityRange,
-            undefined,
-            unit
-          )
-        );
-      }
+      this.#yTicks.set(linearTicks(yRange, unit, undefined));
     }
   }
 
   resetZoom() {
     const units = this.bestDisplayUnits();
-    this.xRange.set(
-      units.x === "date"
-        ? // FIXME this shouldnt be necessary; the moment unit is "date", range will turn into DateRange and vice versa
-          toDateRange(this.traces.get().range as NumericRange | DateRange)
-        : toQuantityRange(
-            this.traces.get().range as NumericRange | QuantityRange,
-            units.x
-          )
-    );
-    this.yRange.set(
-      units.y === "date"
-        ? toDateRange(this.traces.get().getYRange() as NumericRange | DateRange)
-        : toQuantityRange(
-            this.traces.get().getYRange() as NumericRange | QuantityRange,
-            units.y
-          )
-    );
+    this.xRange.set(toRange(this.traces.get().range, units.x));
+    this.yRange.set(toRange(this.traces.get().getYRange(), units.y));
     this.xDisplayUnit.set(units.x);
     this.yDisplayUnit.set(units.y);
     return this.scheduleRender();
@@ -300,13 +263,36 @@ export class Chart {
     x: Unit | "date" | undefined;
     y: Unit | "date" | undefined;
   } {
-    // FIXME make smarter choice
     // FIXME recognize when to use date
     const units = this.traces.get().getUnits();
+    const xUnits = units.map((u) => u.x);
+    const yUnits = units.map((u) => u.y);
+    let medianXUnit;
+    if (xUnits[0] === "date" || xUnits[0] === undefined) {
+      medianXUnit = xUnits[0];
+    } else {
+      xUnits.sort(
+        (a, b) =>
+          (a as Unit).multiplyValueByFactor(1) - //FIXME this cant be the right way
+          (b as Unit).multiplyValueByFactor(1) //FIXME this cant be the right way
+      )[Math.floor(xUnits.length / 2)];
+    }
+
+    let medianYUnit;
+    if (yUnits[0] === "date" || yUnits[0] === undefined) {
+      medianYUnit = yUnits[0];
+    } else {
+      yUnits.sort(
+        (a, b) =>
+          (a as Unit).multiplyValueByFactor(1) - //FIXME this cant be the right way
+          (b as Unit).multiplyValueByFactor(1) //FIXME this cant be the right way
+      )[Math.floor(yUnits.length / 2)];
+    }
+
     return {
-      //x: units[0]?.x, FIXME DEBUG
+      //x: medianXUnit, // FIXME DEBUG
       x: "date",
-      y: units[0]?.y,
+      y: medianYUnit,
     };
   }
 
@@ -328,7 +314,7 @@ export class Chart {
     if (unit === "date") {
       return toDayjs(value);
     }
-    return toQuantity(value, unit);
+    return toQuantOrDay(value, unit);
   }
 
   /** Transforms x, y of chart quantity (or unitless number) into fraction of canvas size */
@@ -368,7 +354,7 @@ export class Chart {
     if (displayUnit === "date") {
       return toDayjs(value);
     }
-    return toQuantity(value, displayUnit);
+    return toQuantOrDay(value, displayUnit);
   }
 
   /** Transforms a point represented by data values and units (if aplicable) into pixel coordinates relative to chart canvas */
@@ -456,9 +442,7 @@ const changeFactorAction = (
     return {
       unit: newUnit,
       callback: () => {
-        range.set(
-          toQuantityRange($range as NumericRange | QuantityRange, newUnit)
-        );
+        range.set(toRange($range as NumericRange | QuantityRange, newUnit));
         displayUnit.set(newUnit);
       },
     };

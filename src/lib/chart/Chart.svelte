@@ -20,7 +20,8 @@
     toDateRange,
     toDayjs,
     toNumeric,
-    toQuantity,
+    toQuantOrDay,
+    toRange,
   } from "../utils/quantityHelpers.js";
   import type dayjs from "dayjs";
 
@@ -113,16 +114,13 @@
       if (shift.dx) {
         const delta = (to - from) * -shift.dx;
         chart.xRange.set(
-          // FIXME this shouldnt be necessary; the moment unit is "date", range will turn into DateRange and vice versa
-          xUnits === "date"
-            ? {
-                from: toDayjs(from + delta),
-                to: toDayjs(to + delta),
-              }
-            : ({
-                from: toQuantity(from + delta, xUnits),
-                to: toQuantity(to + delta, xUnits),
-              } as Range)
+          toRange(
+            {
+              from: from + delta,
+              to: to + delta,
+            },
+            xUnits
+          )
         );
       }
     }
@@ -134,16 +132,7 @@
       if (shift.dy) {
         const delta = (to - from) * -shift.dy;
         chart.yRange.set(
-          // FIXME this shouldnt be necessary; the moment unit is "date", range will turn into DateRange and vice versa
-          yUnits === "date"
-            ? {
-                from: toDayjs(from + delta),
-                to: toDayjs(to + delta),
-              }
-            : ({
-                from: toQuantity(from + delta, yUnits),
-                to: toQuantity(to + delta, yUnits),
-              } as Range)
+          toRange({ from: from + delta, to: to + delta }, yUnits)
         );
       }
     }
@@ -166,19 +155,13 @@
       if (zoom.to - zoom.from <= 0) continue;
 
       chart[rangeName].set(
-        // FIXME this shouldnt be necessary; the moment unit is "date", range will turn into DateRange and vice versa
-        unit === "date"
-          ? {
-              from: toDayjs(toNumeric(range.from, unit) + d * zoom.from),
-              to: toDayjs(toNumeric(range.from, unit) + d * zoom.to),
-            }
-          : ({
-              from: toQuantity(
-                toNumeric(range.from, unit) + d * zoom.from,
-                unit
-              ),
-              to: toQuantity(toNumeric(range.from, unit) + d * zoom.to, unit),
-            } as Range)
+        toRange(
+          {
+            from: toNumeric(range.from, unit) + d * zoom.from,
+            to: toNumeric(range.from, unit) + d * zoom.to,
+          },
+          unit
+        )
       );
     }
   }
@@ -198,8 +181,8 @@
     chart && hoverXQuantity && hoverYQuantity
       ? traces.findClosestTracesToPoint(
           {
-            x: toNumeric(hoverXQuantity, $xDisplayUnit), // FIXME may be redundant once tracelist knows about units
-            y: toNumeric(hoverYQuantity, $yDisplayUnit), // FIXME may be redundant once tracelist knows about units
+            x: hoverXQuantity,
+            y: hoverYQuantity,
           },
           tooltipTracesShown === "all" ? traces.traceCount : tooltipTracesShown
         )
@@ -207,16 +190,8 @@
   $: tracesInfo =
     closestTraces?.map((trace) => ({
       styledTrace: trace.traceInfo,
-      x:
-        $xDisplayUnit === "date"
-          ? // FIXME this shouldnt be necessary; the moment unit is "date", range will turn into DateRange and vice versa
-            toDayjs(trace.closestPoint.x)
-          : toQuantity(trace.closestPoint.x, $xDisplayUnit), // FIXME will be redundant once traces know their units
-      y:
-        $yDisplayUnit === "date"
-          ? // FIXME this shouldnt be necessary; the moment unit is "date", range will turn into DateRange and vice versa
-            toDayjs(trace.closestPoint.y)
-          : toQuantity(trace.closestPoint.y, $yDisplayUnit), // FIXME will be redundant once traces know their units
+      x: trace.closestPoint.x,
+      y: trace.closestPoint.y,
     })) ?? [];
 
   $: {
@@ -256,9 +231,9 @@
     // FIXME rethink this, this is ew
     traceCloseEnough =
       norm([
-        closestTraces[0].closestPoint.x -
+        toNumeric(closestTraces[0].closestPoint.x, $xDisplayUnit) -
           toNumeric(hoverXQuantity, $xDisplayUnit),
-        closestTraces[0].closestPoint.y -
+        toNumeric(closestTraces[0].closestPoint.y, $yDisplayUnit) -
           toNumeric(hoverYQuantity, $yDisplayUnit),
       ]) < closenessDistance;
   }
@@ -273,34 +248,27 @@
     const { from, to } = chart.xRange.get();
     const statsOfClosest = traces.calculateStatistics({
       traces: [closestTraces[0].traceInfo.id],
-      from: toNumeric(from, $xDisplayUnit), // FIXME move the unit logic a bit deeper int othe traces as well
-      to: toNumeric(to, $xDisplayUnit), // FIXME move the unit logic a bit deeper int othe traces as well
+      from,
+      to,
     })[0];
 
     selectedTrace = {
       // FIXME move unit logic to rust?
       styledTrace: closestTraces[0].traceInfo,
-      // FIXME this shouldnt be necessary; the moment unit is "date", range will turn into DateRange and vice versa
-      x:
-        $xDisplayUnit === "date"
-          ? toDayjs(closestTraces[0].closestPoint.x)
-          : toQuantity(closestTraces[0].closestPoint.x, $xDisplayUnit),
-      y:
-        $yDisplayUnit === "date"
-          ? toDayjs(closestTraces[0].closestPoint.y)
-          : toQuantity(closestTraces[0].closestPoint.y, $yDisplayUnit),
+      x: closestTraces[0].closestPoint.x,
+      y: closestTraces[0].closestPoint.y,
       min:
         $yDisplayUnit === "date"
-          ? toDayjs(statsOfClosest.min)
-          : toQuantity(statsOfClosest.min, $yDisplayUnit),
+          ? toDayjs(statsOfClosest.min) // FIXME once metas return quants remove
+          : toQuantOrDay(statsOfClosest.min, $yDisplayUnit),
       max:
         $yDisplayUnit === "date"
-          ? toDayjs(statsOfClosest.max)
-          : toQuantity(statsOfClosest.max, $yDisplayUnit),
+          ? toDayjs(statsOfClosest.max) // FIXME once metas return quants remove
+          : toQuantOrDay(statsOfClosest.max, $yDisplayUnit),
       avg:
         $yDisplayUnit === "date"
-          ? toDayjs(statsOfClosest.avg)
-          : toQuantity(statsOfClosest.avg, $yDisplayUnit),
+          ? toDayjs(statsOfClosest.avg) // FIXME once metas return quants remove
+          : toQuantOrDay(statsOfClosest.avg, $yDisplayUnit),
     };
   } else {
     selectedTrace = undefined;
@@ -361,11 +329,11 @@
 <ChartGrid bind:contentSize>
   <svelte:fragment slot="ylabel">
     {yLabel}
-    {#if !hideYLabelUnits && $yDisplayUnit}[{$yDisplayUnit.toString()}]{/if}
+    {#if !hideYLabelUnits && $yDisplayUnit && $yDisplayUnit !== "date"}[{$yDisplayUnit.toString()}]{/if}
   </svelte:fragment>
   <svelte:fragment slot="xlabel">
     {xLabel}
-    {#if !hideXLabelUnits && $xDisplayUnit}[{$xDisplayUnit.toString()}]{/if}
+    {#if !hideXLabelUnits && $xDisplayUnit && $xDisplayUnit !== "date"}[{$xDisplayUnit.toString()}]{/if}
   </svelte:fragment>
   <svelte:fragment slot="title">
     {title}

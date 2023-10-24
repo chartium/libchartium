@@ -1,4 +1,11 @@
-import type { Point, Quantity, Range, TraceHandle, Unit } from "../types.js";
+import type {
+  GeneralizedPoint,
+  Point,
+  Quantity,
+  Range,
+  TraceHandle,
+  Unit,
+} from "../types.js";
 import { lib } from "./wasm.js";
 import {
   computeTraceColor,
@@ -23,7 +30,12 @@ import {
 } from "../utils/collection.js";
 import { proxyMarker } from "comlink";
 import type { Color } from "../utils/color.js";
-import { toNumeric, toNumericRange } from "../utils/quantityHelpers.js";
+import {
+  toNumeric,
+  toNumericRange,
+  toQuantOrDay,
+} from "../utils/quantityHelpers.js";
+import type dayjs from "dayjs";
 
 export const BUNDLES = Symbol("bundles");
 export const HANDLES = Symbol("handles");
@@ -271,8 +283,8 @@ export class TraceList {
     to,
   }: Partial<{
     traces: string[];
-    from: number | Quantity;
-    to: number | Quantity;
+    from: number | Quantity | dayjs.Dayjs;
+    to: number | Quantity | dayjs.Dayjs;
   }> = {}) {
     const unfiltered =
       from === undefined && to === undefined && traces === undefined;
@@ -334,7 +346,8 @@ export class TraceList {
    * Take care when rendering a trace list with mixed units – if you
    * aren't intentional with it, you may get unexpected results.
    */
-  getUnits(): { x: Unit | undefined; y: Unit | undefined }[] {
+  getUnits(): { x: Unit | "date" | undefined; y: Unit | "date" | undefined }[] {
+    // FIXME this actually doesn't yet know how to spot date so it won't return it
     if (this.#units) return this.#units;
     const units = new Set<{ x: Unit | undefined; y: Unit | undefined }>();
 
@@ -415,37 +428,43 @@ export class TraceList {
    * TODO add a more precise euclidean distance mode
    */
   findClosestTracesToPoint(
-    point: Point,
+    point: GeneralizedPoint,
     howMany: number
   ): {
     traceInfo: TraceInfo;
-    closestPoint: Point;
+    closestPoint: GeneralizedPoint;
   }[] {
     // FIXME make TraceList auto update its ranges based on ranges of bundles
 
     interface FoundPoint {
       handle: TraceHandle;
-      point: Point;
+      point: GeneralizedPoint;
       distance: number;
     }
 
     let closestPoints: FoundPoint[] = [];
 
     for (const bundle of this.#bundles) {
+      const bundleUnits = this.getBundleUnits(bundle);
+      const x = toNumeric(point.x, bundleUnits.x);
+      const y = toNumeric(point.y, bundleUnits.y);
       const foundPoints = bundle.find_n_closest_points(
         new Uint32Array(this.#traceHandles),
-        point.x,
-        point.y,
+        x,
+        y,
         howMany
       );
 
       for (const foundPoint of foundPoints) {
         const distance = Math.sqrt(
-          (foundPoint.x - point.x) ** 2 + (foundPoint.y - point.y) ** 2
+          (foundPoint.x - x) ** 2 + (foundPoint.y - y) ** 2
         );
         closestPoints.push({
           handle: foundPoint.handle as TraceHandle,
-          point: { x: foundPoint.x, y: foundPoint.y } as Point,
+          point: {
+            x: toQuantOrDay(foundPoint.x, bundleUnits.x),
+            y: toQuantOrDay(foundPoint.y, bundleUnits.y),
+          } as GeneralizedPoint,
           distance,
         });
       }
@@ -460,7 +479,7 @@ export class TraceList {
     0;
     let results: {
       traceInfo: TraceInfo;
-      closestPoint: Point;
+      closestPoint: GeneralizedPoint;
     }[] = [];
 
     for (const { point, handle } of closestPoints) {
