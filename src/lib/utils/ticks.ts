@@ -15,6 +15,7 @@ import {
   getRangeSpan,
 } from "./dateFormatter.js";
 import { toDateRange, toNumericRange } from "./quantityHelpers.js";
+import { fitsIntoDecimals, prettyExp } from "./format.js";
 
 const boxes: number[] = [1, 2, 5, 10];
 
@@ -68,7 +69,8 @@ export const linearQuantityTicks = (
     toNumericRange(range)
   );
 
-  const result: Tick[] = [];
+  let result: { value: number; position: number; unit: Unit | undefined }[] =
+    [];
 
   const factor = displayUnit ? dataUnit?.divide(displayUnit) : undefined;
 
@@ -81,7 +83,23 @@ export const linearQuantityTicks = (
     });
   }
 
-  return result;
+  let toReturn: Tick[] = [];
+  if (result.every((tick) => typeof tick.value === "number")) {
+    if (fitsIntoDecimals(result.map((tick) => tick.value as number))) {
+      toReturn = result.map((tick) => ({
+        ...tick,
+        value: (tick.value as number).toFixed(2),
+      }));
+    }
+    // If not, use exponential notation
+    else
+      toReturn = result.map((tick) => ({
+        ...tick,
+        value: prettyExp(tick.value as number, 2),
+      }));
+  }
+
+  return toReturn;
 };
 
 export function linearDateTicks(range: DateRange): Tick[] {

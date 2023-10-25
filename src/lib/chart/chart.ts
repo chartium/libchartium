@@ -2,7 +2,6 @@ import { transfer, type Remote } from "comlink";
 import type { ChartiumController } from "../data-worker/index.js";
 import type { RenderJob, Renderer } from "../data-worker/renderers/mod.js";
 import type {
-  DateRange,
   NumericRange,
   QuantityRange,
   Range,
@@ -11,11 +10,7 @@ import type {
 } from "../types.js";
 import { Quantity } from "../types.js";
 import { TraceList } from "../data-worker/trace-list.js";
-import {
-  linearDateTicks,
-  linearQuantityTicks,
-  linearTicks,
-} from "../utils/ticks.js";
+import { linearTicks } from "../utils/ticks.js";
 import { nextAnimationFrame } from "../utils/promise.js";
 import type { FactorDefinition } from "unitlib";
 
@@ -28,14 +23,13 @@ import type {
 } from "@mod.js/signals";
 export type { Signal, WritableSignal };
 import {
-  toDateRange,
   toDayjs,
   toNumeric,
   toNumericRange,
   toQuantOrDay,
   toRange,
 } from "../utils/quantityHelpers.js";
-import dayjs, { Dayjs } from "dayjs";
+import dayjs from "dayjs";
 
 /**
  * A helper method that takes a signal, adds a
@@ -271,7 +265,7 @@ export class Chart {
     if (xUnits[0] === "date" || xUnits[0] === undefined) {
       medianXUnit = xUnits[0];
     } else {
-      xUnits.sort(
+      medianXUnit = xUnits.sort(
         (a, b) =>
           (a as Unit).multiplyValueByFactor(1) - //FIXME this cant be the right way
           (b as Unit).multiplyValueByFactor(1) //FIXME this cant be the right way
@@ -282,7 +276,7 @@ export class Chart {
     if (yUnits[0] === "date" || yUnits[0] === undefined) {
       medianYUnit = yUnits[0];
     } else {
-      yUnits.sort(
+      medianYUnit = yUnits.sort(
         (a, b) =>
           (a as Unit).multiplyValueByFactor(1) - //FIXME this cant be the right way
           (b as Unit).multiplyValueByFactor(1) //FIXME this cant be the right way
@@ -290,8 +284,7 @@ export class Chart {
     }
 
     return {
-      //x: medianXUnit, // FIXME DEBUG
-      x: "date",
+      x: medianXUnit,
       y: medianYUnit,
     };
   }
@@ -311,9 +304,6 @@ export class Chart {
       (axis === "x" ? fraction : 1 - fraction) *
         (toNumeric(range.to, unit) - toNumeric(range.from, unit));
 
-    if (unit === "date") {
-      return toDayjs(value);
-    }
     return toQuantOrDay(value, unit);
   }
 
@@ -351,9 +341,7 @@ export class Chart {
         ? coordinateInPx / this.canvas!.width
         : 1 - coordinateInPx / this.canvas!.height) *
         (toNumeric(range.to, displayUnit) - toNumeric(range.from, displayUnit));
-    if (displayUnit === "date") {
-      return toDayjs(value);
-    }
+
     return toQuantOrDay(value, displayUnit);
   }
 
@@ -403,7 +391,7 @@ export class Chart {
 const changeFactorAction = (
   direction: "raise" | "lower",
   range: WritableSignal<Range>,
-  displayUnit: WritableSignal<Unit | "date" | undefined> // FIXME this doesnt feel like the best solution, think of a better one
+  displayUnit: WritableSignal<Unit | "date" | undefined>
 ) =>
   range.map(($range) => {
     if (!$range) return;

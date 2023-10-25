@@ -106,8 +106,8 @@ export interface TraceMetas {
  * fraction of axis length/height the tick should be placed.
  */
 export interface Tick {
-  value: number | string;
-  subvalue?: number | string;
+  value: string;
+  subvalue?: string;
   unit: Unit | undefined;
   position: number;
 }

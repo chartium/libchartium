@@ -77,24 +77,60 @@ export function toRange(
   } as Range;
 }
 
-/** returns x.a + x.b */
+/** returns x + xy */
+export function qnAdd(x: number, y: number): number;
+export function qnAdd(x: Quantity, y: Quantity): Quantity;
 export function qnAdd(
-  x: { a: number; b: number } | { a: Quantity; b: Quantity }
+  x: number | Quantity,
+  y: number | Quantity
 ): number | Quantity {
-  if (typeof x.a === "number" && typeof x.b === "number") return x.a + x.b;
-  else if (x.a instanceof Quantity && x.b instanceof Quantity)
-    return x.a.add(x.b);
-  else
-    throw new Error("This is literally impossible, but TS doesn't know that");
+  if (typeof x === "number" && typeof y === "number") return x + y;
+  else return (x as Quantity).add(x as Quantity);
 }
 
-/** returns x.a - x.b */
+/** returns x - y */
+export function qnSubtract(x: number, y: number): number;
+export function qnSubtract(x: Quantity, y: Quantity): Quantity;
 export function qnSubtract(
-  x: { a: number; b: number } | { a: Quantity; b: Quantity }
+  x: number | Quantity,
+  y: number | Quantity
 ): number | Quantity {
-  if (typeof x.a === "number" && typeof x.b === "number") return x.a - x.b;
-  else if (x.a instanceof Quantity && x.b instanceof Quantity)
-    return x.a.subtract(x.b);
-  else
-    throw new Error("This is literally impossible, but TS doesn't know that");
+  if (typeof x === "number" && typeof y === "number") return x - y;
+  else return (x as Quantity).subtract(y as Quantity);
+}
+
+/** Returns the smaller of the two inputs */
+export function qdnMin(x: number, y: number): number;
+export function qdnMin(x: Quantity, y: Quantity): Quantity;
+export function qdnMin(x: dayjs.Dayjs, y: dayjs.Dayjs): dayjs.Dayjs;
+export function qdnMin(
+  x: number | Quantity | dayjs.Dayjs,
+  y: number | Quantity | dayjs.Dayjs
+): number | Quantity | dayjs.Dayjs {
+  if (typeof x === "number" && typeof y === "number") {
+    return Math.min(x, y);
+  } else if (x instanceof Quantity && y instanceof Quantity) {
+    const firstInSecondUnits = x.inUnits(y.unit);
+    return firstInSecondUnits.value < (x as Quantity).value ? x : y;
+  } else {
+    return (x as dayjs.Dayjs).isBefore(y as dayjs.Dayjs) ? x : y;
+  }
+}
+
+/** Returns the larger of the two inputs */
+export function qdnMax(x: number, y: number): number;
+export function qdnMax(x: Quantity, y: Quantity): Quantity;
+export function qdnMax(x: dayjs.Dayjs, y: dayjs.Dayjs): dayjs.Dayjs;
+export function qdnMax(
+  x: number | Quantity | dayjs.Dayjs,
+  y: number | Quantity | dayjs.Dayjs
+): number | Quantity | dayjs.Dayjs {
+  if (typeof x === "number" && typeof y === "number") {
+    return Math.max(x, y);
+  } else if (x instanceof Quantity && y instanceof Quantity) {
+    const firstInSecondUnits = x.inUnits(y.unit);
+    return firstInSecondUnits.value > (x as Quantity).value ? x : y;
+  } else {
+    return (x as dayjs.Dayjs).isAfter(y as dayjs.Dayjs) ? x : y;
+  }
 }

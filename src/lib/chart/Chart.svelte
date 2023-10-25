@@ -253,22 +253,13 @@
     })[0];
 
     selectedTrace = {
-      // FIXME move unit logic to rust?
+      // NOTE move unit logic to rust? prolly not
       styledTrace: closestTraces[0].traceInfo,
       x: closestTraces[0].closestPoint.x,
       y: closestTraces[0].closestPoint.y,
-      min:
-        $yDisplayUnit === "date"
-          ? toDayjs(statsOfClosest.min) // FIXME once metas return quants remove
-          : toQuantOrDay(statsOfClosest.min, $yDisplayUnit),
-      max:
-        $yDisplayUnit === "date"
-          ? toDayjs(statsOfClosest.max) // FIXME once metas return quants remove
-          : toQuantOrDay(statsOfClosest.max, $yDisplayUnit),
-      avg:
-        $yDisplayUnit === "date"
-          ? toDayjs(statsOfClosest.avg) // FIXME once metas return quants remove
-          : toQuantOrDay(statsOfClosest.avg, $yDisplayUnit),
+      min: statsOfClosest.min,
+      max: statsOfClosest.max,
+      avg: statsOfClosest.avg,
     };
   } else {
     selectedTrace = undefined;

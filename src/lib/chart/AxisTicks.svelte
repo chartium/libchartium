@@ -20,7 +20,6 @@
     type WritableSignal,
     mut,
   } from "@mod.js/signals";
-  import { zip } from "../utils/collection.js";
 
   export const events = createEventDispatcher<{
     shift: Shift;
@@ -139,10 +138,10 @@
             ? `left: ${(tick.position * 100).toFixed(2)}%`
             : `top: ${((1 - tick.position) * 100).toFixed(2)}%`}
         >
-          {tick.value}
+          {@html tick.value}
           {#if tick.subvalue}
             <br />
-            {tick.subvalue}
+            {@html tick.subvalue}
           {/if}
         </span>
       {/each}
@@ -168,8 +167,6 @@
     position: absolute;
     line-height: 1;
     width: max-content;
-    display: flex;
-    flex-direction: column;
     transform: translateX(-50%);
   }
 
@@ -177,8 +174,6 @@
     position: absolute;
     line-height: 1;
     width: max-content;
-    display: flex;
-    flex-direction: column;
     transform: translateY(-50%);
   }
 

@@ -27,10 +27,13 @@ import {
   reduce,
   some,
   unique,
+  zip,
 } from "../utils/collection.js";
 import { proxyMarker } from "comlink";
 import type { Color } from "../utils/color.js";
 import {
+  qdnMax,
+  qdnMin,
   toNumeric,
   toNumericRange,
   toQuantOrDay,
@@ -52,12 +55,20 @@ export interface TraceInfo {
   yDataUnit: Unit | undefined;
 }
 
+export interface QDTraceMetas {
+  traceId: string;
+  min: number | Quantity | dayjs.Dayjs;
+  max: number | Quantity | dayjs.Dayjs;
+  avg: number | Quantity | dayjs.Dayjs;
+  avg_nz: number | Quantity | dayjs.Dayjs;
+}
+
 export class TraceList {
   [proxyMarker] = true;
 
   #traceHandles: TraceHandle[];
   #bundles: lib.BoxedBundle[];
-  #statistics: lib.TraceMetas[] | undefined;
+  #statistics: QDTraceMetas[] | undefined;
   #traceInfo: ResolvedTraceInfo;
   #range: Range;
 
@@ -310,8 +321,23 @@ export class TraceList {
     }
 
     const metas: lib.TraceMetas[] = counter.to_array();
-    if (unfiltered) this.#statistics = metas;
-    return metas;
+
+    const convertedMetas: QDTraceMetas[] = [];
+
+    for (const [meta, traceHandle] of zip(metas, handles)) {
+      const id = traceIds.get(traceHandle as TraceHandle)!;
+      const { yDataUnit } = this.getTraceInfo(id);
+
+      convertedMetas.push({
+        traceId: id,
+        min: toQuantOrDay(meta.min, yDataUnit),
+        max: toQuantOrDay(meta.max, yDataUnit),
+        avg: toQuantOrDay(meta.avg, yDataUnit),
+        avg_nz: toQuantOrDay(meta.avg_nz, yDataUnit),
+      });
+    }
+    if (unfiltered) this.#statistics = convertedMetas;
+    return convertedMetas;
   }
 
   #yRange: Range | undefined;
@@ -325,14 +351,14 @@ export class TraceList {
 
     return {
       from: metas.reduce(
-        (prev, { min: curr }) => Math.min(prev, curr),
-        metas[0].min // FIXME needs uuuns (units)
+        (prev, { min: curr }) => qdnMin(prev as any, curr as any),
+        metas[0].min
       ),
       to: metas.reduce(
-        (prev, { max: curr }) => Math.max(prev, curr),
-        metas[0].max // FIXME needs uuuns (units)
+        (prev, { max: curr }) => qdnMax(prev as any, curr as any),
+        metas[0].max
       ),
-    };
+    } as Range;
   }
 
   #units: ReturnType<typeof this.getUnits> | undefined;

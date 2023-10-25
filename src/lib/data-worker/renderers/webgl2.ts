@@ -13,6 +13,7 @@ import { computeStyles } from "../trace-styles.js";
 import { traceIds } from "../controller.js";
 import type { BoxedBundle } from "../../../../dist/wasm/libchartium.js";
 import type { TraceHandle } from "../../types.js";
+import { qdnMax, qdnMin } from "../../utils/quantityHelpers.js";
 
 function compileShader(
   gl: WebGL2RenderingContext,
@@ -169,8 +170,8 @@ export class WebGL2Renderer implements Renderer {
     // prettier-ignore
     const yRange = job.yRange ?? (() => {
       const metas = traceList.calculateStatistics(xRange);
-      const from = reduce(map(metas, (m) => m.min), Math.min);
-      const to = reduce(map(metas, (m) => m.max), Math.max);
+      const from = reduce(map(metas, (m) => m.min) as any, qdnMin);
+      const to = reduce(map(metas, (m) => m.max) as any, qdnMax);
       return { from, to };
     })();
 
