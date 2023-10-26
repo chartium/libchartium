@@ -1,6 +1,7 @@
 import dayjs from "dayjs";
 import { Quantity, type Unit } from "../types.js";
 import type { FormatOptions } from "unitlib";
+import { tick } from "svelte";
 
 /** Writes exponential notation that doesnt make your eyes bleed */
 export function prettyExp(input: number, decimals: number): string {
@@ -33,9 +34,15 @@ export function uniqueDecimals(
 }
 
 /** Measures phisical amount of space text takes up */
-function measureText(text: string, measuringSpan: HTMLSpanElement): number {
+function measureText(
+  text: string,
+  measuringSpan: HTMLSpanElement,
+  direction: "horizontal" | "vertical" = "horizontal"
+): number {
   measuringSpan.innerHTML = text;
-  return measuringSpan.getBoundingClientRect().width;
+  return direction === "horizontal"
+    ? measuringSpan.getBoundingClientRect().width
+    : measuringSpan.getBoundingClientRect().height;
 }
 
 /**
@@ -45,19 +52,21 @@ function measureText(text: string, measuringSpan: HTMLSpanElement): number {
  */
 export function doOverlap(
   content: { text: string; position: number }[],
-  measuringSpan: HTMLSpanElement
+  measuringSpan: HTMLSpanElement,
+  direction: "horizontal" | "vertical" = "horizontal"
 ): boolean {
   for (let i = 0; i < content.length - 1; i++) {
     const thisTick = content[i];
     const nextTick = content[i + 1];
     const distance = nextTick.position - thisTick.position;
     const textLength =
-      measureText(thisTick.text, measuringSpan) / 2 +
-      measureText(nextTick.text, measuringSpan) / 2;
-    if (distance < textLength) {
+      measureText(thisTick.text, measuringSpan, direction) / 2 +
+      measureText(nextTick.text, measuringSpan, direction) / 2;
+    if (distance < textLength + 4) {
       return true;
     }
   }
+
   return false;
 }
 

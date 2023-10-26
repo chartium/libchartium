@@ -110,7 +110,7 @@
   // Handle tick text intersecting
   let overlaps: boolean = false;
   let measuringSpan: HTMLElement;
-  $: if (measuringSpan) {
+  function updateOverlap(ticks: Tick[]) {
     const axisMainDim = axis === "x" ? axisWidth : axisHeight;
     overlaps =
       doOverlap(
@@ -118,15 +118,20 @@
           text: tick.value,
           position: tick.position * axisMainDim,
         })),
-        measuringSpan
+        measuringSpan,
+        axis === "y" ? "vertical" : "horizontal"
       ) ||
       doOverlap(
         ticks.map((tick) => ({
           text: tick.subvalue ?? "",
           position: tick.position * axisMainDim,
         })),
-        measuringSpan
+        measuringSpan,
+        axis === "y" ? "vertical" : "horizontal"
       );
+  }
+  $: if (measuringSpan) {
+    updateOverlap(ticks);
   }
   $: console.log({ axis, overlaps }); // FIXME DEBUG
 </script>
@@ -161,6 +166,14 @@
           style={axis === "x"
             ? `left: ${(tick.position * 100).toFixed(2)}%`
             : `top: ${((1 - tick.position) * 100).toFixed(2)}%`}
+          style:transform={overlaps
+            ? `${axis === "x" ? "rotate(45deg)" : "rotate(45deg)"} ${
+                tick.subvalue !== undefined ? "translateX(-1.5em)" : "" //FIXME AAAAAAAAAAAA rethink this
+              }`
+            : `${axis === "x" ? "translateX(-50%)" : "translateY(-50%)"}`}
+          style:transform-origin={overlaps
+            ? `${axis === "x" ? "center left" : "top right"}`
+            : "center center"}
         >
           {@html tick.value}
           {#if tick.subvalue}
@@ -192,14 +205,12 @@
     position: absolute;
     line-height: 1;
     width: max-content;
-    transform: translateX(-50%);
   }
 
   .y.ticks > span {
     position: absolute;
     line-height: 1;
     width: max-content;
-    transform: translateY(-50%);
   }
 
   .ticks.x {
