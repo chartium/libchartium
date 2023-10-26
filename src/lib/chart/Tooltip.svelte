@@ -14,17 +14,17 @@
 
   export let nearestTracesInfo: {
     styledTrace: TraceInfo;
-    x: Quantity | dayjs.Dayjs | number;
-    y: Quantity | dayjs.Dayjs | number;
+    x: string;
+    y: string;
   }[];
   export let singleTraceInfo:
     | {
         styledTrace: TraceInfo;
-        x: Quantity | dayjs.Dayjs | number;
-        y: Quantity | dayjs.Dayjs | number;
-        min: Quantity | dayjs.Dayjs | number;
-        max: Quantity | dayjs.Dayjs | number;
-        avg: Quantity | dayjs.Dayjs | number;
+        x: string;
+        y: string;
+        min: string;
+        max: string;
+        avg: string;
       }
     | undefined;
 
@@ -33,8 +33,6 @@
   let position: Point;
 
   let boundingDiv: HTMLDivElement;
-
-  const dateFormat = "MMM DD YYYY, hh:mm:ss";
 
   function repairedPosition(
     positionRelativeToPage: Point,
@@ -89,9 +87,7 @@
             <div class="trace-info">
               <div class="value-name">{key}:</div>
               <div class="value-value">
-                {dayjs.isDayjs(value)
-                  ? value.format(dateFormat)
-                  : value.toString()}
+                {value}
               </div>
             </div>
           {/if}
@@ -100,9 +96,7 @@
         {@const first = nearestTracesInfo[0]}
 
         <div class="header">
-          x: {dayjs.isDayjs(first?.x)
-            ? first.x.format(dateFormat)
-            : first?.x.toString()}
+          x: {first?.x}
         </div>
         {#each nearestTracesInfo as info}
           <div class="trace-info">
@@ -111,9 +105,7 @@
               {info.styledTrace.id}:
             </div>
             <div class="value-value">
-              {dayjs.isDayjs(info.y)
-                ? info.y.format(dateFormat)
-                : info.y.toString()}
+              {info.y}
             </div>
           </div>
         {/each}

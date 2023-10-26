@@ -20,6 +20,7 @@
     type WritableSignal,
     mut,
   } from "@mod.js/signals";
+  import { doOverlap } from "../utils/format.js";
 
   export const events = createEventDispatcher<{
     shift: Shift;
@@ -105,6 +106,29 @@
   ).map((arr) => arr.filter((x) => x) as ContextItem<string>[]);
 
   let menu: { open(p: Point): void; close(): void };
+
+  // Handle tick text intersecting
+  let overlaps: boolean = false;
+  let measuringSpan: HTMLElement;
+  $: if (measuringSpan) {
+    const axisMainDim = axis === "x" ? axisWidth : axisHeight;
+    overlaps =
+      doOverlap(
+        ticks.map((tick) => ({
+          text: tick.value,
+          position: tick.position * axisMainDim,
+        })),
+        measuringSpan
+      ) ||
+      doOverlap(
+        ticks.map((tick) => ({
+          text: tick.subvalue ?? "",
+          position: tick.position * axisMainDim,
+        })),
+        measuringSpan
+      );
+  }
+  $: console.log({ axis, overlaps }); // FIXME DEBUG
 </script>
 
 <GenericContextMenu items={$contextItems} bind:this={menu} />
@@ -145,6 +169,7 @@
           {/if}
         </span>
       {/each}
+      <span class="measuring-span" bind:this={measuringSpan} />
     </div>
   {/if}
 </div>
@@ -198,5 +223,13 @@
 
   .tooltip {
     position: absolute;
+  }
+
+  .measuring-span {
+    position: absolute;
+    bottom: -1;
+    left: 0;
+    visibility: hidden;
+    white-space: nowrap;
   }
 </style>

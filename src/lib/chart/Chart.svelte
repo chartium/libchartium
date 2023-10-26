@@ -4,7 +4,7 @@
   import type { TraceInfo, TraceList } from "../data-worker/trace-list.js";
   import type { VisibleAction } from "./ActionsOverlay.svelte";
 
-  import { onDestroy, onMount } from "svelte";
+  import { onDestroy } from "svelte";
   import { Chart } from "./chart.js";
 
   import ChartOverlay from "./ActionsOverlay.svelte";
@@ -16,14 +16,9 @@
   import { norm } from "./position.js";
   import { cons, mut } from "@mod.js/signals";
   import type { Remote } from "comlink";
-  import {
-    toDateRange,
-    toDayjs,
-    toNumeric,
-    toQuantOrDay,
-    toRange,
-  } from "../utils/quantityHelpers.js";
+  import { toNumeric, toRange } from "../utils/quantityHelpers.js";
   import type dayjs from "dayjs";
+  import { qndFormat } from "../utils/format.js";
 
   export let controller: ChartiumController | Remote<ChartiumController>;
   export let traces: TraceList;
@@ -99,6 +94,11 @@
   $: xDisplayUnit = chart?.xDisplayUnit;
   $: yDisplayUnit = chart?.yDisplayUnit;
 
+  $: qndFormatOptions = {
+    decimals: 2,
+    dayjsFormat: "MMM DD, hh:mm:ss",
+    unit: $yDisplayUnit !== "date" ? $yDisplayUnit : undefined,
+  };
   const visibleAction = mut<VisibleAction | undefined>(undefined);
 
   $: (window as any).chart = chart; // FIXME DEBUG
@@ -190,8 +190,8 @@
   $: tracesInfo =
     closestTraces?.map((trace) => ({
       styledTrace: trace.traceInfo,
-      x: trace.closestPoint.x,
-      y: trace.closestPoint.y,
+      x: qndFormat(trace.closestPoint.x, qndFormatOptions),
+      y: qndFormat(trace.closestPoint.y, qndFormatOptions),
     })) ?? [];
 
   $: {
@@ -217,11 +217,11 @@
   let selectedTrace:
     | {
         styledTrace: TraceInfo;
-        x: Quantity | dayjs.Dayjs | number;
-        y: Quantity | dayjs.Dayjs | number;
-        min: Quantity | dayjs.Dayjs | number;
-        max: Quantity | dayjs.Dayjs | number;
-        avg: Quantity | dayjs.Dayjs | number;
+        x: string;
+        y: string;
+        min: string;
+        max: string;
+        avg: string;
       }
     | undefined = undefined;
 
@@ -255,11 +255,11 @@
     selectedTrace = {
       // NOTE move unit logic to rust? prolly not
       styledTrace: closestTraces[0].traceInfo,
-      x: closestTraces[0].closestPoint.x,
-      y: closestTraces[0].closestPoint.y,
-      min: statsOfClosest.min,
-      max: statsOfClosest.max,
-      avg: statsOfClosest.avg,
+      x: qndFormat(closestTraces[0].closestPoint.x, qndFormatOptions),
+      y: qndFormat(closestTraces[0].closestPoint.y, qndFormatOptions),
+      min: qndFormat(statsOfClosest.min, qndFormatOptions),
+      max: qndFormat(statsOfClosest.max, qndFormatOptions),
+      avg: qndFormat(statsOfClosest.avg, qndFormatOptions),
     };
   } else {
     selectedTrace = undefined;
