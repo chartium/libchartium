@@ -20,7 +20,7 @@
     type WritableSignal,
     mut,
   } from "@mod.js/signals";
-  import { doOverlap } from "../utils/format.js";
+  import { doOverlap, measureText } from "../utils/format.js";
 
   export const events = createEventDispatcher<{
     shift: Shift;
@@ -133,7 +133,50 @@
   $: if (measuringSpan) {
     updateOverlap(ticks);
   }
-  $: console.log({ axis, overlaps }); // FIXME DEBUG
+
+  function tickSpanStyle(tick: Tick, overlaps: boolean): string {
+    const absolutePos =
+      axis === "x"
+        ? `left: ${(tick.position * 100).toFixed(2)}%`
+        : `top: ${((1 - tick.position) * 100).toFixed(2)}%`;
+
+    const overlapRotation = overlaps
+      ? `${axis === "x" ? "rotate(45deg)" : "rotate(45deg)"} ${
+          tick.subvalue !== undefined ? "translateX(-1.5em)" : ""
+        }`
+      : `${axis === "x" ? "translateX(-50%)" : "translateY(-50%)"}`;
+
+    const transformOrigin = overlaps
+      ? `${axis === "x" ? "center left" : "top right"}`
+      : "center center";
+    return `${absolutePos}; transform: ${overlapRotation}; transform-origin: ${transformOrigin};`;
+  }
+
+  function maxPerpendicularSize(ticks: Tick[]): number {
+    if (!measuringSpan) return 0;
+    let direction: "horizontal" | "vertical" =
+      axis === "x" ? "vertical" : "horizontal";
+
+    if (overlaps) {
+      measuringSpan.style.rotate = "45deg";
+    }
+
+    let maxSize = 0;
+    for (const tick of ticks) {
+      const content =
+        tick.value +
+        (tick.subvalue !== undefined ? "<br/>" + tick.subvalue : "");
+      const size = measureText(content, measuringSpan, direction);
+
+      if (size > maxSize) {
+        maxSize = size;
+      }
+    }
+
+    measuringSpan.style.rotate = "";
+
+    return maxSize;
+  }
 </script>
 
 <GenericContextMenu items={$contextItems} bind:this={menu} />
@@ -155,26 +198,11 @@
   {#if !hideTicks}
     <div
       class="{axis} ticks"
-      style="{axis === `x` ? `height` : `width`}: {ticks.some(
-        (tick) => tick.subvalue !== undefined
-      )
-        ? `2.5em`
-        : `1.5em`}"
+      style="{axis === `x` ? `height` : `width`}: {maxPerpendicularSize(ticks) +
+        4}px"
     >
       {#each ticks as tick}
-        <span
-          style={axis === "x"
-            ? `left: ${(tick.position * 100).toFixed(2)}%`
-            : `top: ${((1 - tick.position) * 100).toFixed(2)}%`}
-          style:transform={overlaps
-            ? `${axis === "x" ? "rotate(45deg)" : "rotate(45deg)"} ${
-                tick.subvalue !== undefined ? "translateX(-1.5em)" : "" //FIXME AAAAAAAAAAAA rethink this
-              }`
-            : `${axis === "x" ? "translateX(-50%)" : "translateY(-50%)"}`}
-          style:transform-origin={overlaps
-            ? `${axis === "x" ? "center left" : "top right"}`
-            : "center center"}
-        >
+        <span style={tickSpanStyle(tick, overlaps)}>
           {@html tick.value}
           {#if tick.subvalue}
             <br />
@@ -205,12 +233,14 @@
     position: absolute;
     line-height: 1;
     width: max-content;
+    top: 4px;
   }
 
   .y.ticks > span {
     position: absolute;
     line-height: 1;
     width: max-content;
+    right: 4px;
   }
 
   .ticks.x {

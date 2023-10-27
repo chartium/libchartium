@@ -34,7 +34,7 @@ export function uniqueDecimals(
 }
 
 /** Measures phisical amount of space text takes up */
-function measureText(
+export function measureText(
   text: string,
   measuringSpan: HTMLSpanElement,
   direction: "horizontal" | "vertical" = "horizontal"
