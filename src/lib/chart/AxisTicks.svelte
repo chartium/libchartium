@@ -216,6 +216,10 @@
 </div>
 
 <style lang="scss">
+  .ticks-container {
+    height: 100%;
+    width: 100%;
+  }
   .y {
     writing-mode: sideways-lr;
     height: 100%;
