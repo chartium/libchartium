@@ -10,12 +10,17 @@ import {
   type DateRange,
 } from "../types.js";
 
-/** Transforms quantity to just numeric part in selected units. If units === undefined, will return x.value. If input is Date, will return unix minutes */
+/** Transforms quantity to just numeric part in selected units. If units === undefined, will return x.value. If input is Date, will return epoch milliseconds */
 export function toNumeric(
   x: Quantity | number | dayjs.Dayjs,
   units?: Unit | "date"
 ): number {
-  if (x instanceof dayjs) return (x as dayjs.Dayjs).unix() / 60; // NOTE rust works in unix *minutes*
+  if (x instanceof dayjs) {
+    // convert to epoch milliseconds
+    // TODO make this generic
+    return +x;
+  }
+
   if (units === "date") {
     if (x instanceof Quantity)
       throw new Error(
@@ -37,7 +42,9 @@ export function toNumericRange(range: Range, units?: Unit): NumericRange {
 }
 
 export function toDayjs(x: dayjs.Dayjs | number): dayjs.Dayjs {
-  if (typeof x === "number") return dayjs.unix(x * 60);
+  // convert from epoch milliseconds
+  // TODO make this generic
+  if (typeof x === "number") return dayjs(x);
   else return x;
 }
 
@@ -48,9 +55,9 @@ export function toDateRange(range: NumericRange | DateRange): DateRange {
   };
 }
 
-/** Returns quantity if units are defined, otherwise returns number
- *
- * if input is quantity, will convert units
+/**
+ * Returns quantity if units are defined, otherwise returns number.
+ * If input is quantity, will convert units.
  */
 export function toQuantOrDay(
   x: number | Quantity | dayjs.Dayjs,

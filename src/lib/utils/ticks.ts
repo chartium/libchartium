@@ -103,45 +103,39 @@ export const linearQuantityTicks = (
 export function linearDateTicks(range: DateRange): Tick[] {
   const rangeUnits = getRangeSpan(range);
 
-  const dRange = {
-    // hehe, dRange... Derrange
-    from: dayjs(range.from),
-    to: dayjs(range.to),
-  };
+  const rangeWidth = range.to.diff(range.from, rangeUnits, true);
 
-  const rangeWidth = dRange.to.diff(dRange.from, rangeUnits, true);
-
-  const from = getFloatDayjsValue(dRange.from, rangeUnits);
-  const to = from + dRange.to.diff(dRange.from, rangeUnits, true);
+  const from = getFloatDayjsValue(range.from, rangeUnits);
+  const to = from + range.to.diff(range.from, rangeUnits, true);
   const { firstTickValue, ticksDist } = getTickPlaceAndDist({
     from,
     to,
   });
 
-  let currentTick = dayjs(range.from)
+  let currentTick = range.from
     .startOf(rangeUnits)
     .add(firstTickValue % 1, rangeUnits);
-  const toReturn: Tick[] = [];
+  const result: Tick[] = [];
 
-  while (currentTick.isBefore(dRange.to)) {
+  while (currentTick.isBefore(range.to)) {
     const position =
-      currentTick.diff(dRange.from, rangeUnits, true) / rangeWidth;
+      currentTick.diff(range.from, rangeUnits, true) / rangeWidth;
     const largerEra = getLargerEra(currentTick, rangeUnits);
 
     const thisTick = {
       position,
       value: formatInEra(currentTick, rangeUnits),
       unit: undefined,
-      subvalue: toReturn.some((tick) => tick.subvalue === largerEra)
+      subvalue: result.some((tick) => tick.subvalue === largerEra)
         ? undefined
         : largerEra,
     };
 
     if (position >= 0 && position <= 1) {
-      toReturn.push(thisTick);
+      result.push(thisTick);
     }
     currentTick = currentTick.add(ticksDist, rangeUnits);
   }
 
-  return toReturn;
+  return result;
 }
