@@ -1,26 +1,23 @@
+import { isColor, type Color } from "../utils/color.js";
 import type { Vec2Like } from "./position.js";
 import * as Vec from "./position.js";
 
 export type DrawStyle = {
   dash?: number[];
-  strokeStyle?: string | CanvasGradient | CanvasPattern;
-  fillStyle?: string | CanvasGradient | CanvasPattern;
+  strokeStyle?: string | Color | CanvasGradient | CanvasPattern;
+  fillStyle?: string | Color | CanvasGradient | CanvasPattern;
   lineWidth?: number;
 };
 
+const colorToString = ([r, g, b]: Color) => `rgb(${r}, ${g}, ${b})`;
+const coerceColor = <T>(x: T | Color): T | string =>
+  isColor(x) ? colorToString(x) : x;
+
 export function applyStyle(ctxt: CanvasRenderingContext2D, style: DrawStyle) {
-  if (style.strokeStyle) {
-    ctxt.strokeStyle = style.strokeStyle;
-  }
-  if (style.fillStyle) {
-    ctxt.fillStyle = style.fillStyle;
-  }
-  if (style.dash) {
-    ctxt.setLineDash(style.dash);
-  }
-  if (style.lineWidth) {
-    ctxt.lineWidth = style.lineWidth;
-  }
+  if (style.strokeStyle) ctxt.strokeStyle = coerceColor(style.strokeStyle);
+  if (style.fillStyle) ctxt.fillStyle = coerceColor(style.fillStyle);
+  if (style.dash) ctxt.setLineDash(style.dash);
+  if (style.lineWidth) ctxt.lineWidth = style.lineWidth;
 }
 
 export function drawSegment(

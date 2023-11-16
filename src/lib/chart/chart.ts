@@ -152,7 +152,7 @@ export class Chart {
   }
 
   #updateTraces(traces: TraceList) {
-    const dataUnits = traces.getUnits()[0];
+    const dataUnits = traces.getUnits()[0] ?? {};
     this.#xDataUnit = dataUnits.x;
     this.#yDataUnit = dataUnits.y;
 

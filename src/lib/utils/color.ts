@@ -54,6 +54,9 @@ export function colorStringToColor(color: string): Color {
 }
 
 export type Color = [R: number, G: number, B: number];
+export const isColor = (x: unknown): x is Color =>
+  Array.isArray(x) && x.length === 3 && x.every((_) => typeof _ === "number");
+
 const deg = 1 / 360;
 
 export function colorToHex(color: Color): string {

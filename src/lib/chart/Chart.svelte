@@ -7,7 +7,7 @@
   import { onDestroy } from "svelte";
   import { Chart } from "./chart.js";
 
-  import ChartOverlay from "./ActionsOverlay.svelte";
+  import ActionsOverlay from "./ActionsOverlay.svelte";
   import ChartGrid from "./ChartGrid.svelte";
   import AxisTicks from "./AxisTicks.svelte";
   import ChartLegend from "./Legend.svelte";
@@ -200,13 +200,6 @@
     selectedTrace = undefined;
   }
 
-  $: if (selectedTrace !== undefined) {
-    // FIXME ew but im unsure to what style to put it
-    document.body.style.cursor = "crosshair";
-  } else {
-    document.body.style.cursor = "default";
-  }
-
   function updateHoverQuantities(e: MouseEvent) {
     hoverXQuantity = chart?.coordinatesToQuantities(e.offsetX, "x") ?? 0;
     hoverYQuantity = chart?.coordinatesToQuantities(e.offsetY, "y") ?? 0;
@@ -311,12 +304,13 @@
     </div>
   {/if}
 
-  <ChartOverlay
+  <ActionsOverlay
     {visibleAction}
     {hideHoverPoints}
     {hideXRuler}
     {hideYRuler}
     {disableInteractivity}
+    traceHovered={selectedTrace !== undefined}
     on:reset={() => chart?.resetZoom()}
     on:zoom={(d) => chart?.zoomRange(d)}
     on:shift={(d) => chart?.shiftRange(d)}

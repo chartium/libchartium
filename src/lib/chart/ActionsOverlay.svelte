@@ -14,7 +14,12 @@
     mouseDrag,
     rightMouseClick,
   } from "../utils/mouseGestures.js";
-  import * as canvas from "./canvas.js";
+  import {
+    drawArrow,
+    drawCircle,
+    drawSegment,
+    type DrawStyle,
+  } from "./canvas.js";
   import type { MouseDragCallbacks } from "../utils/mouseGestures.js";
   import type { HighlightPoint, Point, Shift, Zoom } from "../types.js";
 
@@ -36,6 +41,7 @@
   export let hideXRuler: boolean;
   export let hideYRuler: boolean;
   export let disableInteractivity: boolean;
+  export let traceHovered: boolean;
 
   let canvasRef: HTMLCanvasElement;
   let ctx: CanvasRenderingContext2D;
@@ -93,24 +99,23 @@
   }
 
   function drawHighlightPoint(point: HighlightPoint) {
-    const style: canvas.DrawStyle = {
-      fillStyle: `rgb(${point.color[0]}, ${point.color[1]}, ${point.color[2]})`,
-      strokeStyle: `rgb(${point.color[0]}, ${point.color[1]}, ${point.color[2]})`,
-    };
-    canvas.drawCircle(
+    drawCircle(
       ctx,
       [point.xFraction * overlayWidth, (1 - point.yFraction) * overlayHeight],
       point.radius * 2.5,
-      style
+      {
+        fillStyle: point.color,
+        strokeStyle: point.color,
+      }
     );
   }
 
   function drawZoom(zoom: Zoom) {
-    const lineStyle: canvas.DrawStyle = {
+    const lineStyle: DrawStyle = {
       dash: [10, 5],
     };
 
-    const windowStyle: canvas.DrawStyle = {
+    const windowStyle: DrawStyle = {
       lineWidth: 3,
     };
 
@@ -121,23 +126,23 @@
 
     // the big lines
     if (zoom.x.from !== zoom.x.to) {
-      canvas.drawSegment(ctx, [xFrom, 0], [xFrom, overlayHeight], lineStyle);
-      canvas.drawSegment(ctx, [xTo, 0], [xTo, overlayHeight], lineStyle);
+      drawSegment(ctx, [xFrom, 0], [xFrom, overlayHeight], lineStyle);
+      drawSegment(ctx, [xTo, 0], [xTo, overlayHeight], lineStyle);
     }
     if (zoom.y.from !== zoom.y.to) {
-      canvas.drawSegment(ctx, [0, yFrom], [overlayWidth, yFrom], lineStyle);
-      canvas.drawSegment(ctx, [0, yTo], [overlayWidth, yTo], lineStyle);
+      drawSegment(ctx, [0, yFrom], [overlayWidth, yFrom], lineStyle);
+      drawSegment(ctx, [0, yTo], [overlayWidth, yTo], lineStyle);
     }
 
     // The little 1D zoom windows
     if (zoom.y.from === zoom.y.to) {
-      canvas.drawSegment(
+      drawSegment(
         ctx,
         [xFrom, yFrom - oneDZoomWindow],
         [xFrom, yFrom + oneDZoomWindow],
         windowStyle
       );
-      canvas.drawSegment(
+      drawSegment(
         ctx,
         [xTo, yTo - oneDZoomWindow],
         [xTo, yTo + oneDZoomWindow],
@@ -146,13 +151,13 @@
     }
 
     if (zoom.x.from === zoom.x.to) {
-      canvas.drawSegment(
+      drawSegment(
         ctx,
         [xFrom - oneDZoomWindow, yFrom],
         [xFrom + oneDZoomWindow, yFrom],
         windowStyle
       );
-      canvas.drawSegment(
+      drawSegment(
         ctx,
         [xFrom - oneDZoomWindow, yTo],
         [xFrom + oneDZoomWindow, yTo],
@@ -167,7 +172,7 @@
     };
 
     if (!hideYRuler) {
-      canvas.drawSegment(
+      drawSegment(
         ctx,
         [point.x * overlayWidth, 0],
         [point.x * overlayWidth, overlayHeight],
@@ -176,7 +181,7 @@
     }
 
     if (!xOnly && !hideXRuler) {
-      canvas.drawSegment(
+      drawSegment(
         ctx,
         [0, (1 - point.y) * overlayHeight],
         [overlayWidth, (1 - point.y) * overlayHeight],
@@ -215,7 +220,7 @@
     // const lineStyle: canvas.DrawStyle = {
     //   dash: [10, 5],
     // };
-    const arrowStyle: canvas.DrawStyle = {
+    const arrowStyle: DrawStyle = {
       lineWidth: 1,
       dash: [20, 5],
     };
@@ -226,7 +231,7 @@
       const fromY = (1 - shift.origin.y) * overlayHeight;
       const toY = (1 - shift.origin.y - shift.dy) * overlayHeight;
 
-      canvas.drawArrow(
+      drawArrow(
         ctx,
         [fromX, fromY],
         [toX, toY],
@@ -240,7 +245,7 @@
 
       // canvas.drawSegment(ctx, [fromX, 0], [fromX, overlayHeight], lineStyle);
       // canvas.drawSegment(ctx, [toX, 0], [toX, overlayHeight], lineStyle);
-      canvas.drawArrow(
+      drawArrow(
         ctx,
         [fromX, (1 - shift.origin.y) * overlayHeight],
         [toX, (1 - shift.origin.y) * overlayHeight],
@@ -254,7 +259,7 @@
 
       // canvas.drawSegment(ctx, [0, fromY], [overlayWidth, fromY], lineStyle);
       // canvas.drawSegment(ctx, [0, toY], [overlayWidth, toY], lineStyle);
-      canvas.drawArrow(
+      drawArrow(
         ctx,
         [shift.origin.x * overlayWidth, fromY],
         [shift.origin.x * overlayWidth, toY],
@@ -367,6 +372,7 @@
 
 <canvas
   bind:this={canvasRef}
+  class:trace-hovered={traceHovered}
   on:dblclick={() => events("reset")}
   on:contextmenu|preventDefault
   use:rightMouseClick={(e) => {
@@ -399,6 +405,10 @@
     height: 100%;
 
     color: black;
+  }
+
+  canvas.trace-hovered {
+    cursor: crosshair;
   }
 
   :global(.dark) canvas {
