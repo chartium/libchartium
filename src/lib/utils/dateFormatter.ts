@@ -84,7 +84,8 @@ export function formatInEra(date: dayjs.Dayjs, era: DateRangeSpan): string {
   }
 }
 
-/** just like dayjs.get() but returns a float
+/**
+ * just like dayjs.get() but returns a float
  * @example getFloatDayjsValue(dayjs(new Date(2001, 9, 11)), "month") // 9.333333333333334 becuase 10/30 is 0.33
  */
 export function getFloatDayjsValue(

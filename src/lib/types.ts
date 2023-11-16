@@ -1,4 +1,4 @@
-import type dayjs from "dayjs";
+import dayjs from "dayjs";
 import type { Color } from "./utils/color.js";
 
 import type { Unit as Unit_ } from "unitlib";
@@ -54,6 +54,19 @@ export type DateRange = {
 };
 
 export type Range = NumericRange | QuantityRange | DateRange;
+
+export const isRange = (x: unknown): x is Range =>
+  typeof x === "object" && x !== null && "from" in x && "to" in x;
+
+export const isNumericRange = (x: unknown): x is NumericRange =>
+  isRange(x) && typeof x.from === "number" && typeof x.to === "number";
+
+export const isDateRange = (x: unknown): x is DateRange =>
+  isRange(x) &&
+  typeof x.from === "object" &&
+  typeof x.to === "object" &&
+  dayjs.isDayjs(x.from) &&
+  dayjs.isDayjs(x.to);
 
 /** Shift of ranges as a fraction of the range
  * i.e. moving the [0, 5] by dx = 0.5 would result in [2.5, 7.5]

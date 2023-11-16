@@ -2,11 +2,14 @@ import { transfer, type Remote } from "comlink";
 import type { ChartiumController } from "../data-worker/index.js";
 import type { RenderJob, Renderer } from "../data-worker/renderers/mod.js";
 import type {
+  GeneralizedPoint,
   NumericRange,
   QuantityRange,
   Range,
+  Shift,
   Tick,
   Unit,
+  Zoom,
 } from "../types.js";
 import { Quantity } from "../types.js";
 import { TraceList } from "../data-worker/trace-list.js";
@@ -23,13 +26,17 @@ import type {
 } from "@mod.js/signals";
 export type { Signal, WritableSignal };
 import {
-  toDayjs,
   toNumeric,
   toNumericRange,
   toQuantOrDay,
   toRange,
 } from "../utils/quantityHelpers.js";
 import dayjs from "dayjs";
+import { NumericDateFormat } from "../index.js";
+import { norm } from "./position.js";
+
+const toDisplayUnit = (unit: Unit | NumericDateFormat | undefined) =>
+  unit instanceof NumericDateFormat ? undefined : unit;
 
 /**
  * A helper method that takes a signal, adds a
@@ -58,7 +65,7 @@ const withSubscriber = <S extends Signal<any>>(
  * unsubscribe that subscriber. Beware memory
  * leaks.
  */
-const withEffect = <S extends Signal<any>>(
+const withListener = <S extends Signal<any>>(
   signal: S,
   sub: Subscriber<SignalValue<S>>
 ) => {
@@ -79,8 +86,11 @@ export class Chart {
     return this.#renderer;
   }
 
-  readonly xDisplayUnit = mut<Unit | "date">();
-  readonly yDisplayUnit = mut<Unit | "date">();
+  #xDataUnit: Unit | NumericDateFormat | undefined;
+  #yDataUnit: Unit | NumericDateFormat | undefined;
+
+  readonly xDisplayUnit = mut<Unit | undefined>();
+  readonly yDisplayUnit = mut<Unit | undefined>();
 
   /**
    * The list of traces to be rendered in this chart.
@@ -115,10 +125,10 @@ export class Chart {
     traces ??= TraceList.empty();
 
     this.traces = withSubscriber(mut(traces), (t) => this.#updateTraces(t));
-    this.xRange = withEffect(mut(traces.range), this.scheduleRender);
-    this.yRange = withEffect(mut(traces.getYRange()), this.scheduleRender);
+    this.xRange = withListener(mut(traces.range), this.scheduleRender);
+    this.yRange = withListener(mut(traces.getYRange()), this.scheduleRender);
 
-    this.size = withEffect(
+    this.size = withListener(
       mut({ width: NaN, height: NaN }),
       ({ width, height }) => {
         this.#renderer?.setSize(width, height);
@@ -126,8 +136,8 @@ export class Chart {
       }
     );
 
-    withEffect(this.xDisplayUnit, () => this.#updateTicks());
-    withEffect(this.yDisplayUnit, () => this.#updateTicks());
+    withListener(this.xDisplayUnit, () => this.#updateTicks());
+    withListener(this.yDisplayUnit, () => this.#updateTicks());
 
     // canvas & renderer
     this.controller.createRenderer(transfer(canvas, [canvas])).then((r) => {
@@ -135,33 +145,20 @@ export class Chart {
       this.scheduleRender();
     });
 
-    this.raiseXFactorAction = changeFactorAction(
-      "raise",
-      this.xRange,
-      this.xDisplayUnit
-    );
-    this.lowerXFactorAction = changeFactorAction(
-      "lower",
-      this.xRange,
-      this.xDisplayUnit
-    );
-    this.raiseYFactorAction = changeFactorAction(
-      "raise",
-      this.yRange,
-      this.yDisplayUnit
-    );
-    this.lowerYFactorAction = changeFactorAction(
-      "lower",
-      this.yRange,
-      this.yDisplayUnit
-    );
+    this.raiseXFactorAction = changeFactorAction("raise", this.xDisplayUnit);
+    this.lowerXFactorAction = changeFactorAction("lower", this.xDisplayUnit);
+    this.raiseYFactorAction = changeFactorAction("raise", this.yDisplayUnit);
+    this.lowerYFactorAction = changeFactorAction("lower", this.yDisplayUnit);
   }
 
   #updateTraces(traces: TraceList) {
-    const someUnits = traces.getUnits()[0];
-    this.xDisplayUnit.set(someUnits?.x);
-    this.yDisplayUnit.set(someUnits?.y);
-    this.scheduleRender(); // FIXME check that this is good
+    const dataUnits = traces.getUnits()[0];
+    this.#xDataUnit = dataUnits.x;
+    this.#yDataUnit = dataUnits.y;
+
+    this.xDisplayUnit.set(toDisplayUnit(dataUnits.x));
+    this.yDisplayUnit.set(toDisplayUnit(dataUnits.y));
+    this.scheduleRender();
   }
 
   /**
@@ -233,60 +230,70 @@ export class Chart {
   #updateTicks() {
     const xRange = this.xRange.get();
     if (xRange) {
-      const unit = this.xDisplayUnit.get();
-      this.#xTicks.set(linearTicks(xRange, unit, undefined));
+      const displayUnit = this.xDisplayUnit.get();
+      this.#xTicks.set(
+        linearTicks({ range: xRange, displayUnit, dataUnit: this.#xDataUnit })
+      );
     }
 
     const yRange = this.yRange.get();
     if (yRange) {
-      const unit = this.yDisplayUnit.get();
-      this.#yTicks.set(linearTicks(yRange, unit, undefined));
+      const displayUnit = this.yDisplayUnit.get();
+      this.#yTicks.set(
+        linearTicks({ range: yRange, displayUnit, dataUnit: this.#yDataUnit })
+      );
     }
   }
 
   resetZoom() {
     const units = this.bestDisplayUnits();
-    this.xRange.set(toRange(this.traces.get().range, units.x));
-    this.yRange.set(toRange(this.traces.get().getYRange(), units.y));
-    this.xDisplayUnit.set(units.x);
-    this.yDisplayUnit.set(units.y);
+    this.xRange.set(this.traces.get().range);
+    this.yRange.set(this.traces.get().getYRange());
+    this.xDisplayUnit.set(toDisplayUnit(units.x));
+    this.yDisplayUnit.set(toDisplayUnit(units.y));
     return this.scheduleRender();
   }
 
   bestDisplayUnits(): {
-    x: Unit | "date" | undefined;
-    y: Unit | "date" | undefined;
+    x: Unit | NumericDateFormat | undefined;
+    y: Unit | NumericDateFormat | undefined;
   } {
-    // FIXME recognize when to use date
     const units = this.traces.get().getUnits();
-    const xUnits = units.map((u) => u.x);
-    const yUnits = units.map((u) => u.y);
-    let medianXUnit;
-    if (xUnits[0] === "date" || xUnits[0] === undefined) {
-      medianXUnit = xUnits[0];
-    } else {
-      medianXUnit = xUnits.sort(
-        (a, b) =>
-          (a as Unit).multiplyValueByFactor(1) - //FIXME this cant be the right way
-          (b as Unit).multiplyValueByFactor(1) //FIXME this cant be the right way
-      )[Math.floor(xUnits.length / 2)];
-    }
-
-    let medianYUnit;
-    if (yUnits[0] === "date" || yUnits[0] === undefined) {
-      medianYUnit = yUnits[0];
-    } else {
-      medianYUnit = yUnits.sort(
-        (a, b) =>
-          (a as Unit).multiplyValueByFactor(1) - //FIXME this cant be the right way
-          (b as Unit).multiplyValueByFactor(1) //FIXME this cant be the right way
-      )[Math.floor(yUnits.length / 2)];
-    }
-
     return {
-      x: medianXUnit,
-      y: medianYUnit,
+      x: units[0].x,
+      y: units[0].y,
     };
+
+    // // FIXME recognize when to use date
+    // const units = this.traces.get().getUnits();
+    // const xUnits = units.map((u) => u.x);
+    // const yUnits = units.map((u) => u.y);
+    // let medianXUnit;
+    // if (xUnits[0] === "date" || xUnits[0] === undefined) {
+    //   medianXUnit = xUnits[0];
+    // } else {
+    //   medianXUnit = xUnits.sort(
+    //     (a, b) =>
+    //       (a as Unit).multiplyValueByFactor(1) - //FIXME this cant be the right way
+    //       (b as Unit).multiplyValueByFactor(1) //FIXME this cant be the right way
+    //   )[Math.floor(xUnits.length / 2)];
+    // }
+
+    // let medianYUnit;
+    // if (yUnits[0] === "date" || yUnits[0] === undefined) {
+    //   medianYUnit = yUnits[0];
+    // } else {
+    //   medianYUnit = yUnits.sort(
+    //     (a, b) =>
+    //       (a as Unit).multiplyValueByFactor(1) - //FIXME this cant be the right way
+    //       (b as Unit).multiplyValueByFactor(1) //FIXME this cant be the right way
+    //   )[Math.floor(yUnits.length / 2)];
+    // }
+
+    // return {
+    //   x: medianXUnit,
+    //   y: medianYUnit,
+    // };
   }
 
   /** Transforms x, y fraction of canvas size into chart quantity (or unitless number) */
@@ -314,12 +321,11 @@ export class Chart {
   ): number {
     const range = axis === "x" ? this.xRange.get() : this.yRange.get();
     if (!range) throw new Error(`${axis} range is undefined`);
-    const unit =
-      axis === "x" ? this.xDisplayUnit.get() : this.yDisplayUnit.get();
+    const unit = axis === "x" ? this.#xDataUnit : this.#yDataUnit;
 
     const fraction =
       (toNumeric(quantity, unit) - toNumeric(range.from, unit)) /
-      (toNumeric(range.to) - toNumeric(range.from));
+      (toNumeric(range.to, unit) - toNumeric(range.from, unit));
 
     return fraction;
   }
@@ -330,19 +336,18 @@ export class Chart {
     axis: "x" | "y"
   ): Quantity | number | dayjs.Dayjs {
     const range = axis === "x" ? this.xRange.get() : this.yRange.get();
-    const displayUnit =
-      axis === "x" ? this.xDisplayUnit.get() : this.yDisplayUnit.get();
+    const unit = axis === "x" ? this.#xDataUnit : this.#yDataUnit;
 
     if (!range) throw new Error("xRange or yRange is undefined");
 
     const value =
-      toNumeric(range.from, displayUnit) +
+      toNumeric(range.from, unit) +
       (axis === "x"
         ? coordinateInPx / this.canvas!.width
         : 1 - coordinateInPx / this.canvas!.height) *
-        (toNumeric(range.to, displayUnit) - toNumeric(range.from, displayUnit));
+        (toNumeric(range.to, unit) - toNumeric(range.from, unit));
 
-    return toQuantOrDay(value, displayUnit);
+    return toQuantOrDay(value, unit);
   }
 
   /** Transforms a point represented by data values and units (if aplicable) into pixel coordinates relative to chart canvas */
@@ -377,6 +382,71 @@ export class Chart {
     return coordinate;
   }
 
+  zoomRange({ detail }: { detail: Zoom }) {
+    for (const [axis, zoom] of Object.entries(detail) as [
+      string,
+      NumericRange
+    ][]) {
+      const rangeName = `${axis}Range` as "xRange" | "yRange";
+      const range = this[rangeName].get();
+      const unit = rangeName === "xRange" ? this.#xDataUnit : this.#yDataUnit;
+
+      const d = toNumeric(range.to, unit) - toNumeric(range.from, unit);
+
+      if (zoom.to - zoom.from <= 0) continue;
+
+      this[rangeName].set(
+        toRange(
+          {
+            from: toNumeric(range.from, unit) + d * zoom.from,
+            to: toNumeric(range.from, unit) + d * zoom.to,
+          },
+          unit
+        )
+      );
+    }
+  }
+
+  shiftRange({ detail: shift }: { detail: Shift }) {
+    {
+      const xRange = this.xRange.get();
+      const xUnits = this.#xDataUnit;
+      const from = toNumeric(xRange.from, xUnits);
+      const to = toNumeric(xRange.to, xUnits);
+      if (shift.dx) {
+        const delta = (to - from) * -shift.dx;
+        this.xRange.set(
+          toRange(
+            {
+              from: from + delta,
+              to: to + delta,
+            },
+            xUnits
+          )
+        );
+      }
+    }
+    {
+      const yRange = this.yRange.get();
+      const yUnits = this.#yDataUnit;
+      const from = toNumeric(yRange.from, yUnits);
+      const to = toNumeric(yRange.to, yUnits);
+      if (shift.dy) {
+        const delta = (to - from) * -shift.dy;
+        this.yRange.set(
+          toRange({ from: from + delta, to: to + delta }, yUnits)
+        );
+      }
+    }
+  }
+
+  distanceInDataUnits(a: GeneralizedPoint, b: GeneralizedPoint) {
+    return norm([
+      toNumeric(b.x, this.#xDataUnit) - toNumeric(a.x, this.#xDataUnit),
+      toNumeric(b.y, this.#yDataUnit) - toNumeric(a.y, this.#yDataUnit),
+    ]);
+  }
+
   readonly raiseXFactorAction: ReturnType<typeof changeFactorAction>;
   readonly lowerXFactorAction: ReturnType<typeof changeFactorAction>;
   readonly raiseYFactorAction: ReturnType<typeof changeFactorAction>;
@@ -390,14 +460,11 @@ export class Chart {
  */
 const changeFactorAction = (
   direction: "raise" | "lower",
-  range: WritableSignal<Range>,
-  displayUnit: WritableSignal<Unit | "date" | undefined>
+  displayUnit: WritableSignal<Unit | NumericDateFormat | undefined>
 ) =>
-  range.map(($range) => {
-    if (!$range) return;
-    if ($range.from instanceof dayjs || displayUnit.get() === "date") return; // NOTE changing the factor of a date range is not supported
-    const unit = $range.from instanceof Quantity ? $range.from.unit : undefined;
-    if (!unit) return;
+  displayUnit.map((unit) => {
+    // NOTE changing the factor of a date range is not supported
+    if (!unit || unit instanceof NumericDateFormat) return;
 
     const factorsEqual = (a: FactorDefinition, b: FactorDefinition) =>
       a.mul === b.mul && a.base === b.base && a.exp === b.exp;
@@ -429,9 +496,6 @@ const changeFactorAction = (
 
     return {
       unit: newUnit,
-      callback: () => {
-        range.set(toRange($range as NumericRange | QuantityRange, newUnit));
-        displayUnit.set(newUnit);
-      },
+      callback: () => displayUnit.set(newUnit),
     };
   });

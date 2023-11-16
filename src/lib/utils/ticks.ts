@@ -7,6 +7,8 @@ import {
   type Range,
   type Tick,
   type Unit,
+  isDateRange,
+  isNumericRange,
 } from "../types.js";
 import {
   formatInEra,
@@ -14,8 +16,9 @@ import {
   getLargerEra,
   getRangeSpan,
 } from "./dateFormatter.js";
-import { toDateRange, toNumericRange } from "./quantityHelpers.js";
+import { toRange, toNumericRange } from "./quantityHelpers.js";
 import { fitsIntoDecimals, prettyExp, uniqueDecimals } from "./format.js";
+import { NumericDateFormat } from "./numericDateFormat.js";
 
 const boxes: number[] = [1, 2, 5, 10];
 
@@ -24,7 +27,7 @@ function getTickPlaceAndDist(range: NumericRange): {
   firstTickValue: number;
   ticksDist: number;
 } {
-  const { from, to } = toNumericRange(range);
+  const { from, to } = range;
   const width = to - from;
 
   let firstTickValue: number = 0.0;
@@ -44,29 +47,62 @@ function getTickPlaceAndDist(range: NumericRange): {
   return { firstTickValue, ticksDist };
 }
 
-export function linearTicks(
-  range: Range,
-  displayUnit?: Unit | "date",
-  dataUnit?: Unit | "date"
-): Tick[] {
-  if (dataUnit === "date" || displayUnit === "date") {
-    if (range.from instanceof Quantity || range.to instanceof Quantity) {
-      throw new Error("Range contains quantities but you assume date");
+export function linearTicks({
+  range,
+  dataUnit,
+  displayUnit,
+}: {
+  range: Range;
+  dataUnit: Unit | NumericDateFormat | undefined;
+  displayUnit: Unit | undefined;
+}): Tick[] {
+  if (isDateRange(range)) {
+    if (!(dataUnit instanceof NumericDateFormat)) {
+      throw TypeError(
+        "The data unit for a DateRange must be a NumericDataFormat"
+      );
     }
-    return linearDateTicks(toDateRange(range as DateRange | NumericRange));
-  } else
-    return linearQuantityTicks(range as QuantityRange, displayUnit, dataUnit);
+    if (displayUnit !== undefined) {
+      throw TypeError("Invalid display unit for a DateRange");
+    }
+
+    return linearDateTicks({ range, displayUnit, dataUnit });
+  } else {
+    if (dataUnit instanceof NumericDateFormat) {
+      throw TypeError(
+        "NumericDateFormat is not a valid data unit for NumericRange and QuantityRange"
+      );
+    }
+
+    if (isNumericRange(range)) {
+      if (!(dataUnit?.isUnitless ?? true)) {
+        throw TypeError(
+          "Only unitless data units are supported for NumericRange"
+        );
+      }
+      if (!(displayUnit?.isUnitless ?? true)) {
+        throw TypeError(
+          "Only unitless display units are supported for NumericRange"
+        );
+      }
+    }
+    return linearQuantityTicks({ range, displayUnit, dataUnit });
+  }
 }
 
-export const linearQuantityTicks = (
-  range: NumericRange | QuantityRange,
-  dataUnit?: Unit,
-  displayUnit?: Unit
-): Tick[] => {
-  const { from, to } = toNumericRange(range);
+const linearQuantityTicks = ({
+  range,
+  dataUnit,
+  displayUnit,
+}: {
+  range: QuantityRange | NumericRange;
+  dataUnit: Unit | undefined;
+  displayUnit: Unit | undefined;
+}): Tick[] => {
+  const { from, to } = toNumericRange(range, dataUnit);
   const width = to - from;
   const { firstTickValue, ticksDist } = getTickPlaceAndDist(
-    toNumericRange(range)
+    toNumericRange(range, dataUnit)
   );
 
   let result: { value: number; position: number; unit: Unit | undefined }[] =
@@ -100,7 +136,13 @@ export const linearQuantityTicks = (
   }
 };
 
-export function linearDateTicks(range: DateRange): Tick[] {
+function linearDateTicks({
+  range,
+}: {
+  range: DateRange;
+  dataUnit: NumericDateFormat;
+  displayUnit: undefined;
+}): Tick[] {
   const rangeUnits = getRangeSpan(range);
 
   const rangeWidth = range.to.diff(range.from, rangeUnits, true);

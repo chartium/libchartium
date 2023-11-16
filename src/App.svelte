@@ -52,7 +52,7 @@
     })
     .then((l) =>
       l.withDataUnits({
-        x: "date",
+        x: NumericDateFormat.EpochSeconds,
         y: IEC.parseUnit("GiB"),
       })
     );
@@ -71,7 +71,7 @@
           sin: { color: "red" },
         })
         .withDataUnits({
-          x: "date",
+          x: NumericDateFormat.EpochSeconds,
           y: IEC.parseUnit("KiB"),
         })
     );
@@ -84,6 +84,7 @@
 
   let wrapDiv: HTMLElement;
   import domtoimage, { DomToImage } from "dom-to-image-more";
+  import { NumericDateFormat } from "./lib/index.js";
   const dti: DomToImage = domtoimage as any;
 
   const takeScreenshot = () => {

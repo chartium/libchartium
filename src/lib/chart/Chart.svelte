@@ -97,74 +97,11 @@
   $: qndFormatOptions = {
     decimals: 2,
     dayjsFormat: "MMM DD, hh:mm:ss",
-    unit: $yDisplayUnit !== "date" ? $yDisplayUnit : undefined,
+    unit: $yDisplayUnit,
   };
   const visibleAction = mut<VisibleAction | undefined>(undefined);
 
   $: (window as any).chart = chart; // FIXME DEBUG
-
-  function shiftRange({ detail: shift }: { detail: Shift }) {
-    if (!chart) return;
-
-    {
-      const xRange = chart.xRange.get();
-      const xUnits = xDisplayUnit?.get();
-      const from = toNumeric(xRange.from, xUnits);
-      const to = toNumeric(xRange.to, xUnits);
-      if (shift.dx) {
-        const delta = (to - from) * -shift.dx;
-        chart.xRange.set(
-          toRange(
-            {
-              from: from + delta,
-              to: to + delta,
-            },
-            xUnits
-          )
-        );
-      }
-    }
-    {
-      const yRange = chart.yRange.get();
-      const yUnits = yDisplayUnit?.get();
-      const from = toNumeric(yRange.from, yUnits);
-      const to = toNumeric(yRange.to, yUnits);
-      if (shift.dy) {
-        const delta = (to - from) * -shift.dy;
-        chart.yRange.set(
-          toRange({ from: from + delta, to: to + delta }, yUnits)
-        );
-      }
-    }
-  }
-
-  function zoomRange({ detail }: { detail: Zoom }) {
-    if (!chart) return;
-
-    for (const [axis, zoom] of Object.entries(detail) as [
-      string,
-      NumericRange
-    ][]) {
-      const rangeName = `${axis}Range` as "xRange" | "yRange";
-      const range = chart[rangeName].get();
-      const unit =
-        rangeName === "xRange" ? xDisplayUnit?.get() : yDisplayUnit?.get();
-
-      const d = toNumeric(range.to, unit) - toNumeric(range.from, unit);
-
-      if (zoom.to - zoom.from <= 0) continue;
-
-      chart[rangeName].set(
-        toRange(
-          {
-            from: toNumeric(range.from, unit) + d * zoom.from,
-            to: toNumeric(range.from, unit) + d * zoom.to,
-          },
-          unit
-        )
-      );
-    }
-  }
 
   let contentSize: [number, number] = [1, 1];
   $: if (chart) {
@@ -230,12 +167,10 @@
   $: if (chart && closestTraces && closestTraces?.length !== 0) {
     // FIXME rethink this, this is ew
     traceCloseEnough =
-      norm([
-        toNumeric(closestTraces[0].closestPoint.x, $xDisplayUnit) -
-          toNumeric(hoverXQuantity, $xDisplayUnit),
-        toNumeric(closestTraces[0].closestPoint.y, $yDisplayUnit) -
-          toNumeric(hoverYQuantity, $yDisplayUnit),
-      ]) < closenessDistance;
+      chart.distanceInDataUnits(closestTraces[0].closestPoint, {
+        x: hoverXQuantity,
+        y: hoverYQuantity,
+      }) < closenessDistance;
   }
 
   // look for the closest trace to the mouse and if it's close enough, show more info
@@ -320,11 +255,11 @@
 <ChartGrid bind:contentSize>
   <svelte:fragment slot="ylabel">
     {yLabel}
-    {#if !hideYLabelUnits && $yDisplayUnit && $yDisplayUnit !== "date"}[{$yDisplayUnit.toString()}]{/if}
+    {#if !hideYLabelUnits && $yDisplayUnit}[{$yDisplayUnit.toString()}]{/if}
   </svelte:fragment>
   <svelte:fragment slot="xlabel">
     {xLabel}
-    {#if !hideXLabelUnits && $xDisplayUnit && $xDisplayUnit !== "date"}[{$xDisplayUnit.toString()}]{/if}
+    {#if !hideXLabelUnits && $xDisplayUnit}[{$xDisplayUnit.toString()}]{/if}
   </svelte:fragment>
   <svelte:fragment slot="title">
     {title}
@@ -340,7 +275,7 @@
     {visibleAction}
     {disableInteractivity}
     hideTicks={hideYTicks}
-    on:shift={shiftRange}
+    on:shift={(d) => chart?.shiftRange(d)}
     raiseFactor={chart?.raiseYFactorAction ?? cons(undefined)}
     lowerFactor={chart?.lowerYFactorAction ?? cons(undefined)}
   />
@@ -352,7 +287,7 @@
     {visibleAction}
     {disableInteractivity}
     hideTicks={hideXTicks}
-    on:shift={shiftRange}
+    on:shift={(d) => chart?.shiftRange(d)}
     raiseFactor={chart?.raiseXFactorAction ?? cons(undefined)}
     lowerFactor={chart?.lowerXFactorAction ?? cons(undefined)}
   />
@@ -383,8 +318,8 @@
     {hideYRuler}
     {disableInteractivity}
     on:reset={() => chart?.resetZoom()}
-    on:zoom={zoomRange}
-    on:shift={shiftRange}
+    on:zoom={(d) => chart?.zoomRange(d)}
+    on:shift={(d) => chart?.shiftRange(d)}
     on:mousemove={(e) => {
       showTooltip = true;
       updateHoverQuantities(e);

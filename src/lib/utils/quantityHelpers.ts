@@ -1,57 +1,51 @@
 /** THelper functions to make the code shorter */
 
 import dayjs from "dayjs";
+import { NumericDateFormat } from "./numericDateFormat.js";
 import {
   Quantity,
   type NumericRange,
   type Unit,
   type Range,
-  type QuantityRange,
-  type DateRange,
 } from "../types.js";
 
-/** Transforms quantity to just numeric part in selected units. If units === undefined, will return x.value. If input is Date, will return epoch milliseconds */
+/** Transforms quantity to just numeric part in selected units. */
 export function toNumeric(
   x: Quantity | number | dayjs.Dayjs,
-  units?: Unit | "date"
+  unit: Unit | NumericDateFormat | undefined
 ): number {
-  if (x instanceof dayjs) {
-    // convert to epoch milliseconds
-    // TODO make this generic
-    return +x;
-  }
-
-  if (units === "date") {
-    if (x instanceof Quantity)
-      throw new Error(
-        "Can't convert quantity to numeric when units are 'date'"
-      );
-    return x as number;
-  }
   if (typeof x === "number") return x;
-  if (units) return (x as Quantity).inUnits(units).value;
-  else return (x as Quantity).value;
+
+  if (unit instanceof NumericDateFormat) {
+    if (dayjs.isDayjs(x)) return unit.valueFrom(x);
+
+    throw new TypeError(
+      "Attempting to convert an unsupported value from a date to a number."
+    );
+  }
+
+  if (unit) {
+    if (x instanceof Quantity) return x.inUnits(unit).value;
+
+    throw new TypeError(
+      "Attempting to convert an unsupported value from a quantity to a number."
+    );
+  }
+
+  console.log(x, unit);
+  throw new TypeError(
+    "Attempting to convert a non-primitive to a number without specifying a unit."
+  );
 }
 
-/** Transforms range to numeric range in selected units. If units === undefined, will return range of from.value to.value */
-export function toNumericRange(range: Range, units?: Unit): NumericRange {
+/** Transforms range to numeric range in selected units. */
+export function toNumericRange(
+  range: Range,
+  unit: Unit | undefined
+): NumericRange {
   return {
-    from: toNumeric(range.from, units),
-    to: toNumeric(range.to, units),
-  };
-}
-
-export function toDayjs(x: dayjs.Dayjs | number): dayjs.Dayjs {
-  // convert from epoch milliseconds
-  // TODO make this generic
-  if (typeof x === "number") return dayjs(x);
-  else return x;
-}
-
-export function toDateRange(range: NumericRange | DateRange): DateRange {
-  return {
-    from: toDayjs(range.from),
-    to: toDayjs(range.to),
+    from: toNumeric(range.from, unit),
+    to: toNumeric(range.to, unit),
   };
 }
 
@@ -60,23 +54,18 @@ export function toDateRange(range: NumericRange | DateRange): DateRange {
  * If input is quantity, will convert units.
  */
 export function toQuantOrDay(
-  x: number | Quantity | dayjs.Dayjs,
-  units?: Unit | "date"
+  x: number,
+  units?: Unit | NumericDateFormat
 ): Quantity | dayjs.Dayjs | number {
-  if (dayjs.isDayjs(x) || units === "date") {
-    if (x instanceof Quantity)
-      throw new Error("Can't convert quantity to date");
-    return toDayjs(x);
-  }
-  if (x instanceof Quantity && units) return x.inUnits(units);
+  if (units instanceof NumericDateFormat) return units.parseToDayjs(x);
   if (typeof x === "number" && units) return new Quantity(x, units);
   else return x;
 }
 
 /** Returns range in units if defined, otherwise returns numeric range */
 export function toRange(
-  range: NumericRange | QuantityRange | DateRange,
-  units?: Unit | "date"
+  range: NumericRange,
+  units?: Unit | NumericDateFormat
 ): Range {
   return {
     from: toQuantOrDay(range.from, units),

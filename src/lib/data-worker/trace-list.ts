@@ -1,10 +1,10 @@
-import type {
-  GeneralizedPoint,
-  Point,
+import {
   Quantity,
-  Range,
-  TraceHandle,
-  Unit,
+  type GeneralizedPoint,
+  type Point,
+  type Range,
+  type TraceHandle,
+  type Unit,
 } from "../types.js";
 import { lib } from "./wasm.js";
 import {
@@ -39,6 +39,7 @@ import {
   toQuantOrDay,
 } from "../utils/quantityHelpers.js";
 import type dayjs from "dayjs";
+import type { NumericDateFormat } from "../index.js";
 
 export const BUNDLES = Symbol("bundles");
 export const HANDLES = Symbol("handles");
@@ -178,7 +179,10 @@ export class TraceList {
    * any unit conversions, nor does it modify the data – rather, it re-interprets
    * the stored data as if it always had these units.
    */
-  withDataUnits(newUnits: { x?: Unit | "date"; y?: Unit | "date" }) {
+  withDataUnits(newUnits: {
+    x?: Unit | NumericDateFormat;
+    y?: Unit | NumericDateFormat;
+  }) {
     const traceInfo: ResolvedTraceInfo = this.#traceInfo.map(([key, info]) => [
       key,
       {
@@ -190,9 +194,15 @@ export class TraceList {
       },
     ]);
 
+    const { from, to } = this.#range;
+    const oldUnits = this.getUnits()[0];
+
     return new TraceList(
       this.#traceHandles,
-      this.#range,
+      {
+        from: toQuantOrDay(toNumeric(from, oldUnits.x), newUnits.x),
+        to: toQuantOrDay(toNumeric(to, oldUnits.x), newUnits.x),
+      } as Range,
       this.#bundles,
       traceInfo
     );
@@ -372,7 +382,10 @@ export class TraceList {
    * Take care when rendering a trace list with mixed units – if you
    * aren't intentional with it, you may get unexpected results.
    */
-  getUnits(): { x: Unit | "date" | undefined; y: Unit | "date" | undefined }[] {
+  getUnits(): {
+    x: Unit | NumericDateFormat | undefined;
+    y: Unit | NumericDateFormat | undefined;
+  }[] {
     // FIXME this actually doesn't yet know how to spot date so it won't return it
     if (this.#units) return this.#units;
     const units = new Set<{ x: Unit | undefined; y: Unit | undefined }>();
