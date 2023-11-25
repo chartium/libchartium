@@ -1,7 +1,6 @@
 import {
   Quantity,
   type GeneralizedPoint,
-  type Point,
   type Range,
   type TraceHandle,
   type Unit,
@@ -44,9 +43,11 @@ import type { NumericDateFormat } from "../index.js";
 export const BUNDLES = Symbol("bundles");
 export const HANDLES = Symbol("handles");
 export const TRACE_INFO = Symbol("trace info");
+export const LABELS = Symbol("labels");
 
 export interface TraceInfo {
   id: string;
+  label: string | undefined;
 
   width: number;
   color: Color;
@@ -70,23 +71,33 @@ export class TraceList {
   #traceHandles: TraceHandle[];
   #bundles: lib.BoxedBundle[];
   #statistics: QDTraceMetas[] | undefined;
+  #labels: ReadonlyMap<string, string>;
   #traceInfo: ResolvedTraceInfo;
   #range: Range;
 
-  constructor(
-    handles: TraceHandle[],
-    range: Range,
-    bundles: lib.BoxedBundle[],
-    traceInfo: ResolvedTraceInfo | null
-  ) {
-    this.#traceHandles = handles;
-    this.#range = range;
-    this.#bundles = bundles;
-    this.#traceInfo = traceInfo ?? resolveTraceInfo({}, [], handles, traceIds);
+  constructor(params: {
+    handles: TraceHandle[];
+    range: Range;
+    bundles: lib.BoxedBundle[];
+    labels: ReadonlyMap<string, string>;
+    traceInfo: ResolvedTraceInfo | null;
+  }) {
+    this.#traceHandles = params.handles;
+    this.#range = params.range;
+    this.#bundles = params.bundles;
+    this.#labels = params.labels;
+    this.#traceInfo =
+      params.traceInfo ?? resolveTraceInfo({}, [], params.handles, traceIds);
   }
 
   static empty() {
-    return new TraceList([], { from: 0, to: 0 }, [], []);
+    return new TraceList({
+      handles: [],
+      range: { from: 0, to: 0 },
+      bundles: [],
+      traceInfo: [],
+      labels: new Map(),
+    });
   }
 
   /**
@@ -126,6 +137,7 @@ export class TraceList {
       xDataUnit: info.xDataUnit,
       yDataUnit: info.yDataUnit,
       color: computeTraceColor(id, info.color),
+      label: this.#labels.get(id),
     };
   }
 
@@ -137,6 +149,9 @@ export class TraceList {
   }
   get [TRACE_INFO]() {
     return this.#traceInfo;
+  }
+  get [LABELS]() {
+    return this.#labels;
   }
 
   /**
@@ -164,14 +179,20 @@ export class TraceList {
         traceIds
       ),
     ]);
-    return new TraceList(this.#traceHandles, this.#range, this.#bundles, [
-      ...resolveTraceInfo(
-        stylesheet,
-        this.#traceInfo,
-        this.#traceHandles,
-        traceIds
-      ),
-    ]);
+    return new TraceList({
+      handles: this.#traceHandles,
+      range: this.#range,
+      bundles: this.#bundles,
+      labels: this.#labels,
+      traceInfo: [
+        ...resolveTraceInfo(
+          stylesheet,
+          this.#traceInfo,
+          this.#traceHandles,
+          traceIds
+        ),
+      ],
+    });
   }
 
   /**
@@ -197,15 +218,16 @@ export class TraceList {
     const { from, to } = this.#range;
     const oldUnits = this.getUnits()[0];
 
-    return new TraceList(
-      this.#traceHandles,
-      {
+    return new TraceList({
+      handles: this.#traceHandles,
+      range: {
         from: toQuantOrDay(toNumeric(from, oldUnits.x), newUnits.x),
         to: toQuantOrDay(toNumeric(to, oldUnits.x), newUnits.x),
       } as Range,
-      this.#bundles,
-      traceInfo
-    );
+      bundles: this.#bundles,
+      labels: this.#labels,
+      traceInfo,
+    });
   }
 
   /**
@@ -229,7 +251,13 @@ export class TraceList {
     );
     const handles = this.#traceHandles.filter((t) => availableHandles.has(t));
 
-    return new TraceList(handles, range, bundles, this.#traceInfo);
+    return new TraceList({
+      handles,
+      range,
+      bundles,
+      labels: this.#labels,
+      traceInfo: this.#traceInfo,
+    });
   }
 
   /**
@@ -246,7 +274,13 @@ export class TraceList {
 
     const handles = this.#traceHandles.filter((h) => !exclude.has(h));
 
-    return new TraceList(handles, this.#range, this.#bundles, this.#traceInfo);
+    return new TraceList({
+      handles,
+      range: this.#range,
+      bundles: this.#bundles,
+      labels: this.#labels,
+      traceInfo: this.#traceInfo,
+    });
   }
 
   /**
@@ -263,7 +297,31 @@ export class TraceList {
 
     const handles = this.#traceHandles.filter((h) => include.has(h));
 
-    return new TraceList(handles, this.#range, this.#bundles, this.#traceInfo);
+    return new TraceList({
+      handles,
+      range: this.#range,
+      bundles: this.#bundles,
+      labels: this.#labels,
+      traceInfo: this.#traceInfo,
+    });
+  }
+
+  /**
+   * Set trace labels by id
+   */
+  withLabels(newLabels: Iterable<[string, string | undefined]>) {
+    const labels = new Map([
+      ...this.#labels,
+      ...filter(newLabels, (kv): kv is [string, string] => kv[1] !== undefined),
+    ]);
+
+    return new TraceList({
+      handles: this.#traceHandles,
+      range: this.#range,
+      bundles: this.#bundles,
+      labels: labels,
+      traceInfo: this.#traceInfo,
+    });
   }
 
   /**
@@ -284,13 +342,20 @@ export class TraceList {
       map(bundles, (b) => b.to()),
       Math.max
     );
-    const info = simplifyTraceInfo(
+    const labels = new Map(flatMap(lists, (l) => l[LABELS].entries()));
+    const traceInfo = simplifyTraceInfo(
       lists.flatMap((l) => l.#traceInfo),
       handles,
       traceIds
     );
 
-    return new TraceList(handles, { from, to }, bundles, info);
+    return new TraceList({
+      handles,
+      range: { from, to },
+      bundles,
+      labels,
+      traceInfo,
+    });
   }
 
   /**
@@ -439,12 +504,13 @@ export class TraceList {
     >();
     for (const bundle of this.#bundles) {
       const { x, y } = this.getBundleUnits(bundle);
-      const newTraceList = new TraceList(
-        Array.from(bundle.traces()) as TraceHandle[],
-        this.#range,
-        [bundle],
-        this.#traceInfo
-      );
+      const newTraceList = new TraceList({
+        handles: Array.from(bundle.traces()) as TraceHandle[],
+        range: this.#range,
+        bundles: [bundle],
+        labels: this.#labels,
+        traceInfo: this.#traceInfo,
+      });
       if (toReturn.has({ x, y })) {
         toReturn.set(
           { x, y },

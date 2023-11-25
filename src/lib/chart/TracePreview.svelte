@@ -1,67 +1,82 @@
 <!-- component for showing a bit of the trace for legends and tooltips and such -->
 <script lang="ts">
-  import { onMount } from "svelte";
   import type { TraceInfo } from "../data-worker/trace-list.js";
   import * as canvas from "./canvas.js";
 
   export let previewedTrace: TraceInfo;
+  $: color = `rgb( ${previewedTrace.color[0]}, ${previewedTrace.color[1]}, ${previewedTrace.color[2]} )`;
 
-  let canvasRef: HTMLCanvasElement;
   export let previewWidth: number = 20;
   export let previewHeight: number = 20;
 
   /** If true, will just show color of trace, otherwise also width */
   export let simplified: boolean = false;
-  let ctx: CanvasRenderingContext2D | null = null;
 
-  onMount(() => {
-    ctx = canvasRef.getContext("2d");
-    drawPreview(previewedTrace, previewHeight, previewWidth);
+  let canvasRef: HTMLCanvasElement | undefined;
+  $: ctx = canvasRef?.getContext("2d") ?? undefined;
+  $: drawPreview({
+    ctx,
+    color,
+    trace: previewedTrace,
+    previewHeight,
+    previewWidth,
   });
 
-  $: drawPreview(previewedTrace, previewHeight, previewWidth);
+  function drawPreview({
+    ctx,
+    trace,
+    previewHeight,
+    previewWidth,
+  }: {
+    ctx: CanvasRenderingContext2D | undefined;
+    trace: TraceInfo;
+    color: string;
+    previewHeight: number;
+    previewWidth: number;
+  }) {
+    if (!ctx) return;
 
-  function drawPreview(trace: TraceInfo, height: number, width: number) {
-    if (!ctx) {
-      return;
-    }
-    ctx.clearRect(0, 0, width, height);
-    const color = trace.color;
-    const traceWidth = trace.width;
+    ctx.clearRect(0, 0, previewWidth, previewHeight);
+    const width = trace.width;
     const points = trace.display === "points" ? true : false;
-    const style: canvas.DrawStyle = {
-      fillStyle: `rgb( ${color[0]}, ${color[1]}, ${color[2]} ) `,
-      strokeStyle: `rgb( ${color[0]}, ${color[1]}, ${color[2]} ) `,
-    };
-
-    if (simplified) {
-      style.lineWidth = 7;
-      canvas.drawSegment(ctx, [width / 2, height], [width / 2, 0], style);
-      return;
-    }
-
-    style.lineWidth = traceWidth;
+    const style: canvas.DrawStyle = { fillStyle: color, strokeStyle: color };
+    style.lineWidth = width;
 
     if (points) {
+      canvas.drawCircle(ctx, [previewWidth - width, width], width, style);
       canvas.drawCircle(
         ctx,
-        [width - traceWidth, traceWidth],
-        traceWidth,
+        [previewWidth / 2, previewHeight / 2],
+        width,
         style
       );
-      canvas.drawCircle(ctx, [previewWidth / 2, height / 2], traceWidth, style);
-      canvas.drawCircle(
-        ctx,
-        [traceWidth, height - traceWidth],
-        traceWidth,
-        style
-      );
+      canvas.drawCircle(ctx, [width, previewHeight - width], width, style);
     } else {
-      canvas.drawSegment(ctx, [0, height], [width, 0], style);
+      canvas.drawSegment(ctx, [0, previewHeight], [previewWidth, 0], style);
     }
   }
 </script>
 
 <div>
-  <canvas bind:this={canvasRef} height={previewWidth} width={previewHeight} />
+  {#if simplified}
+    <div class="color-indicator" style="background: {color}" />
+  {:else}
+    <canvas bind:this={canvasRef} height={previewWidth} width={previewHeight} />
+  {/if}
 </div>
+
+<style lang="scss">
+  @use "./utils.scss" as *;
+
+  .color-indicator {
+    height: 20px;
+    padding: 0;
+    width: round_to_px(0.3rem);
+    min-width: round_to_px(0.3rem);
+    margin: 0 0.2rem 0 -0.2rem;
+
+    // &.highlight {
+    //   min-width: round_to_px(0.5rem);
+    // }
+  }
+</style>

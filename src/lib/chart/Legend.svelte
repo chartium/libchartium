@@ -73,7 +73,10 @@
 -->
   {#each tracesWithStyles.slice(0, numberOfShownTraces) as styledTrace}
     <div class="trace-legend">
-      <div class="trace-preview">
+      <div
+        class="trace-preview"
+        class:simplified={previewType === "simplified"}
+      >
         <TracePreview
           previewedTrace={styledTrace}
           previewHeight={previewSize}
@@ -81,26 +84,31 @@
           simplified={previewType === "simplified"}
         />
       </div>
-      {styledTrace.id}
+      {styledTrace.label ?? styledTrace.id}
     </div>
   {/each}
 </div>
 
-<style>
+<style lang="scss">
   .legend-container {
     display: flex;
-    justify-content: space-between;
+    justify-content: start;
+    flex-wrap: wrap;
     margin: 0.5rem;
-  }
 
-  .trace-preview {
-    margin-left: 0.5rem;
-    margin-right: 0.5rem;
-  }
+    .trace-preview {
+      margin: 0 0.5rem;
+      &.simplified {
+        margin: 0 0.1rem 0 0.5rem;
+      }
+    }
 
-  .trace-legend {
-    display: flex;
-    flex-direction: row;
-    align-items: start;
+    .trace-legend {
+      display: flex;
+      flex: 1;
+      flex-direction: row;
+      align-items: start;
+      text-wrap: nowrap;
+    }
   }
 </style>

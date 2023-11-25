@@ -5,6 +5,7 @@
  -->
 
 <script lang="ts" generics="T">
+  import { portal } from "svelte-portal";
   import { observeResize } from "../utils/actions.js";
   import ContextItemComponent from "./ContextItemComponent.svelte";
   import type { ContextItem, Point } from "./contextMenu.js";
@@ -168,6 +169,7 @@
     menuWidth = width;
     menuHeight = height;
   }}
+  use:portal
 >
   {#each items as item, index}
     <ContextItemComponent

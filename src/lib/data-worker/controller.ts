@@ -203,11 +203,12 @@ export class ChartiumController {
 
     const bundle = bulkload.apply();
 
-    return new TraceList(
+    return new TraceList({
       handles,
-      { from: bundle.from(), to: bundle.to() },
-      [bundle],
-      null
-    );
+      range: { from: bundle.from(), to: bundle.to() },
+      bundles: [bundle],
+      labels: new Map(),
+      traceInfo: null,
+    });
   }
 }
