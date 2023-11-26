@@ -246,12 +246,15 @@ export class Chart {
   }
 
   resetZoom() {
-    const units = this.bestDisplayUnits();
     this.xRange.set(this.traces.get().range);
     this.yRange.set(this.traces.get().getYRange());
+    return this.scheduleRender();
+  }
+
+  resetUnits() {
+    const units = this.bestDisplayUnits();
     this.xDisplayUnit.set(toDisplayUnit(units.x));
     this.yDisplayUnit.set(toDisplayUnit(units.y));
-    return this.scheduleRender();
   }
 
   bestDisplayUnits(): {

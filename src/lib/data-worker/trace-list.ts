@@ -161,7 +161,10 @@ export class TraceList {
     x: Unit | undefined;
     y: Unit | undefined;
   } {
-    const traceId = traceIds.get(bundle.traces()[0] as TraceHandle)!;
+    const firstTrace = bundle.traces()[0] as TraceHandle | undefined;
+    if (!firstTrace) return { x: undefined, y: undefined };
+
+    const traceId = traceIds.get(firstTrace)!;
     const { xDataUnit, yDataUnit } = this.getTraceInfo(traceId);
     return { x: xDataUnit, y: yDataUnit };
   }
@@ -216,7 +219,7 @@ export class TraceList {
     ]);
 
     const { from, to } = this.#range;
-    const oldUnits = this.getUnits()[0];
+    const oldUnits = this.getUnits()[0] ?? {};
 
     return new TraceList({
       handles: this.#traceHandles,

@@ -111,6 +111,7 @@
         subtitle="Podtitulek"
         xLabel="Time"
         yLabel="Amount"
+        yUnit={IEC.parseUnit("MiB")}
       >
         <svelte:fragment slot="toolbar">
           <ToolbarButton title="Fullscreen">

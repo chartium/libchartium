@@ -1,6 +1,13 @@
 <script lang="ts">
   import type { ChartiumController } from "../data-worker/index.js";
-  import type { Range, Shift, Quantity, Zoom, NumericRange } from "../types.js";
+  import type {
+    Range,
+    Shift,
+    Quantity,
+    Zoom,
+    NumericRange,
+    Unit,
+  } from "../types.js";
   import type { TraceInfo, TraceList } from "../data-worker/trace-list.js";
   import type { VisibleAction } from "./ActionsOverlay.svelte";
 
@@ -20,17 +27,23 @@
   import type dayjs from "dayjs";
   import { qndFormat } from "../utils/format.js";
 
+  // SECTION Props
+
   export let controller: ChartiumController | Remote<ChartiumController>;
   export let traces: TraceList;
 
   export let title: string = "";
   export let subtitle: string = "";
-  /** Label to be displayed next to x axis. If empty label will be ommited */
+  /** Label to be displayed next to x axis. If empty, label will be ommited */
   export let xLabel: string = "";
-  /** Label to be displayed next to y axis. If empty label will be ommited */
+  /** Label to be displayed next to y axis. If empty, label will be ommited */
   export let yLabel: string = "";
 
-  // SECTION Props
+  /** Units that should be used on the x axis. If undefined, the units of the data are used. */
+  export let xUnit: Unit | undefined = undefined;
+
+  /** Units that should be used on the y axis. If undefined, the units of the data are used. */
+  export let yUnit: Unit | undefined = undefined;
 
   /** Hides the thick line at the edge of the graph */
   export let hideXAxisLine: boolean = false;
@@ -91,6 +104,9 @@
     : undefined;
   $: xTicks = chart?.xTicks;
   $: yTicks = chart?.yTicks;
+
+  $: if (xUnit) chart?.xDisplayUnit.set(xUnit);
+  $: if (yUnit) chart?.yDisplayUnit.set(yUnit);
   $: xDisplayUnit = chart?.xDisplayUnit;
   $: yDisplayUnit = chart?.yDisplayUnit;
 
