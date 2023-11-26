@@ -426,6 +426,13 @@ export class TraceList {
     if (this.#yRange) return this.#yRange;
     const metas = this.calculateStatistics();
     if (metas.length === 0) return { from: 0, to: 1 };
+    console.log(
+      metas.map((m) =>
+        Object.fromEntries(
+          Object.entries(m).map(([key, value]) => [key, value.toString()])
+        )
+      )
+    );
 
     return {
       from: metas.reduce(

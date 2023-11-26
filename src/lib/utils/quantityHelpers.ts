@@ -106,8 +106,7 @@ export function qdnMin(
   if (typeof x === "number" && typeof y === "number") {
     return Math.min(x, y);
   } else if (x instanceof Quantity && y instanceof Quantity) {
-    const firstInSecondUnits = x.inUnits(y.unit);
-    return firstInSecondUnits.value < (x as Quantity).value ? x : y;
+    return x.lessThan(y) ? x : y;
   } else {
     return (x as dayjs.Dayjs).isBefore(y as dayjs.Dayjs) ? x : y;
   }
@@ -124,8 +123,7 @@ export function qdnMax(
   if (typeof x === "number" && typeof y === "number") {
     return Math.max(x, y);
   } else if (x instanceof Quantity && y instanceof Quantity) {
-    const firstInSecondUnits = x.inUnits(y.unit);
-    return firstInSecondUnits.value > (x as Quantity).value ? x : y;
+    return x.greaterThan(y) ? x : y;
   } else {
     return (x as dayjs.Dayjs).isAfter(y as dayjs.Dayjs) ? x : y;
   }
