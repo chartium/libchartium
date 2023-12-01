@@ -295,6 +295,7 @@
     {disableInteractivity}
     hideTicks={hideYTicks}
     on:shift={(d) => chart?.shiftRange(d)}
+    on:reset={(d) => chart?.resetZoom("y")}
     raiseFactor={chart?.raiseYFactorAction ?? cons(undefined)}
     lowerFactor={chart?.lowerYFactorAction ?? cons(undefined)}
   />
@@ -307,6 +308,7 @@
     {disableInteractivity}
     hideTicks={hideXTicks}
     on:shift={(d) => chart?.shiftRange(d)}
+    on:reset={(d) => chart?.resetZoom("x")}
     raiseFactor={chart?.raiseXFactorAction ?? cons(undefined)}
     lowerFactor={chart?.lowerXFactorAction ?? cons(undefined)}
   />

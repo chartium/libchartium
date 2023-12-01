@@ -245,9 +245,11 @@ export class Chart {
     }
   }
 
-  resetZoom() {
-    this.xRange.set(this.traces.get().range);
-    this.yRange.set(this.traces.get().getYRange());
+  resetZoom(axis: "x" | "y" | "both" = "both") {
+    if (axis === "x" || axis === "both")
+      this.xRange.set(this.traces.get().range);
+    if (axis === "y" || axis === "both")
+      this.yRange.set(this.traces.get().getYRange());
     return this.scheduleRender();
   }
 

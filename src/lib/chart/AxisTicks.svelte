@@ -24,6 +24,7 @@
 
   export const events = createEventDispatcher<{
     shift: Shift;
+    reset: undefined;
   }>();
 
   export let hideTicks: boolean;
@@ -193,7 +194,8 @@
   }}
   role="presentation"
   on:contextmenu|preventDefault
-  use:mouseClick={(e) => menu.open(e)}
+  use:mouseClick={{ callback: (e) => menu.open(e), button: MouseButtons.Right }}
+  on:dblclick={() => events("reset")}
 >
   {#if !hideTicks}
     <div
