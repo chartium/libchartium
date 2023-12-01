@@ -52,6 +52,7 @@
   export let disableInteractivity: boolean;
   export let traceHovered: boolean;
 
+  /** @bind If true, the user can click on the chart to set a y threshold */
   export let thresholdMode: boolean;
 
   let canvasRef: HTMLCanvasElement;

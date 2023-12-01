@@ -336,7 +336,7 @@
     {hideXRuler}
     {hideYRuler}
     {disableInteractivity}
-    {thresholdMode}
+    bind:thresholdMode
     traceHovered={selectedTrace !== undefined}
     on:reset={() => chart?.resetZoom()}
     on:zoom={(d) => chart?.zoomRange(d)}
