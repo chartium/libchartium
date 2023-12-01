@@ -94,6 +94,9 @@
     | "bottom-right"
     | "none" = "top-right";
 
+  /** if true, chart will listen to mouseclick to apply a threshold */
+  export let thresholdMode: boolean = false;
+
   //!SECTION
 
   let canvas: HTMLCanvasElement;
@@ -256,8 +259,7 @@
     })
   );
 
-  let engageThresholdMode: () => void;
-  $: (window as any).thresholdMode_ENGAGE = engageThresholdMode;
+  $: (window as any).thresholdMode_ENGAGE = () => (thresholdMode = true);
 </script>
 
 {#if !hideTooltip}
@@ -334,7 +336,7 @@
     {hideXRuler}
     {hideYRuler}
     {disableInteractivity}
-    bind:engageThresholdMode
+    {thresholdMode}
     traceHovered={selectedTrace !== undefined}
     on:reset={() => chart?.resetZoom()}
     on:zoom={(d) => chart?.zoomRange(d)}

@@ -52,11 +52,7 @@
   export let disableInteractivity: boolean;
   export let traceHovered: boolean;
 
-  /** @bind */
-  export function engageThresholdMode() {
-    thresholdMode = true;
-  }
-  let thresholdMode: boolean;
+  export let thresholdMode: boolean;
 
   let canvasRef: HTMLCanvasElement;
   let ctx: CanvasRenderingContext2D;
