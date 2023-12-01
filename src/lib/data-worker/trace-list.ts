@@ -22,6 +22,7 @@ import { traceIds } from "./controller.js";
 import {
   filter,
   flatMap,
+  intersection,
   map,
   reduce,
   some,
@@ -282,7 +283,18 @@ export class TraceList {
       range: this.#range,
       bundles: this.#bundles,
       labels: this.#labels,
-      traceInfo: this.#traceInfo,
+      traceInfo: this.#traceInfo.map((info) => {
+        const firstID: string = info[0].values().next().value;
+        const { xDataUnit, yDataUnit } = this.getTraceInfo(firstID);
+        return [
+          info[0],
+          {
+            ...info[1],
+            xDataUnit,
+            yDataUnit,
+          },
+        ];
+      }), // handles.map((h) => this.getTraceInfo(traceIds.get(h)!)),
     });
   }
 
@@ -325,6 +337,34 @@ export class TraceList {
       labels: labels,
       traceInfo: this.#traceInfo,
     });
+  }
+
+  /** Returns new tracelist where every trace has at least one datapoint over treshold */
+  withOverTreshold(treshold: Quantity | number): TraceList {
+    const badHandles: TraceHandle[] = this.#bundles.flatMap((bundle) => {
+      const ptrs = bundle.traces();
+      const tresholdInBundleUnits = toNumeric(
+        treshold,
+        this.getBundleUnits(bundle).y
+      );
+      const filter = bundle.are_traces_over_threshold(
+        ptrs,
+        bundle.from(),
+        bundle.to(),
+        tresholdInBundleUnits
+      );
+      return bundle
+        .get_multiple_traces_metas(
+          ptrs.filter((_, i) => !filter[i]),
+          bundle.from(),
+          bundle.to()
+        )
+        .map((meta) => meta.handle);
+    });
+
+    const ids = badHandles.map((handle) => traceIds.get(handle)!);
+
+    return this.withoutTraces(ids as string[]);
   }
 
   /**
@@ -426,13 +466,6 @@ export class TraceList {
     if (this.#yRange) return this.#yRange;
     const metas = this.calculateStatistics();
     if (metas.length === 0) return { from: 0, to: 1 };
-    console.log(
-      metas.map((m) =>
-        Object.fromEntries(
-          Object.entries(m).map(([key, value]) => [key, value.toString()])
-        )
-      )
-    );
 
     return {
       from: metas.reduce(
@@ -515,7 +548,9 @@ export class TraceList {
     for (const bundle of this.#bundles) {
       const { x, y } = this.getBundleUnits(bundle);
       const newTraceList = new TraceList({
-        handles: Array.from(bundle.traces()) as TraceHandle[],
+        handles: Array.from(
+          intersection(Array.from(bundle.traces()), this[HANDLES])
+        ) as TraceHandle[],
         range: this.#range,
         bundles: [bundle],
         labels: this.#labels,
@@ -526,7 +561,9 @@ export class TraceList {
           { x, y },
           TraceList.union(toReturn.get({ x, y })!, newTraceList)
         );
-      } else toReturn.set({ x, y }, newTraceList);
+      } else {
+        toReturn.set({ x, y }, newTraceList);
+      }
     }
 
     this.#unitsToTraceMap = toReturn;

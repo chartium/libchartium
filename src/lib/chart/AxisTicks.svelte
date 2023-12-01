@@ -4,7 +4,7 @@
   import { createEventDispatcher, tick } from "svelte";
   import { MouseButtons, mouseDrag } from "../utils/mouseGestures.js";
   import {
-    rightMouseClick,
+    mouseClick,
     type MouseDragCallbacks,
   } from "../utils/mouseGestures.js";
   import type { Point, Range, Shift, Tick, Unit } from "../types.js";
@@ -193,7 +193,7 @@
   }}
   role="presentation"
   on:contextmenu|preventDefault
-  use:rightMouseClick={(e) => menu.open(e)}
+  use:mouseClick={(e) => menu.open(e)}
 >
   {#if !hideTicks}
     <div
@@ -221,7 +221,7 @@
     width: 100%;
   }
   .y {
-    writing-mode: sideways-lr;
+    writing-mode: sideways-lr; /* doesnt work on chromium based */
     height: 100%;
   }
 

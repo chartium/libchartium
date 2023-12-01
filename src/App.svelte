@@ -85,6 +85,7 @@
   let wrapDiv: HTMLElement;
   import domtoimage, { DomToImage } from "dom-to-image-more";
   import { NumericDateFormat } from "./lib/index.js";
+  import { Quantity } from "unitlib";
   const dti: DomToImage = domtoimage as any;
 
   const takeScreenshot = () => {
@@ -98,6 +99,7 @@
 
   (window as any).SI = SI;
   (window as any).IEC = IEC;
+  (window as any).Quantity = Quantity;
 </script>
 
 <main class="dark">

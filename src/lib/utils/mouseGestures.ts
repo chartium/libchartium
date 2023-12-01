@@ -138,14 +138,17 @@ export const mouseDrag = (
   };
 };
 
-export function rightMouseClick(
+export function mouseClick(
   node: HTMLElement,
-  callback: (event: MouseEvent) => void
+  params: { callback: (event: MouseEvent) => void } & {
+    button: MouseButtons;
+    threshold?: number;
+  }
 ) {
   let init: Point | undefined;
 
   const handleMouseDown = (event: MouseEvent) => {
-    if (event.buttons !== MouseButtons.Right) return;
+    if (event.buttons !== params.button) return;
 
     init = { x: event.clientX, y: event.clientY };
   };
@@ -159,7 +162,7 @@ export function rightMouseClick(
     const threshold = 5;
 
     if (deltaX * deltaX + deltaY * deltaY < threshold * threshold)
-      callback(event);
+      params.callback(event);
 
     init = undefined;
   };

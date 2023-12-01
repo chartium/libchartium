@@ -95,6 +95,7 @@
     justify-content: start;
     flex-wrap: wrap;
     margin: 0.5rem;
+    overflow-y: scroll;
 
     .trace-preview {
       margin: 0 0.5rem;

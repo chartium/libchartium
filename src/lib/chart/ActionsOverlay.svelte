@@ -4,6 +4,8 @@
     zoom?: Zoom;
     shift?: Shift;
     highlightedPoints?: HighlightPoint[];
+    /** fraction of y range */
+    yThreshold?: number;
   };
 </script>
 
@@ -12,7 +14,7 @@
   import {
     MouseButtons,
     mouseDrag,
-    rightMouseClick,
+    mouseClick,
   } from "../utils/mouseGestures.js";
   import {
     drawArrow,
@@ -21,7 +23,13 @@
     type DrawStyle,
   } from "./canvas.js";
   import type { MouseDragCallbacks } from "../utils/mouseGestures.js";
-  import type { HighlightPoint, Point, Shift, Zoom } from "../types.js";
+  import type {
+    HighlightPoint,
+    Point,
+    Shift,
+    Threshold,
+    Zoom,
+  } from "../types.js";
 
   import { scaleCanvas } from "../utils/actions.js";
 
@@ -33,6 +41,7 @@
     reset: undefined;
     zoom: Zoom;
     shift: Shift;
+    yThreshold: Threshold;
   }>();
 
   export let visibleAction: WritableSignal<VisibleAction | undefined>;
@@ -42,6 +51,12 @@
   export let hideYRuler: boolean;
   export let disableInteractivity: boolean;
   export let traceHovered: boolean;
+
+  /** @bind */
+  export function engageThresholdMode() {
+    thresholdMode = true;
+  }
+  let thresholdMode: boolean;
 
   let canvasRef: HTMLCanvasElement;
   let ctx: CanvasRenderingContext2D;
@@ -55,6 +70,10 @@
 
   $: $visibleAction, scheduleDraw();
   $: mousePosition, scheduleDraw();
+  $: if (thresholdMode && mousePosition)
+    visibleAction.update((a) => {
+      return { ...a, yThreshold: 1 - mousePosition![1] / overlayHeight };
+    });
 
   let _frame: number | undefined = undefined;
   function scheduleDraw() {
@@ -78,6 +97,9 @@
         drawZoom(action.zoom);
       } else if (action && action.shift && !disableInteractivity) {
         drawShift(action.shift);
+      } else if (action && action.yThreshold && !disableInteractivity) {
+        console.log("uwu");
+        drawThreshold(action.yThreshold);
       } else if (mousePosition) {
         drawRuler(
           {
@@ -270,6 +292,18 @@
     }
   }
 
+  function drawThreshold(thresholdFrac: number) {
+    const style = {
+      dash: [9, 3],
+    };
+    drawSegment(
+      ctx,
+      [0, (1 - thresholdFrac) * overlayHeight],
+      [overlayWidth, (1 - thresholdFrac) * overlayHeight],
+      style
+    );
+  }
+
   const rightDragCallbacks: MouseDragCallbacks = {
     start: (e) => {},
     move: (_, status) => {
@@ -292,6 +326,18 @@
       }));
       events("shift", status.relativeShift);
     },
+  };
+
+  const leftClickCallback = (e: MouseEvent) => {
+    const yThreshold = visibleAction.get()?.yThreshold;
+    if (yThreshold) {
+      visibleAction.update((a) => ({
+        ...a,
+        yThreshold: undefined, // FIXME THIS IS HERE TWICE
+      }));
+      thresholdMode = false; // FIXME THIS IS HERE TWICE
+      events("yThreshold", { thresholdFrac: yThreshold });
+    }
   };
 
   let overlayWidth: number = 1;
@@ -375,9 +421,13 @@
   class:trace-hovered={traceHovered}
   on:dblclick={() => events("reset")}
   on:contextmenu|preventDefault
-  use:rightMouseClick={(e) => {
-    menu.open(e);
+  use:mouseClick={{
+    callback: (e) => {
+      menu.open(e);
+    },
+    button: MouseButtons.Right,
   }}
+  use:mouseClick={{ callback: leftClickCallback, button: MouseButtons.Left }}
   on:mousemove={(e) => (mousePosition = [e.offsetX, e.offsetY])}
   on:mousemove
   on:mouseout={() => (mousePosition = undefined)}

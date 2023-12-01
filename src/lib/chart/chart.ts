@@ -7,12 +7,13 @@ import type {
   QuantityRange,
   Range,
   Shift,
+  Threshold,
   Tick,
   Unit,
   Zoom,
 } from "../types.js";
 import { Quantity } from "../types.js";
-import { TraceList } from "../data-worker/trace-list.js";
+import { BUNDLES, TraceList } from "../data-worker/trace-list.js";
 import { linearTicks } from "../utils/ticks.js";
 import { nextAnimationFrame } from "../utils/promise.js";
 import type { FactorDefinition } from "unitlib";
@@ -189,7 +190,6 @@ export class Chart {
         xType: "f32",
         xRange: toNumericRange(this.xRange.get(), units.x),
         yRange: toNumericRange(this.yRange.get(), units.y),
-
         clear: false,
       };
 
@@ -441,6 +441,23 @@ export class Chart {
         );
       }
     }
+  }
+
+  /**
+   * Reassigns traces such that only those that reach the treshold are left
+   * if your traces are sin(x) and x^2, then filterByTreshold(1.1) only leaves the x^2
+   */
+  filterOverTreshold({ detail: threshold }: { detail: Threshold }) {
+    const yRange = this.yRange.get();
+    const yUnits = this.#yDataUnit;
+
+    const from = toNumeric(yRange.from, yUnits);
+    const to = toNumeric(yRange.to, yUnits);
+    const qThreshold = toQuantOrDay(
+      from + (to - from) * threshold.thresholdFrac,
+      this.#yDataUnit
+    ) as number | Quantity;
+    this.traces.set(this.traces.get().withOverTreshold(qThreshold));
   }
 
   distanceInDataUnits(a: GeneralizedPoint, b: GeneralizedPoint) {

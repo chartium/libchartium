@@ -99,9 +99,14 @@
   let canvas: HTMLCanvasElement;
 
   $: offscreenCanvas = canvas ? canvas.transferControlToOffscreen() : undefined;
-  $: chart = offscreenCanvas
-    ? new Chart(controller, offscreenCanvas, traces)
-    : undefined;
+  let chart: Chart | undefined = undefined;
+  $: if (offscreenCanvas) {
+    // FIXME oh boy will this trigger an infinite loop?
+    chart = new Chart(controller, offscreenCanvas, traces);
+    chart.traces.subscribe((t) => {
+      traces = t;
+    });
+  }
   $: xTicks = chart?.xTicks;
   $: yTicks = chart?.yTicks;
 
@@ -250,6 +255,9 @@
       }
     })
   );
+
+  let engageThresholdMode: () => void;
+  $: (window as any).thresholdMode_ENGAGE = engageThresholdMode;
 </script>
 
 {#if !hideTooltip}
@@ -326,10 +334,12 @@
     {hideXRuler}
     {hideYRuler}
     {disableInteractivity}
+    bind:engageThresholdMode
     traceHovered={selectedTrace !== undefined}
     on:reset={() => chart?.resetZoom()}
     on:zoom={(d) => chart?.zoomRange(d)}
     on:shift={(d) => chart?.shiftRange(d)}
+    on:yThreshold={(t) => chart?.filterOverTreshold(t)}
     on:mousemove={(e) => {
       showTooltip = true;
       updateHoverQuantities(e);

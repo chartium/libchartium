@@ -78,6 +78,10 @@ export interface Shift {
   origin: Point;
 }
 
+export interface Threshold {
+  thresholdFrac: number;
+}
+
 /** Ranges x and y are fractions of the full range */
 export interface Zoom {
   x: NumericRange;
