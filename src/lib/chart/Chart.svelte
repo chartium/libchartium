@@ -8,6 +8,7 @@
     NumericRange,
     Unit,
     HighlightPoint,
+    GeneralizedPoint,
   } from "../types.js";
   import type { TraceInfo, TraceList } from "../data-worker/trace-list.js";
   import type { VisibleAction } from "./ActionsOverlay.svelte";
@@ -143,6 +144,10 @@
   let showTooltip: boolean = false;
   let hoverXQuantity: number | dayjs.Dayjs | Quantity;
   let hoverYQuantity: number | dayjs.Dayjs | Quantity;
+  function updateHoverQuantities(e: MouseEvent) {
+    hoverXQuantity = chart?.coordinatesToQuantities(e.offsetX, "x") ?? 0;
+    hoverYQuantity = chart?.coordinatesToQuantities(e.offsetY, "y") ?? 0;
+  }
   $: closestTraces =
     chart && hoverXQuantity && hoverYQuantity
       ? traces.findClosestTracesToPoint(
@@ -160,7 +165,16 @@
       y: qndFormat(trace.closestPoint.y, qndFormatOptions),
     })) ?? [];
 
-  $: {
+  /** updates highilghted points in visibleAction */
+  function updateHighlightPoints(
+    chart: Chart | undefined,
+    closestTraces:
+      | {
+          traceInfo: TraceInfo;
+          closestPoint: GeneralizedPoint;
+        }[]
+      | undefined
+  ) {
     if (closestTraces === undefined || chart === undefined) {
       visibleAction.set({ highlightedPoints: [] });
     } else {
@@ -176,6 +190,13 @@
         highlightedPoints: points,
       }));
     }
+  }
+  $: updateHighlightPoints(chart, closestTraces);
+
+  $: if (chart) {
+    // ideally this would just update but without mousemove we don't know where the mouse is
+    chart.xRange.subscribe(() => updateHighlightPoints(chart, []));
+    chart.yRange.subscribe(() => updateHighlightPoints(chart, []));
   }
 
   /** How close to a trace is considered close enough to get only one trace info */
@@ -229,11 +250,6 @@
     selectedTrace = undefined;
   }
 
-  function updateHoverQuantities(e: MouseEvent) {
-    hoverXQuantity = chart?.coordinatesToQuantities(e.offsetX, "x") ?? 0;
-    hoverYQuantity = chart?.coordinatesToQuantities(e.offsetY, "y") ?? 0;
-  }
-
   // forbidden rectangle for tooltip to avoid
   let forbiddenRectangle:
     | {
@@ -264,7 +280,7 @@
     })
   );
 
-  $: (window as any).thresholdMode_ENGAGE = () => (thresholdMode = true);
+  $: (window as any).thresholdMode_ENGAGE = () => (thresholdMode = true); //FIXME DEBUG
 </script>
 
 {#if !hideTooltip}
