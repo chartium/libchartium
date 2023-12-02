@@ -245,11 +245,23 @@ export class Chart {
     }
   }
 
-  resetZoom(axis: "x" | "y" | "both" = "both") {
+  /**
+   * @param axis which axis to reset, defaults to both
+   * @param showYZero if true the y range will be stretched to include 0 if necessary
+   */
+  resetZoom(axis: "x" | "y" | "both" = "both", showYZero = false) {
     if (axis === "x" || axis === "both")
       this.xRange.set(this.traces.get().range);
-    if (axis === "y" || axis === "both")
-      this.yRange.set(this.traces.get().getYRange());
+    if (axis === "y" || axis === "both") {
+      const yRange = this.traces.get().getYRange();
+      if (showYZero) {
+        const from = toNumeric(yRange.from, this.#yDataUnit);
+        const to = toNumeric(yRange.to, this.#yDataUnit);
+        yRange.from = toQuantOrDay(Math.min(0, from), this.#yDataUnit);
+        yRange.to = toQuantOrDay(Math.max(0, to), this.#yDataUnit);
+      }
+      this.yRange.set(yRange);
+    }
     return this.scheduleRender();
   }
 

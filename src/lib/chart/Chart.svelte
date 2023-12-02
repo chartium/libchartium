@@ -7,6 +7,7 @@
     Zoom,
     NumericRange,
     Unit,
+    HighlightPoint,
   } from "../types.js";
   import type { TraceInfo, TraceList } from "../data-worker/trace-list.js";
   import type { VisibleAction } from "./ActionsOverlay.svelte";
@@ -26,6 +27,7 @@
   import { toNumeric, toRange } from "../utils/quantityHelpers.js";
   import type dayjs from "dayjs";
   import { qndFormat } from "../utils/format.js";
+  import { update } from "lodash-es";
 
   // SECTION Props
 
@@ -93,6 +95,9 @@
     | "bottom-left"
     | "bottom-right"
     | "none" = "top-right";
+
+  /** Forces autozoom to show y = 0 */
+  export let showYZero: boolean = false;
 
   /** if true, chart will listen to mouseclick to apply a threshold */
   export let thresholdMode: boolean = false;
@@ -295,7 +300,7 @@
     {disableInteractivity}
     hideTicks={hideYTicks}
     on:shift={(d) => chart?.shiftRange(d)}
-    on:reset={(d) => chart?.resetZoom("y")}
+    on:reset={(d) => chart?.resetZoom("y", showYZero)}
     raiseFactor={chart?.raiseYFactorAction ?? cons(undefined)}
     lowerFactor={chart?.lowerYFactorAction ?? cons(undefined)}
   />
@@ -340,7 +345,7 @@
     {disableInteractivity}
     bind:thresholdMode
     traceHovered={selectedTrace !== undefined}
-    on:reset={() => chart?.resetZoom()}
+    on:reset={() => chart?.resetZoom("both", showYZero)}
     on:zoom={(d) => chart?.zoomRange(d)}
     on:shift={(d) => chart?.shiftRange(d)}
     on:yThreshold={(t) => chart?.filterOverTreshold(t)}
