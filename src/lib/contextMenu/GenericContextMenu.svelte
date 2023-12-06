@@ -225,7 +225,7 @@
   .context-menu {
     border: 1px solid rgb(131, 130, 130);
     border-radius: 4px;
-    background-color: rgb(17, 20, 37);
+    background-color: var(--secondary-background);
 
     position: fixed;
     user-select: none;

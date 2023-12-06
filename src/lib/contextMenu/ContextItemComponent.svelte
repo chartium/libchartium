@@ -70,6 +70,6 @@
   }
 
   .focused {
-    background-color: rgb(75, 75, 75);
+    background-color: var(--highlight-background);
   }
 </style>
