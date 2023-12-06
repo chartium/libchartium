@@ -122,7 +122,7 @@
   .tooltip-container {
     display: flex;
     flex-direction: column;
-    background-color: rgb(51, 51, 51);
+    background-color: var(--secondary-background);
     margin: 5px;
   }
 

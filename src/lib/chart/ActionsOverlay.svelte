@@ -26,6 +26,7 @@
   import type {
     HighlightPoint,
     Point,
+    Quantity,
     Shift,
     Threshold,
     Zoom,
@@ -36,6 +37,8 @@
   import type { ContextItem } from "../contextMenu/contextMenu.js";
   import GenericContextMenu from "../contextMenu/GenericContextMenu.svelte";
   import type { WritableSignal } from "@mod.js/signals";
+  import RulerBubble from "./RulerBubble.svelte";
+  import { Dayjs } from "dayjs";
 
   export const events = createEventDispatcher<{
     reset: undefined;
@@ -49,6 +52,10 @@
   export let hideHoverPoints: boolean;
   export let hideXRuler: boolean;
   export let hideYRuler: boolean;
+  export let hideXBubble: boolean;
+  export let hideYBubble: boolean;
+  export let hoverXQuantity: Quantity | number | Dayjs;
+  export let hoverYQuantity: Quantity | number | Dayjs;
   export let disableInteractivity: boolean;
   export let traceHovered: boolean;
 
@@ -442,6 +449,24 @@
   }}
   use:mouseDrag={{ ...rightDragCallbacks, button: MouseButtons.Right }}
 />
+
+{#if !hideXBubble && mousePosition}
+  {@const x = mousePosition[0] - 10}
+  <RulerBubble
+    position={{ x, y: overlayHeight }}
+    value={hoverXQuantity}
+    axis="x"
+  />
+{/if}
+
+{#if !hideYBubble && mousePosition}
+  {@const y = mousePosition[1] - 10}
+  <RulerBubble
+    position={{ x: overlayWidth, y }}
+    value={hoverYQuantity}
+    axis="y"
+  />
+{/if}
 
 <style>
   canvas {

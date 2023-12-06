@@ -72,6 +72,10 @@
   export let hideXRuler: boolean = false;
   /** Hides the lines shown upon mouse hover */
   export let hideYRuler: boolean = false;
+  /** Hides the coordinate bubble by the odge of the graph */
+  export let hideXBubble: boolean = false;
+  /** Hides the coordinate bubble by the odge of the graph */
+  export let hideYBubble: boolean = false;
 
   /** Hides the tooltips shown next to cursor */
   export let hideTooltip: boolean = false;
@@ -145,6 +149,7 @@
   let hoverXQuantity: number | dayjs.Dayjs | Quantity;
   let hoverYQuantity: number | dayjs.Dayjs | Quantity;
   function updateHoverQuantities(e: MouseEvent) {
+    console.log("fuck");
     hoverXQuantity = chart?.coordinatesToQuantities(e.offsetX, "x") ?? 0;
     hoverYQuantity = chart?.coordinatesToQuantities(e.offsetY, "y") ?? 0;
   }
@@ -329,7 +334,7 @@
     {disableInteractivity}
     hideTicks={hideXTicks}
     on:shift={(d) => chart?.shiftRange(d)}
-    on:reset={(d) => chart?.resetZoom("x")}
+    on:reset={() => chart?.resetZoom("x")}
     raiseFactor={chart?.raiseXFactorAction ?? cons(undefined)}
     lowerFactor={chart?.lowerXFactorAction ?? cons(undefined)}
   />
@@ -358,6 +363,10 @@
     {hideHoverPoints}
     {hideXRuler}
     {hideYRuler}
+    {hideXBubble}
+    {hideYBubble}
+    {hoverXQuantity}
+    {hoverYQuantity}
     {disableInteractivity}
     bind:thresholdMode
     traceHovered={selectedTrace !== undefined}
