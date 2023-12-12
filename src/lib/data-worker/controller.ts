@@ -22,6 +22,7 @@ import type { RenderingController } from "./renderers/mod.js";
 import { WebGL2Controller } from "./renderers/webgl2.js";
 import { proxyMarker } from "comlink";
 import { TraceList } from "./trace-list.js";
+import type { NumericDateFormat, TraceStylesheet } from "../index.js";
 
 let wasmMemory: WebAssembly.Memory | undefined;
 
@@ -169,13 +170,17 @@ export class ChartiumController {
     data,
     xType,
     yType,
+    xUnit,
+    yUnit,
+    style,
   }: {
     ids: string[];
     data: ArrayBuffer | TypedArray;
     xType: TypeOfData;
     yType: TypeOfData;
-    xUnit?: Unit;
-    yUnit?: Unit;
+    xUnit?: Unit | NumericDateFormat;
+    yUnit?: Unit | NumericDateFormat;
+    style?: TraceStylesheet;
   }): Promise<TraceList> {
     await this.initialized;
 
@@ -203,12 +208,16 @@ export class ChartiumController {
 
     const bundle = bulkload.apply();
 
-    return new TraceList({
+    let tl = new TraceList({
       handles,
       range: { from: bundle.from(), to: bundle.to() },
       bundles: [bundle],
       labels: new Map(),
       traceInfo: null,
     });
+
+    if (style) tl = tl.withStyle(style);
+    if (xUnit || yUnit) tl = tl.withDataUnits({ x: xUnit, y: yUnit });
+    return tl;
   }
 }

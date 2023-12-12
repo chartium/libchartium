@@ -43,44 +43,19 @@
 
   // const controller = spawnChartiumWorker();
   const controller = ChartiumController.instantiateInThisThread({ wasmUrl });
-  const otherTraces = controller
-    .addFromArrayBuffer({
-      ids: ["sin2"],
-      data: Float32Array.from(secondTraces),
-      xType: "f32",
-      yType: "f32",
-    })
-    .then((l) =>
-      l.withDataUnits({
-        x: NumericDateFormat.EpochSeconds,
-        y: IEC.parseUnit("GiB"),
-      })
-    );
 
-  const traces = controller
-    .addFromArrayBuffer({
-      ids: ["sin", "cos", "atan"],
-      data: Float32Array.from(chartiumFriendlyTraceData),
-      xType: "f32",
-      yType: "f32",
-    })
-    .then((l) =>
-      l
-        .withStyle({
-          "*": { width: 2 },
-          sin: { color: "red" },
-        })
-        .withDataUnits({
-          x: NumericDateFormat.EpochSeconds,
-          y: IEC.parseUnit("KiB"),
-        })
-    );
-
-  const combinedTraces = Promise.all([traces, otherTraces]).then(
-    ([traces, otherTraces]) => TraceList.union(traces, otherTraces)
-  );
-
-  $: (window as any).combinedTraces = combinedTraces;
+  const traces = controller.addFromArrayBuffer({
+    ids: ["sin", "cos", "atan"],
+    data: Float32Array.from(chartiumFriendlyTraceData),
+    xType: "f32",
+    yType: "f32",
+    xUnit: NumericDateFormat.EpochSeconds,
+    yUnit: IEC.parseUnit("KiB"),
+    style: {
+      "*": { width: 2 },
+      sin: { color: "red" },
+    },
+  });
 
   let wrapDiv: HTMLElement;
   import domtoimage, { DomToImage } from "dom-to-image-more";
@@ -114,6 +89,7 @@
         xLabel="Time"
         yLabel="Amount"
         yUnit={IEC.parseUnit("MiB")}
+        legendPosition="right"
       >
         <svelte:fragment slot="toolbar">
           <ToolbarButton title="Fullscreen">

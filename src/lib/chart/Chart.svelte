@@ -149,7 +149,6 @@
   let hoverXQuantity: number | dayjs.Dayjs | Quantity;
   let hoverYQuantity: number | dayjs.Dayjs | Quantity;
   function updateHoverQuantities(e: MouseEvent) {
-    console.log("fuck");
     hoverXQuantity = chart?.coordinatesToQuantities(e.offsetX, "x") ?? 0;
     hoverYQuantity = chart?.coordinatesToQuantities(e.offsetY, "y") ?? 0;
   }
@@ -429,6 +428,7 @@
 
   .infobox {
     position: absolute;
+    user-select: none;
 
     text-align: left;
     padding: 0.25rem;
