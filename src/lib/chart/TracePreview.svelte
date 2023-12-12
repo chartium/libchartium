@@ -66,13 +66,11 @@
 </div>
 
 <style lang="scss">
-  @use "./utils.scss" as *;
-
   .color-indicator {
     height: 20px;
     padding: 0;
-    width: round_to_px(0.3rem);
-    min-width: round_to_px(0.3rem);
+    width: 5px;
+    min-width: 0.3rem;
     margin: 0 0.2rem 0 -0.2rem;
 
     // &.highlight {
