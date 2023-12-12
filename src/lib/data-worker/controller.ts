@@ -173,6 +173,7 @@ export class ChartiumController {
     xUnit,
     yUnit,
     style,
+    labels,
   }: {
     ids: string[];
     data: ArrayBuffer | TypedArray;
@@ -181,6 +182,7 @@ export class ChartiumController {
     xUnit?: Unit | NumericDateFormat;
     yUnit?: Unit | NumericDateFormat;
     style?: TraceStylesheet;
+    labels?: ReadonlyMap<string, string>;
   }): Promise<TraceList> {
     await this.initialized;
 
@@ -218,6 +220,7 @@ export class ChartiumController {
 
     if (style) tl = tl.withStyle(style);
     if (xUnit || yUnit) tl = tl.withDataUnits({ x: xUnit, y: yUnit });
+    if (labels) tl = tl.withLabels(labels);
     return tl;
   }
 }
