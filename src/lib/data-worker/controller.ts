@@ -182,7 +182,7 @@ export class ChartiumController {
     xUnit?: Unit | NumericDateFormat;
     yUnit?: Unit | NumericDateFormat;
     style?: TraceStylesheet;
-    labels?: ReadonlyMap<string, string>;
+    labels?: Iterable<[string, string | undefined]>;
   }): Promise<TraceList> {
     await this.initialized;
 
