@@ -14,7 +14,7 @@ import type {
 } from "../types.js";
 import { Quantity } from "../types.js";
 import { BUNDLES, TraceList } from "../data-worker/trace-list.js";
-import { linearTicks } from "../utils/ticks.js";
+import { linearTicks, linearTicksFR } from "../utils/ticks.js";
 import { nextAnimationFrame } from "../utils/promise.js";
 import type { FactorDefinition } from "unitlib";
 
@@ -116,6 +116,9 @@ export class Chart {
    * The dimensions of this chart in pixels.
    */
   readonly size: WritableSignal<{ width: number; height: number }>;
+
+  xTextSize?: (text: string) => number;
+  yTextSize?: (text: string) => number;
 
   constructor(
     public readonly controller: ChartiumController | Remote<ChartiumController>,
@@ -229,18 +232,28 @@ export class Chart {
 
   #updateTicks() {
     const xRange = this.xRange.get();
-    if (xRange) {
+    if (xRange && this.xTextSize) {
       const displayUnit = this.xDisplayUnit.get();
       this.#xTicks.set(
-        linearTicks({ range: xRange, displayUnit, dataUnit: this.#xDataUnit })
+        linearTicksFR({
+          range: xRange,
+          displayUnit,
+          axisSize: this.canvas.width,
+          textMeasuringFunction: this.xTextSize,
+        })
       );
     }
 
     const yRange = this.yRange.get();
-    if (yRange) {
+    if (yRange && this.yTextSize) {
       const displayUnit = this.yDisplayUnit.get();
       this.#yTicks.set(
-        linearTicks({ range: yRange, displayUnit, dataUnit: this.#yDataUnit })
+        linearTicksFR({
+          range: yRange,
+          displayUnit,
+          axisSize: this.canvas.height,
+          textMeasuringFunction: this.yTextSize,
+        })
       );
     }
   }

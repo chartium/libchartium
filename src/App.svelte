@@ -80,7 +80,7 @@
 <main class="dark">
   <h1>Chartium test page</h1>
   {#await traces then traces}
-    <div style="height:600px;width:800px;" bind:this={wrapDiv}>
+    <div style="height:150px;width:300px;" bind:this={wrapDiv}>
       <Chart
         {controller}
         {traces}

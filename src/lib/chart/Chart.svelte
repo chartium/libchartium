@@ -127,7 +127,12 @@
   $: if (yUnit) chart?.yDisplayUnit.set(yUnit);
   $: xDisplayUnit = chart?.xDisplayUnit;
   $: yDisplayUnit = chart?.yDisplayUnit;
-
+  let xAxisTextSize: ((text: string) => number) | undefined;
+  let yAxisTextSize: ((text: string) => number) | undefined;
+  $: if (chart) {
+    chart.yTextSize = yAxisTextSize;
+    chart.xTextSize = xAxisTextSize;
+  }
   $: qndFormatOptions = {
     decimals: 2,
     dayjsFormat: "MMM DD, hh:mm:ss",
@@ -323,6 +328,7 @@
     on:reset={(d) => chart?.resetZoom("y", showYZero)}
     raiseFactor={chart?.raiseYFactorAction ?? cons(undefined)}
     lowerFactor={chart?.lowerYFactorAction ?? cons(undefined)}
+    bind:textLength={yAxisTextSize}
   />
 
   <AxisTicks
@@ -336,6 +342,7 @@
     on:reset={() => chart?.resetZoom("x")}
     raiseFactor={chart?.raiseXFactorAction ?? cons(undefined)}
     lowerFactor={chart?.lowerXFactorAction ?? cons(undefined)}
+    bind:textLength={xAxisTextSize}
   />
 
   <Guidelines

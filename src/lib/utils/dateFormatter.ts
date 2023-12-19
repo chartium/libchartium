@@ -11,7 +11,8 @@ export type DateRangeSpan =
   | "milliseconds";
 
 /** Returns what biggest eras the range spans
- * @example getRangeSpan({ from: new Date(2020, 0, 1), to: new Date(2020, 0, 2) }) === "days"
+ * @param [shortWindow=1.5] - if the range spans this many (for instance) days or fewer, it will return "hours" instead of "days"
+ * @example getRangeSpan({ from: new Date(2020, 0, 1), to: new Date(2020, 0, 4) }) === "days"
  */
 export function getRangeSpan(
   range: DateRange,

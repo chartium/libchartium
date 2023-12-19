@@ -42,6 +42,9 @@
   export let raiseFactor: UnitAction;
   export let lowerFactor: UnitAction;
 
+  export const textLength = (text: string) =>
+    measureText(text, measuringSpan, axis === "x" ? "horizontal" : "vertical");
+
   // flatten the mutable prop containing a store into a store
   const raiseFactor$ = mut($raiseFactor);
   $: raiseFactor$.set($raiseFactor);
