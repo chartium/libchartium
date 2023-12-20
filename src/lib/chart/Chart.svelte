@@ -1,15 +1,6 @@
 <script lang="ts">
   import type { ChartiumController } from "../data-worker/index.js";
-  import type {
-    Range,
-    Shift,
-    Quantity,
-    Zoom,
-    NumericRange,
-    Unit,
-    HighlightPoint,
-    GeneralizedPoint,
-  } from "../types.js";
+  import type { Quantity, Unit, GeneralizedPoint } from "../types.js";
   import type { TraceInfo, TraceList } from "../data-worker/trace-list.js";
   import type { VisibleAction } from "./ActionsOverlay.svelte";
 
@@ -22,14 +13,10 @@
   import ChartLegend from "./Legend.svelte";
   import Guidelines from "./Guidelines.svelte";
   import Tooltip from "./Tooltip.svelte";
-  import { norm } from "./position.js";
   import { WritableSignal, cons, mut } from "@mod.js/signals";
   import type { Remote } from "comlink";
-  import { toNumeric, toRange } from "../utils/quantityHelpers.js";
   import type dayjs from "dayjs";
   import { qndFormat } from "../utils/format.js";
-  import { update } from "lodash-es";
-  import type { Writable } from "svelte/store";
 
   // SECTION Props
 
@@ -108,9 +95,6 @@
 
   /** Forces autozoom to show y = 0 */
   export let showYZero: boolean = false;
-
-  /** if true, chart will listen to mouseclick to apply a threshold */
-  export let thresholdMode: boolean = false;
 
   //!SECTION
 
@@ -296,7 +280,10 @@
     })
   );
 
-  $: (window as any).thresholdMode_ENGAGE = () => (thresholdMode = true); //FIXME DEBUG
+  let addPersistentThreshold: () => void;
+  let filterByThreshold: () => void;
+  $: (window as any).addPersistentThreshold = addPersistentThreshold;
+  $: (window as any).filterByThreshold = filterByThreshold;
 </script>
 
 {#if !hideTooltip}
@@ -379,7 +366,8 @@
     {hoverXQuantity}
     {hoverYQuantity}
     {disableInteractivity}
-    bind:thresholdMode
+    bind:filterByThreshold
+    bind:addPersistentThreshold
     traceHovered={selectedTrace !== undefined}
     on:reset={() => chart?.resetZoom("both", showYZero)}
     on:zoom={(d) => chart?.zoomRange(d)}

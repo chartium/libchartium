@@ -59,8 +59,17 @@
   export let disableInteractivity: boolean;
   export let traceHovered: boolean;
 
-  /** @bind If true, the user can click on the chart to set a y threshold */
-  export let thresholdMode: boolean;
+  let thresholdFilterMode: boolean = false;
+  export const filterByThreshold = () => {
+    thresholdFilterMode = true;
+  };
+
+  let persistentYThresholds: Set<number> = new Set();
+
+  let thresholdAddMode: boolean = false;
+  export const addPersistentThreshold = () => {
+    thresholdAddMode = true;
+  };
 
   let canvasRef: HTMLCanvasElement;
   let ctx: CanvasRenderingContext2D;
@@ -74,7 +83,7 @@
 
   $: $visibleAction, scheduleDraw();
   $: mousePosition, scheduleDraw();
-  $: if (thresholdMode && mousePosition)
+  $: if ((thresholdFilterMode || thresholdAddMode) && mousePosition)
     visibleAction.update((a) => {
       return { ...a, yThreshold: 1 - mousePosition![1] / overlayHeight };
     });
@@ -92,6 +101,8 @@
       ctx.strokeStyle = color;
       ctx.lineWidth = 1;
 
+      persistentYThresholds.forEach(drawThreshold);
+
       if (action && action.highlightedPoints && !hideHoverPoints) {
         for (const point of action.highlightedPoints) {
           drawHighlightPoint(point);
@@ -102,7 +113,6 @@
       } else if (action && action.shift && !disableInteractivity) {
         drawShift(action.shift);
       } else if (action && action.yThreshold && !disableInteractivity) {
-        console.log("uwu");
         drawThreshold(action.yThreshold);
       } else if (mousePosition) {
         drawRuler(
@@ -337,10 +347,16 @@
     if (yThreshold) {
       visibleAction.update((a) => ({
         ...a,
-        yThreshold: undefined, // FIXME THIS IS HERE TWICE
+        yThreshold: undefined,
       }));
-      thresholdMode = false; // FIXME THIS IS HERE TWICE
-      events("yThreshold", { thresholdFrac: yThreshold });
+      if (thresholdFilterMode) {
+        events("yThreshold", { thresholdFrac: yThreshold });
+        thresholdFilterMode = false;
+      }
+      if (thresholdAddMode) {
+        persistentYThresholds.add(yThreshold);
+        thresholdAddMode = false;
+      }
     }
   };
 
