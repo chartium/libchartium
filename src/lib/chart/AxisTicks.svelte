@@ -187,6 +187,7 @@
 
     return maxSize;
   }
+  $: console.log({ axis, axisWidth, axisHeight });
 </script>
 
 <GenericContextMenu items={$contextItems} bind:this={menu} />
@@ -210,43 +211,38 @@
     </div>
   {/if}
 
-  <div
-    class="ticks-container"
-    use:mouseDrag={{
-      ...dragCallbacks,
-      button: MouseButtons.Left,
-    }}
-    role="presentation"
-    on:dblclick={() => events("reset")}
-  >
-    {#if !hideTicks}
-      <div
-        class="{axis} ticks"
-        style="{axis === `x` ? `height` : `width`}: {maxPerpendicularSize(
-          ticks
-        ) + 4}px"
-      >
-        {#each ticks as tick}
-          <span style={tickSpanStyle(tick, overlaps)}>
-            {@html tick.value}
-            {#if tick.subvalue}
-              <br />
-              {@html tick.subvalue}
-            {/if}
-          </span>
-        {/each}
-        <span class="measuring-span" bind:this={measuringSpan} />
-      </div>
-    {/if}
-  </div>
+  {#if !hideTicks}
+    <div
+      class="{axis} ticks"
+      style="{axis === `x` ? `height` : `width`}: {maxPerpendicularSize(ticks) +
+        4}px"
+      use:mouseDrag={{
+        ...dragCallbacks,
+        button: MouseButtons.Left,
+      }}
+      role="presentation"
+      on:dblclick={() => events("reset")}
+    >
+      {#each ticks as tick}
+        <span style={tickSpanStyle(tick, overlaps)}>
+          {@html tick.value}
+          {#if tick.subvalue}
+            <br />
+            {@html tick.subvalue}
+          {/if}
+        </span>
+      {/each}
+      <span class="measuring-span" bind:this={measuringSpan} />
+    </div>
+  {/if}
 </div>
 
 <style lang="scss">
   .axis-container {
+    flex-grow: 1;
     display: flex;
-    height: 100%;
-    width: 100%;
     align-items: center;
+    justify-content: flex-end;
   }
   .axis-container.x {
     flex-direction: column-reverse;

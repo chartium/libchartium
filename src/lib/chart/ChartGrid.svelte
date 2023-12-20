@@ -130,5 +130,7 @@
   .xticks,
   .yticks {
     overflow: visible;
+    display: flex;
+    flex-grow: 1;
   }
 </style>
