@@ -114,6 +114,7 @@
 <style lang="scss">
   .legend-container {
     display: flex;
+    gap: 3px;
     justify-content: start;
     flex-wrap: wrap;
     margin: 0.5rem;

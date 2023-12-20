@@ -184,11 +184,9 @@ export class Chart {
     };
     this.#renderer.render(clearJob);
 
-    const hiddenTraces = TraceList.empty();
-
     for (const [units, traces] of this.traces.get().getUnitsToTraceMap()) {
       const renderJob: RenderJob = {
-        traces: traces.withoutTraces(hiddenTraces.traces()),
+        traces,
 
         // TODO read xType
         xType: "f32",

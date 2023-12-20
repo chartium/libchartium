@@ -238,7 +238,6 @@
     })[0];
 
     selectedTrace = {
-      // NOTE move unit logic to rust? prolly not
       styledTrace: closestTraces[0].traceInfo,
       x: qndFormat(closestTraces[0].closestPoint.x, qndFormatOptions),
       y: qndFormat(closestTraces[0].closestPoint.y, qndFormatOptions),
@@ -280,6 +279,7 @@
     })
   );
 
+  // FIXME DEBUG
   let addPersistentThreshold: () => void;
   let filterByThreshold: () => void;
   $: (window as any).addPersistentThreshold = addPersistentThreshold;

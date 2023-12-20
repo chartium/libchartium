@@ -118,58 +118,26 @@
   let menu: { open(p: Point): void; close(): void };
 
   // Handle tick text intersecting
-  let overlaps: boolean = false;
   let measuringSpan: HTMLElement;
-  function updateOverlap(ticks: Tick[]) {
-    const axisMainDim = axis === "x" ? axisWidth : axisHeight;
-    overlaps =
-      doOverlap(
-        ticks.map((tick) => ({
-          text: tick.value,
-          position: tick.position * axisMainDim,
-        })),
-        measuringSpan,
-        axis === "y" ? "vertical" : "horizontal"
-      ) ||
-      doOverlap(
-        ticks.map((tick) => ({
-          text: tick.subvalue ?? "",
-          position: tick.position * axisMainDim,
-        })),
-        measuringSpan,
-        axis === "y" ? "vertical" : "horizontal"
-      );
-  }
-  $: if (measuringSpan) {
-    updateOverlap(ticks);
-  }
 
-  function tickSpanStyle(tick: Tick, overlaps: boolean): string {
+  function tickSpanStyle(tick: Tick): string {
     const absolutePos =
       axis === "x"
         ? `left: ${(tick.position * 100).toFixed(2)}%`
         : `top: ${((1 - tick.position) * 100).toFixed(2)}%`;
 
-    const overlapRotation = overlaps
-      ? `${axis === "x" ? "rotate(45deg)" : "rotate(45deg)"} ${
-          tick.subvalue !== undefined ? "translateX(-1.5em)" : ""
-        }`
-      : `${axis === "x" ? "translateX(-50%)" : "translateY(-50%)"}`;
+    const transform = `${
+      axis === "x" ? "translateX(-50%)" : "translateY(-50%)"
+    }`;
 
-    const transformOrigin = overlaps
-      ? `${axis === "x" ? "center left" : "top right"}`
-      : "center center";
-    return `${absolutePos}; transform: ${overlapRotation}; transform-origin: ${transformOrigin};`;
+    const transformOrigin = "center center";
+    return `${absolutePos}; transform: ${transform}; transform-origin: ${transformOrigin};`;
   }
 
   function maxPerpendicularSize(ticks: Tick[]): number {
     if (!measuringSpan) return 0;
     let direction: "horizontal" | "vertical" =
       axis === "x" ? "vertical" : "horizontal";
-
-    if (overlaps) {
-      measuringSpan.style.rotate = "45deg";
-    }
 
     let maxSize = 0;
     for (const tick of ticks) {
@@ -223,7 +191,7 @@
       on:dblclick={() => events("reset")}
     >
       {#each ticks as tick}
-        <span style={tickSpanStyle(tick, overlaps)}>
+        <span style={tickSpanStyle(tick)}>
           {@html tick.value}
           {#if tick.subvalue}
             <br />
