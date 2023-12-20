@@ -41,7 +41,6 @@ function getTickPlaceAndDist(
   for (const size of boxes) {
     ticksDist = Math.pow(10, order) * size;
     firstTickValue = Math.floor(from / ticksDist) * ticksDist;
-    console.log({ ticksDist, size, firstTickValue });
     if ((to - firstTickValue) / ticksDist < maxTickNum) {
       break;
     }
@@ -216,7 +215,6 @@ function getNumericTicks({
       { length: tickNum + 1 },
       (_, n) => firstTickValue + n * ticksDist
     );
-    console.log(tickVals);
     const decimals = uniqueDecimals(tickVals);
     ticks = tickVals.map((val) => ({
       label: val.toFixed(decimals),

@@ -4,7 +4,6 @@ import type { RenderJob, Renderer } from "../data-worker/renderers/mod.js";
 import type {
   GeneralizedPoint,
   NumericRange,
-  QuantityRange,
   Range,
   Shift,
   Threshold,
@@ -13,7 +12,7 @@ import type {
   Zoom,
 } from "../types.js";
 import { Quantity } from "../types.js";
-import { BUNDLES, TraceList } from "../data-worker/trace-list.js";
+import { TraceList } from "../data-worker/trace-list.js";
 import { linearTicks, linearTicksFR } from "../utils/ticks.js";
 import { nextAnimationFrame } from "../utils/promise.js";
 import type { FactorDefinition } from "unitlib";
@@ -185,9 +184,11 @@ export class Chart {
     };
     this.#renderer.render(clearJob);
 
+    const hiddenTraces = TraceList.empty();
+
     for (const [units, traces] of this.traces.get().getUnitsToTraceMap()) {
       const renderJob: RenderJob = {
-        traces: traces,
+        traces: traces.withoutTraces(hiddenTraces.traces()),
 
         // TODO read xType
         xType: "f32",

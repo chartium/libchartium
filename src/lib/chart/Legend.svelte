@@ -5,6 +5,7 @@
   import * as canvas from "./canvas.js";
   import TracePreview from "./TracePreview.svelte";
   import { map } from "../utils/collection.js";
+  import type { WritableSignal } from "@mod.js/signals";
 
   export let numberOfShownTraces: number = 5;
 
@@ -14,6 +15,8 @@
   $: tracesWithStyles = Array.from(
     map(traces.traces(), (t) => traces.getTraceInfo(t)) // FIXME replace with first(traces, n)
   );
+
+  export let hiddenTraceIDs: WritableSignal<Set<string>>;
 
   let canvasRefs: HTMLCanvasElement[] = [];
 
@@ -72,7 +75,26 @@
   {@const styledTrace = tracesWithStyles[i]}
 -->
   {#each tracesWithStyles.slice(0, numberOfShownTraces) as styledTrace}
-    <div class="trace-legend">
+    {@const hidden = $hiddenTraceIDs.has(styledTrace.id)}
+    <div
+      class="trace-legend"
+      style:opacity={hidden ? "0.5" : 1}
+      on:click={() => {
+        if (hidden)
+          hiddenTraceIDs.update((curr) => {
+            const tmp = curr; // fuck mutability
+            tmp.delete(styledTrace.id);
+            return tmp;
+          });
+        else
+          hiddenTraceIDs.update((curr) => {
+            const tmp = curr; // fuck mutability
+            tmp.add(styledTrace.id);
+            return tmp;
+          });
+      }}
+      role="presentation"
+    >
       <div
         class="trace-preview"
         class:simplified={previewType === "simplified"}
@@ -105,6 +127,8 @@
     }
 
     .trace-legend {
+      user-select: none;
+      cursor: pointer;
       display: flex;
       flex: 1;
       flex-direction: row;

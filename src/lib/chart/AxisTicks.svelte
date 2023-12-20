@@ -187,7 +187,6 @@
 
     return maxSize;
   }
-  $: console.log({ axis, axisWidth, axisHeight });
 </script>
 
 <GenericContextMenu items={$contextItems} bind:this={menu} />

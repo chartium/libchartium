@@ -23,17 +23,22 @@
   import Guidelines from "./Guidelines.svelte";
   import Tooltip from "./Tooltip.svelte";
   import { norm } from "./position.js";
-  import { cons, mut } from "@mod.js/signals";
+  import { WritableSignal, cons, mut } from "@mod.js/signals";
   import type { Remote } from "comlink";
   import { toNumeric, toRange } from "../utils/quantityHelpers.js";
   import type dayjs from "dayjs";
   import { qndFormat } from "../utils/format.js";
   import { update } from "lodash-es";
+  import type { Writable } from "svelte/store";
 
   // SECTION Props
 
   export let controller: ChartiumController | Remote<ChartiumController>;
+  /** All traces in the chart */
   export let traces: TraceList;
+  let hiddenTraceIDs: WritableSignal<Set<string>> = mut(new Set<string>());
+  /** Only those that aren't hidden */
+  $: displayedTraces = traces.withoutTraces($hiddenTraceIDs);
 
   export let title: string = "";
   export let subtitle: string = "";
@@ -87,7 +92,7 @@
   export let legendPosition: "none" | "right" | "bottom" = "right";
   /** Refers to the little trace sample, simplified just shows color, full shows real width and stroke style */
   export let legendPreview: "simplified" | "full" = "simplified";
-  /** How many traces to show in the legend, the rest will be hidden behind a button */
+  /** How many traces to show in the legend */
   export let legendTracesShown: number | "all" = "all";
 
   /** Disables zooming and moving */ // TODO should this include context menu?
@@ -115,9 +120,9 @@
   let chart: Chart | undefined = undefined;
   $: if (offscreenCanvas) {
     // FIXME oh boy will this trigger an infinite loop?
-    chart = new Chart(controller, offscreenCanvas, traces);
+    chart = new Chart(controller, offscreenCanvas, displayedTraces);
     chart.traces.subscribe((t) => {
-      traces = t;
+      displayedTraces = t;
     });
   }
   $: xTicks = chart?.xTicks;
@@ -159,12 +164,14 @@
   }
   $: closestTraces =
     chart && hoverXQuantity && hoverYQuantity
-      ? traces.findClosestTracesToPoint(
+      ? displayedTraces.findClosestTracesToPoint(
           {
             x: hoverXQuantity,
             y: hoverYQuantity,
           },
-          tooltipTracesShown === "all" ? traces.traceCount : tooltipTracesShown
+          tooltipTracesShown === "all"
+            ? displayedTraces.traceCount
+            : tooltipTracesShown
         )
       : undefined;
   $: tracesInfo =
@@ -240,7 +247,7 @@
     traceCloseEnough
   ) {
     const { from, to } = chart.xRange.get();
-    const statsOfClosest = traces.calculateStatistics({
+    const statsOfClosest = displayedTraces.calculateStatistics({
       traces: [closestTraces[0].traceInfo.id],
       from,
       to,
@@ -403,6 +410,7 @@
     {#if legendPosition === "right"}
       <ChartLegend
         {traces}
+        {hiddenTraceIDs}
         previewType={legendPreview}
         numberOfShownTraces={legendTracesShown === "all"
           ? traces.traceCount
@@ -414,6 +422,7 @@
     {#if legendPosition === "bottom"}
       <ChartLegend
         {traces}
+        {hiddenTraceIDs}
         previewType={legendPreview}
         numberOfShownTraces={legendTracesShown === "all"
           ? traces.traceCount
