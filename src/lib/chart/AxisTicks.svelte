@@ -34,6 +34,12 @@
   /** Ticks on the axis. Position is to be between 0 and 1 */
   export let ticks: Tick[];
 
+  export let label: string | undefined;
+
+  export let unit: Unit | undefined;
+
+  export let hideLabelUnits: boolean;
+
   export let disableInteractivity: boolean;
 
   export let visibleAction: WritableSignal<VisibleAction | undefined>;
@@ -184,43 +190,71 @@
 </script>
 
 <GenericContextMenu items={$contextItems} bind:this={menu} />
-
 <div
-  class="ticks-container"
-  use:mouseDrag={{
-    ...dragCallbacks,
-    button: MouseButtons.Left,
-  }}
+  class="axis-container {axis}"
   use:observeResize={([width, height]) => {
     axisWidth = width;
     axisHeight = height;
   }}
   role="presentation"
   on:contextmenu|preventDefault
-  use:mouseClick={{ callback: (e) => menu.open(e), button: MouseButtons.Right }}
-  on:dblclick={() => events("reset")}
+  use:mouseClick={{
+    callback: (e) => menu.open(e),
+    button: MouseButtons.Right,
+  }}
 >
-  {#if !hideTicks}
-    <div
-      class="{axis} ticks"
-      style="{axis === `x` ? `height` : `width`}: {maxPerpendicularSize(ticks) +
-        4}px"
-    >
-      {#each ticks as tick}
-        <span style={tickSpanStyle(tick, overlaps)}>
-          {@html tick.value}
-          {#if tick.subvalue}
-            <br />
-            {@html tick.subvalue}
-          {/if}
-        </span>
-      {/each}
-      <span class="measuring-span" bind:this={measuringSpan} />
+  {#if label !== undefined}
+    <div>
+      {label}
+      {#if !hideLabelUnits && unit}[{unit.toString()}]{/if}
     </div>
   {/if}
+
+  <div
+    class="ticks-container"
+    use:mouseDrag={{
+      ...dragCallbacks,
+      button: MouseButtons.Left,
+    }}
+    role="presentation"
+    on:dblclick={() => events("reset")}
+  >
+    {#if !hideTicks}
+      <div
+        class="{axis} ticks"
+        style="{axis === `x` ? `height` : `width`}: {maxPerpendicularSize(
+          ticks
+        ) + 4}px"
+      >
+        {#each ticks as tick}
+          <span style={tickSpanStyle(tick, overlaps)}>
+            {@html tick.value}
+            {#if tick.subvalue}
+              <br />
+              {@html tick.subvalue}
+            {/if}
+          </span>
+        {/each}
+        <span class="measuring-span" bind:this={measuringSpan} />
+      </div>
+    {/if}
+  </div>
 </div>
 
 <style lang="scss">
+  .axis-container {
+    display: flex;
+    height: 100%;
+    width: 100%;
+    align-items: center;
+  }
+  .axis-container.x {
+    flex-direction: column-reverse;
+  }
+  .axis-container.y {
+    flex-direction: column;
+  }
+
   .ticks-container {
     height: 100%;
     width: 100%;

@@ -57,6 +57,10 @@
 
   /** opens as main menu at the point positionRelativeToPage or if overflow will clamp to edges of viewport */
   export function open(positionRelativeToPage: Point): void {
+    if (items.length === 0) {
+      console.warn("Tried to open an empty context menu");
+      return;
+    }
     opened = true;
     sourceActive = true;
     active = true;

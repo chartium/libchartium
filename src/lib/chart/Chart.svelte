@@ -302,14 +302,6 @@
 {/if}
 
 <ChartGrid bind:contentSize>
-  <svelte:fragment slot="ylabel">
-    {yLabel}
-    {#if !hideYLabelUnits && $yDisplayUnit}[{$yDisplayUnit.toString()}]{/if}
-  </svelte:fragment>
-  <svelte:fragment slot="xlabel">
-    {xLabel}
-    {#if !hideXLabelUnits && $xDisplayUnit}[{$xDisplayUnit.toString()}]{/if}
-  </svelte:fragment>
   <svelte:fragment slot="title">
     {title}
   </svelte:fragment>
@@ -321,6 +313,9 @@
     slot="yticks"
     axis="y"
     ticks={$yTicks ?? []}
+    label={yLabel}
+    unit={$yDisplayUnit}
+    hideLabelUnits={hideYLabelUnits}
     {visibleAction}
     {disableInteractivity}
     hideTicks={hideYTicks}
@@ -335,6 +330,9 @@
     slot="xticks"
     axis="x"
     ticks={$xTicks ?? []}
+    label={xLabel}
+    unit={$xDisplayUnit}
+    hideLabelUnits={hideXLabelUnits}
     {visibleAction}
     {disableInteractivity}
     hideTicks={hideXTicks}
