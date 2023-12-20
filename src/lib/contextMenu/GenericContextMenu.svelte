@@ -16,6 +16,8 @@
     genericKeydown,
   } from "./contextMenu.js";
 
+  import { tick } from "svelte";
+
   /** The only required input from outside, the content of the context menu */
   export let items: ContextItem<T>[];
 
@@ -75,12 +77,13 @@
   export let sourceRect: DOMRect | undefined = undefined;
 
   /** opens on the right of this rect or, if there isnt enough space, on the left */
-  export function openNextToSourceRect(): void {
+  export async function openNextToSourceRect(): Promise<void> {
     if (sourceRect === undefined) {
       return;
     }
     opened = true;
     sourceActive = true;
+    await tick();
     renderPosition = openPositionNextToRect(sourceRect, menuHeight, menuWidth);
   }
   $: if (sourceActive) {
@@ -168,10 +171,8 @@
     top:{renderPosition?.y ?? 0}px;"
     use:mouseDownOutside={close}
     use:genericKeydown={handleKeyboardNavigation}
-    use:observeResize={([width, height]) => {
-      menuWidth = width;
-      menuHeight = height;
-    }}
+    bind:clientWidth={menuWidth}
+    bind:clientHeight={menuHeight}
     use:portal
   >
     {#each items as item, index}
