@@ -159,71 +159,71 @@
   }
 </script>
 
-<div
-  class="context-menu"
-  role="menu"
-  tabindex="-1"
-  aria-hidden={visibility === "hidden"}
-  style="visibility:{visibility};
-    left:{renderPosition?.x ?? 0}px;
+{#if visibility !== "hidden"}
+  <div
+    class="context-menu"
+    role="menu"
+    tabindex="-1"
+    style="left:{renderPosition?.x ?? 0}px;
     top:{renderPosition?.y ?? 0}px;"
-  use:mouseDownOutside={close}
-  use:genericKeydown={handleKeyboardNavigation}
-  use:observeResize={([width, height]) => {
-    menuWidth = width;
-    menuHeight = height;
-  }}
-  use:portal
->
-  {#each items as item, index}
-    <ContextItemComponent
-      {item}
-      focused={currentlyFocusedIndex === index && item.type !== "separator"}
-      on:select={(e) => {
-        currentlySelectedRect = e.detail.rect;
-      }}
-      on:mouseover={(e) => {
-        if (opened) {
-          currentlyFocusedIndex = index;
-          active = true;
-        }
-      }}
-      on:focus={(e) => {
-        if (opened) {
-          currentlyFocusedIndex = index;
-          active = true;
-        }
-      }}
-    >
-      {#if item.type !== "separator"}
-        <slot {item}>
-          {item.content}
-        </slot>
-      {/if}
-    </ContextItemComponent>
-    {#if item.type === "branch"}
-      <div
-        role="menu"
-        tabindex="-1"
-        on:mouseover={giveFocus}
-        on:focus={giveFocus}
+    use:mouseDownOutside={close}
+    use:genericKeydown={handleKeyboardNavigation}
+    use:observeResize={([width, height]) => {
+      menuWidth = width;
+      menuHeight = height;
+    }}
+    use:portal
+  >
+    {#each items as item, index}
+      <ContextItemComponent
+        {item}
+        focused={currentlyFocusedIndex === index && item.type !== "separator"}
+        on:select={(e) => {
+          currentlySelectedRect = e.detail.rect;
+        }}
+        on:mouseover={(e) => {
+          if (opened) {
+            currentlyFocusedIndex = index;
+            active = true;
+          }
+        }}
+        on:focus={(e) => {
+          if (opened) {
+            currentlyFocusedIndex = index;
+            active = true;
+          }
+        }}
       >
-        <svelte:self
-          items={item.children}
-          main={false}
-          active={currentlyFocusedIndex === index && surrenderedFocus}
-          currentlyFocusedIndex={currentlyFocusedIndex === index &&
-          surrenderedFocus
-            ? 0
-            : -1}
-          sourceActive={currentlyFocusedIndex === index}
-          sourceRect={currentlySelectedRect}
-          returnFocus={takeBackFocus}
-        />
-      </div>
-    {/if}
-  {/each}
-</div>
+        {#if item.type !== "separator"}
+          <slot {item}>
+            {item.content}
+          </slot>
+        {/if}
+      </ContextItemComponent>
+      {#if item.type === "branch"}
+        <div
+          role="menu"
+          tabindex="-1"
+          on:mouseover={giveFocus}
+          on:focus={giveFocus}
+        >
+          <svelte:self
+            items={item.children}
+            main={false}
+            active={currentlyFocusedIndex === index && surrenderedFocus}
+            currentlyFocusedIndex={currentlyFocusedIndex === index &&
+            surrenderedFocus
+              ? 0
+              : -1}
+            sourceActive={currentlyFocusedIndex === index}
+            sourceRect={currentlySelectedRect}
+            returnFocus={takeBackFocus}
+          />
+        </div>
+      {/if}
+    {/each}
+  </div>
+{/if}
 
 <style>
   .context-menu {

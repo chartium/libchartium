@@ -44,20 +44,18 @@
   .graph-inner {
     display: grid;
     grid-template:
-      "title title title title" auto
-      "subtitle subtitle subtitle subtitle" auto
-      "ylabel yticks graph rl" 1fr
-      "a b xticks c" auto
-      "a b xlabel c" auto
-      "bl bl bl bl" auto / auto auto 1fr auto;
+      "title title title" auto
+      "subtitle subtitle subtitle" auto
+      "yticks graph rl" 1fr
+      "b xticks c" auto
+      "bl bl bl" auto / auto 1fr auto;
 
     /* gap: 0.5rem;  <- exchanged for padding so the "gap" is still clickable*/
-    /* -        -        Title      -        */
-    /* -        -        Subtitle   -        */
-    /* YLabel | YTicks | graph    | (legend) */
-    /* -      | -      | XTicks   | -        */
-    /* -      | -      | XLabel   | -        */
-    /* -      | -      | (legend) | -        */
+    /*  -        Title      -        */
+    /*  -        Subtitle   -        */
+    /*  YTicks | graph    | (legend) */
+    /*  -      | XTicks   | -        */
+    /*  -      | (legend) | -        */
 
     width: 100%;
     height: 100%;
