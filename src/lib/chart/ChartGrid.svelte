@@ -64,13 +64,10 @@
   }
 
   .title,
-  .subtitle,
-  .ylabel,
-  .xlabel {
+  .subtitle {
     place-self: center;
   }
 
-  .ylabel,
   .yticks > :global(span) {
     writing-mode: vertical-rl;
     text-orientation: mixed;
@@ -78,9 +75,7 @@
   }
 
   .title,
-  .subtitle,
-  .ylabel,
-  .xlabel {
+  .subtitle {
     line-height: 1;
   }
 
@@ -96,20 +91,12 @@
     padding-bottom: 0.5rem;
   }
 
-  .ylabel {
-    grid-area: ylabel;
-  }
-
   .yticks {
     grid-area: yticks;
   }
 
   .xticks {
     grid-area: xticks;
-  }
-
-  .xlabel {
-    grid-area: xlabel;
   }
 
   .content {

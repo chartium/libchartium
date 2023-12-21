@@ -152,6 +152,21 @@ export class Chart {
     this.lowerXFactorAction = changeFactorAction("lower", this.xDisplayUnit);
     this.raiseYFactorAction = changeFactorAction("raise", this.yDisplayUnit);
     this.lowerYFactorAction = changeFactorAction("lower", this.yDisplayUnit);
+    const { x: bestXUnit, y: bestYUnit } = this.bestDisplayUnits();
+    this.resetXFactorAction = this.xDisplayUnit.map(() => {
+      if (!bestXUnit || bestXUnit instanceof NumericDateFormat) return;
+      return {
+        unit: bestXUnit,
+        callback: () => this.xDisplayUnit.set(bestXUnit),
+      };
+    });
+    this.resetYFactorAction = this.yDisplayUnit.map(() => {
+      if (!bestYUnit || bestYUnit instanceof NumericDateFormat) return;
+      return {
+        unit: bestYUnit,
+        callback: () => this.yDisplayUnit.set(bestYUnit),
+      };
+    });
   }
 
   #updateTraces(traces: TraceList) {
@@ -495,8 +510,10 @@ export class Chart {
 
   readonly raiseXFactorAction: ReturnType<typeof changeFactorAction>;
   readonly lowerXFactorAction: ReturnType<typeof changeFactorAction>;
+  readonly resetXFactorAction: ReturnType<typeof changeFactorAction>;
   readonly raiseYFactorAction: ReturnType<typeof changeFactorAction>;
   readonly lowerYFactorAction: ReturnType<typeof changeFactorAction>;
+  readonly resetYFactorAction: ReturnType<typeof changeFactorAction>;
 }
 
 /**

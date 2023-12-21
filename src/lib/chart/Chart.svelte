@@ -17,6 +17,7 @@
   import type { Remote } from "comlink";
   import type dayjs from "dayjs";
   import { qndFormat } from "../utils/format.js";
+  import type { NumericDateFormat } from "../index.js";
 
   // SECTION Props
 
@@ -84,6 +85,11 @@
 
   /** Disables zooming and moving */ // TODO should this include context menu?
   export let disableInteractivity: boolean = false;
+
+  /** Disables possibility to change X units via context menu on chart axis */
+  export let disableXUnitChanges: boolean = false;
+  /** Disables possibility to change Y units via context menu on chart axis */
+  export let disableYUnitChanges: boolean = false;
 
   /** Sets position of the lil infobox that shows number of traces and range */
   export let infoboxPosition:
@@ -284,6 +290,10 @@
   let filterByThreshold: () => void;
   $: (window as any).addPersistentThreshold = addPersistentThreshold;
   $: (window as any).filterByThreshold = filterByThreshold;
+
+  let bestXUnit: undefined | Unit | NumericDateFormat;
+  let bestYUnit: undefined | Unit | NumericDateFormat;
+  $: if (chart) ({ x: bestXUnit, y: bestYUnit } = chart.bestDisplayUnits());
 </script>
 
 {#if !hideTooltip}
@@ -312,11 +322,13 @@
     hideLabelUnits={hideYLabelUnits}
     {visibleAction}
     {disableInteractivity}
+    disableUnitChange={disableYUnitChanges}
     hideTicks={hideYTicks}
     on:shift={(d) => chart?.shiftRange(d)}
     on:reset={(d) => chart?.resetZoom("y", showYZero)}
     raiseFactor={chart?.raiseYFactorAction ?? cons(undefined)}
     lowerFactor={chart?.lowerYFactorAction ?? cons(undefined)}
+    resetUnit={chart?.resetYFactorAction ?? cons(undefined)}
     bind:textLength={yAxisTextSize}
   />
 
@@ -329,11 +341,13 @@
     hideLabelUnits={hideXLabelUnits}
     {visibleAction}
     {disableInteractivity}
+    disableUnitChange={disableXUnitChanges}
     hideTicks={hideXTicks}
     on:shift={(d) => chart?.shiftRange(d)}
     on:reset={() => chart?.resetZoom("x")}
     raiseFactor={chart?.raiseXFactorAction ?? cons(undefined)}
     lowerFactor={chart?.lowerXFactorAction ?? cons(undefined)}
+    resetUnit={chart?.resetXFactorAction ?? cons(undefined)}
     bind:textLength={xAxisTextSize}
   />
 

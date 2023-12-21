@@ -40,6 +40,8 @@
 
   export let hideLabelUnits: boolean;
 
+  export let disableUnitChange: boolean;
+
   export let disableInteractivity: boolean;
 
   export let visibleAction: WritableSignal<VisibleAction | undefined>;
@@ -47,6 +49,8 @@
   type UnitAction = Signal<{ unit: Unit; callback: () => void } | undefined>;
   export let raiseFactor: UnitAction;
   export let lowerFactor: UnitAction;
+  /** unit to reset the axis to */
+  export let resetUnit: UnitAction;
 
   export const textLength = (text: string) =>
     measureText(text, measuringSpan, axis === "x" ? "horizontal" : "vertical");
@@ -56,6 +60,8 @@
   $: raiseFactor$.set($raiseFactor);
   const lowerFactor$ = mut($lowerFactor);
   $: lowerFactor$.set($lowerFactor);
+  const resetUnit$ = mut($resetUnit);
+  $: resetUnit$.set($resetUnit);
 
   const dragCallbacks: MouseDragCallbacks = {
     start: (e) => {},
@@ -88,32 +94,46 @@
   let axisWidth: number = 1;
   let axisHeight: number = 1;
 
-  const contextItems = ZippedSignal(
-    raiseFactor$.map(($v) => {
-      if (!$v) return;
-      const { unit, callback } = $v;
-      return <const>{
-        type: "leaf",
-        content: `Raise unit to ${unit.toString()}`,
-        callback() {
-          callback();
-          menu.close();
-        },
-      };
-    }),
-    lowerFactor$.map(($v) => {
-      if (!$v) return;
-      const { unit, callback } = $v;
-      return <const>{
-        type: "leaf",
-        content: `Lower unit to ${unit.toString()}`,
-        callback() {
-          callback();
-          menu.close();
-        },
-      };
-    })
-  ).map((arr) => arr.filter((x) => x) as ContextItem<string>[]);
+  const contextItems = disableUnitChange
+    ? mut([])
+    : ZippedSignal(
+        raiseFactor$.map(($v) => {
+          if (!$v) return;
+          const { unit, callback } = $v;
+          return <const>{
+            type: "leaf",
+            content: `Raise unit to ${unit.toString()}`,
+            callback() {
+              callback();
+              menu.close();
+            },
+          };
+        }),
+        resetUnit$.map(($v) => {
+          if (!$v) return;
+          const { unit, callback } = $v;
+          return <const>{
+            type: "leaf",
+            content: `Reset unit to ${unit.toString()}`,
+            callback() {
+              callback();
+              menu.close();
+            },
+          };
+        }),
+        lowerFactor$.map(($v) => {
+          if (!$v) return;
+          const { unit, callback } = $v;
+          return <const>{
+            type: "leaf",
+            content: `Lower unit to ${unit.toString()}`,
+            callback() {
+              callback();
+              menu.close();
+            },
+          };
+        })
+      ).map((arr) => arr.filter((x) => x) as ContextItem<string>[]);
 
   let menu: { open(p: Point): void; close(): void };
 
