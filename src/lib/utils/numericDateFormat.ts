@@ -26,6 +26,10 @@ export class NumericDateFormat {
     return new Quantity(+date, milliseconds).inUnits(this.unit).value;
   }
 
+  isEqual(other: NumericDateFormat) {
+    return this.unit === other.unit && +this.relativeTo === +other.relativeTo;
+  }
+
   static EpochNanoseconds = new NumericDateFormat(nanoseconds);
   static EpochMilliseconds = new NumericDateFormat(milliseconds);
   static EpochSeconds = new NumericDateFormat(seconds);

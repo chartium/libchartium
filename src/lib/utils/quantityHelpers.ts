@@ -41,7 +41,7 @@ export function toNumeric(
 /** Transforms range to numeric range in selected units. */
 export function toNumericRange(
   range: Range,
-  unit: Unit | undefined
+  unit: Unit | NumericDateFormat | undefined
 ): NumericRange {
   return {
     from: toNumeric(range.from, unit),
@@ -60,6 +60,16 @@ export function toQuantOrDay(
   if (units instanceof NumericDateFormat) return units.parseToDayjs(x);
   if (typeof x === "number" && units) return new Quantity(x, units);
   else return x;
+}
+
+export function toQuantOrDayRange(
+  r: NumericRange,
+  units?: Unit | NumericDateFormat
+): Range {
+  return {
+    from: toQuantOrDay(r.from, units),
+    to: toQuantOrDay(r.to, units),
+  } as Range;
 }
 
 /** Returns range in units if defined, otherwise returns numeric range */
@@ -127,4 +137,14 @@ export function qdnMax(
   } else {
     return (x as dayjs.Dayjs).isAfter(y as dayjs.Dayjs) ? x : y;
   }
+}
+
+export function unitEqual(
+  a: Unit | NumericDateFormat | undefined,
+  b: Unit | NumericDateFormat | undefined
+): boolean {
+  if (a === undefined) return b === undefined;
+  if (a instanceof NumericDateFormat !== b instanceof NumericDateFormat)
+    return false;
+  return a.isEqual(b as any);
 }

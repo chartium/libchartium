@@ -67,7 +67,7 @@
       const positionOfRightMenuBoundary = x + tooltipWidth + 3;
       const rightOverflow = positionOfRightMenuBoundary - innerWidth;
       toReturnX = rightOverflow > 0 ? x - containerWidth : x;
-    } 
+    }
     if (left) {
       const positionOfLeftMenuBoundary = x - tooltipWidth - 3;
       const leftOverflow = positionOfLeftMenuBoundary;
@@ -77,7 +77,7 @@
       const positionOfBottomMenuBoundary = y + tooltipHeight + 3;
       const bottomOverflow = positionOfBottomMenuBoundary - innerHeight;
       toReturnY = bottomOverflow > 0 ? y - containerHeight : y;
-    } 
+    }
     if (top) {
       const positionOfTopMenuBoundary = y - tooltipHeight - 3;
       const topOverflow = positionOfTopMenuBoundary;
@@ -91,7 +91,7 @@
   }
 </script>
 
-<svelte:window bind:innerHeight={innerHeight} bind:innerWidth={innerWidth} />
+<svelte:window bind:innerHeight bind:innerWidth />
 
 <div
   bind:clientHeight={containerHeight}
@@ -100,11 +100,17 @@
   style:visibility={position === undefined ? "hidden" : "visible"}
   style:top={renderPosition?.y + "px"}
   style:left={renderPosition?.x + "px"}
-  style="position: fixed;
-  height: fit-content;
-  width: fit-content;
-  z-index: 1;
-  pointer-events: none;"
 >
   <slot />
 </div>
+
+<style lang="scss">
+  .tooltip {
+    position: fixed;
+    height: fit-content;
+    width: fit-content;
+    z-index: 1;
+    pointer-events: none;
+    user-select: none;
+  }
+</style>

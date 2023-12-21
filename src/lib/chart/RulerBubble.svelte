@@ -10,26 +10,30 @@
 
   let clientHeight: number;
   let clientWidth: number;
-  let style: string;
-  $: {
-    const pointerAndPosition = `pointer-events: none; position: absolute; top: ${position.y}px;`;
-    const axisPosition = `${axis === "x" ? "left" : "right"}: ${position.x}px;`;
-    const writingMode =
-      axis === "x"
-        ? ""
-        : `transform-origin: top right; transform: rotate(-90deg) translateY(-${clientHeight}px);`;
-    const margin = axis === "x" ? "margin-top: 4px;" : "margin-right: 4px;";
 
-    style = `${pointerAndPosition} ${axisPosition} ${writingMode} ${margin}`;
-  }
+  $: style =
+    axis === "x"
+      ? `top: ${position.y}px; left: ${position.x}px`
+      : `top: ${position.y}px; right: ${position.x}px; transform: rotate(-90deg) translateY(-${clientHeight}px)`;
 </script>
 
-<div {style} bind:clientHeight bind:clientWidth>
+<div
+  class="axis-bubble"
+  class:x-axis-bubble={axis === "x"}
+  class:y-axis-bubble={axis === "y"}
+  {style}
+  bind:clientHeight
+  bind:clientWidth
+>
   {qndFormat(value ?? 0, { decimals: 2, dayjsFormat: "YYYY-MM-DD\nHH:mm:ss" })}
 </div>
 
-<style>
-  div {
+<style lang="scss">
+  .axis-bubble {
+    position: absolute;
+    pointer-events: none;
+    user-select: none;
+
     background-color: var(--secondary-background);
     border-radius: 4px;
     padding: 4px;
@@ -38,5 +42,15 @@
     overflow: hidden;
     width: max-content;
     height: max-content;
+  }
+
+  .x-axis-bubble {
+    margin-top: 4px;
+  }
+
+  .y-axis-bubble {
+    transform-origin: top right;
+    transform: rotate(-90deg);
+    margin-right: 4px;
   }
 </style>

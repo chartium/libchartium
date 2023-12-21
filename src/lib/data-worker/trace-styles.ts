@@ -9,6 +9,7 @@ import { yeet } from "../utils/yeet.js";
 import { UnknownTraceHandleError } from "../errors.js";
 import type { TraceHandle, Unit } from "../types.js";
 import { map } from "../utils/collection.js";
+import type { NumericDateFormat } from "../index.js";
 
 export interface TraceStyle {
   width: number;
@@ -19,8 +20,8 @@ export interface TraceStyle {
 export type TraceStylesheet = Record<string, Partial<TraceStyle>>;
 
 export interface TraceDataUnits {
-  xDataUnit?: Unit;
-  yDataUnit?: Unit;
+  xDataUnit?: Unit | NumericDateFormat;
+  yDataUnit?: Unit | NumericDateFormat;
 }
 
 export type ResolvedTraceInfo = Array<
@@ -116,16 +117,16 @@ export function simplifyTraceInfo(
   );
 
   const usedTraces = new Set<string>();
-  const newInfo = new Map<string, Set<string>>();
+  const newInfo = new Map<TraceStyle & TraceDataUnits, Set<string>>();
 
   for (const [ts, info] of traceInfo) {
-    const serializedInfo = JSON.stringify({
+    const serializedInfo = {
       color: info.color,
       display: info.display,
       width: info.width,
       xDataUnit: info.xDataUnit,
       yDataUnit: info.yDataUnit,
-    } satisfies TraceStyle & TraceDataUnits);
+    } satisfies TraceStyle & TraceDataUnits;
 
     for (const t of ts) {
       if (!existingTraces.has(t)) continue;
@@ -138,9 +139,7 @@ export function simplifyTraceInfo(
     }
   }
 
-  return Array.from(
-    map(newInfo, ([info, traces]) => [traces, JSON.parse(info)])
-  );
+  return Array.from(map(newInfo, ([info, traces]) => [traces, info]));
 }
 
 export function computeTraceColor(id: string, color: TraceStyle["color"]) {

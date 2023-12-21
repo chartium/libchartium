@@ -2,6 +2,7 @@ import dayjs from "dayjs";
 import { Quantity, type Unit } from "../types.js";
 import type { FormatOptions } from "unitlib";
 import { tick } from "svelte";
+import { NumericDateFormat } from "./numericDateFormat.js";
 
 /** Writes exponential notation that doesnt make your eyes bleed */
 export function prettyExp(input: number, decimals: number): string {

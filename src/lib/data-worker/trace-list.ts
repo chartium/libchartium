@@ -37,9 +37,11 @@ import {
   toNumeric,
   toNumericRange,
   toQuantOrDay,
+  toQuantOrDayRange,
+  unitEqual,
 } from "../utils/quantityHelpers.js";
 import type dayjs from "dayjs";
-import type { NumericDateFormat } from "../index.js";
+import { NumericDateFormat } from "../index.js";
 
 export const BUNDLES = Symbol("bundles");
 export const HANDLES = Symbol("handles");
@@ -54,8 +56,8 @@ export interface TraceInfo {
   color: Color;
   display: "line" | "points";
 
-  xDataUnit: Unit | undefined;
-  yDataUnit: Unit | undefined;
+  xDataUnit: Unit | NumericDateFormat | undefined;
+  yDataUnit: Unit | NumericDateFormat | undefined;
 }
 
 export interface QDTraceMetas {
@@ -159,8 +161,8 @@ export class TraceList {
    * Returns units that traces of input bundle use
    */
   getBundleUnits(bundle: lib.BoxedBundle): {
-    x: Unit | undefined;
-    y: Unit | undefined;
+    x: Unit | NumericDateFormat | undefined;
+    y: Unit | NumericDateFormat | undefined;
   } {
     const firstTrace = bundle.traces()[0] as TraceHandle | undefined;
     if (!firstTrace) return { x: undefined, y: undefined };
@@ -394,7 +396,7 @@ export class TraceList {
 
     return new TraceList({
       handles,
-      range: { from, to },
+      range: toQuantOrDayRange({ from, to }, traceInfo[0]?.[1]?.xDataUnit),
       bundles,
       labels,
       traceInfo,
@@ -499,22 +501,19 @@ export class TraceList {
     const units = new Set<{ x: Unit | undefined; y: Unit | undefined }>();
 
     const addUnique = (
-      set: Set<{ x: Unit | undefined; y: Unit | undefined }>,
-      value: { x: Unit | undefined; y: Unit | undefined }
+      set: Set<{
+        x: Unit | NumericDateFormat | undefined;
+        y: Unit | NumericDateFormat | undefined;
+      }>,
+      value: {
+        x: Unit | NumericDateFormat | undefined;
+        y: Unit | NumericDateFormat | undefined;
+      }
     ): void => {
       const alreadyRecorded = some(set, (u) => {
         console.log("u.x", u.x);
         console.log("u.x?.isEqual");
-        const xMatch =
-          value.x !== undefined
-            ? u.x?.isEqual(value.x) ?? false
-            : value.x === u.x;
-        const yMatch =
-          value.y !== undefined
-            ? u.y?.isEqual(value.y) ?? false
-            : value.y === u.y;
-
-        return xMatch && yMatch;
+        return unitEqual(u.x, value.x) && unitEqual(u.y, value.y);
       });
       if (alreadyRecorded) return;
       set.add(value);
@@ -536,13 +535,19 @@ export class TraceList {
    * the traces that use them.
    */
   getUnitsToTraceMap(): Map<
-    { x: Unit | undefined; y: Unit | undefined },
+    {
+      x: Unit | NumericDateFormat | undefined;
+      y: Unit | NumericDateFormat | undefined;
+    },
     TraceList // FIXME do we want tracelist here or ids?
   > {
     if (this.#unitsToTraceMap) return this.#unitsToTraceMap;
 
     let toReturn = new Map<
-      { x: Unit | undefined; y: Unit | undefined },
+      {
+        x: Unit | NumericDateFormat | undefined;
+        y: Unit | NumericDateFormat | undefined;
+      },
       TraceList
     >();
     for (const bundle of this.#bundles) {
