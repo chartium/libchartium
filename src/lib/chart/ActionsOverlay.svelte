@@ -64,7 +64,8 @@
     thresholdFilterMode = true;
   };
 
-  let persistentYThresholds: Set<number> = new Set();
+  /** Fractions of the graphs width representing presisntent thresholds */
+  export let presYThreshFracs: number[] = [];
 
   let thresholdAddMode: boolean = false;
   export const addPersistentThreshold = () => {
@@ -101,7 +102,7 @@
       ctx.strokeStyle = color;
       ctx.lineWidth = 1;
 
-      persistentYThresholds.forEach(drawThreshold);
+      presYThreshFracs.forEach(drawThreshold);
 
       if (action && action.highlightedPoints && !hideHoverPoints) {
         for (const point of action.highlightedPoints) {
@@ -350,11 +351,11 @@
         yThreshold: undefined,
       }));
       if (thresholdFilterMode) {
-        events("yThreshold", { thresholdFrac: yThreshold });
+        events("yThreshold", { thresholdFrac: yThreshold, type: "filtering" });
         thresholdFilterMode = false;
       }
       if (thresholdAddMode) {
-        persistentYThresholds.add(yThreshold);
+        events("yThreshold", { thresholdFrac: yThreshold, type: "persistent" });
         thresholdAddMode = false;
       }
     }

@@ -18,6 +18,7 @@
   import type dayjs from "dayjs";
   import { qndFormat } from "../utils/format.js";
   import type { NumericDateFormat } from "../index.js";
+  import type { Dayjs } from "dayjs";
 
   // SECTION Props
 
@@ -285,6 +286,17 @@
     })
   );
 
+  /** In fractions of graph height */
+  let persistentYThresholds: (Quantity | number | Dayjs)[] = [];
+  $: presYThreshFracs = persistentYThresholds.map(
+    (q) => chart?.quantitiesToFractions(q, "y") ?? 0
+  );
+  $: chart?.yRange.subscribe(() => {
+    presYThreshFracs = persistentYThresholds.map(
+      (q) => chart?.quantitiesToFractions(q, "y") ?? 0
+    );
+  });
+
   // FIXME DEBUG
   let addPersistentThreshold: () => void;
   let filterByThreshold: () => void;
@@ -380,13 +392,28 @@
     {hoverXQuantity}
     {hoverYQuantity}
     {disableInteractivity}
+    {presYThreshFracs}
     bind:filterByThreshold
     bind:addPersistentThreshold
     traceHovered={selectedTrace !== undefined}
     on:reset={() => chart?.resetZoom("both", showYZero)}
     on:zoom={(d) => chart?.zoomRange(d)}
     on:shift={(d) => chart?.shiftRange(d)}
-    on:yThreshold={(t) => chart?.filterOverTreshold(t)}
+    on:yThreshold={(t) => {
+      if (t.detail.type === "persistent") {
+        const thresholdQ = chart?.fractionsToQuantities(
+          1 - t.detail.thresholdFrac,
+          "y"
+        );
+        if (thresholdQ) persistentYThresholds.push(thresholdQ);
+        persistentYThresholds = persistentYThresholds;
+      }
+      if (t.detail.type === "filtering")
+        hiddenTraceIDs.update((curr) => {
+          for (const id of chart?.idsUnderThreshold(t) ?? []) curr.add(id);
+          return curr;
+        });
+    }}
     on:mousemove={(e) => {
       showTooltip = true;
       updateHoverQuantities(e);

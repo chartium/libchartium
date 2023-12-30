@@ -88,9 +88,8 @@
           });
         else
           hiddenTraceIDs.update((curr) => {
-            const tmp = curr; // fuck mutability
-            tmp.add(styledTrace.id);
-            return tmp;
+            curr.add(styledTrace.id);
+            return curr;
           });
       }}
       role="presentation"

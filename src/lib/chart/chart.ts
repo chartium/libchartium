@@ -485,10 +485,14 @@ export class Chart {
   }
 
   /**
-   * Reassigns traces such that only those that reach the treshold are left
+   * Returns IDs of traces below the threshold so they can be hidden
    * if your traces are sin(x) and x^2, then filterByTreshold(1.1) only leaves the x^2
    */
-  filterOverTreshold({ detail: threshold }: { detail: Threshold }) {
+  idsUnderThreshold({
+    detail: threshold,
+  }: {
+    detail: Threshold;
+  }): Iterable<string> {
     const yRange = this.yRange.get();
     const yUnits = this.#yDataUnit;
 
@@ -498,7 +502,20 @@ export class Chart {
       from + (to - from) * threshold.thresholdFrac,
       this.#yDataUnit
     ) as number | Quantity;
-    this.traces.set(this.traces.get().withOverTreshold(qThreshold));
+    const traces = this.traces.get();
+
+    const tracesWithThreshold = new Set(
+      traces.withOverTreshold(qThreshold).traces()
+    );
+    const result = new Set<string>();
+
+    for (const trace of traces.traces()) {
+      if (!tracesWithThreshold.has(trace)) {
+        result.add(trace);
+      }
+    }
+
+    return result;
   }
 
   distanceInDataUnits(a: GeneralizedPoint, b: GeneralizedPoint) {
