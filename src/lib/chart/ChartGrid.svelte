@@ -23,12 +23,7 @@
   <div class="xlabel">
     <slot name="xlabel" />
   </div>
-  <div
-    class="content"
-    use:observeResize={(size) => {
-      contentSize = size;
-    }}
-  >
+  <div class="content" use:observeResize={(s) => (contentSize = s)}>
     <slot />
   </div>
   <div class="right-legend">

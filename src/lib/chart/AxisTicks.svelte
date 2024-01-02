@@ -243,7 +243,8 @@
     width: 100%;
   }
   .y {
-    writing-mode: sideways-lr; /* doesnt work on chromium based */
+    // FIXME
+    // writing-mode: sideways-lr; /* doesnt work on chromium based */
     height: 100%;
   }
 

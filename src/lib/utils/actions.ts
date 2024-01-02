@@ -16,6 +16,7 @@ export const observeResize = (
   } satisfies ActionReturn;
 };
 
+/** Update the dimensions of the coordinate space of a canvas according to its CSS dimensions */
 export const scaleCanvas = (
   element: HTMLCanvasElement,
   callback?: (size: [width: number, height: number]) => void
