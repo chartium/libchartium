@@ -462,6 +462,11 @@
 </ChartGrid>
 
 <style lang="scss">
+  :global(:root) {
+    --libchartium-secondary-background: rgb(51, 51, 51);
+    --libchartium-highlight-background: rgb(75, 75, 75);
+  }
+
   canvas {
     position: absolute;
     inset: 0;

@@ -11,7 +11,7 @@ use super::{InterpolationStrategy::Linear, TracePoint};
 
 #[wasm_bindgen]
 impl BoxedBundle {
-    /// Finds n closest points to input x, y such that no two points are from the same trace
+    /// Finds n closest points to input x, y such that no two points are from the same trace.
     pub fn find_n_closest_points(
         &self,
         traces: Option<Box<[TraceHandle]>>,
@@ -20,16 +20,13 @@ impl BoxedBundle {
         n: usize,
         max_dy: Option<f64>,
     ) -> Box<[JsValue]> {
-
         // clamp x to the range we are working with
         // NOTE this may lead to wrong results
         let x: f64 = if x < self.from() {
             self.from()
-        }
-        else if x > self.to() {
+        } else if x > self.to() {
             self.to()
-        }
-        else {
+        } else {
             x
         };
 

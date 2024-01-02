@@ -106,7 +106,7 @@
           <div class="trace-info">
             <div class="value-name">
               <TracePreview previewedTrace={info.styledTrace} />
-              {info.styledTrace.id}:
+              {info.styledTrace.label ?? info.styledTrace.id}:
             </div>
             <div class="value-value">
               {info.y}
@@ -122,8 +122,10 @@
   .tooltip-container {
     display: flex;
     flex-direction: column;
-    background-color: var(--secondary-background);
+    background-color: var(--libchartium-secondary-background);
     margin: 5px;
+    padding: 0.5em;
+    border-radius: 0.5em;
   }
 
   .header {

@@ -34,7 +34,7 @@
     pointer-events: none;
     user-select: none;
 
-    background-color: var(--secondary-background);
+    background-color: var(--libchartium-secondary-background);
     border-radius: 4px;
     padding: 4px;
     font-size: 0.8rem;

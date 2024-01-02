@@ -27,6 +27,7 @@ import {
   reduce,
   some,
   unique,
+  weakMapUnion,
   zip,
 } from "../utils/collection.js";
 import { proxyMarker } from "comlink";
@@ -77,6 +78,13 @@ export class TraceList {
   #labels: ReadonlyMap<string, string>;
   #traceInfo: ResolvedTraceInfo;
   #range: Range;
+
+  #traceHandleSet_: Set<TraceHandle> | undefined;
+  get #traceHandlesSet(): Set<TraceHandle> {
+    if (!this.#traceHandleSet_)
+      this.#traceHandleSet_ = new Set(this.#traceHandles);
+    return this.#traceHandleSet_;
+  }
 
   constructor(params: {
     handles: TraceHandle[];
@@ -554,7 +562,7 @@ export class TraceList {
       const { x, y } = this.getBundleUnits(bundle);
       const newTraceList = new TraceList({
         handles: Array.from(
-          intersection(Array.from(bundle.traces()), this[HANDLES])
+          intersection(bundle.traces(), this.#traceHandlesSet)
         ) as TraceHandle[],
         range: this.#range,
         bundles: [bundle],
@@ -602,11 +610,14 @@ export class TraceList {
     let closestPoints: FoundPoint[] = [];
 
     for (const bundle of this.#bundles) {
+      const bundleTraces = new Uint32Array(
+        intersection(bundle.traces(), this.#traceHandlesSet)
+      );
       const bundleUnits = this.getBundleUnits(bundle);
       const x = toNumeric(point.x, bundleUnits.x);
       const y = toNumeric(point.y, bundleUnits.y);
       const foundPoints = bundle.find_n_closest_points(
-        new Uint32Array(this.#traceHandles),
+        bundleTraces,
         x,
         y,
         howMany
@@ -630,10 +641,8 @@ export class TraceList {
       closestPoints = closestPoints.slice(0, howMany);
     }
 
-    if (closestPoints.length === 0) {
-      return [];
-    }
-    0;
+    if (closestPoints.length === 0) return [];
+
     let results: {
       traceInfo: TraceInfo;
       closestPoint: GeneralizedPoint;

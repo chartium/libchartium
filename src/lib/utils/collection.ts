@@ -190,16 +190,12 @@ export function weakMapUnion<K extends object, V>(
   );
 }
 
-/** More like INTERSET AM I RITE */
-export function intersection<T>(...inputs: Iterable<T>[]): Set<T> {
-  const sets = inputs.map((input) => new Set(input));
-  if (sets.length === 0) return new Set();
-  const first = sets.shift()!;
+export function intersection<T>(a: Iterable<T>, ...sets: Set<T>[]): Set<T> {
+  if (sets.length === 0) return new Set(a);
+  const toReturn = new Set<T>();
 
-  const toReturn: Set<T> = new Set();
-
-  for (const el of first) {
-    if (every(sets, (set) => set.has(el))) toReturn.add(el);
+  for (const el of a) {
+    if (sets.every((set) => set.has(el))) toReturn.add(el);
   }
 
   return toReturn;

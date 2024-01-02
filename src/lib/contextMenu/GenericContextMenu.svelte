@@ -230,7 +230,7 @@
   .context-menu {
     border: 1px solid rgb(131, 130, 130);
     border-radius: 4px;
-    background-color: var(--secondary-background);
+    background-color: var(--libchartium-secondary-background);
 
     position: fixed;
     user-select: none;
