@@ -6,6 +6,7 @@ import type {
   NumericRange,
   Range,
   Shift,
+  Size,
   Threshold,
   Tick,
   Unit,
@@ -34,6 +35,11 @@ import {
 import dayjs from "dayjs";
 import { NumericDateFormat } from "../index.js";
 import { norm } from "./position.js";
+import {
+  addMarginsToRange,
+  addZeroToRange,
+  type RangeMargins,
+} from "../utils/rangeMargins.js";
 
 const toDisplayUnit = (unit: Unit | NumericDateFormat | undefined) =>
   unit instanceof NumericDateFormat ? undefined : unit;
@@ -116,6 +122,23 @@ export class Chart {
    */
   readonly size: WritableSignal<{ width: number; height: number }>;
 
+  /**
+   * Margins to be added around the provided trace data on autozoom.
+   */
+  readonly margins: WritableSignal<RangeMargins | undefined>;
+
+  /**
+   * Whether autozoom should increase the range such that x=0 is visible.
+   */
+  readonly showXAxisZero: WritableSignal<boolean>;
+
+  /**
+   * Whether autozoom should increase the range such that y=0 is visible.
+   */
+  readonly showYAxisZero: WritableSignal<boolean>;
+
+  #autozoomed = true;
+
   xTextSize?: (text: string) => number;
   yTextSize?: (text: string) => number;
 
@@ -128,8 +151,15 @@ export class Chart {
     traces ??= TraceList.empty();
 
     this.traces = withSubscriber(mut(traces), (t) => this.#updateTraces(t));
-    this.xRange = withListener(mut(traces.range), this.scheduleRender);
-    this.yRange = withListener(mut(traces.getYRange()), this.scheduleRender);
+
+    this.xRange = withListener(mut(traces.range), () => {
+      this.scheduleRender();
+      this.#autozoomed = false;
+    });
+    this.yRange = withListener(mut(traces.getYRange()), () => {
+      this.scheduleRender();
+      this.#autozoomed = false;
+    });
 
     this.size = withListener(
       mut({ width: NaN, height: NaN }),
@@ -141,6 +171,10 @@ export class Chart {
 
     withListener(this.xDisplayUnit, () => this.#updateTicks());
     withListener(this.yDisplayUnit, () => this.#updateTicks());
+
+    this.margins = withListener(mut(), this.scheduleRender);
+    this.showXAxisZero = withListener(mut(false), this.scheduleRender);
+    this.showYAxisZero = withListener(mut(false), this.scheduleRender);
 
     // canvas & renderer
     this.controller.createRenderer(transfer(canvas, [canvas])).then((r) => {
@@ -167,6 +201,8 @@ export class Chart {
         callback: () => this.yDisplayUnit.set(bestYUnit),
       };
     });
+
+    this.resetZoom();
   }
 
   #updateTraces(traces: TraceList) {
@@ -181,7 +217,7 @@ export class Chart {
 
   /**
    * Render the chart. This gets called automatically if you use any of the setters.
-   *  Autocalculates the ranges and estimates type if undefined
+   * Automatically calculates the ranges and estimates type if undefined.
    */
   render() {
     console.log("render");
@@ -191,15 +227,13 @@ export class Chart {
       throw new Error("Canvas not assigned");
     }
 
-    // clear canvas // FIXME just clear it normally u dummy
-    const clearJob: RenderJob = {
-      xType: "f32",
-      traces: TraceList.empty(),
-      clear: true,
-    };
-    this.#renderer.render(clearJob);
+    if (this.#autozoomed === true) this.resetZoom();
 
+    let firstRun = true;
     for (const [units, traces] of this.traces.get().getUnitsToTraceMap()) {
+      const clear = firstRun;
+      firstRun = false;
+
       const renderJob: RenderJob = {
         traces,
 
@@ -207,7 +241,7 @@ export class Chart {
         xType: "f32",
         xRange: toNumericRange(this.xRange.get(), units.x),
         yRange: toNumericRange(this.yRange.get(), units.y),
-        clear: false,
+        clear,
       };
 
       this.#renderer.render(renderJob);
@@ -233,10 +267,13 @@ export class Chart {
     // render already scheduled
     if (this.#renderScheduled) return;
 
-    this.#renderScheduled = true;
-    await nextAnimationFrame();
-    this.#renderScheduled = false;
-    this.tryRender();
+    try {
+      this.#renderScheduled = true;
+      await nextAnimationFrame();
+      this.tryRender();
+    } finally {
+      this.#renderScheduled = false;
+    }
   };
 
   readonly #xTicks = mut<Tick[]>([]);
@@ -276,19 +313,24 @@ export class Chart {
    * @param axis which axis to reset, defaults to both
    * @param showYZero if true the y range will be stretched to include 0 if necessary
    */
-  resetZoom(axis: "x" | "y" | "both" = "both", showYZero = false) {
-    if (axis === "x" || axis === "both")
-      this.xRange.set(this.traces.get().range);
-    if (axis === "y" || axis === "both") {
-      const yRange = this.traces.get().getYRange();
-      if (showYZero) {
-        const from = toNumeric(yRange.from, this.#yDataUnit);
-        const to = toNumeric(yRange.to, this.#yDataUnit);
-        yRange.from = toQuantOrDay(Math.min(0, from), this.#yDataUnit);
-        yRange.to = toQuantOrDay(Math.max(0, to), this.#yDataUnit);
-      }
-      this.yRange.set(yRange);
-    }
+  resetZoom(axis: "x" | "y" | "both" = "both") {
+    const traces = this.traces.get();
+    let xRange = traces.range;
+    let yRange = traces.getYRange();
+
+    const margins = this.margins.get() ?? { vertical: { percent: 5 } };
+    const size = this.size.get();
+    ({ xRange, yRange } = addMarginsToRange(margins, size, xRange, yRange));
+
+    if (this.showXAxisZero.get())
+      xRange = addZeroToRange(xRange, this.#xDataUnit);
+    if (this.showYAxisZero.get())
+      yRange = addZeroToRange(yRange, this.#yDataUnit);
+
+    if (axis === "x" || axis === "both") this.xRange.set(xRange);
+    if (axis === "y" || axis === "both") this.yRange.set(yRange);
+
+    this.#autozoomed = true;
     return this.scheduleRender();
   }
 

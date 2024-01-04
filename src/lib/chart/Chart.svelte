@@ -19,6 +19,7 @@
   import { qndFormat } from "../utils/format.js";
   import type { NumericDateFormat } from "../index.js";
   import type { Dayjs } from "dayjs";
+  import type { RangeMargins } from "../utils/rangeMargins.js";
 
   // SECTION Props
 
@@ -100,8 +101,16 @@
     | "bottom-right"
     | "none" = "top-right";
 
+  /** Forces autozoom to show x = 0 */
+  export let showXAxisZero: boolean = false;
+  $: chart?.showXAxisZero.set(showXAxisZero);
+
   /** Forces autozoom to show y = 0 */
-  export let showYZero: boolean = false;
+  export let showYAxisZero: boolean = false;
+  $: chart?.showYAxisZero.set(showYAxisZero);
+
+  export let margins: RangeMargins | undefined = undefined;
+  $: chart?.margins.set(margins);
 
   //!SECTION
 
@@ -337,7 +346,7 @@
     disableUnitChange={disableYUnitChanges}
     hideTicks={hideYTicks}
     on:shift={(d) => chart?.shiftRange(d)}
-    on:reset={(d) => chart?.resetZoom("y", showYZero)}
+    on:reset={(d) => chart?.resetZoom("y")}
     raiseFactor={chart?.raiseYFactorAction ?? cons(undefined)}
     lowerFactor={chart?.lowerYFactorAction ?? cons(undefined)}
     resetUnit={chart?.resetYFactorAction ?? cons(undefined)}
@@ -396,7 +405,7 @@
     bind:filterByThreshold
     bind:addPersistentThreshold
     traceHovered={selectedTrace !== undefined}
-    on:reset={() => chart?.resetZoom("both", showYZero)}
+    on:reset={() => chart?.resetZoom("both")}
     on:zoom={(d) => chart?.zoomRange(d)}
     on:shift={(d) => chart?.shiftRange(d)}
     on:yThreshold={(t) => {

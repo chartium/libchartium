@@ -100,7 +100,7 @@
         {@const first = nearestTracesInfo[0]}
 
         <div class="header">
-          x: {first?.x}
+          {first?.x}
         </div>
         {#each nearestTracesInfo as info}
           <div class="trace-info">

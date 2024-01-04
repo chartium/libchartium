@@ -56,6 +56,6 @@
     "svelte": "^4.2.2",
     "svelte-fa": "^3.0.4",
     "svelte-portal": "^2.2.0",
-    "unitlib": "^0.5.0"
+    "unitlib": "^0.5.2"
   }
 }
