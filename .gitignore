@@ -13,3 +13,5 @@ dist-ssr
 dist-rust
 *.local
 .svelte-kit
+
+.vscode
