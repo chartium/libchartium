@@ -22,6 +22,13 @@ extern "C" {
     fn time_end(s: &str);
 }
 
+#[macro_export]
+macro_rules! console_log {
+    // Note that this is using the `log` function imported above during
+    // `bare_bones`
+    ($($t:tt)*) => (log(&format_args!($($t)*).to_string()))
+}
+
 #[wasm_bindgen]
 pub fn set_panic_hook() {
     // For more details see
