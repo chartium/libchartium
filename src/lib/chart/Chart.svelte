@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { ChartiumController } from "../data-worker/index.js";
-  import type { Quantity, Unit, GeneralizedPoint } from "../types.js";
+  import { Quantity, type Unit, type GeneralizedPoint } from "../types.js";
   import type { TraceInfo, TraceList } from "../data-worker/trace-list.js";
   import type { VisibleAction } from "./ActionsOverlay.svelte";
 
@@ -150,8 +150,16 @@
   let hoverXQuantity: number | dayjs.Dayjs | Quantity;
   let hoverYQuantity: number | dayjs.Dayjs | Quantity;
   function updateHoverQuantities(e: MouseEvent) {
-    hoverXQuantity = chart?.coordinatesToQuantities(e.offsetX, "x") ?? 0;
-    hoverYQuantity = chart?.coordinatesToQuantities(e.offsetY, "y") ?? 0;
+    const unconvertedX = chart?.coordinatesToQuantities(e.offsetX, "x") ?? 0;
+    const unconvertedY = chart?.coordinatesToQuantities(e.offsetY, "y") ?? 0;
+    hoverXQuantity =
+      unconvertedX instanceof Quantity && $xDisplayUnit
+        ? unconvertedX.inUnits($xDisplayUnit)
+        : unconvertedX;
+    hoverYQuantity =
+      unconvertedY instanceof Quantity && $yDisplayUnit
+        ? unconvertedY.inUnits($yDisplayUnit)
+        : unconvertedY;
   }
   $: closestTraces =
     chart && hoverXQuantity && hoverYQuantity

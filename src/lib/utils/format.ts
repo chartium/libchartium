@@ -78,19 +78,24 @@ export function qndFormat(
     decimals?: number;
     dayjsFormat?: string;
     quantityFormat?: FormatOptions;
-    unit?: Unit;
+    unit?: Unit | NumericDateFormat;
   }
 ) {
   if (typeof input === "number") {
     return input.toFixed(options.decimals ?? 2);
+  } else if (
+    dayjs.isDayjs(input) &&
+    options.unit instanceof NumericDateFormat
+  ) {
+    return input.format(options.dayjsFormat ?? "YYYY-MM-DD");
   } else if (input instanceof Quantity) {
-    input = input.inUnits(options.unit ?? input.unit);
+    input = input.inUnits((options.unit as Unit | undefined) ?? input.unit);
     return `${input.value.toFixed(
       options.decimals ?? 2
     )} ${input.unit.toString()}`;
     // FIXME fix this once this is implemented in unitlib
     // return input.toString(options.quantityFormat ?? {});
   } else {
-    return input.format(options.dayjsFormat ?? "YYYY-MM-DD");
+    throw new Error("Invalid input");
   }
 }
