@@ -79,8 +79,8 @@ impl<X: N, Y: N> Bundle for Batch<X, Y> {
         for (i, window) in self.x.windows(2).enumerate() {
             let left = &window[0];
             let right = &window[1];
-            let left_f = left.as_f64();
-            let right_f = right.as_f64();
+            let left_x = left.as_f64();
+            let right_x = right.as_f64();
 
             if left.as_f64() <= x && right.as_f64() >= x {
                 let left_y = self.ys[&handle][i].as_f64();
@@ -99,16 +99,16 @@ impl<X: N, Y: N> Bundle for Batch<X, Y> {
                         return None;
                     }
                     InterpolationStrategy::Nearest => {
-                        if (x - left_f) < (right_f - x) {
+                        if (x - left_x) < (right_x - x) {
                             return left_y.into();
                         } else {
                             return right_y.into();
                         }
                     }
                     InterpolationStrategy::Linear => {
-                        return Some(
-                            (right_f - x) * left_y + (x - left_f) * right_y / (right_f - left_f),
-                        )
+                        let frac = (x - left_x) / (right_x - left_x);
+
+                        return Some(right_y * frac + left_y * (1.0 - frac));
                     }
                 }
             }
