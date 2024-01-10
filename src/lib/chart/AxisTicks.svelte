@@ -14,12 +14,7 @@
     type ContextItem,
     GenericContextMenu,
   } from "../contextMenu/index.js";
-  import {
-    ZippedSignal,
-    type Signal,
-    type WritableSignal,
-    mut,
-  } from "@mod.js/signals";
+  import * as signals from "@mod.js/signals";
   import { doOverlap, measureText } from "../utils/format.js";
 
   export const events = createEventDispatcher<{
@@ -44,9 +39,11 @@
 
   export let disableInteractivity: boolean;
 
-  export let visibleAction: WritableSignal<VisibleAction | undefined>;
+  export let visibleAction: signals.WritableSignal<VisibleAction | undefined>;
 
-  type UnitAction = Signal<{ unit: Unit; callback: () => void } | undefined>;
+  type UnitAction = signals.Signal<
+    { unit: Unit; callback: () => void } | undefined
+  >;
   export let raiseFactor: UnitAction;
   export let lowerFactor: UnitAction;
   /** unit to reset the axis to */
@@ -56,11 +53,11 @@
     measureText(text, measuringSpan, axis === "x" ? "horizontal" : "vertical");
 
   // flatten the mutable prop containing a store into a store
-  const raiseFactor$ = mut($raiseFactor);
+  const raiseFactor$ = signals.mut($raiseFactor);
   $: raiseFactor$.set($raiseFactor);
-  const lowerFactor$ = mut($lowerFactor);
+  const lowerFactor$ = signals.mut($lowerFactor);
   $: lowerFactor$.set($lowerFactor);
-  const resetUnit$ = mut($resetUnit);
+  const resetUnit$ = signals.mut($resetUnit);
   $: resetUnit$.set($resetUnit);
 
   const dragCallbacks: MouseDragCallbacks = {
@@ -95,45 +92,47 @@
   let axisHeight: number = 1;
 
   const contextItems = disableUnitChange
-    ? mut([])
-    : ZippedSignal(
-        raiseFactor$.map(($v) => {
-          if (!$v) return;
-          const { unit, callback } = $v;
-          return <const>{
-            type: "leaf",
-            content: `Raise unit to ${unit.toString()}`,
-            callback() {
-              callback();
-              menu.close();
-            },
-          };
-        }),
-        resetUnit$.map(($v) => {
-          if (!$v) return;
-          const { unit, callback } = $v;
-          return <const>{
-            type: "leaf",
-            content: `Reset unit to ${unit.toString()}`,
-            callback() {
-              callback();
-              menu.close();
-            },
-          };
-        }),
-        lowerFactor$.map(($v) => {
-          if (!$v) return;
-          const { unit, callback } = $v;
-          return <const>{
-            type: "leaf",
-            content: `Lower unit to ${unit.toString()}`,
-            callback() {
-              callback();
-              menu.close();
-            },
-          };
-        })
-      ).map((arr) => arr.filter((x) => x) as ContextItem<string>[]);
+    ? signals.mut([])
+    : signals
+        .ZippedSignal(
+          raiseFactor$.map(($v) => {
+            if (!$v) return;
+            const { unit, callback } = $v;
+            return <const>{
+              type: "leaf",
+              content: `Raise unit to ${unit.toString()}`,
+              callback() {
+                callback();
+                menu.close();
+              },
+            };
+          }),
+          resetUnit$.map(($v) => {
+            if (!$v) return;
+            const { unit, callback } = $v;
+            return <const>{
+              type: "leaf",
+              content: `Reset unit to ${unit.toString()}`,
+              callback() {
+                callback();
+                menu.close();
+              },
+            };
+          }),
+          lowerFactor$.map(($v) => {
+            if (!$v) return;
+            const { unit, callback } = $v;
+            return <const>{
+              type: "leaf",
+              content: `Lower unit to ${unit.toString()}`,
+              callback() {
+                callback();
+                menu.close();
+              },
+            };
+          })
+        )
+        .map((arr) => arr.filter((x) => x) as ContextItem<string>[]);
 
   let menu: { open(p: Point): void; close(): void };
 

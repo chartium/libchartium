@@ -130,7 +130,7 @@ impl Bulkloader {
                 });
         }
 
-        let ys = HashMap::from_iter(handles.iter().zip(ys.into_iter()).map(|(h, y)| (*h, y)));
+        let ys = HashMap::from_iter(handles.iter().zip(ys).map(|(h, y)| (*h, y)));
 
         BoxedBundle::new(Batch::new(x, ys))
     }

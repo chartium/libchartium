@@ -38,7 +38,7 @@
   import GenericContextMenu from "../contextMenu/GenericContextMenu.svelte";
   import type { WritableSignal } from "@mod.js/signals";
   import RulerBubble from "./RulerBubble.svelte";
-  import { Dayjs } from "dayjs";
+  import { type Dayjs } from "dayjs";
 
   export const events = createEventDispatcher<{
     reset: undefined;

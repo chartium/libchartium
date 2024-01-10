@@ -8,7 +8,7 @@
  * higher level abstraction above it.
  */
 
-import { BiMap } from "bim";
+import { BiMap } from "@risai/bim";
 import { init, lib } from "./wasm.js";
 
 import type {

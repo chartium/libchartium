@@ -18,7 +18,7 @@ import { linearTicks, linearTicksFR } from "../utils/ticks.js";
 import { nextAnimationFrame } from "../utils/promise.js";
 import type { FactorDefinition } from "unitlib";
 
-import { mut } from "@mod.js/signals";
+import * as signals from "@mod.js/signals";
 import type {
   Signal,
   Subscriber,
@@ -95,8 +95,8 @@ export class Chart {
   #xDataUnit: Unit | NumericDateFormat | undefined;
   #yDataUnit: Unit | NumericDateFormat | undefined;
 
-  readonly xDisplayUnit = mut<Unit | undefined>();
-  readonly yDisplayUnit = mut<Unit | undefined>();
+  readonly xDisplayUnit = signals.mut<Unit | undefined>();
+  readonly yDisplayUnit = signals.mut<Unit | undefined>();
 
   /**
    * The list of traces to be rendered in this chart.
@@ -150,19 +150,21 @@ export class Chart {
     // signals
     traces ??= TraceList.empty();
 
-    this.traces = withSubscriber(mut(traces), (t) => this.#updateTraces(t));
+    this.traces = withSubscriber(signals.mut(traces), (t) =>
+      this.#updateTraces(t)
+    );
 
-    this.xRange = withListener(mut(traces.range), () => {
+    this.xRange = withListener(signals.mut(traces.range), () => {
       this.scheduleRender();
       this.#autozoomed = false;
     });
-    this.yRange = withListener(mut(traces.getYRange()), () => {
+    this.yRange = withListener(signals.mut(traces.getYRange()), () => {
       this.scheduleRender();
       this.#autozoomed = false;
     });
 
     this.size = withListener(
-      mut({ width: NaN, height: NaN }),
+      signals.mut({ width: NaN, height: NaN }),
       ({ width, height }) => {
         this.#renderer?.setSize(width, height);
         this.scheduleRender();
@@ -172,9 +174,9 @@ export class Chart {
     withListener(this.xDisplayUnit, () => this.#updateTicks());
     withListener(this.yDisplayUnit, () => this.#updateTicks());
 
-    this.margins = withListener(mut(), this.scheduleRender);
-    this.showXAxisZero = withListener(mut(false), this.scheduleRender);
-    this.showYAxisZero = withListener(mut(false), this.scheduleRender);
+    this.margins = withListener(signals.mut(), this.scheduleRender);
+    this.showXAxisZero = withListener(signals.mut(false), this.scheduleRender);
+    this.showYAxisZero = withListener(signals.mut(false), this.scheduleRender);
 
     // canvas & renderer
     this.controller.createRenderer(transfer(canvas, [canvas])).then((r) => {
@@ -276,8 +278,8 @@ export class Chart {
     }
   };
 
-  readonly #xTicks = mut<Tick[]>([]);
-  readonly #yTicks = mut<Tick[]>([]);
+  readonly #xTicks = signals.mut<Tick[]>([]);
+  readonly #yTicks = signals.mut<Tick[]>([]);
   readonly xTicks = this.#xTicks.toReadonly();
   readonly yTicks = this.#yTicks.toReadonly();
 

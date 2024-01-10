@@ -41,7 +41,7 @@ import {
   toQuantOrDayRange,
   unitEqual,
 } from "../utils/quantityHelpers.js";
-import type dayjs from "dayjs";
+import { type Dayjs } from "dayjs";
 import { NumericDateFormat } from "../index.js";
 
 export const BUNDLES = Symbol("bundles");
@@ -63,10 +63,10 @@ export interface TraceInfo {
 
 export interface QDTraceMetas {
   traceId: string;
-  min: number | Quantity | dayjs.Dayjs;
-  max: number | Quantity | dayjs.Dayjs;
-  avg: number | Quantity | dayjs.Dayjs;
-  avg_nz: number | Quantity | dayjs.Dayjs;
+  min: number | Quantity | Dayjs;
+  max: number | Quantity | Dayjs;
+  avg: number | Quantity | Dayjs;
+  avg_nz: number | Quantity | Dayjs;
 }
 
 export class TraceList {
@@ -422,8 +422,8 @@ export class TraceList {
     to,
   }: Partial<{
     traces: string[];
-    from: number | Quantity | dayjs.Dayjs;
-    to: number | Quantity | dayjs.Dayjs;
+    from: number | Quantity | Dayjs;
+    to: number | Quantity | Dayjs;
   }> = {}) {
     const unfiltered =
       from === undefined && to === undefined && traces === undefined;

@@ -13,7 +13,7 @@
   import ChartLegend from "./Legend.svelte";
   import Guidelines from "./Guidelines.svelte";
   import Tooltip from "./Tooltip.svelte";
-  import { WritableSignal, cons, mut } from "@mod.js/signals";
+  import * as signals from "@mod.js/signals";
   import type { Remote } from "comlink";
   import type dayjs from "dayjs";
   import { qndFormat } from "../utils/format.js";
@@ -26,7 +26,9 @@
   export let controller: ChartiumController | Remote<ChartiumController>;
   /** All traces in the chart */
   export let traces: TraceList;
-  let hiddenTraceIDs: WritableSignal<Set<string>> = mut(new Set<string>());
+  let hiddenTraceIDs: signals.WritableSignal<Set<string>> = signals.mut(
+    new Set<string>()
+  );
   /** Only those that aren't hidden */
   $: displayedTraces = traces.withoutTraces($hiddenTraceIDs);
 
@@ -143,7 +145,7 @@
     dayjsFormat: "MMM DD, hh:mm:ss",
     unit: $yDisplayUnit,
   };
-  const visibleAction = mut<VisibleAction | undefined>(undefined);
+  const visibleAction = signals.mut<VisibleAction | undefined>(undefined);
 
   $: (window as any).chart = chart; // FIXME DEBUG
 
@@ -347,9 +349,9 @@
     hideTicks={hideYTicks}
     on:shift={(d) => chart?.shiftRange(d)}
     on:reset={(d) => chart?.resetZoom("y")}
-    raiseFactor={chart?.raiseYFactorAction ?? cons(undefined)}
-    lowerFactor={chart?.lowerYFactorAction ?? cons(undefined)}
-    resetUnit={chart?.resetYFactorAction ?? cons(undefined)}
+    raiseFactor={chart?.raiseYFactorAction ?? signals.cons(undefined)}
+    lowerFactor={chart?.lowerYFactorAction ?? signals.cons(undefined)}
+    resetUnit={chart?.resetYFactorAction ?? signals.cons(undefined)}
     bind:textLength={yAxisTextSize}
   />
 
@@ -366,9 +368,9 @@
     hideTicks={hideXTicks}
     on:shift={(d) => chart?.shiftRange(d)}
     on:reset={() => chart?.resetZoom("x")}
-    raiseFactor={chart?.raiseXFactorAction ?? cons(undefined)}
-    lowerFactor={chart?.lowerXFactorAction ?? cons(undefined)}
-    resetUnit={chart?.resetXFactorAction ?? cons(undefined)}
+    raiseFactor={chart?.raiseXFactorAction ?? signals.cons(undefined)}
+    lowerFactor={chart?.lowerXFactorAction ?? signals.cons(undefined)}
+    resetUnit={chart?.resetXFactorAction ?? signals.cons(undefined)}
     bind:textLength={xAxisTextSize}
   />
 

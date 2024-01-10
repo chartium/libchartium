@@ -1,6 +1,6 @@
 /** THelper functions to make the code shorter */
 
-import dayjs, { type Dayjs, isDayjs } from "dayjs";
+import dayjs, { type Dayjs } from "dayjs";
 import { NumericDateFormat } from "./numericDateFormat.js";
 import {
   Quantity,
@@ -18,7 +18,7 @@ export function toNumeric(
   if (typeof x === "number") return x;
 
   if (unit instanceof NumericDateFormat) {
-    if (isDayjs(x)) return unit.valueFrom(x);
+    if (dayjs.isDayjs(x)) return unit.valueFrom(x);
 
     throw new TypeError(
       "Attempting to convert an unsupported value from a date to a number."
@@ -123,7 +123,7 @@ export function subtract(
 ) {
   if (typeof b === "number") return add(a, -b);
   if (b instanceof Quantity) return add(a, b.negative());
-  if (isDayjs(a)) return new Quantity(+a - +b, milliseconds);
+  if (dayjs.isDayjs(a)) return new Quantity(+a - +b, milliseconds);
   throw TypeError("Attempting to subtract a date from an incompatible type.");
 }
 
