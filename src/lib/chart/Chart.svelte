@@ -140,15 +140,10 @@
   $: xTicks = chart?.xTicks;
   $: yTicks = chart?.yTicks;
 
-  $: chart?.defaultXDisplayUnit.set(defaultXUnit);
-  $: {
-    chart?.defaultYDisplayUnit.set(defaultYUnit);
-    console.log(
-      `setting default y unit ${defaultYUnit} ${chart?.defaultYDisplayUnit.get()}`
-    );
-  }
-  $: xDisplayUnit = chart?.currentXDisplayUnit;
-  $: yDisplayUnit = chart?.currentYDisplayUnit;
+  $: chart?.defaultDisplayUnit.x.set(defaultXUnit);
+  $: chart?.defaultDisplayUnit.y.set(defaultYUnit);
+  $: xDisplayUnit = chart?.currentDisplayUnit.x;
+  $: yDisplayUnit = chart?.currentDisplayUnit.y;
   let xAxisTextSize: ((text: string) => number) | undefined;
   let yAxisTextSize: ((text: string) => number) | undefined;
 
@@ -233,8 +228,8 @@
 
   $: if (chart) {
     // ideally this would just update but without mousemove we don't know where the mouse is
-    chart.xRange.subscribe(() => updateHighlightPoints(chart, []));
-    chart.yRange.subscribe(() => updateHighlightPoints(chart, []));
+    chart.range.x.subscribe(() => updateHighlightPoints(chart, []));
+    chart.range.y.subscribe(() => updateHighlightPoints(chart, []));
   }
 
   /** How close to a trace is considered close enough to get only one trace info */
@@ -268,7 +263,7 @@
     closestTraces?.length !== 0 &&
     traceCloseEnough
   ) {
-    const { from, to } = chart.xRange.get();
+    const { from, to } = chart.range.x.get();
     const statsOfClosest = displayedTraces.calculateStatistics({
       traces: [closestTraces[0].traceInfo.id],
       from,
@@ -322,7 +317,7 @@
   $: presYThreshFracs = persistentYThresholds.map(
     (q) => chart?.quantitiesToFractions(q, "y") ?? 0
   );
-  $: chart?.yRange.subscribe(() => {
+  $: chart?.range.y.subscribe(() => {
     presYThreshFracs = persistentYThresholds.map(
       (q) => chart?.quantitiesToFractions(q, "y") ?? 0
     );

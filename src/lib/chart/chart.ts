@@ -96,17 +96,19 @@ export class Chart {
     return this.#renderer;
   }
 
-  #xDataUnit: Unit | NumericDateFormat | undefined;
-  #yDataUnit: Unit | NumericDateFormat | undefined;
+  #dataUnit: {
+    x?: Unit | NumericDateFormat | undefined;
+    y?: Unit | NumericDateFormat | undefined;
+  } = {};
 
-  readonly defaultXDisplayUnit = mut<Unit | undefined | "auto" | "data">(
-    "auto"
-  );
-  readonly defaultYDisplayUnit = mut<Unit | undefined | "auto" | "data">(
-    "auto"
-  );
-  readonly currentXDisplayUnit = mut<Unit | undefined>();
-  readonly currentYDisplayUnit = mut<Unit | undefined>();
+  readonly defaultDisplayUnit = {
+    x: mut<Unit | undefined | "auto" | "data">("auto"),
+    y: mut<Unit | undefined | "auto" | "data">("auto"),
+  };
+  readonly currentDisplayUnit = {
+    x: mut<Unit | undefined>(),
+    y: mut<Unit | undefined>(),
+  };
 
   /**
    * The list of traces to be rendered in this chart.
@@ -114,18 +116,14 @@ export class Chart {
   readonly traces: WritableSignal<TraceList>;
 
   /**
-   * The visible range (in display units) of the x axis, changes with user
-   * interaction (eg. zooming and panning). To reset both axes to fit the data,
-   * use the `resetZoom` method.
+   * The visible range (in display units) of the x & y axes, changes with user
+   * interaction (eg. zooming and panning). To reset one or both axes to fit
+   * the data, use the `resetZoom` method.
    */
-  readonly xRange: WritableSignal<Range>;
-
-  /**
-   * The visible range (in display units) of the y axis, changes with user
-   * interaction (eg. zooming and panning). To reset both axes to fit the data,
-   * use the `resetZoom` method.
-   */
-  readonly yRange: WritableSignal<Range>;
+  readonly range: {
+    x: WritableSignal<Range>;
+    y: WritableSignal<Range>;
+  };
 
   /**
    * The dimensions of this chart in pixels.
@@ -148,8 +146,7 @@ export class Chart {
   readonly showYAxisZero: WritableSignal<boolean>;
 
   #autozoomed = true;
-  #currentXUnitsAreDefault = true;
-  #currentYUnitsAreDefault = true;
+  #currentUnitsAreDefault = { x: true, y: true };
 
   xTextSize?: (text: string) => number;
   yTextSize?: (text: string) => number;
@@ -164,14 +161,16 @@ export class Chart {
 
     this.traces = withSubscriber(mut(traces), (t) => this.#updateTraces(t));
 
-    this.xRange = withListener(mut(traces.range), () => {
-      this.scheduleRender();
-      this.#autozoomed = false;
-    });
-    this.yRange = withListener(mut(traces.getYRange()), () => {
-      this.scheduleRender();
-      this.#autozoomed = false;
-    });
+    this.range = {
+      x: withListener(mut(traces.range), () => {
+        this.scheduleRender();
+        this.#autozoomed = false;
+      }),
+      y: withListener(mut(traces.getYRange()), () => {
+        this.scheduleRender();
+        this.#autozoomed = false;
+      }),
+    };
 
     this.size = withListener(
       mut({ width: NaN, height: NaN }),
@@ -182,21 +181,13 @@ export class Chart {
     );
 
     this.resetUnits();
-    withListener(this.currentXDisplayUnit, () => this.#updateTicks());
-    withListener(this.currentYDisplayUnit, () => this.#updateTicks());
-    withListener(this.defaultXDisplayUnit, () => {
-      console.log(
-        "resetting x units",
-        this.defaultXDisplayUnit.get()?.toString()
-      );
-      if (this.#currentXUnitsAreDefault) this.resetUnits("x");
+    withListener(this.currentDisplayUnit.x, () => this.#updateTicks());
+    withListener(this.currentDisplayUnit.y, () => this.#updateTicks());
+    withListener(this.defaultDisplayUnit.x, () => {
+      if (this.#currentUnitsAreDefault.x) this.resetUnits("x");
     });
-    withListener(this.defaultYDisplayUnit, () => {
-      console.log(
-        "resetting y units",
-        this.defaultYDisplayUnit.get()?.toString()
-      );
-      if (this.#currentYUnitsAreDefault) this.resetUnits("y");
+    withListener(this.defaultDisplayUnit.y, () => {
+      if (this.#currentUnitsAreDefault.y) this.resetUnits("y");
     });
 
     this.margins = withListener(mut(), this.scheduleRender);
@@ -220,9 +211,7 @@ export class Chart {
   }
 
   #updateTraces(traces: TraceList) {
-    const dataUnits = traces.getUnits()[0] ?? {};
-    this.#xDataUnit = dataUnits.x;
-    this.#yDataUnit = dataUnits.y;
+    this.#dataUnit = traces.getUnits()[0] ?? {};
 
     // TODO reset units if incompatible
     // this.xDisplayUnit.set(toDisplayUnit(dataUnits.x));
@@ -254,8 +243,8 @@ export class Chart {
 
         // TODO read xType
         xType: "f32",
-        xRange: toNumericRange(this.xRange.get(), units.x),
-        yRange: toNumericRange(this.yRange.get(), units.y),
+        xRange: toNumericRange(this.range.x.get(), units.x),
+        yRange: toNumericRange(this.range.y.get(), units.y),
         clear,
       };
 
@@ -293,9 +282,9 @@ export class Chart {
   readonly yTicks = this.#yTicks.toReadonly();
 
   #updateTicks() {
-    const xRange = this.xRange.get();
+    const xRange = this.range.x.get();
     if (xRange && this.xTextSize) {
-      const displayUnit = this.currentXDisplayUnit.get();
+      const displayUnit = this.currentDisplayUnit.x.get();
       this.#xTicks.set(
         linearTicks({
           range: xRange,
@@ -306,9 +295,9 @@ export class Chart {
       );
     }
 
-    const yRange = this.yRange.get();
+    const yRange = this.range.y.get();
     if (yRange && this.yTextSize) {
-      const displayUnit = this.currentYDisplayUnit.get();
+      const displayUnit = this.currentDisplayUnit.y.get();
       this.#yTicks.set(
         linearTicks({
           range: yRange,
@@ -334,25 +323,21 @@ export class Chart {
     ({ xRange, yRange } = addMarginsToRange(margins, size, xRange, yRange));
 
     if (this.showXAxisZero.get())
-      xRange = addZeroToRange(xRange, this.#xDataUnit);
+      xRange = addZeroToRange(xRange, this.#dataUnit.x);
     if (this.showYAxisZero.get())
-      yRange = addZeroToRange(yRange, this.#yDataUnit);
+      yRange = addZeroToRange(yRange, this.#dataUnit.y);
 
-    if (axes.includes("x")) this.xRange.set(xRange);
-    if (axes.includes("y")) this.yRange.set(yRange);
+    if (axes.includes("x")) this.range.x.set(xRange);
+    if (axes.includes("y")) this.range.y.set(yRange);
 
     this.#autozoomed = true;
     return this.scheduleRender();
   }
 
   resetUnits(axes: "x" | "y" | "xy" = "xy") {
-    if (axes.includes("x")) {
-      this.currentXDisplayUnit.set(this.#findResetUnit("x"));
-      this.#currentXUnitsAreDefault = true;
-    }
-    if (axes.includes("y")) {
-      this.currentYDisplayUnit.set(this.#findResetUnit("y"));
-      this.#currentYUnitsAreDefault = true;
+    for (const axis of axes as Iterable<"x" | "y">) {
+      this.currentDisplayUnit[axis].set(this.#findResetUnit(axis));
+      this.#currentUnitsAreDefault[axis] = true;
     }
   }
 
@@ -399,7 +384,7 @@ export class Chart {
     fraction: number,
     axis: "x" | "y"
   ): Quantity | dayjs.Dayjs | number {
-    const range = axis === "x" ? this.xRange.get() : this.yRange.get();
+    const range = this.range[axis].get();
     const unit = this.bestDisplayUnits(axis);
 
     const value =
@@ -415,9 +400,9 @@ export class Chart {
     quantity: Quantity | dayjs.Dayjs | number,
     axis: "x" | "y"
   ): number {
-    const range = axis === "x" ? this.xRange.get() : this.yRange.get();
+    const range = this.range[axis].get();
     if (!range) throw new Error(`${axis} range is undefined`);
-    const unit = axis === "x" ? this.#xDataUnit : this.#yDataUnit;
+    const unit = this.#dataUnit[axis];
 
     const fraction =
       (toNumeric(quantity, unit) - toNumeric(range.from, unit)) /
@@ -431,12 +416,9 @@ export class Chart {
     coordinateInPx: number,
     axis: "x" | "y"
   ): Quantity | number | dayjs.Dayjs {
-    const range = axis === "x" ? this.xRange.get() : this.yRange.get();
-    const unit = axis === "x" ? this.#xDataUnit : this.#yDataUnit;
-    const displayUnit =
-      axis === "x"
-        ? this.currentXDisplayUnit.get()
-        : this.currentYDisplayUnit.get();
+    const range = this.range[axis].get();
+    const unit = this.#dataUnit[axis];
+    const displayUnit = this.currentDisplayUnit[axis].get();
 
     if (!range) throw new Error("xRange or yRange is undefined");
 
@@ -455,7 +437,7 @@ export class Chart {
     quantity: Quantity | dayjs.Dayjs | number,
     axis: "x" | "y"
   ): number {
-    const range = axis === "x" ? this.xRange.get() : this.yRange.get();
+    const range = this.range[axis].get();
 
     if (
       typeof range.from !== typeof quantity &&
@@ -466,10 +448,7 @@ export class Chart {
       );
     }
 
-    const displayUnit =
-      axis === "x"
-        ? this.currentXDisplayUnit.get()
-        : this.currentYDisplayUnit.get();
+    const displayUnit = this.currentDisplayUnit[axis].get();
 
     if (range === undefined) throw new Error(`${axis} range is undefined`);
 
@@ -486,18 +465,17 @@ export class Chart {
 
   zoomRange({ detail }: { detail: Zoom }) {
     for (const [axis, zoom] of Object.entries(detail) as [
-      string,
+      "x" | "y",
       NumericRange
     ][]) {
-      const rangeName = `${axis}Range` as "xRange" | "yRange";
-      const range = this[rangeName].get();
-      const unit = rangeName === "xRange" ? this.#xDataUnit : this.#yDataUnit;
+      const range = this.range[axis].get();
+      const unit = this.#dataUnit[axis];
 
       const d = toNumeric(range.to, unit) - toNumeric(range.from, unit);
 
       if (zoom.to - zoom.from <= 0) continue;
 
-      this[rangeName].set(
+      this.range[axis].set(
         toRange(
           {
             from: toNumeric(range.from, unit) + d * zoom.from,
@@ -511,13 +489,13 @@ export class Chart {
 
   shiftRange({ detail: shift }: { detail: Shift }) {
     {
-      const xRange = this.xRange.get();
-      const xUnits = this.#xDataUnit;
+      const xRange = this.range.x.get();
+      const xUnits = this.#dataUnit.x;
       const from = toNumeric(xRange.from, xUnits);
       const to = toNumeric(xRange.to, xUnits);
       if (shift.dx) {
         const delta = (to - from) * -shift.dx;
-        this.xRange.set(
+        this.range.x.set(
           toRange(
             {
               from: from + delta,
@@ -529,13 +507,13 @@ export class Chart {
       }
     }
     {
-      const yRange = this.yRange.get();
-      const yUnits = this.#yDataUnit;
+      const yRange = this.range.y.get();
+      const yUnits = this.#dataUnit.y;
       const from = toNumeric(yRange.from, yUnits);
       const to = toNumeric(yRange.to, yUnits);
       if (shift.dy) {
         const delta = (to - from) * -shift.dy;
-        this.yRange.set(
+        this.range.y.set(
           toRange({ from: from + delta, to: to + delta }, yUnits)
         );
       }
@@ -551,14 +529,14 @@ export class Chart {
   }: {
     detail: Threshold;
   }): Iterable<string> {
-    const yRange = this.yRange.get();
-    const yUnits = this.#yDataUnit;
+    const yRange = this.range.y.get();
+    const yUnits = this.#dataUnit.y;
 
     const from = toNumeric(yRange.from, yUnits);
     const to = toNumeric(yRange.to, yUnits);
     const qThreshold = toQuantOrDay(
       from + (to - from) * threshold.thresholdFrac,
-      this.#yDataUnit
+      this.#dataUnit.y
     ) as number | Quantity;
     const traces = this.traces.get();
 
@@ -578,8 +556,8 @@ export class Chart {
 
   distanceInDataUnits(a: GeneralizedPoint, b: GeneralizedPoint) {
     return norm([
-      toNumeric(b.x, this.#xDataUnit) - toNumeric(a.x, this.#xDataUnit),
-      toNumeric(b.y, this.#yDataUnit) - toNumeric(a.y, this.#yDataUnit),
+      toNumeric(b.x, this.#dataUnit.x) - toNumeric(a.x, this.#dataUnit.x),
+      toNumeric(b.y, this.#dataUnit.y) - toNumeric(a.y, this.#dataUnit.y),
     ]);
   }
 
@@ -599,8 +577,7 @@ export class Chart {
     direction: "raise" | "lower",
     axis: "x" | "y"
   ): Signal<UnitChangeAction | undefined> => {
-    const displayUnit =
-      axis === "x" ? this.currentXDisplayUnit : this.currentYDisplayUnit;
+    const displayUnit = this.currentDisplayUnit[axis];
 
     return displayUnit.map((unit) => {
       const self = this;
@@ -639,9 +616,7 @@ export class Chart {
       return {
         unit: newUnit,
         callback() {
-          if (axis === "x") self.#currentXUnitsAreDefault = false;
-          else self.#currentYUnitsAreDefault = false;
-
+          self.#currentUnitsAreDefault[axis] = false;
           displayUnit.set(newUnit);
         },
       };
@@ -652,11 +627,8 @@ export class Chart {
     axis: "x" | "y"
   ): Signal<UnitChangeAction | undefined> => {
     const self = this;
-
-    const currentUnit =
-      axis === "x" ? this.currentXDisplayUnit : this.currentYDisplayUnit;
-    const defaultUnitSettings =
-      axis === "x" ? this.defaultXDisplayUnit : this.defaultYDisplayUnit;
+    const currentUnit = this.currentDisplayUnit[axis];
+    const defaultUnitSettings = this.defaultDisplayUnit[axis];
 
     return defaultUnitSettings.zip(currentUnit).map(([def, curr]) => {
       const targetUnit = this.#findResetUnit(axis);
@@ -667,9 +639,7 @@ export class Chart {
       return {
         unit: targetUnit,
         callback() {
-          if (axis === "x") self.#currentXUnitsAreDefault = true;
-          else self.#currentYUnitsAreDefault = true;
-
+          self.#currentUnitsAreDefault[axis] = true;
           currentUnit.set(targetUnit);
         },
       };
@@ -678,9 +648,7 @@ export class Chart {
 
   #findResetUnit = (axis: "x" | "y") => {
     const dataUnit = this.traces.get().getUnits()[0][axis];
-    const defaultUnitSettings = (
-      axis === "x" ? this.defaultXDisplayUnit : this.defaultYDisplayUnit
-    ).get();
+    const defaultUnitSettings = this.defaultDisplayUnit[axis].get();
 
     switch (defaultUnitSettings) {
       case "data":
