@@ -9,8 +9,8 @@ dependencies:
     specifier: ^6.4.2
     version: 6.4.2
   '@mod.js/signals':
-    specifier: ^0.0.13
-    version: 0.0.13
+    specifier: ^0.0.17
+    version: 0.0.17
   '@risai/bim':
     specifier: ^1.4.2
     version: 1.4.2
@@ -329,8 +329,8 @@ packages:
       '@jridgewell/resolve-uri': 3.1.1
       '@jridgewell/sourcemap-codec': 1.4.15
 
-  /@mod.js/signals@0.0.13:
-    resolution: {integrity: sha512-DoHD02P1leamCw70391UChaexsb2F0ladmcNtEyQEdXvodTuNMfct4eBKhg1nzEgu639xIBHCOmw/fZSy/BLhA==}
+  /@mod.js/signals@0.0.17:
+    resolution: {integrity: sha512-q1jMSrlcJ9/EjDska31ZAORV0ePROVuGsbQJmPlu3lD+bJV8rEjwN6uHrXlal0pWezVaoHIVXZXV0xqGUgoH+A==}
     dev: false
 
   /@nodelib/fs.scandir@2.1.5:

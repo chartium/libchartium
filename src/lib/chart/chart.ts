@@ -6,7 +6,6 @@ import type {
   NumericRange,
   Range,
   Shift,
-  Size,
   Threshold,
   Tick,
   Unit,
@@ -14,11 +13,11 @@ import type {
 } from "../types.js";
 import { Quantity } from "../types.js";
 import { TraceList } from "../data-worker/trace-list.js";
-import { linearTicks, linearTicksFR } from "../utils/ticks.js";
+import { linearTicks } from "../utils/ticks.js";
 import { nextAnimationFrame } from "../utils/promise.js";
 import type { FactorDefinition } from "unitlib";
 
-import * as signals from "@mod.js/signals";
+import { mut } from "@mod.js/signals";
 import type {
   Signal,
   Subscriber,
@@ -95,8 +94,14 @@ export class Chart {
   #xDataUnit: Unit | NumericDateFormat | undefined;
   #yDataUnit: Unit | NumericDateFormat | undefined;
 
-  readonly xDisplayUnit = signals.mut<Unit | undefined>();
-  readonly yDisplayUnit = signals.mut<Unit | undefined>();
+  readonly defaultXDisplayUnit = mut<Unit | undefined | "auto" | "data">(
+    "auto"
+  );
+  readonly defaultYDisplayUnit = mut<Unit | undefined | "auto" | "data">(
+    "auto"
+  );
+  readonly currentXDisplayUnit = mut<Unit | undefined>();
+  readonly currentYDisplayUnit = mut<Unit | undefined>();
 
   /**
    * The list of traces to be rendered in this chart.
@@ -138,6 +143,7 @@ export class Chart {
   readonly showYAxisZero: WritableSignal<boolean>;
 
   #autozoomed = true;
+  #defaultUnits = true;
 
   xTextSize?: (text: string) => number;
   yTextSize?: (text: string) => number;
@@ -150,33 +156,32 @@ export class Chart {
     // signals
     traces ??= TraceList.empty();
 
-    this.traces = withSubscriber(signals.mut(traces), (t) =>
-      this.#updateTraces(t)
-    );
+    this.traces = withSubscriber(mut(traces), (t) => this.#updateTraces(t));
 
-    this.xRange = withListener(signals.mut(traces.range), () => {
+    this.xRange = withListener(mut(traces.range), () => {
       this.scheduleRender();
       this.#autozoomed = false;
     });
-    this.yRange = withListener(signals.mut(traces.getYRange()), () => {
+    this.yRange = withListener(mut(traces.getYRange()), () => {
       this.scheduleRender();
       this.#autozoomed = false;
     });
 
     this.size = withListener(
-      signals.mut({ width: NaN, height: NaN }),
+      mut({ width: NaN, height: NaN }),
       ({ width, height }) => {
         this.#renderer?.setSize(width, height);
         this.scheduleRender();
       }
     );
 
-    withListener(this.xDisplayUnit, () => this.#updateTicks());
-    withListener(this.yDisplayUnit, () => this.#updateTicks());
+    this.resetUnits();
+    withListener(this.currentXDisplayUnit, () => this.#updateTicks());
+    withListener(this.currentYDisplayUnit, () => this.#updateTicks());
 
-    this.margins = withListener(signals.mut(), this.scheduleRender);
-    this.showXAxisZero = withListener(signals.mut(false), this.scheduleRender);
-    this.showYAxisZero = withListener(signals.mut(false), this.scheduleRender);
+    this.margins = withListener(mut(), this.scheduleRender);
+    this.showXAxisZero = withListener(mut(false), this.scheduleRender);
+    this.showYAxisZero = withListener(mut(false), this.scheduleRender);
 
     // canvas & renderer
     this.controller.createRenderer(transfer(canvas, [canvas])).then((r) => {
@@ -184,24 +189,33 @@ export class Chart {
       this.scheduleRender();
     });
 
-    this.raiseXFactorAction = changeFactorAction("raise", this.xDisplayUnit);
-    this.lowerXFactorAction = changeFactorAction("lower", this.xDisplayUnit);
-    this.raiseYFactorAction = changeFactorAction("raise", this.yDisplayUnit);
-    this.lowerYFactorAction = changeFactorAction("lower", this.yDisplayUnit);
-    const { x: bestXUnit, y: bestYUnit } = this.bestDisplayUnits();
-    this.resetXFactorAction = this.xDisplayUnit.map(() => {
-      if (!bestXUnit || bestXUnit instanceof NumericDateFormat) return;
-      return {
-        unit: bestXUnit,
-        callback: () => this.xDisplayUnit.set(bestXUnit),
-      };
+    this.raiseXFactorAction = changeFactorAction(
+      "raise",
+      this.currentXDisplayUnit
+    );
+    this.lowerXFactorAction = changeFactorAction(
+      "lower",
+      this.currentXDisplayUnit
+    );
+    this.raiseYFactorAction = changeFactorAction(
+      "raise",
+      this.currentYDisplayUnit
+    );
+    this.lowerYFactorAction = changeFactorAction(
+      "lower",
+      this.currentYDisplayUnit
+    );
+    this.resetXFactorAction = resetFactorAction({
+      currentUnit: this.currentXDisplayUnit,
+      defaultUnitSettings: this.defaultXDisplayUnit,
+      dataUnit: traces.getUnits()[0].x,
+      autoUnit: () => this.bestDisplayUnits("x"),
     });
-    this.resetYFactorAction = this.yDisplayUnit.map(() => {
-      if (!bestYUnit || bestYUnit instanceof NumericDateFormat) return;
-      return {
-        unit: bestYUnit,
-        callback: () => this.yDisplayUnit.set(bestYUnit),
-      };
+    this.resetYFactorAction = resetFactorAction({
+      currentUnit: this.currentYDisplayUnit,
+      defaultUnitSettings: this.defaultYDisplayUnit,
+      dataUnit: traces.getUnits()[0].y,
+      autoUnit: () => this.bestDisplayUnits("y"),
     });
 
     this.resetZoom();
@@ -212,8 +226,9 @@ export class Chart {
     this.#xDataUnit = dataUnits.x;
     this.#yDataUnit = dataUnits.y;
 
-    this.xDisplayUnit.set(toDisplayUnit(dataUnits.x));
-    this.yDisplayUnit.set(toDisplayUnit(dataUnits.y));
+    // TODO reset units if incompatible
+    // this.xDisplayUnit.set(toDisplayUnit(dataUnits.x));
+    // this.yDisplayUnit.set(toDisplayUnit(dataUnits.y));
     this.scheduleRender();
   }
 
@@ -278,17 +293,19 @@ export class Chart {
     }
   };
 
-  readonly #xTicks = signals.mut<Tick[]>([]);
-  readonly #yTicks = signals.mut<Tick[]>([]);
+  readonly #xTicks = mut<Tick[]>([]);
+  readonly #yTicks = mut<Tick[]>([]);
   readonly xTicks = this.#xTicks.toReadonly();
   readonly yTicks = this.#yTicks.toReadonly();
 
   #updateTicks() {
+    console.log("update ticks", this.xTextSize, this.yTextSize);
+
     const xRange = this.xRange.get();
     if (xRange && this.xTextSize) {
-      const displayUnit = this.xDisplayUnit.get();
+      const displayUnit = this.currentXDisplayUnit.get();
       this.#xTicks.set(
-        linearTicksFR({
+        linearTicks({
           range: xRange,
           displayUnit,
           axisSize: this.canvas.width,
@@ -299,9 +316,9 @@ export class Chart {
 
     const yRange = this.yRange.get();
     if (yRange && this.yTextSize) {
-      const displayUnit = this.yDisplayUnit.get();
+      const displayUnit = this.currentYDisplayUnit.get();
       this.#yTicks.set(
-        linearTicksFR({
+        linearTicks({
           range: yRange,
           displayUnit,
           axisSize: this.canvas.height,
@@ -336,21 +353,28 @@ export class Chart {
     return this.scheduleRender();
   }
 
-  resetUnits() {
-    const units = this.bestDisplayUnits();
-    this.xDisplayUnit.set(toDisplayUnit(units.x));
-    this.yDisplayUnit.set(toDisplayUnit(units.y));
+  resetUnits(axes: "x" | "y" | "both" = "both") {
+    this.currentXDisplayUnit.set(
+      findResetUnit({
+        dataUnit: this.traces.get().getUnits()[0].x,
+        defaultUnitSettings: this.defaultXDisplayUnit.get(),
+        autoUnit: () => this.bestDisplayUnits("x"),
+      })
+    );
+    this.currentYDisplayUnit.set(
+      findResetUnit({
+        dataUnit: this.traces.get().getUnits()[0].y,
+        defaultUnitSettings: this.defaultYDisplayUnit.get(),
+        autoUnit: () => this.bestDisplayUnits("y"),
+      })
+    );
   }
 
-  bestDisplayUnits(): {
-    x: Unit | NumericDateFormat | undefined;
-    y: Unit | NumericDateFormat | undefined;
-  } {
-    const units = this.traces.get().getUnits();
-    return {
-      x: units[0].x,
-      y: units[0].y,
-    };
+  // FIXME
+  bestDisplayUnits(axis: "x" | "y"): Unit | undefined {
+    const unit = this.traces.get().getUnits()[0][axis];
+    if (unit instanceof NumericDateFormat) return undefined;
+    return unit;
 
     // // FIXME recognize when to use date
     // const units = this.traces.get().getUnits();
@@ -390,9 +414,7 @@ export class Chart {
     axis: "x" | "y"
   ): Quantity | dayjs.Dayjs | number {
     const range = axis === "x" ? this.xRange.get() : this.yRange.get();
-    if (!range) throw new Error(`${axis} range is undefined`);
-    const unit =
-      axis === "x" ? this.bestDisplayUnits().x : this.bestDisplayUnits().y;
+    const unit = this.bestDisplayUnits(axis);
 
     const value =
       toNumeric(range.from, unit) +
@@ -455,7 +477,9 @@ export class Chart {
     }
 
     const displayUnit =
-      axis === "x" ? this.xDisplayUnit.get() : this.yDisplayUnit.get();
+      axis === "x"
+        ? this.currentXDisplayUnit.get()
+        : this.currentYDisplayUnit.get();
 
     if (range === undefined) throw new Error(`${axis} range is undefined`);
 
@@ -623,3 +647,52 @@ const changeFactorAction = (
       callback: () => displayUnit.set(newUnit),
     };
   });
+
+const resetFactorAction = ({
+  defaultUnitSettings,
+  dataUnit,
+  currentUnit,
+  autoUnit,
+}: {
+  defaultUnitSettings: Signal<Unit | undefined | "auto" | "data">;
+  dataUnit: Unit | NumericDateFormat | undefined;
+  currentUnit: WritableSignal<Unit | undefined>;
+  autoUnit: () => Unit | undefined;
+}) =>
+  defaultUnitSettings.zip(currentUnit).map(([def, curr]) => {
+    const targetUnit = findResetUnit({
+      autoUnit,
+      dataUnit,
+      defaultUnitSettings: def,
+    });
+
+    if (!targetUnit || !curr) return;
+    if (targetUnit.isEqual(curr)) return;
+
+    return {
+      unit: targetUnit,
+      callback: () => currentUnit.set(targetUnit),
+    };
+  });
+
+const findResetUnit = ({
+  defaultUnitSettings,
+  dataUnit,
+  autoUnit,
+}: {
+  defaultUnitSettings: Unit | undefined | "auto" | "data";
+  dataUnit: Unit | NumericDateFormat | undefined;
+  autoUnit: () => Unit | undefined;
+}) => {
+  switch (defaultUnitSettings) {
+    case "data":
+      if (dataUnit instanceof NumericDateFormat) return undefined;
+      return dataUnit;
+
+    case "auto":
+      return autoUnit();
+
+    default:
+      return defaultUnitSettings;
+  }
+};

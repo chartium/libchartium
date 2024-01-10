@@ -41,7 +41,7 @@
   },
   "dependencies": {
     "@fortawesome/free-solid-svg-icons": "^6.4.2",
-    "@mod.js/signals": "^0.0.13",
+    "@mod.js/signals": "^0.0.17",
     "@risai/bim": "^1.4.2",
     "@types/dom-to-image": "^2.6.6",
     "@types/lodash-es": "^4.17.10",

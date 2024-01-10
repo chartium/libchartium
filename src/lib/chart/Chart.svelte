@@ -17,7 +17,6 @@
   import type { Remote } from "comlink";
   import type dayjs from "dayjs";
   import { qndFormat } from "../utils/format.js";
-  import type { NumericDateFormat } from "../index.js";
   import type { Dayjs } from "dayjs";
   import type { RangeMargins } from "../utils/rangeMargins.js";
 
@@ -39,11 +38,19 @@
   /** Label to be displayed next to y axis. If empty, label will be ommited */
   export let yLabel: string = "";
 
-  /** Units that should be used on the x axis. If undefined, the units of the data are used. */
-  export let xUnit: Unit | undefined = undefined;
+  /**
+   * Units that should be displayed on the x axis.
+   * The "data" option will display the units of the provided data.
+   * The "auto" option (default) will choose the best factor according to the range.
+   */
+  export let defaultXUnit: Unit | undefined | "auto" | "data" = "auto";
 
-  /** Units that should be used on the y axis. If undefined, the units of the data are used. */
-  export let yUnit: Unit | undefined = undefined;
+  /**
+   * Units that should be displayed on the y axis.
+   * The "data" option will display the units of the provided data.
+   * The "auto" option (default) will choose the best factor according to the range.
+   */
+  export let defaultYUnit: Unit | "auto" | "data" = "auto";
 
   /** Hides the thick line at the edge of the graph */
   export let hideXAxisLine: boolean = false;
@@ -119,24 +126,31 @@
   let canvas: HTMLCanvasElement;
 
   $: offscreenCanvas = canvas ? canvas.transferControlToOffscreen() : undefined;
-  let chart: Chart | undefined = undefined;
-  $: if (offscreenCanvas) {
-    // FIXME oh boy will this trigger an infinite loop?
+  $: chartCanvasChanged(offscreenCanvas);
+  function chartCanvasChanged(offscreenCanvas: OffscreenCanvas | undefined) {
+    if (!offscreenCanvas) return (chart = undefined);
+
     chart = new Chart(controller, offscreenCanvas, displayedTraces);
     chart.traces.subscribe((t) => {
       displayedTraces = t;
     });
   }
+
+  let chart: Chart | undefined = undefined;
   $: xTicks = chart?.xTicks;
   $: yTicks = chart?.yTicks;
 
-  $: if (xUnit) chart?.xDisplayUnit.set(xUnit);
-  $: if (yUnit) chart?.yDisplayUnit.set(yUnit);
-  $: xDisplayUnit = chart?.xDisplayUnit;
-  $: yDisplayUnit = chart?.yDisplayUnit;
+  $: chart?.defaultXDisplayUnit.set(defaultXUnit);
+  $: chart?.defaultYDisplayUnit.set(defaultYUnit);
+  $: xDisplayUnit = chart?.currentXDisplayUnit;
+  $: yDisplayUnit = chart?.currentYDisplayUnit;
   let xAxisTextSize: ((text: string) => number) | undefined;
   let yAxisTextSize: ((text: string) => number) | undefined;
+
+  $: console.log("chart updated", chart);
+
   $: if (chart) {
+    console.log("text size update", xAxisTextSize, yAxisTextSize);
     chart.yTextSize = yAxisTextSize;
     chart.xTextSize = xAxisTextSize;
   }
@@ -151,6 +165,7 @@
 
   let contentSize: [number, number] = [1, 1];
   $: if (chart) {
+    console.log("chart size update");
     chart.size.set({
       width: contentSize[0] * devicePixelRatio,
       height: contentSize[1] * devicePixelRatio,
@@ -313,10 +328,6 @@
   let filterByThreshold: () => void;
   $: (window as any).addPersistentThreshold = addPersistentThreshold;
   $: (window as any).filterByThreshold = filterByThreshold;
-
-  let bestXUnit: undefined | Unit | NumericDateFormat;
-  let bestYUnit: undefined | Unit | NumericDateFormat;
-  $: if (chart) ({ x: bestXUnit, y: bestYUnit } = chart.bestDisplayUnits());
 </script>
 
 {#if !hideTooltip}

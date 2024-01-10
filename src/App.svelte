@@ -88,7 +88,7 @@
         subtitle="Podtitulek"
         xLabel="Time"
         yLabel="Amount"
-        yUnit={IEC.parseUnit("MiB")}
+        defaultYUnit={IEC.parseUnit("MiB")}
         legendPosition="right"
       >
         <svelte:fragment slot="toolbar">

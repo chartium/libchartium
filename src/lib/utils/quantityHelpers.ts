@@ -1,6 +1,6 @@
 /** THelper functions to make the code shorter */
 
-import dayjs, { type Dayjs } from "dayjs";
+import dayjs, { isDayjs, type Dayjs } from "dayjs";
 import { NumericDateFormat } from "./numericDateFormat.js";
 import {
   Quantity,
@@ -9,6 +9,7 @@ import {
   type Range,
 } from "../types.js";
 import { SI } from "unitlib/systems";
+import { Unit as UUnit } from "unitlib";
 
 /** Transforms quantity to just numeric part in selected units. */
 export function toNumeric(
@@ -85,6 +86,17 @@ export function toRange(
 }
 
 const milliseconds = SI.parseUnit("ms");
+
+export function eq(
+  a: number | Quantity | Dayjs | Unit | undefined,
+  b: number | Quantity | Dayjs | Unit | undefined
+): boolean {
+  if (typeof a === "number" || a === undefined) return a === b;
+  if (a instanceof Quantity && b instanceof Quantity) return a.isEqual(b);
+  if (a instanceof UUnit && b instanceof UUnit) return a.isEqual(b);
+  if (isDayjs(a) && isDayjs(b)) return +a === +b;
+  return false;
+}
 
 export function add(
   a: number | Quantity | Dayjs,
