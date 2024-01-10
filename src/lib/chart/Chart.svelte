@@ -147,13 +147,14 @@
   let xAxisTextSize: ((text: string) => number) | undefined;
   let yAxisTextSize: ((text: string) => number) | undefined;
 
-  $: console.log("chart updated", chart);
-
-  $: if (chart) {
-    console.log("text size update", xAxisTextSize, yAxisTextSize);
-    chart.yTextSize = yAxisTextSize;
+  // walkaround for svelte 4 random reactivity bug
+  $: chartUpdated(chart);
+  function chartUpdated(chart: Chart | undefined) {
+    if (!chart) return;
     chart.xTextSize = xAxisTextSize;
+    chart.yTextSize = yAxisTextSize;
   }
+
   $: qndFormatOptions = {
     decimals: 2,
     dayjsFormat: "MMM DD, hh:mm:ss",
