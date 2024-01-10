@@ -98,14 +98,3 @@ export function getFloatDayjsValue(
 
   return start.get(unit === "days" ? "date" : unit) + fract;
 }
-
-function test() {
-  const from = dayjs().subtract(3, "days");
-  const to = dayjs();
-
-  console.log(to.diff(from, "days"));
-
-  console.log(getRangeSpan({ from, to }));
-}
-
-test();

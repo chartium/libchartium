@@ -366,72 +366,7 @@
 
   let mousePosition: [number, number] | undefined = undefined;
 
-  let options: ContextItem<string>[] = [
-    {
-      type: "leaf",
-      content: "First option",
-      callback: () => console.log("First option clicked"),
-    },
-    {
-      type: "leaf",
-      content: "Second option above separator",
-      callback: () => console.log("Second option clicked"),
-    },
-    {
-      type: "separator",
-    },
-    {
-      type: "branch",
-      content: "Submenu",
-      children: [
-        {
-          type: "leaf",
-          content: "First option in submenu",
-          callback: () => console.log("First option in submenu clicked"),
-        },
-        {
-          type: "branch",
-          content: "Submenu in submenu",
-          children: [
-            {
-              type: "leaf",
-              content: "First option in submenu in submenu",
-              callback: () =>
-                console.log("First option in submenu in submenu clicked"),
-            },
-            {
-              type: "leaf",
-              content: "Second option in submenu in submenu",
-              callback: () =>
-                console.log("Second option in submenu in submenu clicked"),
-            },
-          ],
-        },
-
-        {
-          type: "leaf",
-          content: "Second option in submenu",
-          callback: () => console.log("Second option in submenu clicked"),
-        },
-      ],
-    },
-    {
-      type: "branch",
-      content: "even more options??",
-      children: [
-        {
-          type: "leaf",
-          content: "First option in submenu",
-          callback: () => console.log("First option in submenu clicked"),
-        },
-        {
-          type: "leaf",
-          content: "Second option in submenu",
-          callback: () => console.log("Second option in submenu clicked"),
-        },
-      ],
-    },
-  ];
+  let options: ContextItem<string>[] = []; // TODO add some options
   let menu: any;
 </script>
 

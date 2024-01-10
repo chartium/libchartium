@@ -237,7 +237,7 @@ export class Chart {
    * Automatically calculates the ranges and estimates type if undefined.
    */
   render() {
-    console.log("render");
+    console.log("chartium: rendered");
 
     if (this.#renderer === undefined) {
       // renderer gets initialized when canvas is assigned
@@ -268,8 +268,6 @@ export class Chart {
   }
 
   tryRender(): boolean {
-    console.log("try render");
-
     if (this.#renderer) {
       this.render();
       return true;
@@ -279,8 +277,6 @@ export class Chart {
 
   #renderScheduled = false;
   scheduleRender = async () => {
-    console.log("schedule render");
-
     // render already scheduled
     if (this.#renderScheduled) return;
 
@@ -299,8 +295,6 @@ export class Chart {
   readonly yTicks = this.#yTicks.toReadonly();
 
   #updateTicks() {
-    console.log("update ticks", this.xTextSize, this.yTextSize);
-
     const xRange = this.xRange.get();
     if (xRange && this.xTextSize) {
       const displayUnit = this.currentXDisplayUnit.get();

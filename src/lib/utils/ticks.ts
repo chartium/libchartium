@@ -156,7 +156,6 @@ export function linearTicks({
   textMeasuringFunction: (x: string) => number;
   displayUnit: Unit | undefined | NumericDateFormat;
 }): Tick[] {
-  console.log("ticks", arguments);
   const unit =
     displayUnit instanceof NumericDateFormat ? undefined : displayUnit;
   if (isDateRange(range)) {

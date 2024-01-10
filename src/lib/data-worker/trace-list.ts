@@ -184,15 +184,6 @@ export class TraceList {
    * Create a new trace list with the same traces and identical range, but modified styles.
    */
   withStyle(stylesheet: TraceStylesheet): TraceList {
-    console.log("from this.#traceInfo", this.#traceInfo);
-    console.log("from ...resolveTraceInfo(this.#traceInfo)", [
-      ...resolveTraceInfo(
-        stylesheet,
-        this.#traceInfo,
-        this.#traceHandles,
-        traceIds
-      ),
-    ]);
     return new TraceList({
       handles: this.#traceHandles,
       range: this.#range,
@@ -519,8 +510,6 @@ export class TraceList {
       }
     ): void => {
       const alreadyRecorded = some(set, (u) => {
-        console.log("u.x", u.x);
-        console.log("u.x?.isEqual");
         return unitEqual(u.x, value.x) && unitEqual(u.y, value.y);
       });
       if (alreadyRecorded) return;

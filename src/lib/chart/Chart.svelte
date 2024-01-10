@@ -166,7 +166,6 @@
 
   let contentSize: [number, number] = [1, 1];
   $: if (chart) {
-    console.log("chart size update");
     chart.size.set({
       width: contentSize[0] * devicePixelRatio,
       height: contentSize[1] * devicePixelRatio,

@@ -34,7 +34,6 @@ export function toNumeric(
     );
   }
 
-  console.log(x, unit);
   throw new TypeError(
     "Attempting to convert a non-primitive to a number without specifying a unit."
   );
