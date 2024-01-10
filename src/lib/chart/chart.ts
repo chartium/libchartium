@@ -43,6 +43,11 @@ import {
 const toDisplayUnit = (unit: Unit | NumericDateFormat | undefined) =>
   unit instanceof NumericDateFormat ? undefined : unit;
 
+export interface UnitChangeAction {
+  unit: Unit;
+  callback(): void;
+}
+
 /**
  * A helper method that takes a signal, adds a
  * subscriber to it, and returns that signal.
@@ -143,7 +148,8 @@ export class Chart {
   readonly showYAxisZero: WritableSignal<boolean>;
 
   #autozoomed = true;
-  #defaultUnits = true;
+  #currentXUnitsAreDefault = true;
+  #currentYUnitsAreDefault = true;
 
   xTextSize?: (text: string) => number;
   yTextSize?: (text: string) => number;
@@ -178,6 +184,20 @@ export class Chart {
     this.resetUnits();
     withListener(this.currentXDisplayUnit, () => this.#updateTicks());
     withListener(this.currentYDisplayUnit, () => this.#updateTicks());
+    withListener(this.defaultXDisplayUnit, () => {
+      console.log(
+        "resetting x units",
+        this.defaultXDisplayUnit.get()?.toString()
+      );
+      if (this.#currentXUnitsAreDefault) this.resetUnits("x");
+    });
+    withListener(this.defaultYDisplayUnit, () => {
+      console.log(
+        "resetting y units",
+        this.defaultYDisplayUnit.get()?.toString()
+      );
+      if (this.#currentYUnitsAreDefault) this.resetUnits("y");
+    });
 
     this.margins = withListener(mut(), this.scheduleRender);
     this.showXAxisZero = withListener(mut(false), this.scheduleRender);
@@ -189,34 +209,12 @@ export class Chart {
       this.scheduleRender();
     });
 
-    this.raiseXFactorAction = changeFactorAction(
-      "raise",
-      this.currentXDisplayUnit
-    );
-    this.lowerXFactorAction = changeFactorAction(
-      "lower",
-      this.currentXDisplayUnit
-    );
-    this.raiseYFactorAction = changeFactorAction(
-      "raise",
-      this.currentYDisplayUnit
-    );
-    this.lowerYFactorAction = changeFactorAction(
-      "lower",
-      this.currentYDisplayUnit
-    );
-    this.resetXFactorAction = resetFactorAction({
-      currentUnit: this.currentXDisplayUnit,
-      defaultUnitSettings: this.defaultXDisplayUnit,
-      dataUnit: traces.getUnits()[0].x,
-      autoUnit: () => this.bestDisplayUnits("x"),
-    });
-    this.resetYFactorAction = resetFactorAction({
-      currentUnit: this.currentYDisplayUnit,
-      defaultUnitSettings: this.defaultYDisplayUnit,
-      dataUnit: traces.getUnits()[0].y,
-      autoUnit: () => this.bestDisplayUnits("y"),
-    });
+    this.raiseXFactorAction = this.#changeFactorAction("raise", "x");
+    this.lowerXFactorAction = this.#changeFactorAction("lower", "x");
+    this.raiseYFactorAction = this.#changeFactorAction("raise", "y");
+    this.lowerYFactorAction = this.#changeFactorAction("lower", "y");
+    this.resetXFactorAction = this.#resetFactorAction("x");
+    this.resetYFactorAction = this.#resetFactorAction("y");
 
     this.resetZoom();
   }
@@ -323,10 +321,10 @@ export class Chart {
   }
 
   /**
-   * @param axis which axis to reset, defaults to both
+   * @param axes which axis to reset, defaults to both
    * @param showYZero if true the y range will be stretched to include 0 if necessary
    */
-  resetZoom(axis: "x" | "y" | "both" = "both") {
+  resetZoom(axes: "x" | "y" | "xy" = "xy") {
     const traces = this.traces.get();
     let xRange = traces.range;
     let yRange = traces.getYRange();
@@ -340,28 +338,22 @@ export class Chart {
     if (this.showYAxisZero.get())
       yRange = addZeroToRange(yRange, this.#yDataUnit);
 
-    if (axis === "x" || axis === "both") this.xRange.set(xRange);
-    if (axis === "y" || axis === "both") this.yRange.set(yRange);
+    if (axes.includes("x")) this.xRange.set(xRange);
+    if (axes.includes("y")) this.yRange.set(yRange);
 
     this.#autozoomed = true;
     return this.scheduleRender();
   }
 
-  resetUnits(axes: "x" | "y" | "both" = "both") {
-    this.currentXDisplayUnit.set(
-      findResetUnit({
-        dataUnit: this.traces.get().getUnits()[0].x,
-        defaultUnitSettings: this.defaultXDisplayUnit.get(),
-        autoUnit: () => this.bestDisplayUnits("x"),
-      })
-    );
-    this.currentYDisplayUnit.set(
-      findResetUnit({
-        dataUnit: this.traces.get().getUnits()[0].y,
-        defaultUnitSettings: this.defaultYDisplayUnit.get(),
-        autoUnit: () => this.bestDisplayUnits("y"),
-      })
-    );
+  resetUnits(axes: "x" | "y" | "xy" = "xy") {
+    if (axes.includes("x")) {
+      this.currentXDisplayUnit.set(this.#findResetUnit("x"));
+      this.#currentXUnitsAreDefault = true;
+    }
+    if (axes.includes("y")) {
+      this.currentYDisplayUnit.set(this.#findResetUnit("y"));
+      this.#currentYUnitsAreDefault = true;
+    }
   }
 
   // FIXME
@@ -441,6 +433,10 @@ export class Chart {
   ): Quantity | number | dayjs.Dayjs {
     const range = axis === "x" ? this.xRange.get() : this.yRange.get();
     const unit = axis === "x" ? this.#xDataUnit : this.#yDataUnit;
+    const displayUnit =
+      axis === "x"
+        ? this.currentXDisplayUnit.get()
+        : this.currentYDisplayUnit.get();
 
     if (!range) throw new Error("xRange or yRange is undefined");
 
@@ -451,7 +447,7 @@ export class Chart {
         : 1 - coordinateInPx / this.canvas!.height) *
         (toNumeric(range.to, unit) - toNumeric(range.from, unit));
 
-    return toQuantOrDay(value, unit);
+    return toQuantOrDay(value, unit, displayUnit);
   }
 
   /** Transforms a point represented by data values and units (if aplicable) into pixel coordinates relative to chart canvas */
@@ -587,106 +583,115 @@ export class Chart {
     ]);
   }
 
-  readonly raiseXFactorAction: ReturnType<typeof changeFactorAction>;
-  readonly lowerXFactorAction: ReturnType<typeof changeFactorAction>;
-  readonly resetXFactorAction: ReturnType<typeof changeFactorAction>;
-  readonly raiseYFactorAction: ReturnType<typeof changeFactorAction>;
-  readonly lowerYFactorAction: ReturnType<typeof changeFactorAction>;
-  readonly resetYFactorAction: ReturnType<typeof changeFactorAction>;
-}
+  readonly raiseXFactorAction: Signal<UnitChangeAction | undefined>;
+  readonly lowerXFactorAction: Signal<UnitChangeAction | undefined>;
+  readonly resetXFactorAction: Signal<UnitChangeAction | undefined>;
+  readonly raiseYFactorAction: Signal<UnitChangeAction | undefined>;
+  readonly lowerYFactorAction: Signal<UnitChangeAction | undefined>;
+  readonly resetYFactorAction: Signal<UnitChangeAction | undefined>;
 
-/**
- * A signal that corresponds to the context menu options "Raise unit to..."
- * and "Lower unit to...", it contains the unit to be changed to, and a
- * callback that actually performs the change
- */
-const changeFactorAction = (
-  direction: "raise" | "lower",
-  displayUnit: WritableSignal<Unit | NumericDateFormat | undefined>
-) =>
-  displayUnit.map((unit) => {
-    // NOTE changing the factor of a date range is not supported
-    if (!unit || unit instanceof NumericDateFormat) return;
+  /**
+   * A signal that corresponds to the context menu options "Raise unit to..."
+   * and "Lower unit to...", it contains the unit to be changed to, and a
+   * callback that actually performs the change
+   */
+  #changeFactorAction = (
+    direction: "raise" | "lower",
+    axis: "x" | "y"
+  ): Signal<UnitChangeAction | undefined> => {
+    const displayUnit =
+      axis === "x" ? this.currentXDisplayUnit : this.currentYDisplayUnit;
 
-    const factorsEqual = (a: FactorDefinition, b: FactorDefinition) =>
-      a.mul === b.mul && a.base === b.base && a.exp === b.exp;
+    return displayUnit.map((unit) => {
+      const self = this;
 
-    const factors = Object.entries<FactorDefinition>(unit.unitSystem.factors);
+      // NOTE changing the factor of a date range is not supported
+      if (!unit || unit instanceof NumericDateFormat) return;
 
-    // add prefix-less factor
-    factors.push(["(unitless)", { mul: 1, base: 1, exp: 1 }]);
+      const factorsEqual = (a: FactorDefinition, b: FactorDefinition) =>
+        a.mul === b.mul && a.base === b.base && a.exp === b.exp;
 
-    // if the current factor is non-standard, add it to the list
-    if (!factors.find(([_, f]) => factorsEqual(unit.factor, f))) {
-      factors.push(["(current)", unit.factor]);
-    }
+      const factors = Object.entries<FactorDefinition>(unit.unitSystem.factors);
 
-    // sort by value
-    factors.sort(
-      ([_, a], [__, b]) => a.mul * a.base ** a.exp - b.mul * b.base ** b.exp
-    );
+      // add prefix-less factor
+      factors.push(["(unitless)", { mul: 1, base: 1, exp: 1 }]);
 
-    const currentIndex = factors.findIndex(([_, f]) =>
-      factorsEqual(unit.factor, f)
-    );
+      // if the current factor is non-standard, add it to the list
+      if (!factors.find(([_, f]) => factorsEqual(unit.factor, f))) {
+        factors.push(["(current)", unit.factor]);
+      }
 
-    const newIndex = currentIndex + (direction === "raise" ? 1 : -1);
-    if (newIndex < 0 || newIndex >= factors.length) return;
+      // sort by value
+      factors.sort(
+        ([_, a], [__, b]) => a.mul * a.base ** a.exp - b.mul * b.base ** b.exp
+      );
 
-    const newFactor = factors[newIndex][1];
-    const newUnit = unit.withFactor(newFactor);
+      const currentIndex = factors.findIndex(([_, f]) =>
+        factorsEqual(unit.factor, f)
+      );
 
-    return {
-      unit: newUnit,
-      callback: () => displayUnit.set(newUnit),
-    };
-  });
+      const newIndex = currentIndex + (direction === "raise" ? 1 : -1);
+      if (newIndex < 0 || newIndex >= factors.length) return;
 
-const resetFactorAction = ({
-  defaultUnitSettings,
-  dataUnit,
-  currentUnit,
-  autoUnit,
-}: {
-  defaultUnitSettings: Signal<Unit | undefined | "auto" | "data">;
-  dataUnit: Unit | NumericDateFormat | undefined;
-  currentUnit: WritableSignal<Unit | undefined>;
-  autoUnit: () => Unit | undefined;
-}) =>
-  defaultUnitSettings.zip(currentUnit).map(([def, curr]) => {
-    const targetUnit = findResetUnit({
-      autoUnit,
-      dataUnit,
-      defaultUnitSettings: def,
+      const newFactor = factors[newIndex][1];
+      const newUnit = unit.withFactor(newFactor);
+
+      return {
+        unit: newUnit,
+        callback() {
+          if (axis === "x") self.#currentXUnitsAreDefault = false;
+          else self.#currentYUnitsAreDefault = false;
+
+          displayUnit.set(newUnit);
+        },
+      };
     });
+  };
 
-    if (!targetUnit || !curr) return;
-    if (targetUnit.isEqual(curr)) return;
+  #resetFactorAction = (
+    axis: "x" | "y"
+  ): Signal<UnitChangeAction | undefined> => {
+    const self = this;
 
-    return {
-      unit: targetUnit,
-      callback: () => currentUnit.set(targetUnit),
-    };
-  });
+    const currentUnit =
+      axis === "x" ? this.currentXDisplayUnit : this.currentYDisplayUnit;
+    const defaultUnitSettings =
+      axis === "x" ? this.defaultXDisplayUnit : this.defaultYDisplayUnit;
 
-const findResetUnit = ({
-  defaultUnitSettings,
-  dataUnit,
-  autoUnit,
-}: {
-  defaultUnitSettings: Unit | undefined | "auto" | "data";
-  dataUnit: Unit | NumericDateFormat | undefined;
-  autoUnit: () => Unit | undefined;
-}) => {
-  switch (defaultUnitSettings) {
-    case "data":
-      if (dataUnit instanceof NumericDateFormat) return undefined;
-      return dataUnit;
+    return defaultUnitSettings.zip(currentUnit).map(([def, curr]) => {
+      const targetUnit = this.#findResetUnit(axis);
 
-    case "auto":
-      return autoUnit();
+      if (!targetUnit || !curr) return;
+      if (targetUnit.isEqual(curr)) return;
 
-    default:
-      return defaultUnitSettings;
-  }
-};
+      return {
+        unit: targetUnit,
+        callback() {
+          if (axis === "x") self.#currentXUnitsAreDefault = true;
+          else self.#currentYUnitsAreDefault = true;
+
+          currentUnit.set(targetUnit);
+        },
+      };
+    });
+  };
+
+  #findResetUnit = (axis: "x" | "y") => {
+    const dataUnit = this.traces.get().getUnits()[0][axis];
+    const defaultUnitSettings = (
+      axis === "x" ? this.defaultXDisplayUnit : this.defaultYDisplayUnit
+    ).get();
+
+    switch (defaultUnitSettings) {
+      case "data":
+        if (dataUnit instanceof NumericDateFormat) return undefined;
+        return dataUnit;
+
+      case "auto":
+        return this.bestDisplayUnits(axis);
+
+      default:
+        return defaultUnitSettings;
+    }
+  };
+}

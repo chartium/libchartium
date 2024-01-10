@@ -90,7 +90,7 @@
 
   export let legendPosition: "none" | "right" | "bottom" = "right";
   /** Refers to the little trace sample, simplified just shows color, full shows real width and stroke style */
-  export let legendPreview: "simplified" | "full" = "simplified";
+  export let legendPreviewStyle: "simplified" | "full" = "simplified";
   /** How many traces to show in the legend */
   export let legendTracesShown: number | "all" = "all";
 
@@ -141,7 +141,12 @@
   $: yTicks = chart?.yTicks;
 
   $: chart?.defaultXDisplayUnit.set(defaultXUnit);
-  $: chart?.defaultYDisplayUnit.set(defaultYUnit);
+  $: {
+    chart?.defaultYDisplayUnit.set(defaultYUnit);
+    console.log(
+      `setting default y unit ${defaultYUnit} ${chart?.defaultYDisplayUnit.get()}`
+    );
+  }
   $: xDisplayUnit = chart?.currentXDisplayUnit;
   $: yDisplayUnit = chart?.currentYDisplayUnit;
   let xAxisTextSize: ((text: string) => number) | undefined;
@@ -336,6 +341,7 @@
     nearestTracesInfo={tracesInfo}
     singleTraceInfo={selectedTrace}
     show={showTooltip}
+    previewStyle={legendPreviewStyle}
   />
 {/if}
 
@@ -418,7 +424,7 @@
     bind:filterByThreshold
     bind:addPersistentThreshold
     traceHovered={selectedTrace !== undefined}
-    on:reset={() => chart?.resetZoom("both")}
+    on:reset={() => chart?.resetZoom("xy")}
     on:zoom={(d) => chart?.zoomRange(d)}
     on:shift={(d) => chart?.shiftRange(d)}
     on:yThreshold={(t) => {
@@ -462,7 +468,7 @@
       <ChartLegend
         {traces}
         {hiddenTraceIDs}
-        previewType={legendPreview}
+        previewStyle={legendPreviewStyle}
         numberOfShownTraces={legendTracesShown === "all"
           ? traces.traceCount
           : legendTracesShown}
@@ -474,7 +480,7 @@
       <ChartLegend
         {traces}
         {hiddenTraceIDs}
-        previewType={legendPreview}
+        previewStyle={legendPreviewStyle}
         numberOfShownTraces={legendTracesShown === "all"
           ? traces.traceCount
           : legendTracesShown}

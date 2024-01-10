@@ -56,11 +56,16 @@ export function toNumericRange(
  */
 export function toQuantOrDay(
   x: number,
-  units?: Unit | NumericDateFormat
+  units?: Unit | NumericDateFormat,
+  displayUnits?: Unit
 ): Quantity | Dayjs | number {
   if (units instanceof NumericDateFormat) return units.parseToDayjs(x);
-  if (typeof x === "number" && units) return new Quantity(x, units);
-  else return x;
+  if (typeof x === "number" && units) {
+    const q = new Quantity(x, units);
+    if (displayUnits) return q.inUnits(displayUnits);
+    return q;
+  }
+  return x;
 }
 
 export function toQuantOrDayRange(

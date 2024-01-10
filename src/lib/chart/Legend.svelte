@@ -9,7 +9,7 @@
 
   export let numberOfShownTraces: number = 5;
 
-  export let previewType: "simplified" | "full";
+  export let previewStyle: "simplified" | "full";
 
   export let traces: TraceList;
   $: tracesWithStyles = Array.from(
@@ -96,13 +96,13 @@
     >
       <div
         class="trace-preview"
-        class:simplified={previewType === "simplified"}
+        class:simplified={previewStyle === "simplified"}
       >
         <TracePreview
           previewedTrace={styledTrace}
           previewHeight={previewSize}
           previewWidth={previewSize}
-          simplified={previewType === "simplified"}
+          simplified={previewStyle === "simplified"}
         />
       </div>
       {styledTrace.label ?? styledTrace.id}
@@ -118,13 +118,6 @@
     flex-wrap: wrap;
     margin: 0.5rem;
     overflow-y: auto;
-
-    .trace-preview {
-      margin: 0 0.5rem;
-      &.simplified {
-        margin: 0 0.1rem 0 0.5rem;
-      }
-    }
 
     .trace-legend {
       user-select: none;

@@ -57,7 +57,7 @@
   }
 </script>
 
-<div>
+<div class="trace-preview" class:simplified>
   {#if simplified}
     <div class="color-indicator" style="background: {color}" />
   {:else}
@@ -66,6 +66,13 @@
 </div>
 
 <style lang="scss">
+  .trace-preview {
+    margin: 0 0.5rem;
+    &.simplified {
+      margin: 0 0.1rem 0 0.5rem;
+    }
+  }
+
   .color-indicator {
     height: 20px;
     padding: 0;

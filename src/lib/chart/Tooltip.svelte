@@ -28,6 +28,8 @@
       }
     | undefined;
 
+  export let previewStyle: "simplified" | "full";
+
   export let show: boolean;
 
   let position: Point;
@@ -105,7 +107,10 @@
         {#each nearestTracesInfo as info}
           <div class="trace-info">
             <div class="value-name">
-              <TracePreview previewedTrace={info.styledTrace} />
+              <TracePreview
+                previewedTrace={info.styledTrace}
+                simplified={previewStyle === "simplified"}
+              />
               {info.styledTrace.label ?? info.styledTrace.id}:
             </div>
             <div class="value-value">
