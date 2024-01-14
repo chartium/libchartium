@@ -1,8 +1,8 @@
 <script lang="ts">
-  import Chart from "./lib/chart/Chart.svelte";
-  import wasmUrl from "../dist/wasm/libchartium.wasm?url";
-  import ToolbarButton from "./lib/chart/ToolbarButton.svelte";
-  import { ChartiumController, TraceList } from "./lib/data-worker/index.js";
+  import Chart from "$lib/chart/Chart.svelte";
+  import wasmUrl from "../../dist/wasm/libchartium.wasm?url";
+  import ToolbarButton from "$lib/chart/ToolbarButton.svelte";
+  import { ChartiumController, TraceList } from "$lib/data-worker/index.js";
   import {
     faArrowRight,
     faArrowLeft,
@@ -58,8 +58,8 @@
   });
 
   let wrapDiv: HTMLElement;
-  import domtoimage, { DomToImage } from "dom-to-image-more";
-  import { NumericDateFormat } from "./lib/index.js";
+  import domtoimage, { type DomToImage } from "dom-to-image-more";
+  import { NumericDateFormat } from "$lib/index.js";
   import { Quantity } from "unitlib";
   const dti: DomToImage = domtoimage as any;
 
