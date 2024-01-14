@@ -13,8 +13,8 @@
       "svelte": "./dist/lib/index.js"
     },
     "./worker": {
-      "types": "./dist/lib/data-worker/worker.js",
-      "import": "./dist/lib/data-worker/worker.d.ts"
+      "types": "./dist/lib/data-worker/worker.d.ts",
+      "import": "./dist/lib/data-worker/worker.js"
     },
     "./wasm": {
       "types": "./dist/wasm/libchartium.wasm.d.ts",
@@ -22,7 +22,7 @@
     }
   },
   "scripts": {
-    "dev": "pnpm build-wasm && vite",
+    "dev": "pnpm build-wasm && vite dev",
     "build": "pnpm build-wasm && svelte-package -i src/lib -o dist/lib",
     "build-wasm": "sh ./build-wasm.sh",
     "clean": "sh ./clean.sh",
@@ -31,17 +31,17 @@
   },
   "devDependencies": {
     "@sveltejs/package": "^2.2.5",
-    "@sveltejs/vite-plugin-svelte": "^3.0.1",
+    "@sveltejs/vite-plugin-svelte": "^2",
     "@tsconfig/svelte": "^5.0.2",
     "@types/node": "^20.11.0",
     "svelte-check": "^3.6.2",
     "tslib": "^2.6.2",
     "typescript": "^5.3.3",
-    "vite": "^5.0.11"
+    "vite": "^4"
   },
   "dependencies": {
     "@fortawesome/free-solid-svg-icons": "^6.5.1",
-    "@mod.js/signals": "^0.0.17",
+    "@mod.js/signals": "^0.0.18",
     "@risai/bim": "^1.4.2",
     "@types/dom-to-image": "^2.6.7",
     "@types/lodash-es": "^4.17.12",
