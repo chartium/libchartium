@@ -125,7 +125,7 @@
       display: flex;
       flex: 1;
       flex-direction: row;
-      align-items: start;
+      align-items: flex-start;
       text-wrap: nowrap;
     }
   }

@@ -64,7 +64,7 @@
   }
   .context-item {
     display: flex;
-    align-items: start;
+    align-items: flex-start;
     padding: 5px;
     padding-left: 10px;
   }
