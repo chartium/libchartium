@@ -448,7 +448,9 @@ export class Chart {
       );
     }
 
-    const displayUnit = this.currentDisplayUnit[axis].get();
+    const displayUnit = dayjs.isDayjs(quantity)
+      ? NumericDateFormat.EpochMilliseconds
+      : this.currentDisplayUnit[axis].get();
 
     if (range === undefined) throw new Error(`${axis} range is undefined`);
 
@@ -554,10 +556,10 @@ export class Chart {
     return result;
   }
 
-  distanceInDataUnits(a: GeneralizedPoint, b: GeneralizedPoint) {
+  distanceInPx(a: GeneralizedPoint, b: GeneralizedPoint) {
     return norm([
-      toNumeric(b.x, this.#dataUnit.x) - toNumeric(a.x, this.#dataUnit.x),
-      toNumeric(b.y, this.#dataUnit.y) - toNumeric(a.y, this.#dataUnit.y),
+      this.quantityToCoordinate(b.x, "x") - this.quantityToCoordinate(a.x, "x"),
+      this.quantityToCoordinate(b.y, "y") - this.quantityToCoordinate(a.y, "y"),
     ]);
   }
 

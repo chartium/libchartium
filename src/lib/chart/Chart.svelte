@@ -231,7 +231,7 @@
   }
 
   /** How close to a trace is considered close enough to get only one trace info */
-  const closenessDistance = 6;
+  const closenessDistance = 10;
   let selectedTrace:
     | {
         styledTrace: TraceInfo;
@@ -248,7 +248,7 @@
   $: if (chart && closestTraces && closestTraces?.length !== 0) {
     // FIXME rethink this, this is ew
     traceCloseEnough =
-      chart.distanceInDataUnits(closestTraces[0].closestPoint, {
+      chart.distanceInPx(closestTraces[0].closestPoint, {
         x: hoverXQuantity,
         y: hoverYQuantity,
       }) < closenessDistance;
