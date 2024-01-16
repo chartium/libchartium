@@ -2,19 +2,26 @@
   import dayjs from "dayjs";
   import type { Point, Quantity } from "../types.js";
   import { qndFormat } from "../utils/format.js";
+  import { portal } from "svelte-portal";
 
-  /** *relative* position at the edge of the canvas */
+  /** position relative to body; i.e. absolute :d */
   export let position: Point;
   export let value: Quantity | number | dayjs.Dayjs;
   export let axis: "x" | "y";
+  export let rotated: boolean = false;
 
   let clientHeight: number;
   let clientWidth: number;
 
-  $: style =
-    axis === "x"
-      ? `top: ${position.y}px; left: ${position.x}px`
-      : `top: ${position.y}px; right: ${position.x}px; transform: rotate(-90deg) translateY(-${clientHeight}px)`;
+  $: style = `top: ${position.y}px; left: ${
+    position.x - (axis === "y" ? clientWidth + 4 : 0)
+  }px; ${
+    rotated
+      ? axis === "y"
+        ? `transform-origin: bottom right; transform: rotate(-90deg) translateX(${clientHeight}px)`
+        : `transform-origin: top left; transform: rotate(-90deg) translateX(-${clientWidth}px);`
+      : ""
+  }`;
 </script>
 
 <div
@@ -24,6 +31,7 @@
   {style}
   bind:clientHeight
   bind:clientWidth
+  use:portal
 >
   {qndFormat(value ?? 0, { decimals: 2, dayjsFormat: "YYYY-MM-DD\nHH:mm:ss" })}
 </div>
@@ -39,9 +47,9 @@
     padding: 4px;
     font-size: 0.8rem;
     z-index: 1;
-    overflow: hidden;
     width: max-content;
     height: max-content;
+    overflow: visible;
   }
 
   .x-axis-bubble {
@@ -49,8 +57,6 @@
   }
 
   .y-axis-bubble {
-    transform-origin: top right;
-    transform: rotate(-90deg);
     margin-right: 4px;
   }
 </style>

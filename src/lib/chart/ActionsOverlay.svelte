@@ -403,21 +403,15 @@
 />
 
 {#if !hideXBubble && mousePosition}
-  {@const x = mousePosition[0] - 10}
-  <RulerBubble
-    position={{ x, y: overlayHeight }}
-    value={hoverXQuantity}
-    axis="x"
-  />
+  {@const x = mousePosition[0] + canvasRef.getBoundingClientRect().left}
+  {@const y = canvasRef.getBoundingClientRect().bottom}
+  <RulerBubble position={{ x, y }} value={hoverXQuantity} axis="x" />
 {/if}
 
 {#if !hideYBubble && mousePosition}
-  {@const y = mousePosition[1] - 10}
-  <RulerBubble
-    position={{ x: overlayWidth, y }}
-    value={hoverYQuantity}
-    axis="y"
-  />
+  {@const x = canvasRef.getBoundingClientRect().left}
+  {@const y = mousePosition[1] + canvasRef.getBoundingClientRect().top}
+  <RulerBubble position={{ x, y }} value={hoverYQuantity} axis="y" />
 {/if}
 
 <style>
