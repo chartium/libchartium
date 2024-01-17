@@ -114,7 +114,7 @@
   .legend-container {
     display: flex;
     gap: 3px;
-    justify-content: start;
+    justify-content: flex-start;
     flex-wrap: wrap;
     margin: 0.5rem;
     overflow-y: auto;

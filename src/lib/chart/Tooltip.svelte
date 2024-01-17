@@ -76,17 +76,16 @@
   }
 </script>
 
-<div
-  use:portal
-  use:globalMouseMove={updateMousePosition}
-  bind:this={boundingDiv}
->
+<div use:globalMouseMove={updateMousePosition} bind:this={boundingDiv}>
   <GenericTooltip position={show ? position : undefined}>
     <div class="tooltip-container">
       {#if singleTraceInfo !== undefined}
         <div class="header">
-          <TracePreview previewedTrace={singleTraceInfo.styledTrace} />
-          {singleTraceInfo.styledTrace.id}
+          <TracePreview
+            previewedTrace={singleTraceInfo.styledTrace}
+            simplified={previewStyle === "simplified"}
+          />
+          {singleTraceInfo.styledTrace.label ?? singleTraceInfo.styledTrace.id}:
         </div>
         {#each Object.entries(singleTraceInfo) as [key, value]}
           {#if key !== "styledTrace"}

@@ -231,7 +231,7 @@
   }
 
   /** How close to a trace is considered close enough to get only one trace info */
-  const closenessDistance = 10;
+  const closenessDistance = 5;
   let selectedTrace:
     | {
         styledTrace: TraceInfo;

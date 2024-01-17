@@ -2,6 +2,8 @@
   The slot should not have set position -->
 
 <script lang="ts">
+  import { portal } from "svelte-portal";
+
   /** Corner position where to render this. If undefined, hide self */
   export let position: { x: number; y: number } | undefined = undefined;
 
@@ -96,6 +98,7 @@
 <div
   bind:clientHeight={containerHeight}
   bind:clientWidth={containerWidth}
+  use:portal
   class="tooltip"
   style:visibility={position === undefined ? "hidden" : "visible"}
   style:top={renderPosition?.y + "px"}
