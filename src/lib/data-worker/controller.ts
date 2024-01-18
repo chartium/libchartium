@@ -185,6 +185,7 @@ export class ChartiumController {
     labels?: Iterable<[string, string | undefined]>;
   }): Promise<TraceList> {
     await this.initialized;
+    if (ids.length === 0) return TraceList.empty();
 
     const dataBuffer = data instanceof ArrayBuffer ? data : data.buffer;
 
