@@ -23,7 +23,7 @@
   }>();
 
   export let hideTicks: boolean;
-
+  ///
   /** Whether the axis is for x or y. Determines label orientation and selection positions */
   export let axis: "x" | "y";
   /** Ticks on the axis. Position is to be between 0 and 1 */
