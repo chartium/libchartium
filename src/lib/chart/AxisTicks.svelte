@@ -187,7 +187,7 @@
   }}
 >
   {#if label !== undefined}
-    <div>
+    <div class="{axis} label">
       {label}
       {#if !hideLabelUnits && unit}[{unit.toString()}]{/if}
     </div>
@@ -230,9 +230,13 @@
     flex-direction: column-reverse;
   }
   .axis-container.y {
-    flex-direction: column;
+    flex-direction: row;
   }
 
+  .label.y {
+    height: fit-content;
+    transform: rotate(-90deg);
+  }
   .ticks-container {
     height: 100%;
     width: 100%;
