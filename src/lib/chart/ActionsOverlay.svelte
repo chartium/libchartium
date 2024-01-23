@@ -104,11 +104,6 @@
 
       presYThreshFracs.forEach(drawThreshold);
 
-      if (action && action.highlightedPoints && !hideHoverPoints) {
-        for (const point of action.highlightedPoints) {
-          drawHighlightPoint(point);
-        }
-      }
       if (action && action.zoom && !disableInteractivity) {
         drawZoom(action.zoom);
       } else if (action && action.shift && !disableInteractivity) {
@@ -125,6 +120,12 @@
         );
       }
       // TODO: global ruler
+
+      if (action && action.highlightedPoints && !hideHoverPoints) {
+        for (const point of action.highlightedPoints) {
+          drawHighlightPoint(point);
+        }
+      }
     }
 
     if (_frame) return;
