@@ -120,6 +120,7 @@
         );
       }
       // TODO: global ruler
+      // https://open.spotify.com/track/3vFZheR74pxUkzxqhXTZ2X
 
       if (action && action.highlightedPoints && !hideHoverPoints) {
         for (const point of action.highlightedPoints) {
