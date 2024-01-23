@@ -173,10 +173,13 @@
   let showTooltip: boolean = false;
   let hoverXQuantity: number | dayjs.Dayjs | Quantity;
   let hoverYQuantity: number | dayjs.Dayjs | Quantity;
-  function updateHoverQuantities(e: MouseEvent) {
-    hoverXQuantity = chart?.coordinatesToQuantities(e.offsetX, "x") ?? 0;
-    hoverYQuantity = chart?.coordinatesToQuantities(e.offsetY, "y") ?? 0;
-  }
+
+  const updateHoverQuantities = (e: MouseEvent) => {
+    const zoom = devicePixelRatio;
+    hoverXQuantity = chart?.coordinatesToQuantities(e.offsetX * zoom, "x") ?? 0;
+    hoverYQuantity = chart?.coordinatesToQuantities(e.offsetY * zoom, "y") ?? 0;
+  };
+
   $: closestTraces =
     chart && hoverXQuantity && hoverYQuantity
       ? displayedTraces.findClosestTracesToPoint(

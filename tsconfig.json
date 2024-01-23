@@ -4,7 +4,7 @@
     "target": "ESNext",
     "useDefineForClassFields": true,
     "resolveJsonModule": true,
-    "module": "ESNext", // don't believe TypeScript, leave it there
+    "module": "NodeNext",
     "moduleResolution": "NodeNext",
     /**
      * Typecheck JS in `.svelte` and `.js` files by default.
