@@ -5,7 +5,6 @@
   import { globalMouseMove } from "../utils/mouseGestures.js";
   import type { TraceInfo } from "../data-worker/trace-list.js";
   import TracePreview from "./TracePreview.svelte";
-  import { portal } from "svelte-portal";
 
   /** The tooltip will try its best to not be in this rectangle */
   export let forbiddenRectangle:
@@ -33,8 +32,6 @@
   export let show: boolean;
 
   let position: Point;
-
-  let boundingDiv: HTMLDivElement;
 
   function repairedPosition(
     positionRelativeToPage: Point,
@@ -76,7 +73,7 @@
   }
 </script>
 
-<div use:globalMouseMove={updateMousePosition} bind:this={boundingDiv}>
+<div use:globalMouseMove={updateMousePosition}>
   <GenericTooltip position={show ? position : undefined}>
     <div class="tooltip-container">
       {#if singleTraceInfo !== undefined}
@@ -127,7 +124,7 @@
     display: flex;
     flex-direction: column;
     background-color: var(--libchartium-secondary-background);
-    margin: 5px;
+    margin: 1em;
     padding: 0.5em;
     border-radius: 0.5em;
   }

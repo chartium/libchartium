@@ -16,6 +16,7 @@
   } from "../contextMenu/index.js";
   import { mut, Signal, WritableSignal, ZippedSignal } from "@mod.js/signals";
   import { doOverlap, measureText } from "../utils/format.js";
+  import RotatedBox from "../utils/RotatedBox.svelte";
 
   export const events = createEventDispatcher<{
     shift: Shift;
@@ -187,10 +188,16 @@
   }}
 >
   {#if label !== undefined}
-    <div class="{axis} label">
-      {label}
-      {#if !hideLabelUnits && unit}[{unit.toString()}]{/if}
-    </div>
+    {@const labelText =
+      label + (!hideLabelUnits && unit ? ` [${unit.toString()}]` : "")}
+
+    {#if axis === "y"}
+      <RotatedBox>
+        <div class="y label">{labelText}</div>
+      </RotatedBox>
+    {:else}
+      <div class="{axis} label">{labelText}</div>
+    {/if}
   {/if}
 
   {#if !hideTicks}
@@ -235,6 +242,7 @@
 
   .label.y {
     height: fit-content;
+    width: max-content;
     transform: rotate(-90deg);
   }
   .ticks-container {
@@ -242,8 +250,6 @@
     width: 100%;
   }
   .y {
-    // FIXME
-    // writing-mode: sideways-lr; /* doesnt work on chromium based */
     height: 100%;
   }
 
