@@ -28,6 +28,8 @@ function getNumericTicks({
   tickMeasuringFunction: (x: string) => number;
   maxTickNum: number;
 }): { label: string; position: number }[] {
+  if (range.to === range.from) return [];
+
   const oneOrderLess = Math.floor(Math.log10(range.to - range.from)) - 1;
   const niceMultiples = [1, 2, 3, 5, 10, 20, 25, 30, 50, 100];
 
@@ -40,7 +42,7 @@ function getNumericTicks({
     const tickNum = rangeWidth / ticksDist;
     if (tickNum > maxTickNum) continue;
     if (tickNum <= 0) return [];
-    
+
     const firstTickValue = range.from - (range.from % ticksDist) + ticksDist;
     const tickValues = Array.from(
       { length: tickNum + 1 },
