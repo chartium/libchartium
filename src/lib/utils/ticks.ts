@@ -39,6 +39,8 @@ function getNumericTicks({
     const ticksDist = Math.pow(10, oneOrderLess) * multiple;
     const tickNum = rangeWidth / ticksDist;
     if (tickNum > maxTickNum) continue;
+    if (tickNum <= 0) return [];
+    
     const firstTickValue = range.from - (range.from % ticksDist) + ticksDist;
     const tickValues = Array.from(
       { length: tickNum + 1 },
