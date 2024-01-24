@@ -340,7 +340,7 @@ export class Chart {
 
   // FIXME
   bestDisplayUnits(axis: "x" | "y"): Unit | undefined {
-    const unit = this.traces.get().getUnits()[0][axis];
+    const unit = this.#dataUnit[axis];
     if (unit instanceof NumericDateFormat) return undefined;
     return unit;
 
@@ -646,7 +646,7 @@ export class Chart {
   };
 
   #findResetUnit = (axis: "x" | "y") => {
-    const dataUnit = this.traces.get().getUnits()[0][axis];
+    const dataUnit = this.#dataUnit[axis];
     const defaultUnitSettings = this.defaultDisplayUnit[axis].get();
 
     switch (defaultUnitSettings) {
