@@ -1,6 +1,6 @@
 import { startsWith } from "./string.js";
 import random from "random";
-import seedrandom from "seedrandom";
+import seedRandom from "seedrandom";
 
 export type HexColor = `#${string}`;
 export type RgbaColor = `rgba(${number}, ${number}, ${number}, ${number})`;
@@ -64,7 +64,7 @@ export function colorToHex(color: Color): string {
 }
 
 export function randomColor(seed?: string): Color {
-  const rng = random.clone(seedrandom(seed)).uniform();
+  const rng = random.clone(seedRandom(seed)).uniform();
   return [0, 0, 0].map(() => Math.floor(255 * rng())) as Color;
 }
 
@@ -79,7 +79,7 @@ export function randomContrastingColor(
   const rng =
     typeof seedOrRng === "function"
       ? seedOrRng
-      : random.clone(seedrandom(seedOrRng)).uniform();
+      : random.clone(seedRandom(seedOrRng)).uniform();
 
   const h = rng();
   const s = Math.sqrt(0.2 + rng() * 0.8);

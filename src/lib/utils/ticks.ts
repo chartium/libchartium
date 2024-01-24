@@ -40,12 +40,12 @@ function getNumericTicks({
     const tickNum = rangeWidth / ticksDist;
     if (tickNum > maxTickNum) continue;
     const firstTickValue = range.from - (range.from % ticksDist) + ticksDist;
-    const tickVals = Array.from(
+    const tickValues = Array.from(
       { length: tickNum + 1 },
       (_, n) => firstTickValue + n * ticksDist,
     );
-    const decimals = uniqueDecimals(tickVals);
-    ticks = tickVals.map((val) => ({
+    const decimals = uniqueDecimals(tickValues);
+    ticks = tickValues.map((val) => ({
       label: val.toFixed(decimals),
       position: (val - range.from) / rangeWidth,
     }));

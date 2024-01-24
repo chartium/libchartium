@@ -3,7 +3,7 @@
  *
  * This is the JavaScript singleton class, which runs in
  * a worker and owns and operates essentially all the data
- * in the worker. It is responsible for the inicialization
+ * in the worker. It is responsible for the initialization
  * of the WebAssembly part of the codebase, and provides a
  * higher level abstraction above it.
  */

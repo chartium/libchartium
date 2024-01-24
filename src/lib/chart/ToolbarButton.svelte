@@ -25,7 +25,7 @@
 {#if title !== undefined}
   <GenericTooltip
     position={showTooltip ? tooltipPosition : undefined}
-    preferedPositioning="bottom"
+    preferredPositioning="bottom"
   >
     <div class="toolbar">
       {title}

@@ -1,4 +1,4 @@
-<!-- This component handles appearing at specific coordinates and displaying info. 
+<!-- This component handles appearing at specific coordinates and displaying info.
   The slot should not have set position -->
 
 <script lang="ts">
@@ -12,7 +12,7 @@
   }
 
   /** In what position relative to input position to open the tooltip */
-  export let preferedPositioning:
+  export let preferredPositioning:
     | "center"
     | "top"
     | "bottom"
@@ -23,10 +23,10 @@
     | "top-right"
     | "bottom-left" = "top-right";
 
-  $: top = preferedPositioning.includes("top");
-  $: bottom = preferedPositioning.includes("bottom");
-  $: right = preferedPositioning.includes("right");
-  $: left = preferedPositioning.includes("left");
+  $: top = preferredPositioning.includes("top");
+  $: bottom = preferredPositioning.includes("bottom");
+  $: right = preferredPositioning.includes("right");
+  $: left = preferredPositioning.includes("left");
 
   /** Where the tooltip actually gets displayed */
   let renderPosition: { x: number; y: number } | undefined = undefined;
