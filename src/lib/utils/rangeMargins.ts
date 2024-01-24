@@ -37,7 +37,7 @@ export const addMarginsToRange = (
   margins: RangeMargins,
   { width, height }: Size,
   xRange: Range,
-  yRange: Range
+  yRange: Range,
 ): { xRange: Range; yRange: Range } => {
   if ("all" in margins)
     margins = {
@@ -73,17 +73,17 @@ export const addMarginsToRange = (
     // the relative margins are counted as L ↦ L/(1 - Σrᵢ)
     const numerator = margins.reduce(
       (a, b) => (b && "value" in b ? add(a, b.value) : a),
-      subtract(to, from)
+      subtract(to, from),
     ) as number | Quantity;
     const denominator = margins.reduce(
       (a, b) => (b && "percent" in b ? a - b.percent / 100 : a),
-      1
+      1,
     );
     const newLength = divide(numerator, denominator);
 
     // convert relative margins to absolute margins
     const absoluteMargins = margins.map((m) =>
-      !m ? 0 : "value" in m ? m.value : multiply(newLength, m.percent / 100)
+      !m ? 0 : "value" in m ? m.value : multiply(newLength, m.percent / 100),
     );
 
     return {
@@ -100,7 +100,7 @@ export const addMarginsToRange = (
 
 export const addZeroToRange = (
   range: Range,
-  dataUnit: Unit | NumericDateFormat | undefined
+  dataUnit: Unit | NumericDateFormat | undefined,
 ): Range => {
   const from = toNumeric(range.from, dataUnit);
   const to = toNumeric(range.to, dataUnit);

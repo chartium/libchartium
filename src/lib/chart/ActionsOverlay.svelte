@@ -116,7 +116,7 @@
             x: mousePosition[0] / overlayWidth,
             y: 1 - mousePosition[1] / overlayHeight,
           },
-          false
+          false,
         );
       }
       // TODO: global ruler
@@ -145,7 +145,7 @@
       {
         fillStyle: point.color,
         strokeStyle: point.color,
-      }
+      },
     );
   }
 
@@ -179,13 +179,13 @@
         ctx,
         [xFrom, yFrom - oneDZoomWindow],
         [xFrom, yFrom + oneDZoomWindow],
-        windowStyle
+        windowStyle,
       );
       drawSegment(
         ctx,
         [xTo, yTo - oneDZoomWindow],
         [xTo, yTo + oneDZoomWindow],
-        windowStyle
+        windowStyle,
       );
     }
 
@@ -194,13 +194,13 @@
         ctx,
         [xFrom - oneDZoomWindow, yFrom],
         [xFrom + oneDZoomWindow, yFrom],
-        windowStyle
+        windowStyle,
       );
       drawSegment(
         ctx,
         [xFrom - oneDZoomWindow, yTo],
         [xFrom + oneDZoomWindow, yTo],
-        windowStyle
+        windowStyle,
       );
     }
   }
@@ -215,7 +215,7 @@
         ctx,
         [point.x * overlayWidth, 0],
         [point.x * overlayWidth, overlayHeight],
-        style
+        style,
       );
     }
 
@@ -224,7 +224,7 @@
         ctx,
         [0, (1 - point.y) * overlayHeight],
         [overlayWidth, (1 - point.y) * overlayHeight],
-        style
+        style,
       );
     }
   }
@@ -276,7 +276,7 @@
         [toX, toY],
         wingLength,
         spreadRad,
-        arrowStyle
+        arrowStyle,
       );
     } else if (shift.dx) {
       const fromX = shift.origin.x * overlayWidth;
@@ -290,7 +290,7 @@
         [toX, (1 - shift.origin.y) * overlayHeight],
         wingLength,
         spreadRad,
-        arrowStyle
+        arrowStyle,
       );
     } else if (shift.dy) {
       const fromY = (1 - shift.origin.y) * overlayHeight;
@@ -304,7 +304,7 @@
         [shift.origin.x * overlayWidth, toY],
         wingLength,
         spreadRad,
-        arrowStyle
+        arrowStyle,
       );
     }
   }
@@ -317,7 +317,7 @@
       ctx,
       [0, (1 - thresholdFrac) * overlayHeight],
       [overlayWidth, (1 - thresholdFrac) * overlayHeight],
-      style
+      style,
     );
   }
 

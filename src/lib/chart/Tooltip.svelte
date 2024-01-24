@@ -42,7 +42,7 @@
           width: number;
           height: number;
         }
-      | undefined
+      | undefined,
   ): Point {
     if (forbiddenRectangle === undefined) {
       return positionRelativeToPage;
@@ -68,7 +68,7 @@
   function updateMousePosition(event: MouseEvent) {
     position = repairedPosition(
       { x: event.clientX, y: event.clientY },
-      forbiddenRectangle
+      forbiddenRectangle,
     );
   }
 </script>

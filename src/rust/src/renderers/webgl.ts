@@ -1,6 +1,6 @@
 export function render_between(
   source: OffscreenCanvas,
-  target: OffscreenCanvas
+  target: OffscreenCanvas,
 ) {
   const ctxt = target.getContext("2d");
 

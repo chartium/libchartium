@@ -2,7 +2,7 @@ import type { ActionReturn } from "svelte/action";
 
 export const observeResize = (
   element: HTMLElement,
-  callback: (size: [width: number, height: number]) => void
+  callback: (size: [width: number, height: number]) => void,
 ) => {
   const resizeObserver = new ResizeObserver((entries) => {
     const { width, height } = entries[0].contentRect;
@@ -19,7 +19,7 @@ export const observeResize = (
 /** Update the dimensions of the coordinate space of a canvas according to its CSS dimensions */
 export const scaleCanvas = (
   element: HTMLCanvasElement,
-  callback?: (size: [width: number, height: number]) => void
+  callback?: (size: [width: number, height: number]) => void,
 ) => {
   return observeResize(element, (size) => {
     size.forEach((v, i) => (size[i] = Math.trunc(v)));

@@ -27,7 +27,7 @@
 
   const xs = Array.from(
     { length: numSteps },
-    (_, index) => from + index * stepSize
+    (_, index) => from + index * stepSize,
   );
   const y1s = xs.map((x) => 100 + 100 * Math.sin((x / to) * 2 * Math.PI));
   const y2s = xs.map((x) => 100 + 100 * Math.cos((x / to) * 2 * Math.PI));

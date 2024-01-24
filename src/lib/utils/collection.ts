@@ -16,15 +16,15 @@ export function* unique<T>(iter: Iterable<T>, used?: Set<T>): Iterable<T> {
 
 export function filter<S, T extends S>(
   iter: Iterable<S>,
-  fn: (value: S) => value is T
+  fn: (value: S) => value is T,
 ): Iterable<T>;
 export function filter<T>(
   iter: Iterable<T>,
-  fn: (value: T) => boolean
+  fn: (value: T) => boolean,
 ): Iterable<T>;
 export function* filter<T>(
   iter: Iterable<T>,
-  fn: (value: T) => boolean
+  fn: (value: T) => boolean,
 ): Iterable<T> {
   for (const el of iter) {
     if (fn(el)) yield el;
@@ -33,7 +33,7 @@ export function* filter<T>(
 
 export function* map<S, T>(
   iter: Iterable<S>,
-  fn: (value: S) => T
+  fn: (value: S) => T,
 ): Iterable<T> {
   for (const el of iter) {
     yield fn(el);
@@ -42,7 +42,7 @@ export function* map<S, T>(
 
 export function* flatMap<S, T>(
   iter: Iterable<S>,
-  mapFn: (value: S) => Iterable<T>
+  mapFn: (value: S) => Iterable<T>,
 ): Iterable<T> {
   for (const el of iter) {
     yield* mapFn(el);
@@ -53,17 +53,17 @@ export function reduce<T>(iter: Iterable<T>, fn: (prev: T, curr: T) => T): T;
 export function reduce<T>(
   iter: Iterable<T>,
   fn: (prev: T, curr: T) => T,
-  initialValue: T
+  initialValue: T,
 ): T;
 export function reduce<S, T>(
   iter: Iterable<S>,
   fn: (prev: T, curr: S) => T,
-  initialValue: T
+  initialValue: T,
 ): T;
 export function reduce<S, T>(
   iter: Iterable<S>,
   fn: (prev: T, curr: S) => T,
-  initialValue?: T
+  initialValue?: T,
 ): T {
   const initialProvided = arguments.length === 3;
   let first = true;
@@ -83,7 +83,7 @@ export function reduce<S, T>(
 
 export function* zip<S, T>(
   iterable1: Iterable<S>,
-  iterable2: Iterable<T>
+  iterable2: Iterable<T>,
 ): Iterable<[S, T]> {
   const iter1 = iterable1[Symbol.iterator]();
   const iter2 = iterable2[Symbol.iterator]();
@@ -97,7 +97,7 @@ export function* zip<S, T>(
 
 export function some<T>(
   iterable: Iterable<T>,
-  predicate: (value: T) => boolean
+  predicate: (value: T) => boolean,
 ): boolean {
   for (const value of iterable) {
     if (predicate(value)) return true;
@@ -107,7 +107,7 @@ export function some<T>(
 
 export function every<T>(
   iterable: Iterable<T>,
-  predicate: (value: T) => boolean
+  predicate: (value: T) => boolean,
 ): boolean {
   for (const value of iterable) {
     if (!predicate(value)) return false;
@@ -117,7 +117,7 @@ export function every<T>(
 
 export function weakSetUnion<T extends object>(
   a: WeakSet<T>,
-  b: WeakSet<T>
+  b: WeakSet<T>,
 ): WeakSet<T> {
   if (a === b) return a;
   const added = new WeakSet<T>();
@@ -145,13 +145,13 @@ export function weakSetUnion<T extends object>(
       getPrototypeOf() {
         return WeakSet.prototype;
       },
-    }
+    },
   );
 }
 
 export function weakMapUnion<K extends object, V>(
   a: WeakMap<K, V>,
-  b: WeakMap<K, V>
+  b: WeakMap<K, V>,
 ): WeakMap<K, V> {
   if (a === b) return a;
   const modified = new WeakMap<K, V>();
@@ -186,7 +186,7 @@ export function weakMapUnion<K extends object, V>(
       getPrototypeOf() {
         return WeakMap.prototype;
       },
-    }
+    },
   );
 }
 

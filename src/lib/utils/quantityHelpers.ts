@@ -14,7 +14,7 @@ import { Unit as UUnit } from "unitlib";
 /** Transforms quantity to just numeric part in selected units. */
 export function toNumeric(
   x: Quantity | number | Dayjs,
-  unit: Unit | NumericDateFormat | undefined
+  unit: Unit | NumericDateFormat | undefined,
 ): number {
   if (typeof x === "number") return x;
 
@@ -22,7 +22,7 @@ export function toNumeric(
     if (dayjs.isDayjs(x)) return unit.valueFrom(x);
 
     throw new TypeError(
-      "Attempting to convert an unsupported value from a date to a number."
+      "Attempting to convert an unsupported value from a date to a number.",
     );
   }
 
@@ -30,19 +30,19 @@ export function toNumeric(
     if (x instanceof Quantity) return x.inUnits(unit).value;
 
     throw new TypeError(
-      "Attempting to convert an unsupported value from a quantity to a number."
+      "Attempting to convert an unsupported value from a quantity to a number.",
     );
   }
 
   throw new TypeError(
-    "Attempting to convert a non-primitive to a number without specifying a unit."
+    "Attempting to convert a non-primitive to a number without specifying a unit.",
   );
 }
 
 /** Transforms range to numeric range in selected units. */
 export function toNumericRange(
   range: Range,
-  unit: Unit | NumericDateFormat | undefined
+  unit: Unit | NumericDateFormat | undefined,
 ): NumericRange {
   return {
     from: toNumeric(range.from, unit),
@@ -57,7 +57,7 @@ export function toNumericRange(
 export function toQuantOrDay(
   x: number,
   units?: Unit | NumericDateFormat,
-  displayUnits?: Unit
+  displayUnits?: Unit,
 ): Quantity | Dayjs | number {
   if (units instanceof NumericDateFormat) return units.parseToDayjs(x);
   if (typeof x === "number" && units) {
@@ -70,7 +70,7 @@ export function toQuantOrDay(
 
 export function toQuantOrDayRange(
   r: NumericRange,
-  units?: Unit | NumericDateFormat
+  units?: Unit | NumericDateFormat,
 ): Range {
   return {
     from: toQuantOrDay(r.from, units),
@@ -81,7 +81,7 @@ export function toQuantOrDayRange(
 /** Returns range in units if defined, otherwise returns numeric range */
 export function toRange(
   range: NumericRange,
-  units?: Unit | NumericDateFormat
+  units?: Unit | NumericDateFormat,
 ): Range {
   return {
     from: toQuantOrDay(range.from, units),
@@ -93,7 +93,7 @@ const milliseconds = SI.parseUnit("ms");
 
 export function eq(
   a: number | Quantity | Dayjs | Unit | undefined,
-  b: number | Quantity | Dayjs | Unit | undefined
+  b: number | Quantity | Dayjs | Unit | undefined,
 ): boolean {
   if (typeof a === "number" || a === undefined) return a === b;
   if (a instanceof Quantity && b instanceof Quantity) return a.isEqual(b);
@@ -104,7 +104,7 @@ export function eq(
 
 export function add(
   a: number | Quantity | Dayjs,
-  b: number | Quantity | Dayjs
+  b: number | Quantity | Dayjs,
 ) {
   if (a === 0 || (a instanceof Quantity && a.value === 0)) return b;
   if (b === 0 || (b instanceof Quantity && b.value === 0)) return a;
@@ -135,7 +135,7 @@ export function add(
 
 export function subtract(
   a: number | Quantity | Dayjs,
-  b: number | Quantity | Dayjs
+  b: number | Quantity | Dayjs,
 ) {
   if (typeof b === "number") return add(a, -b);
   if (b instanceof Quantity) return add(a, b.negative());
@@ -160,7 +160,7 @@ export function qdnMin(x: Quantity, y: Quantity): Quantity;
 export function qdnMin(x: Dayjs, y: Dayjs): Dayjs;
 export function qdnMin(
   x: number | Quantity | Dayjs,
-  y: number | Quantity | Dayjs
+  y: number | Quantity | Dayjs,
 ): number | Quantity | Dayjs {
   if (typeof x === "number" && typeof y === "number") {
     return Math.min(x, y);
@@ -177,7 +177,7 @@ export function qdnMax(x: Quantity, y: Quantity): Quantity;
 export function qdnMax(x: Dayjs, y: Dayjs): Dayjs;
 export function qdnMax(
   x: number | Quantity | Dayjs,
-  y: number | Quantity | Dayjs
+  y: number | Quantity | Dayjs,
 ): number | Quantity | Dayjs {
   if (typeof x === "number" && typeof y === "number") {
     return Math.max(x, y);
@@ -190,7 +190,7 @@ export function qdnMax(
 
 export function unitEqual(
   a: Unit | NumericDateFormat | undefined,
-  b: Unit | NumericDateFormat | undefined
+  b: Unit | NumericDateFormat | undefined,
 ): boolean {
   if (a === undefined) return b === undefined;
   if (a instanceof NumericDateFormat !== b instanceof NumericDateFormat)

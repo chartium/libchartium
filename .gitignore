@@ -13,5 +13,6 @@ dist-ssr
 dist-rust
 *.local
 .svelte-kit
+vite.config.ts.timestamp-*.mjs
 
 .vscode/timeyWimey

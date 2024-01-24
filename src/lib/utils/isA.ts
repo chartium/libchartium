@@ -27,7 +27,7 @@ export function isA(x: unknown, type: "array?"): x is any[] | nullish;
 
 export function isA<C extends AnyConstructor>(
   x: unknown,
-  type: C
+  type: C,
 ): x is InstanceType<C>;
 
 export function isA(x: unknown, type: string | AnyConstructor): boolean {

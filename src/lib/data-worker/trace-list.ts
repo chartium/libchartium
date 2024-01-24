@@ -194,7 +194,7 @@ export class TraceList {
           stylesheet,
           this.#traceInfo,
           this.#traceHandles,
-          traceIds
+          traceIds,
         ),
       ],
     });
@@ -247,12 +247,12 @@ export class TraceList {
       const { from, to } = toNumericRange(range, units.x);
       const theseBundles = traces.#bundles;
       bundles.push(
-        ...theseBundles.filter((bundle) => bundle.intersects(from, to))
+        ...theseBundles.filter((bundle) => bundle.intersects(from, to)),
       );
     }
 
     const availableHandles = new Set(
-      flatMap(bundles, (b) => b.traces() as Iterable<TraceHandle>)
+      flatMap(bundles, (b) => b.traces() as Iterable<TraceHandle>),
     );
     const handles = this.#traceHandles.filter((t) => availableHandles.has(t));
 
@@ -273,8 +273,8 @@ export class TraceList {
     const exclude = new Set(
       filter(
         map(tracesToExclude, (id) => traceIds.getKey(id)),
-        (n): n is TraceHandle => n !== undefined
-      )
+        (n): n is TraceHandle => n !== undefined,
+      ),
     );
 
     const handles = this.#traceHandles.filter((h) => !exclude.has(h));
@@ -307,8 +307,8 @@ export class TraceList {
     const include = new Set(
       filter(
         map(tracesToInclude, (id) => traceIds.getKey(id)),
-        (n): n is TraceHandle => n !== undefined
-      )
+        (n): n is TraceHandle => n !== undefined,
+      ),
     );
 
     const handles = this.#traceHandles.filter((h) => include.has(h));
@@ -340,25 +340,25 @@ export class TraceList {
     });
   }
 
-  /** Returns new tracelist where every trace has at least one datapoint over treshold */
-  withOverTreshold(treshold: Quantity | number): TraceList {
+  /** Returns new tracelist where every trace has at least one datapoint over threshold */
+  withOverThreshold(threshold: Quantity | number): TraceList {
     const badHandles: TraceHandle[] = this.#bundles.flatMap((bundle) => {
       const ptrs = bundle.traces();
-      const tresholdInBundleUnits = toNumeric(
-        treshold,
-        this.getBundleUnits(bundle).y
+      const thresholdInBundleUnits = toNumeric(
+        threshold,
+        this.getBundleUnits(bundle).y,
       );
       const filter = bundle.are_traces_over_threshold(
         ptrs,
         bundle.from(),
         bundle.to(),
-        tresholdInBundleUnits
+        thresholdInBundleUnits,
       );
       return bundle
         .get_multiple_traces_metas(
           ptrs.filter((_, i) => !filter[i]),
           bundle.from(),
-          bundle.to()
+          bundle.to(),
         )
         .map((meta) => meta.handle);
     });
@@ -372,7 +372,7 @@ export class TraceList {
    * Creates a new trace list by concatenating the provided trace lists together.
    * The resulting range will be a bounding interval of all the individual lists'
    * ranges. Each trace's style will be preserved – if a trace is present in multiple
-   * lists, style of its first occurence will be preserved.
+   * lists, style of its first occurrence will be preserved.
    */
   static union(...lists: TraceList[]): TraceList {
     const bundles = Array.from(unique(flatMap(lists, (l) => l[BUNDLES])));
@@ -380,17 +380,17 @@ export class TraceList {
 
     const from = reduce(
       map(bundles, (b) => b.from()),
-      Math.min
+      Math.min,
     );
     const to = reduce(
       map(bundles, (b) => b.to()),
-      Math.max
+      Math.max,
     );
     const labels = new Map(flatMap(lists, (l) => l[LABELS].entries()));
     const traceInfo = simplifyTraceInfo(
       lists.flatMap((l) => l.#traceInfo),
       handles,
-      traceIds
+      traceIds,
     );
 
     return new TraceList({
@@ -404,7 +404,7 @@ export class TraceList {
 
   /**
    * Calculate the statistics (like the maximum, minimum and average value)
-   * for the provided traces on the provided range. If parameters are ommited,
+   * for the provided traces on the provided range. If parameters are omitted,
    * it will use all traces and the entire range of this trace list.
    */
   calculateStatistics({
@@ -431,7 +431,7 @@ export class TraceList {
       const xUnit = this.getBundleUnits(bundle).x;
       const a = Math.max(
         from ? toNumeric(from, xUnit) : bundle.from(),
-        bundle.from()
+        bundle.from(),
       );
       const b = Math.min(to ? toNumeric(to, xUnit) : bundle.to(), bundle.to());
       if (a >= b) continue;
@@ -471,11 +471,11 @@ export class TraceList {
     return {
       from: metas.reduce(
         (prev, { min: curr }) => qdnMin(prev as any, curr as any),
-        metas[0].min
+        metas[0].min,
       ),
       to: metas.reduce(
         (prev, { max: curr }) => qdnMax(prev as any, curr as any),
-        metas[0].max
+        metas[0].max,
       ),
     } as Range;
   }
@@ -507,7 +507,7 @@ export class TraceList {
       value: {
         x: Unit | NumericDateFormat | undefined;
         y: Unit | NumericDateFormat | undefined;
-      }
+      },
     ): void => {
       const alreadyRecorded = some(set, (u) => {
         return unitEqual(u.x, value.x) && unitEqual(u.y, value.y);
@@ -551,7 +551,7 @@ export class TraceList {
       const { x, y } = this.getBundleUnits(bundle);
       const newTraceList = new TraceList({
         handles: Array.from(
-          intersection(bundle.traces(), this.#traceHandlesSet)
+          intersection(bundle.traces(), this.#traceHandlesSet),
         ) as TraceHandle[],
         range: this.#range,
         bundles: [bundle],
@@ -561,7 +561,7 @@ export class TraceList {
       if (toReturn.has({ x, y })) {
         toReturn.set(
           { x, y },
-          TraceList.union(toReturn.get({ x, y })!, newTraceList)
+          TraceList.union(toReturn.get({ x, y })!, newTraceList),
         );
       } else {
         toReturn.set({ x, y }, newTraceList);
@@ -583,7 +583,7 @@ export class TraceList {
    */
   findClosestTracesToPoint(
     point: GeneralizedPoint,
-    howMany: number
+    howMany: number,
   ): {
     traceInfo: TraceInfo;
     closestPoint: GeneralizedPoint;
@@ -600,7 +600,7 @@ export class TraceList {
 
     for (const bundle of this.#bundles) {
       const bundleTraces = new Uint32Array(
-        intersection(bundle.traces(), this.#traceHandlesSet)
+        intersection(bundle.traces(), this.#traceHandlesSet),
       );
       const bundleUnits = this.getBundleUnits(bundle);
       const x = toNumeric(point.x, bundleUnits.x);
@@ -609,12 +609,12 @@ export class TraceList {
         bundleTraces,
         x,
         y,
-        howMany
+        howMany,
       );
 
       for (const foundPoint of foundPoints) {
         const distance = Math.sqrt(
-          (foundPoint.x - x) ** 2 + (foundPoint.y - y) ** 2
+          (foundPoint.x - x) ** 2 + (foundPoint.y - y) ** 2,
         );
         closestPoints.push({
           handle: foundPoint.handle as TraceHandle,

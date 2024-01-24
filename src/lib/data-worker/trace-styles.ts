@@ -56,13 +56,13 @@ export function resolveTraceInfo(
   stylesheet: TraceStylesheet,
   currentStyles: ResolvedTraceInfo,
   traceHandles: Iterable<TraceHandle>,
-  ids: Map<TraceHandle, string>
+  ids: Map<TraceHandle, string>,
 ): ResolvedTraceInfo {
   const traces = new Set(
     map(
       traceHandles,
-      (handle) => ids.get(handle) ?? yeet(UnknownTraceHandleError, handle)
-    )
+      (handle) => ids.get(handle) ?? yeet(UnknownTraceHandleError, handle),
+    ),
   );
 
   const lowSpecificity: Partial<TraceStyle> = {
@@ -78,7 +78,7 @@ export function resolveTraceInfo(
         ...lowSpecificity,
         ...omit(s, "xDataUnit", "yDataUnit"),
       },
-    ])
+    ]),
   );
 
   const resolved: ResolvedTraceInfo = [];
@@ -107,13 +107,13 @@ export function resolveTraceInfo(
 export function simplifyTraceInfo(
   traceInfo: ResolvedTraceInfo,
   traceHandles: Iterable<TraceHandle>,
-  ids: Map<TraceHandle, string>
+  ids: Map<TraceHandle, string>,
 ): ResolvedTraceInfo {
   const existingTraces = new Set(
     map(
       traceHandles,
-      (handle) => ids.get(handle) ?? yeet(UnknownTraceHandleError, handle)
-    )
+      (handle) => ids.get(handle) ?? yeet(UnknownTraceHandleError, handle),
+    ),
   );
 
   const usedTraces = new Set<string>();
@@ -158,7 +158,7 @@ export function computeTraceColor(id: string, color: TraceStyle["color"]) {
 export function* computeStyles(
   info: ResolvedTraceInfo,
   traces: Iterable<TraceHandle>,
-  ids: Map<TraceHandle, string>
+  ids: Map<TraceHandle, string>,
 ): Iterable<RawTraceStyle> {
   const getStyle = (id: string) => {
     for (const [set, style] of info) if (set.has(id)) return style;
@@ -183,7 +183,7 @@ export function* computeStyles(
 export function reduceStylesheet(
   stylesheet: TraceStylesheet,
   traces: Iterable<TraceHandle>,
-  ids: Map<TraceHandle, string>
+  ids: Map<TraceHandle, string>,
 ): TraceStylesheet {
   const usedIds = new Set<string>();
   for (const handle of traces)
@@ -191,8 +191,8 @@ export function reduceStylesheet(
 
   return Object.fromEntries(
     Object.entries(stylesheet).filter(
-      ([selector, _props]) => selector === "*" || usedIds.has(selector)
-    )
+      ([selector, _props]) => selector === "*" || usedIds.has(selector),
+    ),
   );
 }
 
@@ -210,7 +210,7 @@ const isEmptyStyle = (style: Partial<TraceStyle>) =>
 export function stylesheetNormalForm(
   stylesheet: TraceStylesheet,
   traces: Iterable<TraceHandle>,
-  ids: Map<TraceHandle, string>
+  ids: Map<TraceHandle, string>,
 ): string {
   stylesheet = reduceStylesheet(stylesheet, traces, ids);
 

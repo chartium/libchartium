@@ -24,7 +24,7 @@ export function drawSegment(
   ctxt: CanvasRenderingContext2D,
   from: Vec2Like,
   to: Vec2Like,
-  style: DrawStyle | undefined = undefined
+  style: DrawStyle | undefined = undefined,
 ): void {
   ctxt.save();
   applyStyle(ctxt, style ?? {});
@@ -40,7 +40,7 @@ export function drawCircle(
   ctxt: CanvasRenderingContext2D,
   point: Vec2Like,
   radius: number,
-  style?: DrawStyle
+  style?: DrawStyle,
 ): void {
   ctxt.save();
   applyStyle(ctxt, style ?? {});
@@ -57,7 +57,7 @@ export function drawArrow(
   to: Vec2Like,
   wingLen: number,
   spreadRad: number,
-  style?: DrawStyle
+  style?: DrawStyle,
 ): void {
   drawSegment(ctxt, from, to, style);
 
@@ -67,12 +67,12 @@ export function drawArrow(
     ctxt,
     to,
     Vec.add(to, Vec.scale(Vec.rotate(normal, spreadRad), wingLen)),
-    style
+    style,
   );
   drawSegment(
     ctxt,
     to,
     Vec.add(to, Vec.scale(Vec.rotate(normal, -spreadRad), wingLen)),
-    style
+    style,
   );
 }

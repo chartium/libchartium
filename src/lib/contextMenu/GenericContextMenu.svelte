@@ -69,7 +69,7 @@
     renderPosition = openPositionNextToPoint(
       positionRelativeToPage,
       menuHeight,
-      menuWidth
+      menuWidth,
     );
   }
 

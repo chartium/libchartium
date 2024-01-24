@@ -13,7 +13,7 @@
 
   export let traces: TraceList;
   $: tracesWithStyles = Array.from(
-    map(traces.traces(), (t) => traces.getTraceInfo(t)) // FIXME replace with first(traces, n)
+    map(traces.traces(), (t) => traces.getTraceInfo(t)), // FIXME replace with first(traces, n)
   );
 
   export let hiddenTraceIDs: WritableSignal<Set<string>>;
@@ -52,7 +52,7 @@
           ctx,
           [previewSize / 2, previewSize / 2],
           width,
-          style
+          style,
         );
         canvas.drawCircle(ctx, [width, previewSize - width], width, style);
       } else {

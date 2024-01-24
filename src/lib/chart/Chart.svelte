@@ -189,7 +189,7 @@
           },
           tooltipTracesShown === "all"
             ? displayedTraces.traceCount
-            : tooltipTracesShown
+            : tooltipTracesShown,
         )
       : undefined;
   $: tracesInfo =
@@ -207,7 +207,7 @@
           traceInfo: TraceInfo;
           closestPoint: GeneralizedPoint;
         }[]
-      | undefined
+      | undefined,
   ) {
     if (closestTraces === undefined || chart === undefined) {
       visibleAction.set({ highlightedPoints: [] });
@@ -310,17 +310,17 @@
       } else {
         forbiddenRectangle = undefined;
       }
-    })
+    }),
   );
 
   /** In fractions of graph height */
   let persistentYThresholds: (Quantity | number | Dayjs)[] = [];
   $: presYThreshFracs = persistentYThresholds.map(
-    (q) => chart?.quantitiesToFractions(q, "y") ?? 0
+    (q) => chart?.quantitiesToFractions(q, "y") ?? 0,
   );
   $: chart?.range.y.subscribe(() => {
     presYThreshFracs = persistentYThresholds.map(
-      (q) => chart?.quantitiesToFractions(q, "y") ?? 0
+      (q) => chart?.quantitiesToFractions(q, "y") ?? 0,
     );
   });
 
@@ -427,7 +427,7 @@
       if (t.detail.type === "persistent") {
         const thresholdQ = chart?.fractionsToQuantities(
           1 - t.detail.thresholdFrac,
-          "y"
+          "y",
         );
         if (thresholdQ) persistentYThresholds.push(thresholdQ);
         persistentYThresholds = persistentYThresholds;

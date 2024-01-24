@@ -41,7 +41,7 @@ export interface Point {
 export function openPositionNextToPoint(
   positionRelativeToPage: Point,
   menuHeight: number,
-  menuWidth: number
+  menuWidth: number,
 ): Point {
   const { x, y } = positionRelativeToPage;
   const { innerWidth, innerHeight } = window;
@@ -61,7 +61,7 @@ export function openPositionNextToPoint(
 export function openPositionNextToRect(
   rect: DOMRect,
   menuHeight: number,
-  menuWidth: number
+  menuWidth: number,
 ): Point {
   const x = rect.right + window.scrollX;
   const y = rect.top + window.scrollY;
@@ -84,7 +84,7 @@ export function openPositionNextToRect(
 /** svelte action for adding a click outside event on an element */
 export function mouseDownOutside(
   node: HTMLElement,
-  callback: (event: MouseEvent) => void
+  callback: (event: MouseEvent) => void,
 ) {
   const handleClick = (event: MouseEvent) => {
     if (!(event.target instanceof Node)) return;
@@ -105,7 +105,7 @@ export function mouseDownOutside(
 /** svelte action for keydown that doesn't require focus on the div component listening */
 export function genericKeydown(
   node: HTMLElement,
-  callback: (event: KeyboardEvent) => void
+  callback: (event: KeyboardEvent) => void,
 ) {
   const handleKeydown = (event: KeyboardEvent) => {
     callback(event);

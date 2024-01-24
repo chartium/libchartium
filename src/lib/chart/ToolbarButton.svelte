@@ -16,7 +16,11 @@
   let showTooltip = false;
 </script>
 
-<svelte:window on:resize={() => {buttonRect = button?.getBoundingClientRect()}} />
+<svelte:window
+  on:resize={() => {
+    buttonRect = button?.getBoundingClientRect();
+  }}
+/>
 
 {#if title !== undefined}
   <GenericTooltip

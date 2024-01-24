@@ -18,7 +18,7 @@ import { qdnMax, qdnMin } from "../../utils/quantityHelpers.js";
 function compileShader(
   gl: WebGL2RenderingContext,
   type: number,
-  source: string
+  source: string,
 ): WebGLShader {
   const shader = gl.createShader(type)!;
   gl.shaderSource(shader, source);
@@ -28,7 +28,7 @@ function compileShader(
 function linkProgram(
   gl: WebGL2RenderingContext,
   vertShader: WebGLShader,
-  fragShader: WebGLShader
+  fragShader: WebGLShader,
 ): WebGLProgram {
   const program = gl.createProgram()!;
   gl.attachShader(program, vertShader);
@@ -70,7 +70,7 @@ export class WebGL2Controller implements RenderingController {
       traceOrigin,
       traceSize,
       traceCsoffset,
-      traceColor
+      traceColor,
     );
   }
 
@@ -79,7 +79,7 @@ export class WebGL2Controller implements RenderingController {
       this.#canvas,
       this.#context,
       this.#programs,
-      presentCanvas
+      presentCanvas,
     );
     const handle = this.#availableRendererHandle++;
     const wrapped = new WebGL2Renderer(this, handle, this.#context, raw);
@@ -106,7 +106,7 @@ export class WebGL2Controller implements RenderingController {
             gl_Position = vec4(csoffset + vec2(-1,-1) + vec2(2,2) * (aVertexPosition * vec2(1,transform.x) + vec2(0, transform.y) - origin) / size, 0, 1);
             gl_PointSize = 8.0;
         }
-      `
+      `,
     );
 
     const fragShader = compileShader(
@@ -119,7 +119,7 @@ export class WebGL2Controller implements RenderingController {
         void main() {
             gl_FragColor = color;
         }
-      `
+      `,
     );
 
     const traceProgram = linkProgram(gl, vertShader, fragShader);
@@ -155,7 +155,7 @@ export class WebGL2Renderer implements Renderer {
     public readonly parent: WebGL2Controller,
     public readonly handle: number,
     context: WebGL2RenderingContext,
-    renderer: lib.WebGlRenderer
+    renderer: lib.WebGlRenderer,
   ) {
     this.#context = context;
     this.#renderer = renderer;
@@ -183,12 +183,12 @@ export class WebGL2Renderer implements Renderer {
     for (const bundle of traceList[BUNDLES]) {
       const handles = Array.from(
         filter(bundle.traces() as Iterable<TraceHandle>, (h) =>
-          availableHandles.has(h)
-        )
+          availableHandles.has(h),
+        ),
       );
       const styles = computeStyles(traceList[TRACE_INFO], handles, traceIds);
       const buffers = map(handles, (h) =>
-        lib.WebGlRenderer.create_trace_buffer(this.#context, bundle, h)
+        lib.WebGlRenderer.create_trace_buffer(this.#context, bundle, h),
       );
       rj.add_traces(bundle, handles.length, buffers, styles);
     }

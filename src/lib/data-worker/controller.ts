@@ -61,7 +61,7 @@ export class ChartiumController {
   #renderingController!: RenderingController;
 
   static instantiateInThisThread(
-    options: ChartiumControllerOptions
+    options: ChartiumControllerOptions,
   ): ChartiumController {
     const ctl = new ChartiumController(options);
 
@@ -85,7 +85,7 @@ export class ChartiumController {
           (ctl.screenSize = {
             width: innerWidth * devicePixelRatio,
             height: innerHeight * devicePixelRatio,
-          })
+          }),
       );
     }
 
@@ -98,7 +98,7 @@ export class ChartiumController {
     if (instance) {
       window.location.reload(); // FIXME only for hot reload while debugging
       throw new Error(
-        "There already is a ChartiumController instance running in this thread."
+        "There already is a ChartiumController instance running in this thread.",
       );
     }
     instance = this;
@@ -110,7 +110,7 @@ export class ChartiumController {
       console.log(
         `Loaded Chartium WASM ${
           isRunningInWorker() ? "in a worker!" : "on the main thread!"
-        }`
+        }`,
       );
 
       switch (options.renderingMode ?? "webgl2") {
@@ -206,7 +206,7 @@ export class ChartiumController {
       new Uint32Array(handles),
       xType,
       yType,
-      new Uint8Array(dataBuffer)
+      new Uint8Array(dataBuffer),
     );
 
     const bundle = bulkload.apply();

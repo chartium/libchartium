@@ -16,7 +16,7 @@ export type DateRangeSpan =
  */
 export function getRangeSpan(
   range: DateRange,
-  shortWindow = 1.5
+  shortWindow = 1.5,
 ): DateRangeSpan {
   const from = dayjs(range.from);
   const to = dayjs(range.to);
@@ -44,7 +44,7 @@ export function getRangeSpan(
  */
 export function getLargerEra(
   date: dayjs.Dayjs | Date,
-  largerThanUnits: DateRangeSpan
+  largerThanUnits: DateRangeSpan,
 ): string | undefined {
   date = dayjs(date);
 
@@ -91,7 +91,7 @@ export function formatInEra(date: dayjs.Dayjs, era: DateRangeSpan): string {
  */
 export function getFloatDayjsValue(
   date: dayjs.Dayjs,
-  unit: DateRangeSpan
+  unit: DateRangeSpan,
 ): number {
   const start = date.startOf(unit);
   const fract = date.diff(start, unit, true);

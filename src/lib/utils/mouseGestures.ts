@@ -13,7 +13,7 @@ class DragStatus {
     public from: Point,
     public to: Point,
     public extents: Size,
-    public threshold: number = 5
+    public threshold: number = 5,
   ) {}
 
   public get absoluteShift(): Shift {
@@ -84,7 +84,7 @@ export enum MouseButtons {
 
 export const mouseDrag = (
   elem: HTMLElement,
-  params: MouseDragCallbacks & { button: MouseButtons; threshold?: number }
+  params: MouseDragCallbacks & { button: MouseButtons; threshold?: number },
 ) => {
   let status: DragStatus | undefined = undefined;
 
@@ -97,7 +97,7 @@ export const mouseDrag = (
       point,
       { ...point },
       { width: elem.clientWidth, height: elem.clientHeight },
-      params.threshold ?? 5
+      params.threshold ?? 5,
     );
 
     params.start(event);
@@ -143,7 +143,7 @@ export function mouseClick(
   params: { callback: (event: MouseEvent) => void } & {
     button: MouseButtons;
     threshold?: number;
-  }
+  },
 ) {
   let init: Point | undefined;
 
@@ -180,7 +180,7 @@ export function mouseClick(
 
 export function clickOutside(
   node: HTMLElement,
-  callback: (event: MouseEvent) => void
+  callback: (event: MouseEvent) => void,
 ) {
   const handleClick = (event: MouseEvent) => {
     if (!(event.target instanceof Node)) return;
@@ -200,7 +200,7 @@ export function clickOutside(
 
 export function globalMouseMove(
   node: HTMLElement,
-  callback: (event: MouseEvent) => void
+  callback: (event: MouseEvent) => void,
 ) {
   document.addEventListener("mousemove", callback, true);
 

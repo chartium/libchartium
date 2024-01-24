@@ -45,7 +45,7 @@ export function colorStringToColor(color: string): Color {
 
   if (startsWith(hexOrRgba, "rgba(")) {
     const [_, r, g, b] = hexOrRgba.match(
-      /^rgba\(\s*(\d+),\s*(\d+),\s*(\d+)\s*\)$/
+      /^rgba\(\s*(\d+),\s*(\d+),\s*(\d+)\s*\)$/,
     )!;
     return [+r, +g, +b];
   }
@@ -71,7 +71,7 @@ export function randomColor(seed?: string): Color {
 export function randomContrastingColor(
   seedOrRng?: string | (() => number),
   contrastWithLight = true,
-  contrastWithDark = true
+  contrastWithDark = true,
 ): Color {
   // for a tutorial on custom probability distributions see:
   // https://programming.guide/generate-random-value-with-distribution.html

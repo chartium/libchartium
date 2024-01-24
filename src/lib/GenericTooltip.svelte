@@ -45,7 +45,7 @@
       renderPosition = repairedPosition(
         position,
         containerHeight,
-        containerWidth
+        containerWidth,
       );
     } else {
       renderPosition = {
@@ -59,7 +59,7 @@
   function repairedPosition(
     positionRelativeToPage: { x: number; y: number },
     tooltipHeight: number,
-    tooltipWidth: number
+    tooltipWidth: number,
   ): { x: number; y: number } {
     const { x, y } = positionRelativeToPage;
     let toReturnX;

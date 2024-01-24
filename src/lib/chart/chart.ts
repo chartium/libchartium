@@ -58,7 +58,7 @@ export interface UnitChangeAction {
  */
 const withSubscriber = <S extends Signal<any>>(
   signal: S,
-  sub: Subscriber<SignalValue<S>>
+  sub: Subscriber<SignalValue<S>>,
 ) => {
   signal.subscribe(sub);
   return signal;
@@ -77,7 +77,7 @@ const withSubscriber = <S extends Signal<any>>(
  */
 const withListener = <S extends Signal<any>>(
   signal: S,
-  sub: Subscriber<SignalValue<S>>
+  sub: Subscriber<SignalValue<S>>,
 ) => {
   let firstCall = true;
   return withSubscriber(signal, (value, params) => {
@@ -154,7 +154,7 @@ export class Chart {
   constructor(
     public readonly controller: ChartiumController | Remote<ChartiumController>,
     public readonly canvas: OffscreenCanvas,
-    traces?: TraceList
+    traces?: TraceList,
   ) {
     // signals
     traces ??= TraceList.empty();
@@ -177,7 +177,7 @@ export class Chart {
       ({ width, height }) => {
         this.#renderer?.setSize(width, height);
         this.scheduleRender();
-      }
+      },
     );
 
     this.resetUnits();
@@ -291,7 +291,7 @@ export class Chart {
           displayUnit,
           axisSize: this.canvas.width,
           textMeasuringFunction: this.xTextSize,
-        })
+        }),
       );
     }
 
@@ -304,7 +304,7 @@ export class Chart {
           displayUnit,
           axisSize: this.canvas.height,
           textMeasuringFunction: this.yTextSize,
-        })
+        }),
       );
     }
   }
@@ -382,7 +382,7 @@ export class Chart {
   /** Transforms x, y fraction of canvas size into chart quantity (or unitless number) */
   fractionsToQuantities(
     fraction: number,
-    axis: "x" | "y"
+    axis: "x" | "y",
   ): Quantity | dayjs.Dayjs | number {
     const range = this.range[axis].get();
     const unit = this.bestDisplayUnits(axis);
@@ -398,7 +398,7 @@ export class Chart {
   /** Transforms x, y of chart quantity (or unitless number) into fraction of canvas size */
   quantitiesToFractions(
     quantity: Quantity | dayjs.Dayjs | number,
-    axis: "x" | "y"
+    axis: "x" | "y",
   ): number {
     const range = this.range[axis].get();
     if (!range) throw new Error(`${axis} range is undefined`);
@@ -414,7 +414,7 @@ export class Chart {
   /** Transforms x, y pixel coordinates (relative to chart canvas) of a point into the x, y quantities or numbers */
   coordinatesToQuantities(
     coordinateInPx: number,
-    axis: "x" | "y"
+    axis: "x" | "y",
   ): Quantity | number | dayjs.Dayjs {
     const range = this.range[axis].get();
     const unit = this.#dataUnit[axis];
@@ -435,7 +435,7 @@ export class Chart {
   /** Transforms a point represented by data values and units (if aplicable) into pixel coordinates relative to chart canvas */
   quantityToCoordinate(
     quantity: Quantity | dayjs.Dayjs | number,
-    axis: "x" | "y"
+    axis: "x" | "y",
   ): number {
     const range = this.range[axis].get();
 
@@ -444,7 +444,7 @@ export class Chart {
       typeof range.to !== typeof quantity
     ) {
       throw new Error(
-        "Either range is numeric and you passed a quantity, or vice versa"
+        "Either range is numeric and you passed a quantity, or vice versa",
       );
     }
 
@@ -468,7 +468,7 @@ export class Chart {
   zoomRange({ detail }: { detail: Zoom }) {
     for (const [axis, zoom] of Object.entries(detail) as [
       "x" | "y",
-      NumericRange
+      NumericRange,
     ][]) {
       const range = this.range[axis].get();
       const unit = this.#dataUnit[axis];
@@ -483,8 +483,8 @@ export class Chart {
             from: toNumeric(range.from, unit) + d * zoom.from,
             to: toNumeric(range.from, unit) + d * zoom.to,
           },
-          unit
-        )
+          unit,
+        ),
       );
     }
   }
@@ -503,8 +503,8 @@ export class Chart {
               from: from + delta,
               to: to + delta,
             },
-            xUnits
-          )
+            xUnits,
+          ),
         );
       }
     }
@@ -516,7 +516,7 @@ export class Chart {
       if (shift.dy) {
         const delta = (to - from) * -shift.dy;
         this.range.y.set(
-          toRange({ from: from + delta, to: to + delta }, yUnits)
+          toRange({ from: from + delta, to: to + delta }, yUnits),
         );
       }
     }
@@ -538,12 +538,12 @@ export class Chart {
     const to = toNumeric(yRange.to, yUnits);
     const qThreshold = toQuantOrDay(
       from + (to - from) * threshold.thresholdFrac,
-      this.#dataUnit.y
+      this.#dataUnit.y,
     ) as number | Quantity;
     const traces = this.traces.get();
 
     const tracesWithThreshold = new Set(
-      traces.withOverTreshold(qThreshold).traces()
+      traces.withOverThreshold(qThreshold).traces(),
     );
     const result = new Set<string>();
 
@@ -577,7 +577,7 @@ export class Chart {
    */
   #changeFactorAction = (
     direction: "raise" | "lower",
-    axis: "x" | "y"
+    axis: "x" | "y",
   ): Signal<UnitChangeAction | undefined> => {
     const displayUnit = this.currentDisplayUnit[axis];
 
@@ -602,11 +602,11 @@ export class Chart {
 
       // sort by value
       factors.sort(
-        ([_, a], [__, b]) => a.mul * a.base ** a.exp - b.mul * b.base ** b.exp
+        ([_, a], [__, b]) => a.mul * a.base ** a.exp - b.mul * b.base ** b.exp,
       );
 
       const currentIndex = factors.findIndex(([_, f]) =>
-        factorsEqual(unit.factor, f)
+        factorsEqual(unit.factor, f),
       );
 
       const newIndex = currentIndex + (direction === "raise" ? 1 : -1);
@@ -626,7 +626,7 @@ export class Chart {
   };
 
   #resetFactorAction = (
-    axis: "x" | "y"
+    axis: "x" | "y",
   ): Signal<UnitChangeAction | undefined> => {
     const self = this;
     const currentUnit = this.currentDisplayUnit[axis];

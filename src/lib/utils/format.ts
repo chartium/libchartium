@@ -24,7 +24,7 @@ export function fitsIntoDecimals(arr: number[], numOfDeciamls = 2): boolean {
  * to uniquely describe each element of the input array */
 export function uniqueDecimals(
   arr: number[],
-  maxDecimals: number = 10
+  maxDecimals: number = 10,
 ): number {
   for (var i = 0; i < maxDecimals; i++) {
     if (fitsIntoDecimals(arr, i)) {
@@ -38,7 +38,7 @@ export function uniqueDecimals(
 export function measureText(
   text: string,
   measuringSpan: HTMLSpanElement,
-  direction: "horizontal" | "vertical" = "horizontal"
+  direction: "horizontal" | "vertical" = "horizontal",
 ): number {
   measuringSpan.innerHTML = text;
   return direction === "horizontal"
@@ -54,7 +54,7 @@ export function measureText(
 export function doOverlap(
   content: { text: string; position: number }[],
   measuringSpan: HTMLSpanElement,
-  direction: "horizontal" | "vertical" = "horizontal"
+  direction: "horizontal" | "vertical" = "horizontal",
 ): boolean {
   for (let i = 0; i < content.length - 1; i++) {
     const thisTick = content[i];
@@ -79,14 +79,14 @@ export function qndFormat(
     dayjsFormat?: string;
     quantityFormat?: FormatOptions;
     unit?: Unit;
-  }
+  },
 ) {
   if (typeof input === "number") {
     return input.toFixed(options.decimals ?? 2);
   } else if (input instanceof Quantity) {
     input = input.inUnits(options.unit ?? input.unit);
     return `${input.value.toFixed(
-      options.decimals ?? 2
+      options.decimals ?? 2,
     )} ${input.unit.toString()}`;
     // FIXME fix this once this is implemented in unitlib
     // return input.toString(options.quantityFormat ?? {});

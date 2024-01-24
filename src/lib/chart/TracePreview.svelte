@@ -48,7 +48,7 @@
         ctx,
         [previewWidth / 2, previewHeight / 2],
         width,
-        style
+        style,
       );
       canvas.drawCircle(ctx, [width, previewHeight - width], width, style);
     } else {

@@ -3,22 +3,22 @@ import type { ChartiumController } from "./controller.js";
 import { asMap } from "../utils/object.js";
 
 export function exportControllerFromWorker(
-  controller: ChartiumController
+  controller: ChartiumController,
 ): void {
   expose(controller);
 }
 
 export function importControllerFromWorker(
-  w: Worker | { new (): Worker } | URL | string
+  w: Worker | { new (): Worker } | URL | string,
 ): Remote<ChartiumController> {
   w =
     typeof w === "function"
       ? new w()
       : typeof w === "string"
-      ? new Worker(w)
-      : w instanceof URL
-      ? new Worker(w.href)
-      : w;
+        ? new Worker(w)
+        : w instanceof URL
+          ? new Worker(w.href)
+          : w;
 
   const remote = wrap<ChartiumController>(w);
 

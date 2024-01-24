@@ -128,7 +128,7 @@
               menu.close();
             },
           };
-        })
+        }),
       ).map((arr) => arr.filter((x) => x) as ContextItem<string>[]);
 
   let menu: { open(p: Point): void; close(): void };

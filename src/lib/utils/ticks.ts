@@ -43,7 +43,7 @@ function getNumericTicks({
     const firstTickValue = range.from - (range.from % ticksDist) + ticksDist;
     const tickVals = Array.from(
       { length: tickNum + 1 },
-      (_, n) => firstTickValue + n * ticksDist
+      (_, n) => firstTickValue + n * ticksDist,
     );
     const decimals = uniqueDecimals(tickVals);
     ticks = tickVals.map((val) => ({
@@ -98,7 +98,7 @@ function linearDateTicks(
   range: DateRange,
   axisSize: number,
   textMeasuringFunction: (x: string) => number,
-  maxTickNum: number = 10
+  maxTickNum: number = 10,
 ): Tick[] {
   const rangeUnits = getRangeSpan(range);
   const iLoveDayjsISwear = rangeUnits === "days" ? "date" : rangeUnits;
@@ -109,7 +109,7 @@ function linearDateTicks(
     const inBiggerEra = getLargerEra(asDayjs, rangeUnits) ?? "";
     return Math.max(
       textMeasuringFunction(inEra),
-      textMeasuringFunction(inBiggerEra)
+      textMeasuringFunction(inBiggerEra),
     );
   };
 

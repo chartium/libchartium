@@ -11,7 +11,7 @@ const hours = minutes.multiply(60);
 export class NumericDateFormat {
   constructor(
     public readonly unit: Unit,
-    public readonly relativeTo = new Date(0)
+    public readonly relativeTo = new Date(0),
   ) {}
 
   parseToDate(value: number): Date {
