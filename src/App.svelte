@@ -30,28 +30,27 @@
     { length: numSteps },
     (_, index) => from + index * stepSize,
   );
-  const y1s = xs.map((x) => 100 + 100 * Math.sin((x / to) * 2 * Math.PI));
-  const y2s = xs.map((x) => 100 + 100 * Math.cos((x / to) * 2 * Math.PI));
-  const y3s = xs.map((x) => 75 + 75 * Math.tanh((x / to - 0.5) * 2 * Math.PI));
-  const chartiumFriendlyTraceData = xs.flatMap((x, index) => [
-    x,
-    y1s[index],
-    y2s[index],
-    y3s[index],
-  ]);
 
-  // const secondTraces = xs.flatMap((x, index) => [x, y1s[index] * -1 + 100]);
+  const ys = Array.from({ length: 100 }, (_, idx) => ({
+    id: `trace_${idx}`,
+    data: Float32Array.from(
+      xs.map((x) => 100 + 100 * Math.sin((x / to) * 2 * Math.PI + idx)),
+    ),
+  }));
 
-  // const controller = spawnChartiumWorker();
   const controller = ChartiumController.instantiateInThisThread({ wasmUrl });
 
-  const traces = controller.addFromArrayBuffer({
-    ids: ["sin", "cos", "atan"],
-    data: Float32Array.from(chartiumFriendlyTraceData),
-    xType: "f32",
-    yType: "f32",
-    xUnit: NumericDateFormat.EpochSeconds,
-    yUnit: IEC.parseUnit("KiB"),
+  const traces = controller.addFromColumnarArrayBuffers({
+    x: {
+      type: "f32",
+      unit: NumericDateFormat.EpochSeconds,
+      data: Float32Array.from(xs),
+    },
+    y: {
+      type: "f32",
+      unit: IEC.parseUnit("KiB"),
+      columns: ys,
+    },
     style: {
       "*": { width: 2 },
       sin: { color: "red" },
@@ -88,6 +87,7 @@
         yLabel="Amount"
         defaultYUnit={IEC.parseUnit("MiB")}
         legendPosition="right"
+        legendTracesShown={10}
       >
         <svelte:fragment slot="toolbar">
           <ToolbarButton title="Fullscreen">

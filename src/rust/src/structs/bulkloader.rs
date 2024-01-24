@@ -134,4 +134,54 @@ impl Bulkloader {
 
         BoxedBundle::new(Batch::new(x, ys))
     }
+
+    pub fn from_columnar(
+        handles: Vec<TraceHandle>,
+        x_type: String,
+        y_type: String,
+        input_x: Uint8Array,
+        input_ys: Vec<Uint8Array>,
+    ) -> BoxedBundle {
+        let x_desc = TYPE_SIZES.get(x_type.as_str()).unwrap();
+        let y_desc = TYPE_SIZES.get(y_type.as_str()).unwrap();
+
+        let point_count = input_x.length() as usize / x_desc.size;
+
+        let mut x = Vec::<u64>::with_capacity(point_count);
+        let mut ys = {
+            let ptr = unsafe {
+                use std::alloc::{alloc, Layout};
+
+                alloc(Layout::array::<f64>(point_count * input_ys.len()).unwrap()) as *mut f64
+            };
+            handles
+                .iter()
+                .enumerate()
+                .map(|(i, _)| unsafe {
+                    Vec::from_raw_parts(ptr.add(i * point_count), 0, point_count)
+                })
+                .collect::<Vec<_>>()
+        };
+
+        let input_x = input_x.to_vec();
+
+        for current_x in input_x.chunks_exact(x_desc.size) {
+            let cur = (x_desc.parser)(current_x);
+            x.push(cur as u64);
+        }
+
+        for (input, output) in input_ys.into_iter().zip(ys.iter_mut()) {
+            let y = input.to_vec();
+
+            for current_y in y.chunks_exact(y_desc.size) {
+                let val = (y_desc.parser)(current_y);
+
+                output.push(val);
+            }
+        }
+
+        let ys = HashMap::from_iter(handles.iter().zip(ys).map(|(h, y)| (*h, y)));
+
+        BoxedBundle::new(Batch::new(x, ys))
+    }
 }

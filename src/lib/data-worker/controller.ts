@@ -160,8 +160,7 @@ export class ChartiumController {
   }
 
   // TODO add better documentation
-  // TODO add a function to upload transposed (horizontal) data
-  // TODO add a function for streamed upload
+  // TODO add a function for streamed download
   /**
    * Upload new trace data in the "vertical" order, ie. `[ x[0], y1[0], y2[0], ... x[1], y1[1], y2[1], ...]`.
    */
@@ -222,6 +221,78 @@ export class ChartiumController {
     if (style) tl = tl.withStyle(style);
     if (xUnit || yUnit) tl = tl.withDataUnits({ x: xUnit, y: yUnit });
     if (labels) tl = tl.withLabels(labels);
+    return tl;
+  }
+
+  /**
+   * Upload new trace data in the "horizontal" (columnar) order.
+   */
+  public async addFromColumnarArrayBuffers({
+    x,
+    y,
+    style,
+    labels,
+  }: {
+    x: {
+      type: TypeOfData;
+      unit?: Unit | NumericDateFormat;
+      data: ArrayBuffer | TypedArray;
+    };
+    y: {
+      type: TypeOfData;
+      unit?: Unit | NumericDateFormat;
+      columns: {
+        id: string;
+        data: ArrayBuffer | TypedArray;
+      }[];
+    };
+    style?: TraceStylesheet;
+    labels?: Iterable<[string, string | undefined]>;
+  }): Promise<TraceList> {
+    await this.initialized;
+    if (y.columns.length === 0) return TraceList.empty();
+
+    const xBuffer = new Uint8Array(
+      x.data instanceof ArrayBuffer ? x.data : x.data.buffer,
+    );
+    const yBuffers = y.columns.map(
+      ({ data }) =>
+        new Uint8Array(data instanceof ArrayBuffer ? data : data.buffer),
+    );
+
+    const handles: TraceHandle[] = [];
+
+    for (const { id } of y.columns) {
+      let handle = traceIds.getKey(id);
+
+      if (!handle) {
+        handle = this.#getNewTraceHandle();
+        traceIds.set(handle, id);
+      }
+
+      handles.push(handle);
+    }
+
+    const bundle = await lib.Bulkloader.from_columnar(
+      new Uint32Array(handles),
+      x.type,
+      y.type,
+      xBuffer,
+      yBuffers,
+    );
+
+    let tl = new TraceList({
+      handles,
+      range: { from: bundle.from(), to: bundle.to() },
+      bundles: [bundle],
+      labels: new Map(),
+      traceInfo: null,
+    });
+
+    if (style) tl = tl.withStyle(style);
+    if (x.unit || y.unit) tl = tl.withDataUnits({ x: x.unit, y: y.unit });
+    if (labels) tl = tl.withLabels(labels);
+
     return tl;
   }
 }
