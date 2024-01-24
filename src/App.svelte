@@ -2,7 +2,7 @@
   import Chart from "./lib/chart/Chart.svelte";
   import wasmUrl from "../dist/wasm/libchartium.wasm?url";
   import ToolbarButton from "./lib/chart/ToolbarButton.svelte";
-  import { ChartiumController, TraceList } from "./lib/data-worker/index.js";
+  import { ChartiumController } from "./lib/data-worker/index.js";
   import {
     faArrowRight,
     faArrowLeft,
@@ -14,6 +14,9 @@
     faUserClock,
   } from "@fortawesome/free-solid-svg-icons";
   import { SI, IEC } from "unitlib/systems";
+  import domToImage, { DomToImage } from "dom-to-image-more";
+  import { NumericDateFormat } from "./lib/index.js";
+  import { Quantity } from "unitlib";
 
   // weird hack to import svelte-fa bc of NodeNext module resolution
   import { default as Fa_1, type Fa as Fa_2 } from "svelte-fa";
@@ -39,7 +42,7 @@
     y3s[index],
   ]);
 
-  const secondTraces = xs.flatMap((x, index) => [x, y1s[index] * -1 + 100]);
+  // const secondTraces = xs.flatMap((x, index) => [x, y1s[index] * -1 + 100]);
 
   // const controller = spawnChartiumWorker();
   const controller = ChartiumController.instantiateInThisThread({ wasmUrl });
@@ -58,10 +61,7 @@
   });
 
   let wrapDiv: HTMLElement;
-  import domtoimage, { DomToImage } from "dom-to-image-more";
-  import { NumericDateFormat } from "./lib/index.js";
-  import { Quantity } from "unitlib";
-  const dti: DomToImage = domtoimage as any;
+  const dti: DomToImage = domToImage as any;
 
   const takeScreenshot = () => {
     dti.toPng(wrapDiv).then((url) => {

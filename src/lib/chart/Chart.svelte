@@ -361,7 +361,7 @@
     disableUnitChange={disableYUnitChanges}
     hideTicks={hideYTicks}
     on:shift={(d) => chart?.shiftRange(d)}
-    on:reset={(d) => chart?.resetZoom("y")}
+    on:reset={() => chart?.resetZoom("y")}
     raiseFactor={chart?.raiseYFactorAction ?? cons(undefined)}
     lowerFactor={chart?.lowerYFactorAction ?? cons(undefined)}
     resetUnit={chart?.resetYFactorAction ?? cons(undefined)}
@@ -442,7 +442,7 @@
       showTooltip = true;
       updateHoverQuantities(e);
     }}
-    on:mouseout={(e) => {
+    on:mouseout={() => {
       showTooltip = false;
       closestTraces = [];
       visibleAction.update((action) => ({
@@ -450,7 +450,7 @@
         highlightedPoints: [],
       }));
     }}
-    on:blur={(e) => {
+    on:blur={() => {
       showTooltip = false;
     }}
   />

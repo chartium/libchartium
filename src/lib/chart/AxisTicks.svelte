@@ -1,21 +1,20 @@
 <!-- Component creating both the X and Y axis -->
 
 <script lang="ts">
-  import { createEventDispatcher, tick } from "svelte";
+  import { createEventDispatcher } from "svelte";
   import { MouseButtons, mouseDrag } from "../utils/mouseGestures.js";
   import {
     mouseClick,
     type MouseDragCallbacks,
   } from "../utils/mouseGestures.js";
-  import type { Point, Range, Shift, Tick, Unit } from "../types.js";
+  import type { Point, Shift, Tick, Unit } from "../types.js";
   import type { VisibleAction } from "./ActionsOverlay.svelte";
-  import { observeResize } from "../utils/actions.js";
   import {
     type ContextItem,
     GenericContextMenu,
   } from "../contextMenu/index.js";
   import { mut, Signal, WritableSignal, ZippedSignal } from "@mod.js/signals";
-  import { doOverlap, measureText } from "../utils/format.js";
+  import { measureText } from "../utils/format.js";
   import RotatedBox from "../utils/RotatedBox.svelte";
 
   export const events = createEventDispatcher<{
@@ -60,7 +59,7 @@
   $: resetUnit$.set($resetUnit);
 
   const dragCallbacks: MouseDragCallbacks = {
-    start: (e) => {},
+    start: () => {},
     move: (_, status) => {
       if (disableInteractivity) return;
       const shift = status.relativeShift;
@@ -86,9 +85,6 @@
       visibleAction.set(undefined);
     },
   };
-
-  let axisWidth: number = 1;
-  let axisHeight: number = 1;
 
   const contextItems = disableUnitChange
     ? mut([])
@@ -176,10 +172,6 @@
 <GenericContextMenu items={$contextItems} bind:this={menu} />
 <div
   class="axis-container {axis}"
-  use:observeResize={([width, height]) => {
-    axisWidth = width;
-    axisHeight = height;
-  }}
   role="presentation"
   on:contextmenu|preventDefault
   use:mouseClick={{

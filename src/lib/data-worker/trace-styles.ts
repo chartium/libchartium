@@ -13,6 +13,7 @@ import type { NumericDateFormat } from "../index.js";
 
 export interface TraceStyle {
   width: number;
+  // eslint-disable-next-line @typescript-eslint/ban-types
   color: TraceColor | (string & {});
   display: "line" | "points";
 }
@@ -169,7 +170,7 @@ export function* computeStyles(
     const id = ids.get(handle) ?? yeet(UnknownTraceHandleError, handle);
     const { width, display, color } = getStyle(id) ?? defaultStyle;
 
-    let [r, g, b] = computeTraceColor(id, color);
+    const [r, g, b] = computeTraceColor(id, color);
 
     yield {
       width,

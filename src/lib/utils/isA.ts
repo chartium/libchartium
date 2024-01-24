@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-types */
 export type nullish = undefined | null;
 export type AnyConstructor = new (...x: any) => any;
 

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export const yeet: {
   (message: string): never;
   <T extends any[]>(error: { new (...args: T): any }, ...args: T): never;

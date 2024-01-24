@@ -6,7 +6,6 @@ import {
   type Tick,
   type Unit,
   isDateRange,
-  isNumericRange,
 } from "../types.js";
 import {
   formatInEra,

@@ -7,7 +7,7 @@ import {
   type RenderingController,
 } from "./mod.js";
 import { proxyMarker } from "comlink";
-import { BUNDLES, HANDLES, TRACE_INFO, TraceList } from "../trace-list.js";
+import { BUNDLES, HANDLES, TRACE_INFO } from "../trace-list.js";
 import { filter, map, reduce } from "../../utils/collection.js";
 import { computeStyles } from "../trace-styles.js";
 import { traceIds } from "../controller.js";

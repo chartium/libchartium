@@ -1,4 +1,3 @@
-import type { Dayjs } from "dayjs";
 import type { Quantity, Range, Size, Unit } from "../types.js";
 import {
   add,
@@ -10,6 +9,7 @@ import {
 } from "./quantityHelpers.js";
 import type { NumericDateFormat } from "./numericDateFormat.js";
 
+export type Test = HTMLButtonElement;
 export type RangeMarginValue =
   | { percent: number }
   | { value: number | Quantity }

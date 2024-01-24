@@ -26,10 +26,12 @@
   .rotate-inner {
     width: fit-content;
     height: fit-content;
-    .cw {
+
+    :global(.cw) {
       transform: rotate(90deg);
     }
-    .ccw {
+
+    :global(.ccw) {
       transform: rotate(-90deg);
     }
   }

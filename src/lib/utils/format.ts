@@ -1,10 +1,8 @@
 import dayjs from "dayjs";
 import { Quantity, type Unit } from "../types.js";
 import type { FormatOptions } from "unitlib";
-import { tick } from "svelte";
-import { NumericDateFormat } from "./numericDateFormat.js";
 
-/** Writes exponential notation that doesnt make your eyes bleed */
+/** Writes exponential notation that doesn't make your eyes bleed */
 export function prettyExp(input: number, decimals: number): string {
   const exp = Math.floor(Math.log10(input));
   const mantissa = input / Math.pow(10, exp);
@@ -12,8 +10,8 @@ export function prettyExp(input: number, decimals: number): string {
 }
 
 /** checks if all numbers of an array can be uniquely written with fixed decimals */
-export function fitsIntoDecimals(arr: number[], numOfDeciamls = 2): boolean {
-  const withFixed = arr.map((el) => el.toFixed(numOfDeciamls));
+export function fitsIntoDecimals(arr: number[], numOfDecimals = 2): boolean {
+  const withFixed = arr.map((el) => el.toFixed(numOfDecimals));
   return (
     withFixed.filter((item, index) => withFixed.indexOf(item) !== index)
       .length === 0
@@ -26,7 +24,8 @@ export function uniqueDecimals(
   arr: number[],
   maxDecimals: number = 10,
 ): number {
-  for (var i = 0; i < maxDecimals; i++) {
+  let i = 0;
+  for (; i < maxDecimals; i++) {
     if (fitsIntoDecimals(arr, i)) {
       break;
     }
@@ -34,7 +33,7 @@ export function uniqueDecimals(
   return i;
 }
 
-/** Measures phisical amount of space text takes up */
+/** Measures physical amount of space text takes up */
 export function measureText(
   text: string,
   measuringSpan: HTMLSpanElement,

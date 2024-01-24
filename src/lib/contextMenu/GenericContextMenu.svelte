@@ -1,12 +1,11 @@
-<!-- 
-  Generic context menu component. Since this component gets recursively nested, 
+<!--
+  Generic context menu component. Since this component gets recursively nested,
   it exposes many variables the end user never has to worry about. It is not meant to be used directly.
-  ContextMenu.svelte wrapps this and exposes the only necessary input: the items.
+  ContextMenu.svelte wraps this and exposes the only necessary input: the items.
  -->
 
 <script lang="ts" generics="T">
   import { portal } from "svelte-portal";
-  import { observeResize } from "../utils/actions.js";
   import ContextItemComponent from "./ContextItemComponent.svelte";
   import type { ContextItem, Point } from "./contextMenu.js";
   import {
@@ -21,7 +20,7 @@
   /** The only required input from outside, the content of the context menu */
   export let items: ContextItem<T>[];
 
-  /** only the main menu stays shown when it nor its childern are howered */
+  /** only the main menu stays shown when it nor its children are hovered */
   export let main: boolean = true;
 
   /** return focus to parent menu when left arrow is pressed */
@@ -76,7 +75,7 @@
   /** Rect next to which a submenu should open */
   export let sourceRect: DOMRect | undefined = undefined;
 
-  /** opens on the right of this rect or, if there isnt enough space, on the left */
+  /** opens on the right of this rect or, if there isn't enough space, on the left */
   export async function openNextToSourceRect(): Promise<void> {
     if (sourceRect === undefined) {
       return;
@@ -182,13 +181,13 @@
         on:select={(e) => {
           currentlySelectedRect = e.detail.rect;
         }}
-        on:mouseover={(e) => {
+        on:mouseover={() => {
           if (opened) {
             currentlyFocusedIndex = index;
             active = true;
           }
         }}
-        on:focus={(e) => {
+        on:focus={() => {
           if (opened) {
             currentlyFocusedIndex = index;
             active = true;

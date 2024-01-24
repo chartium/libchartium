@@ -6,7 +6,7 @@
 
   let button: HTMLButtonElement;
   $: buttonRect = button?.getBoundingClientRect();
-  $: tooltipPoisiton =
+  $: tooltipPosition =
     buttonRect !== undefined
       ? {
           x: buttonRect.left + buttonRect.width / 2,
@@ -24,7 +24,7 @@
 
 {#if title !== undefined}
   <GenericTooltip
-    position={showTooltip ? tooltipPoisiton : undefined}
+    position={showTooltip ? tooltipPosition : undefined}
     preferedPositioning="bottom"
   >
     <div class="toolbar">

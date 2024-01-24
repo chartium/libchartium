@@ -27,7 +27,6 @@ import {
   reduce,
   some,
   unique,
-  weakMapUnion,
   zip,
 } from "../utils/collection.js";
 import { proxyMarker } from "comlink";
@@ -242,7 +241,7 @@ export class TraceList {
    * than expand it again, don't expect you'll get back all the data.
    */
   withRange(range: Range): TraceList {
-    let bundles: lib.BoxedBundle[] = [];
+    const bundles: lib.BoxedBundle[] = [];
     for (const [units, traces] of this.getUnitsToTraceMap()) {
       const { from, to } = toNumericRange(range, units.x);
       const theseBundles = traces.#bundles;
@@ -540,7 +539,7 @@ export class TraceList {
   > {
     if (this.#unitsToTraceMap) return this.#unitsToTraceMap;
 
-    let toReturn = new Map<
+    const toReturn = new Map<
       {
         x: Unit | NumericDateFormat | undefined;
         y: Unit | NumericDateFormat | undefined;
@@ -632,7 +631,7 @@ export class TraceList {
 
     if (closestPoints.length === 0) return [];
 
-    let results: {
+    const results: {
       traceInfo: TraceInfo;
       closestPoint: GeneralizedPoint;
     }[] = [];

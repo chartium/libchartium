@@ -40,9 +40,6 @@ import {
   type RangeMargins,
 } from "../utils/rangeMargins.js";
 
-const toDisplayUnit = (unit: Unit | NumericDateFormat | undefined) =>
-  unit instanceof NumericDateFormat ? undefined : unit;
-
 export interface UnitChangeAction {
   unit: Unit;
   callback(): void;
@@ -87,7 +84,7 @@ const withListener = <S extends Signal<any>>(
 };
 
 /**
- * Chartium render handler that is to be used by frontend svelte comonents to render charts.
+ * Chartium render handler that is to be used by frontend svelte components to render charts.
  * It automatically re-renders when anything about the chart changes.
  */
 export class Chart {
@@ -432,7 +429,7 @@ export class Chart {
     return toQuantOrDay(value, unit, displayUnit);
   }
 
-  /** Transforms a point represented by data values and units (if aplicable) into pixel coordinates relative to chart canvas */
+  /** Transforms a point represented by data values and units (if applicable) into pixel coordinates relative to chart canvas */
   quantityToCoordinate(
     quantity: Quantity | dayjs.Dayjs | number,
     axis: "x" | "y",
@@ -524,7 +521,7 @@ export class Chart {
 
   /**
    * Returns IDs of traces below the threshold so they can be hidden
-   * if your traces are sin(x) and x^2, then filterByTreshold(1.1) only leaves the x^2
+   * if your traces are sin(x) and x^2, then filterByThreshold(1.1) only leaves the x^2
    */
   idsUnderThreshold({
     detail: threshold,
@@ -632,7 +629,7 @@ export class Chart {
     const currentUnit = this.currentDisplayUnit[axis];
     const defaultUnitSettings = this.defaultDisplayUnit[axis];
 
-    return defaultUnitSettings.zip(currentUnit).map(([def, curr]) => {
+    return defaultUnitSettings.zip(currentUnit).map(([_def, curr]) => {
       const targetUnit = this.#findResetUnit(axis);
 
       if (!targetUnit || !curr) return;

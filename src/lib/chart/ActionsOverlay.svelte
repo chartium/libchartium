@@ -1,4 +1,4 @@
-<!-- Chart overlay that draw rectangles and line segements on zoom -->
+<!-- Chart overlay that draw rectangles and line segments on zoom -->
 <script lang="ts" context="module">
   export type VisibleAction = {
     zoom?: Zoom;
@@ -64,7 +64,7 @@
     thresholdFilterMode = true;
   };
 
-  /** Fractions of the graphs width representing presisntent thresholds */
+  /** Fractions of the graphs width representing persistent thresholds */
   export let presYThreshFracs: number[] = [];
 
   let thresholdAddMode: boolean = false;
@@ -322,7 +322,7 @@
   }
 
   const rightDragCallbacks: MouseDragCallbacks = {
-    start: (e) => {},
+    start: () => {},
     move: (_, status) => {
       if (disableInteractivity) {
         console.log("Chart interactivity disabled!");
@@ -345,7 +345,7 @@
     },
   };
 
-  const leftClickCallback = (e: MouseEvent) => {
+  const leftClickCallback = (_e: MouseEvent) => {
     const yThreshold = visibleAction.get()?.yThreshold;
     if (yThreshold) {
       visibleAction.update((a) => ({
