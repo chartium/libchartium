@@ -18,9 +18,7 @@
   import { NumericDateFormat } from "./lib/index.js";
   import { Quantity } from "unitlib";
 
-  // weird hack to import svelte-fa bc of NodeNext module resolution
-  import { default as Fa_1, type Fa as Fa_2 } from "svelte-fa";
-  const Fa = Fa_1 as any as typeof Fa_2;
+  import Fa from "svelte-fa";
 
   // autogenerate a lot of data
   const from = 0;

@@ -24,8 +24,8 @@ pub struct Batch<X: N, Y: N> {
 
 impl<X: N, Y: N> Batch<X, Y> {
     pub fn new(x: Vec<X>, ys: HashMap<TraceHandle, Vec<Y>>) -> Self {
-        let from = x.first().unwrap().clone().as_f64();
-        let to = x.last().unwrap().clone().as_f64();
+        let from = x.first().unwrap().as_f64();
+        let to = x.last().unwrap().as_f64();
 
         Self { x, ys, from, to }
     }
