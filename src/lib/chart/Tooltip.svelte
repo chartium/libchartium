@@ -124,7 +124,7 @@
     display: flex;
     flex-direction: column;
     background-color: var(--libchartium-secondary-background);
-    margin: 1em;
+    margin: 1em 3em;
     padding: 0.5em;
     border-radius: 0.5em;
   }
