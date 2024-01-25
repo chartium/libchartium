@@ -34,6 +34,9 @@ export function toNumeric(
     );
   }
 
+  if (x instanceof Quantity && x.isUnitless)
+    return x.value * x.unit.multiplyValueByFactor(1);
+
   throw new TypeError(
     "Attempting to convert a non-primitive to a number without specifying a unit.",
   );

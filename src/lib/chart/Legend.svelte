@@ -16,7 +16,7 @@
     map(traces.traces(), (t) => traces.getTraceInfo(t)), // FIXME replace with first(traces, n)
   );
 
-  export let hiddenTraceIDs: WritableSignal<Set<string>>;
+  export let hiddenTraceIds: WritableSignal<Set<string>>;
 
   let canvasRefs: HTMLCanvasElement[] = [];
 
@@ -81,13 +81,13 @@
       style:opacity={hidden ? "0.5" : 1}
       on:click={() => {
         if (hidden)
-          hiddenTraceIDs.update((curr) => {
+          hiddenTraceIds.update((curr) => {
             const tmp = curr; // fuck mutability
             tmp.delete(styledTrace.id);
             return tmp;
           });
         else
-          hiddenTraceIDs.update((curr) => {
+          hiddenTraceIds.update((curr) => {
             curr.add(styledTrace.id);
             return curr;
           });

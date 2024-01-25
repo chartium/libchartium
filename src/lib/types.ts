@@ -5,6 +5,7 @@ import type { Unit as Unit_ } from "unitlib";
 export type Unit = Unit_<any, any, any>;
 
 import { Quantity as Quantity_ } from "unitlib";
+import { toNumeric } from "./utils/quantityHelpers.js";
 export type Quantity = Quantity_<any, any, any>;
 export const Quantity = Quantity_;
 
@@ -67,6 +68,29 @@ export const isDateRange = (x: unknown): x is DateRange =>
   typeof x.to === "object" &&
   dayjs.isDayjs(x.from) &&
   dayjs.isDayjs(x.to);
+
+export const rangesHaveMeaningfulIntersection = function isect(
+  a: Range,
+  b: Range,
+): boolean {
+  if (isNumericRange(a)) {
+    if (!isNumericRange(b)) return false;
+    return a.from < b.to && b.from < a.to;
+  }
+  if (isDateRange(a)) {
+    if (!isDateRange(b)) return false;
+    return isect({ from: +a.from, to: +a.to }, { from: +b.from, to: +b.to });
+  }
+  try {
+    const unit = a.from.unit;
+    return isect(
+      { from: toNumeric(a.from, unit), to: toNumeric(a.to, unit) },
+      { from: toNumeric(b.from, unit), to: toNumeric(b.to, unit) },
+    );
+  } catch {
+    return false;
+  }
+};
 
 /** Shift of ranges as a fraction of the range
  * i.e. moving the [0, 5] by dx = 0.5 would result in [2.5, 7.5]

@@ -11,7 +11,7 @@ import type {
   Unit,
   Zoom,
 } from "../types.js";
-import { Quantity } from "../types.js";
+import { Quantity, rangesHaveMeaningfulIntersection } from "../types.js";
 import { TraceList } from "../data-worker/trace-list.js";
 import { linearTicks } from "../utils/ticks.js";
 import { nextAnimationFrame } from "../utils/promise.js";
@@ -83,6 +83,20 @@ const withListener = <S extends Signal<any>>(
   });
 };
 
+const isDisplayUnitValidForDataUnit = (
+  dataUnit: Unit | NumericDateFormat | undefined,
+  displayUnit: Unit | undefined,
+) => {
+  if (!dataUnit || dataUnit instanceof NumericDateFormat)
+    return displayUnit === undefined;
+  try {
+    new Quantity(1, dataUnit).inUnits(displayUnit!);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
 /**
  * Chartium render handler that is to be used by frontend svelte components to render charts.
  * It automatically re-renders when anything about the chart changes.
@@ -145,8 +159,9 @@ export class Chart {
   #autozoomed = true;
   #currentUnitsAreDefault = { x: true, y: true };
 
-  xTextSize?: (text: string) => number;
-  yTextSize?: (text: string) => number;
+  textSize: { x?: (text: string) => number; y?: (text: string) => number } = {};
+
+  #initialized = false;
 
   constructor(
     public readonly controller: ChartiumController | Remote<ChartiumController>,
@@ -178,8 +193,8 @@ export class Chart {
     );
 
     this.resetUnits();
-    withListener(this.currentDisplayUnit.x, () => this.#updateTicks());
-    withListener(this.currentDisplayUnit.y, () => this.#updateTicks());
+    withListener(this.currentDisplayUnit.x, () => this.#updateTicks("x"));
+    withListener(this.currentDisplayUnit.y, () => this.#updateTicks("y"));
     withListener(this.defaultDisplayUnit.x, () => {
       if (this.#currentUnitsAreDefault.x) this.resetUnits("x");
     });
@@ -205,15 +220,35 @@ export class Chart {
     this.resetYFactorAction = this.#resetFactorAction("y");
 
     this.resetZoom();
+
+    this.#initialized = true;
   }
 
   #updateTraces(traces: TraceList) {
     this.#dataUnit = traces.getUnits()[0] ?? {};
-
-    // TODO reset units if incompatible
-    // this.xDisplayUnit.set(toDisplayUnit(dataUnits.x));
-    // this.yDisplayUnit.set(toDisplayUnit(dataUnits.y));
     this.scheduleRender();
+
+    if (!this.#initialized) return;
+
+    // reset units if incompatible
+    for (const axis of <const>["x", "y"]) {
+      if (
+        !isDisplayUnitValidForDataUnit(
+          this.#dataUnit[axis],
+          this.currentDisplayUnit[axis].get(),
+        )
+      ) {
+        this.resetUnits(axis);
+      }
+    }
+
+    // reset zoom if not intersecting
+    if (
+      !rangesHaveMeaningfulIntersection(this.range.x.get(), traces.range) ||
+      !rangesHaveMeaningfulIntersection(this.range.y.get(), traces.getYRange())
+    ) {
+      this.resetZoom();
+    }
   }
 
   /**
@@ -221,8 +256,6 @@ export class Chart {
    * Automatically calculates the ranges and estimates type if undefined.
    */
   render() {
-    console.log("chartium: rendered");
-
     if (this.#renderer === undefined) {
       // renderer gets initialized when canvas is assigned
       throw new Error("Canvas not assigned");
@@ -248,7 +281,7 @@ export class Chart {
       this.#renderer.render(renderJob);
     }
 
-    this.#updateTicks();
+    this.#updateTicks("xy");
   }
 
   tryRender(): boolean {
@@ -273,36 +306,30 @@ export class Chart {
     }
   };
 
-  readonly #xTicks = mut<Tick[]>([]);
-  readonly #yTicks = mut<Tick[]>([]);
-  readonly xTicks = this.#xTicks.toReadonly();
-  readonly yTicks = this.#yTicks.toReadonly();
+  readonly #ticks = {
+    x: mut<Tick[]>([]),
+    y: mut<Tick[]>([]),
+  };
+  readonly ticks = {
+    x: this.#ticks.x.toReadonly(),
+    y: this.#ticks.y.toReadonly(),
+  };
 
-  #updateTicks() {
-    const xRange = this.range.x.get();
-    if (xRange && this.xTextSize) {
-      const displayUnit = this.currentDisplayUnit.x.get();
-      this.#xTicks.set(
-        linearTicks({
-          range: xRange,
-          displayUnit,
-          axisSize: this.canvas.width,
-          textMeasuringFunction: this.xTextSize,
-        }),
-      );
-    }
-
-    const yRange = this.range.y.get();
-    if (yRange && this.yTextSize) {
-      const displayUnit = this.currentDisplayUnit.y.get();
-      this.#yTicks.set(
-        linearTicks({
-          range: yRange,
-          displayUnit,
-          axisSize: this.canvas.height,
-          textMeasuringFunction: this.yTextSize,
-        }),
-      );
+  #updateTicks(axes: "x" | "y" | "xy") {
+    for (const axis of axes as Iterable<"x" | "y">) {
+      const range = this.range[axis].get();
+      const textMeasuringFunction = this.textSize[axis];
+      if (range && textMeasuringFunction) {
+        const displayUnit = this.currentDisplayUnit[axis].get();
+        this.#ticks[axis].set(
+          linearTicks({
+            range: range,
+            displayUnit,
+            axisSize: this.canvas.width,
+            textMeasuringFunction,
+          }),
+        );
+      }
     }
   }
 
@@ -523,11 +550,7 @@ export class Chart {
    * Returns IDs of traces below the threshold so they can be hidden
    * if your traces are sin(x) and x^2, then filterByThreshold(1.1) only leaves the x^2
    */
-  idsUnderThreshold({
-    detail: threshold,
-  }: {
-    detail: Threshold;
-  }): Iterable<string> {
+  idsUnderThreshold({ detail: threshold }: { detail: Threshold }): Set<string> {
     const yRange = this.range.y.get();
     const yUnits = this.#dataUnit.y;
 
@@ -658,7 +681,14 @@ export class Chart {
         return this.bestDisplayUnits(axis);
 
       default:
-        return defaultUnitSettings;
+        if (isDisplayUnitValidForDataUnit(dataUnit, defaultUnitSettings)) {
+          return defaultUnitSettings;
+        } else {
+          console.warn(
+            `The specified display unit "${defaultUnitSettings}" is invalid for the data unit "${dataUnit}"`,
+          );
+          return dataUnit instanceof NumericDateFormat ? undefined : dataUnit;
+        }
     }
   };
 }

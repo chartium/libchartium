@@ -41,7 +41,6 @@ function getNumericTicks({
     const ticksDist = Math.pow(10, oneOrderLess) * multiple;
     const tickNum = rangeWidth / ticksDist;
     if (tickNum > maxTickNum) continue;
-    if (tickNum <= 0) return [];
 
     const firstTickValue = range.from - (range.from % ticksDist) + ticksDist;
     const tickValues = Array.from(
@@ -53,7 +52,7 @@ function getNumericTicks({
       label: val.toFixed(decimals),
       position: (val - range.from) / rangeWidth,
     }));
-    const tickSize = textMeasuringFunction(ticks.at(-1)!.label); // upper estimate
+    const tickSize = textMeasuringFunction(ticks.at(-1)?.label ?? ""); // upper estimate
     if (axisSize > tickNum * tickSize) break;
   }
   ticks = ticks.filter((tick) => tick.position >= 0 && tick.position <= 1);

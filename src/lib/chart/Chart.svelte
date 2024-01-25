@@ -13,7 +13,7 @@
   import ChartLegend from "./Legend.svelte";
   import Guidelines from "./Guidelines.svelte";
   import Tooltip from "./Tooltip.svelte";
-  import { mut, cons, WritableSignal } from "@mod.js/signals";
+  import { mut, cons } from "@mod.js/signals";
   import type { Remote } from "comlink";
   import type dayjs from "dayjs";
   import { qndFormat } from "../utils/format.js";
@@ -23,11 +23,14 @@
   // SECTION Props
 
   export let controller: ChartiumController | Remote<ChartiumController>;
+  let chart: Chart | undefined = undefined;
+  let canvas: HTMLCanvasElement;
+
   /** All traces in the chart */
   export let traces: TraceList;
-  let hiddenTraceIDs: WritableSignal<Set<string>> = mut(new Set<string>());
-  /** Only those that aren't hidden */
-  $: displayedTraces = traces.withoutTraces($hiddenTraceIDs);
+  let hiddenTraceIds = mut(new Set<string>());
+  $: visibleTraces = traces.withoutTraces($hiddenTraceIds);
+  $: chart?.traces.set(visibleTraces);
 
   export let title: string = "";
   export let subtitle: string = "";
@@ -121,22 +124,15 @@
 
   //!SECTION
 
-  let canvas: HTMLCanvasElement;
-
   $: offscreenCanvas = canvas ? canvas.transferControlToOffscreen() : undefined;
   $: chartCanvasChanged(offscreenCanvas);
   function chartCanvasChanged(offscreenCanvas: OffscreenCanvas | undefined) {
     if (!offscreenCanvas) return (chart = undefined);
-
-    chart = new Chart(controller, offscreenCanvas, displayedTraces);
-    chart.traces.subscribe((t) => {
-      displayedTraces = t;
-    });
+    chart = new Chart(controller, offscreenCanvas, visibleTraces);
   }
 
-  let chart: Chart | undefined = undefined;
-  $: xTicks = chart?.xTicks;
-  $: yTicks = chart?.yTicks;
+  $: xTicks = chart?.ticks.x;
+  $: yTicks = chart?.ticks.y;
 
   $: chart?.defaultDisplayUnit.x.set(defaultXUnit);
   $: chart?.defaultDisplayUnit.y.set(defaultYUnit);
@@ -149,8 +145,8 @@
   $: chartUpdated(chart);
   function chartUpdated(chart: Chart | undefined) {
     if (!chart) return;
-    chart.xTextSize = xAxisTextSize;
-    chart.yTextSize = yAxisTextSize;
+    chart.textSize.x = xAxisTextSize;
+    chart.textSize.y = yAxisTextSize;
   }
 
   $: qndFormatOptions = {
@@ -182,13 +178,13 @@
 
   $: closestTraces =
     chart && hoverXQuantity && hoverYQuantity
-      ? displayedTraces.findClosestTracesToPoint(
+      ? visibleTraces.findClosestTracesToPoint(
           {
             x: hoverXQuantity,
             y: hoverYQuantity,
           },
           tooltipTracesShown === "all"
-            ? displayedTraces.traceCount
+            ? visibleTraces.traceCount
             : tooltipTracesShown,
         )
       : undefined;
@@ -265,7 +261,7 @@
     traceCloseEnough
   ) {
     const { from, to } = chart.range.x.get();
-    const statsOfClosest = displayedTraces.calculateStatistics({
+    const statsOfClosest = visibleTraces.calculateStatistics({
       traces: [closestTraces[0].traceInfo.id],
       from,
       to,
@@ -433,7 +429,7 @@
         persistentYThresholds = persistentYThresholds;
       }
       if (t.detail.type === "filtering")
-        hiddenTraceIDs.update((curr) => {
+        hiddenTraceIds.update((curr) => {
           for (const id of chart?.idsUnderThreshold(t) ?? []) curr.add(id);
           return curr;
         });
@@ -463,7 +459,7 @@
     {#if legendPosition === "right"}
       <ChartLegend
         {traces}
-        {hiddenTraceIDs}
+        {hiddenTraceIds}
         previewStyle={legendPreviewStyle}
         numberOfShownTraces={legendTracesShown === "all"
           ? traces.traceCount
@@ -475,7 +471,7 @@
     {#if legendPosition === "bottom"}
       <ChartLegend
         {traces}
-        {hiddenTraceIDs}
+        {hiddenTraceIds}
         previewStyle={legendPreviewStyle}
         numberOfShownTraces={legendTracesShown === "all"
           ? traces.traceCount

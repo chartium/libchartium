@@ -54,8 +54,8 @@ dependencies:
     specifier: ^2.2.0
     version: 2.2.0
   unitlib:
-    specifier: ^0.5.2
-    version: 0.5.2
+    specifier: ^0.5.3
+    version: 0.5.3
 
 devDependencies:
   '@sveltejs/package':
@@ -1925,8 +1925,8 @@ packages:
     resolution: {integrity: sha512-JlCMO+ehdEIKqlFxk6IfVoAUVmgz7cU7zD/h9XZ0qzeosSHmUJVOzSQvvYSYWXkFXC+IfLKSIffhv0sVZup6pA==}
     dev: true
 
-  /unitlib@0.5.2:
-    resolution: {integrity: sha512-CYgX/LRtd/sR8iI70suQ4gEGmIS7NJVy75phpD97zBeFRBJQ0TfYlS7EqAb3HJJGIwLOCFxlBUbJS93wmxq0oA==}
+  /unitlib@0.5.3:
+    resolution: {integrity: sha512-R1eK+Bsrrj4ws6lS702blOqc4U46t9Gh2jZxBbxrNk3Lt8VMf9RzTkJuANwXZ3ZjVe8d5GROgJFBCV8u3U1EnQ==}
     dependencies:
       fraction.js: 4.3.7
     dev: false
