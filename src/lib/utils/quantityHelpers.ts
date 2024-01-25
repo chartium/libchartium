@@ -7,6 +7,7 @@ import {
   type NumericRange,
   type Unit,
   type Range,
+  type ChartValue,
 } from "../types.js";
 import { SI } from "unitlib/systems";
 import { Unit as UUnit } from "unitlib";
@@ -161,10 +162,7 @@ export function divide(a: number | Quantity, b: number | Quantity) {
 export function qdnMin(x: number, y: number): number;
 export function qdnMin(x: Quantity, y: Quantity): Quantity;
 export function qdnMin(x: Dayjs, y: Dayjs): Dayjs;
-export function qdnMin(
-  x: number | Quantity | Dayjs,
-  y: number | Quantity | Dayjs,
-): number | Quantity | Dayjs {
+export function qdnMin(x: ChartValue, y: ChartValue): ChartValue {
   if (typeof x === "number" && typeof y === "number") {
     return Math.min(x, y);
   } else if (x instanceof Quantity && y instanceof Quantity) {
@@ -178,10 +176,7 @@ export function qdnMin(
 export function qdnMax(x: number, y: number): number;
 export function qdnMax(x: Quantity, y: Quantity): Quantity;
 export function qdnMax(x: Dayjs, y: Dayjs): Dayjs;
-export function qdnMax(
-  x: number | Quantity | Dayjs,
-  y: number | Quantity | Dayjs,
-): number | Quantity | Dayjs {
+export function qdnMax(x: ChartValue, y: ChartValue): ChartValue {
   if (typeof x === "number" && typeof y === "number") {
     return Math.max(x, y);
   } else if (x instanceof Quantity && y instanceof Quantity) {

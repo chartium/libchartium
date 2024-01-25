@@ -2,7 +2,7 @@ import { transfer, type Remote } from "comlink";
 import type { ChartiumController } from "../data-worker/index.js";
 import type { RenderJob, Renderer } from "../data-worker/renderers/mod.js";
 import type {
-  GeneralizedPoint,
+  ChartValuePoint,
   NumericRange,
   Range,
   Shift,
@@ -576,7 +576,7 @@ export class Chart {
     return result;
   }
 
-  distanceInPx(a: GeneralizedPoint, b: GeneralizedPoint) {
+  distanceInPx(a: ChartValuePoint, b: ChartValuePoint) {
     return norm([
       this.quantityToCoordinate(b.x, "x") - this.quantityToCoordinate(a.x, "x"),
       this.quantityToCoordinate(b.y, "y") - this.quantityToCoordinate(a.y, "y"),

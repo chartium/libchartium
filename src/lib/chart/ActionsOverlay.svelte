@@ -24,6 +24,7 @@
   } from "./canvas.js";
   import type { MouseDragCallbacks } from "../utils/mouseGestures.js";
   import type {
+    ChartValue,
     HighlightPoint,
     Point,
     Quantity,
@@ -39,6 +40,7 @@
   import type { WritableSignal } from "@mod.js/signals";
   import RulerBubble from "./RulerBubble.svelte";
   import { type Dayjs } from "dayjs";
+  import type { Chart } from "./chart.js";
 
   export const events = createEventDispatcher<{
     reset: undefined;
@@ -49,6 +51,7 @@
 
   export let visibleAction: WritableSignal<VisibleAction | undefined>;
 
+  export let chart: Chart | undefined;
   export let hideHoverPoints: boolean;
   export let hideXRuler: boolean;
   export let hideYRuler: boolean;
@@ -58,6 +61,7 @@
   export let hoverYQuantity: Quantity | number | Dayjs;
   export let disableInteractivity: boolean;
   export let traceHovered: boolean;
+  export let commonXRuler: WritableSignal<ChartValue | undefined>;
 
   let thresholdFilterMode: boolean = false;
   export const filterByThreshold = () => {
@@ -84,13 +88,22 @@
 
   $: $visibleAction, scheduleDraw();
   $: mousePosition, scheduleDraw();
+  $: $commonXRuler, scheduleDraw();
   $: if ((thresholdFilterMode || thresholdAddMode) && mousePosition)
     visibleAction.update((a) => {
       return { ...a, yThreshold: 1 - mousePosition![1] / overlayHeight };
     });
 
-  let _frame: number | undefined = undefined;
+  let drawScheduled = false;
   function scheduleDraw() {
+    if (drawScheduled) return;
+
+    drawScheduled = true;
+    requestAnimationFrame(() => {
+      drawScheduled = false;
+      draw();
+    });
+
     function draw() {
       const action = $visibleAction;
 
@@ -118,9 +131,14 @@
           },
           false,
         );
+      } else if (chart && commonXRuler.get()) {
+        // Global Ruler
+        // https://open.spotify.com/track/3vFZheR74pxUkzxqhXTZ2X
+        const xValue = commonXRuler.get()!;
+        const zoom = devicePixelRatio;
+        const x = chart.quantitiesToFractions(xValue, "x");
+        drawRuler({ x, y: 0 }, true);
       }
-      // TODO: global ruler
-      // https://open.spotify.com/track/3vFZheR74pxUkzxqhXTZ2X
 
       if (action && action.highlightedPoints && !hideHoverPoints) {
         for (const point of action.highlightedPoints) {
@@ -128,19 +146,17 @@
         }
       }
     }
-
-    if (_frame) return;
-
-    _frame = requestAnimationFrame(() => {
-      _frame = undefined;
-      draw();
-    });
   }
 
   function drawHighlightPoint(point: HighlightPoint) {
+    if (!chart) return;
+
     drawCircle(
       ctx,
-      [point.xFraction * overlayWidth, (1 - point.yFraction) * overlayHeight],
+      [
+        chart.quantitiesToFractions(point.x, "x") * overlayWidth,
+        (1 - chart.quantitiesToFractions(point.y, "y")) * overlayHeight,
+      ],
       point.radius * 2.5,
       {
         fillStyle: point.color,
@@ -210,7 +226,7 @@
       dash: [9, 3],
     };
 
-    if (!hideYRuler) {
+    if (!hideXRuler) {
       drawSegment(
         ctx,
         [point.x * overlayWidth, 0],
@@ -219,7 +235,7 @@
       );
     }
 
-    if (!xOnly && !hideXRuler) {
+    if (!xOnly && !hideYRuler) {
       drawSegment(
         ctx,
         [0, (1 - point.y) * overlayHeight],

@@ -1,9 +1,10 @@
 import {
   Quantity,
-  type GeneralizedPoint,
+  type ChartValuePoint,
   type Range,
   type TraceHandle,
   type Unit,
+  type ChartValue,
 } from "../types.js";
 import { lib } from "./wasm.js";
 import {
@@ -62,10 +63,10 @@ export interface TraceInfo {
 
 export interface QDTraceMetas {
   traceId: string;
-  min: number | Quantity | Dayjs;
-  max: number | Quantity | Dayjs;
-  avg: number | Quantity | Dayjs;
-  avg_nz: number | Quantity | Dayjs;
+  min: ChartValue;
+  max: ChartValue;
+  avg: ChartValue;
+  avg_nz: ChartValue;
 }
 
 export class TraceList {
@@ -412,8 +413,8 @@ export class TraceList {
     to,
   }: Partial<{
     traces: string[];
-    from: number | Quantity | Dayjs;
-    to: number | Quantity | Dayjs;
+    from: ChartValue;
+    to: ChartValue;
   }> = {}) {
     const unfiltered =
       from === undefined && to === undefined && traces === undefined;
@@ -581,17 +582,17 @@ export class TraceList {
    * TODO add a more precise euclidean distance mode
    */
   findClosestTracesToPoint(
-    point: GeneralizedPoint,
+    point: ChartValuePoint,
     howMany: number,
   ): {
     traceInfo: TraceInfo;
-    closestPoint: GeneralizedPoint;
+    closestPoint: ChartValuePoint;
   }[] {
     // FIXME make TraceList auto update its ranges based on ranges of bundles
 
     interface FoundPoint {
       handle: TraceHandle;
-      point: GeneralizedPoint;
+      point: ChartValuePoint;
       distance: number;
     }
 
@@ -620,7 +621,7 @@ export class TraceList {
           point: {
             x: toQuantOrDay(foundPoint.x, bundleUnits.x),
             y: toQuantOrDay(foundPoint.y, bundleUnits.y),
-          } as GeneralizedPoint,
+          } as ChartValuePoint,
           distance,
         });
       }
@@ -633,7 +634,7 @@ export class TraceList {
 
     const results: {
       traceInfo: TraceInfo;
-      closestPoint: GeneralizedPoint;
+      closestPoint: ChartValuePoint;
     }[] = [];
 
     for (const { point, handle } of closestPoints) {

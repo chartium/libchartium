@@ -1,6 +1,11 @@
 <script lang="ts">
   import type { ChartiumController } from "../data-worker/index.js";
-  import type { Quantity, Unit, GeneralizedPoint } from "../types.js";
+  import type {
+    Quantity,
+    Unit,
+    ChartValuePoint,
+    ChartValue,
+  } from "../types.js";
   import type { TraceInfo, TraceList } from "../data-worker/trace-list.js";
   import type { VisibleAction } from "./ActionsOverlay.svelte";
 
@@ -103,6 +108,9 @@
   /** Disables possibility to change Y units via context menu on chart axis */
   export let disableYUnitChanges: boolean = false;
 
+  /** Bind this property among several charts to make them all display an x axis ruler when one of them is hovered */
+  export let commonXRuler = mut<ChartValue>();
+
   /** Sets position of the lil infobox that shows number of traces and range */
   export let infoboxPosition:
     | "top-left"
@@ -167,13 +175,15 @@
   }
 
   let showTooltip: boolean = false;
-  let hoverXQuantity: number | dayjs.Dayjs | Quantity;
-  let hoverYQuantity: number | dayjs.Dayjs | Quantity;
+  let hoverXQuantity: ChartValue;
+  let hoverYQuantity: ChartValue;
 
   const updateHoverQuantities = (e: MouseEvent) => {
+    if (!chart) return;
     const zoom = devicePixelRatio;
-    hoverXQuantity = chart?.coordinatesToQuantities(e.offsetX * zoom, "x") ?? 0;
-    hoverYQuantity = chart?.coordinatesToQuantities(e.offsetY * zoom, "y") ?? 0;
+    hoverXQuantity = chart.coordinatesToQuantities(e.offsetX * zoom, "x");
+    hoverYQuantity = chart.coordinatesToQuantities(e.offsetY * zoom, "y");
+    commonXRuler.set(hoverXQuantity);
   };
 
   $: closestTraces =
@@ -201,7 +211,7 @@
     closestTraces:
       | {
           traceInfo: TraceInfo;
-          closestPoint: GeneralizedPoint;
+          closestPoint: ChartValuePoint;
         }[]
       | undefined,
   ) {
@@ -209,8 +219,8 @@
       visibleAction.set({ highlightedPoints: [] });
     } else {
       const points = closestTraces.map((trace) => ({
-        xFraction: chart!.quantitiesToFractions(trace.closestPoint.x, "x"),
-        yFraction: chart!.quantitiesToFractions(trace.closestPoint.y, "y"),
+        x: trace.closestPoint.x,
+        y: trace.closestPoint.y,
         color: trace.traceInfo.color,
         radius: trace.traceInfo.width,
       }));
@@ -403,6 +413,7 @@
   {/if}
 
   <ActionsOverlay
+    {chart}
     {visibleAction}
     {hideHoverPoints}
     {hideXRuler}
@@ -413,6 +424,7 @@
     {hoverYQuantity}
     {disableInteractivity}
     {presYThreshFracs}
+    {commonXRuler}
     bind:filterByThreshold
     bind:addPersistentThreshold
     traceHovered={selectedTrace !== undefined}
@@ -445,6 +457,7 @@
         ...action,
         highlightedPoints: [],
       }));
+      commonXRuler.set(undefined);
     }}
     on:blur={() => {
       showTooltip = false;

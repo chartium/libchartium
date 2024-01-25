@@ -118,14 +118,16 @@ export interface Point {
   y: number;
 }
 
-export interface GeneralizedPoint {
-  x: number | Quantity | dayjs.Dayjs;
-  y: number | Quantity | dayjs.Dayjs;
+export type ChartValue = number | dayjs.Dayjs | Quantity;
+
+export interface ChartValuePoint {
+  x: ChartValue;
+  y: ChartValue;
 }
 
 export interface HighlightPoint {
-  xFraction: number;
-  yFraction: number;
+  x: ChartValue;
+  y: ChartValue;
   color: Color;
   radius: number;
 }
