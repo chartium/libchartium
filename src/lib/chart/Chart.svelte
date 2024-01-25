@@ -85,7 +85,7 @@
   /** Hides the tooltips shown next to cursor */
   export let hideTooltip: boolean = false;
   /** Sets the number of traces that are shown in the tooltip by users keyboard */
-  export let tooltipTracesShown: number | "all" = 2;
+  export let tooltipTracesShown: number | "all" = 5;
   /** Hides the highlighted points on traces that the tooltip is showing info about */
   export let hideHoverPoints: boolean = false;
 

@@ -75,7 +75,7 @@
   {@const styledTrace = tracesWithStyles[i]}
 -->
   {#each tracesWithStyles.slice(0, numberOfShownTraces) as styledTrace}
-    {@const hidden = $hiddenTraceIDs.has(styledTrace.id)}
+    {@const hidden = $hiddenTraceIds.has(styledTrace.id)}
     <div
       class="trace-legend"
       style:opacity={hidden ? "0.5" : 1}
