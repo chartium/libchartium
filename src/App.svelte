@@ -7,11 +7,6 @@
     faArrowRight,
     faArrowLeft,
     faChartLine,
-    faExpand,
-    faCamera,
-    faDownload,
-    faUpDown,
-    faUserClock,
   } from "@fortawesome/free-solid-svg-icons";
   import { SI, IEC } from "unitlib/systems";
   import domToImage, { DomToImage } from "dom-to-image-more";
@@ -28,13 +23,13 @@
 
   const xs = Array.from(
     { length: numSteps },
-    (_, index) => from + index * stepSize,
+    (_, index) => from + index * stepSize
   );
 
   const ys = Array.from({ length: 100 }, (_, idx) => ({
     id: `trace_${idx}`,
     data: Float32Array.from(
-      xs.map((x) => 100 + 100 * Math.sin((x / to) * 2 * Math.PI + idx)),
+      xs.map((x) => 100 + 100 * Math.sin((x / to) * 2 * Math.PI + idx))
     ),
   }));
 
@@ -57,62 +52,58 @@
     },
   });
 
-  let wrapDiv: HTMLElement;
-  const dti: DomToImage = domToImage as any;
-
-  const takeScreenshot = () => {
-    dti.toPng(wrapDiv).then((url) => {
-      const link = document.createElement("a");
-      link.download = `graph.png`;
-      link.href = url;
-      link.click();
-    });
-  };
+  let wrapDiv: HTMLDivElement;
+  import { NumericDateFormat } from "./lib/index.js";
+  import { Quantity } from "unitlib";
+  import ToolFullscreen from "./lib/ToolFullscreen.svelte";
+  import ToolExportToPng from "./lib/chart/Toolbar/ToolExportToPNG.svelte";
+  import ToolHideLegend from "./lib/chart/Toolbar/ToolHideLegend.svelte";
+  import { portal } from "svelte-portal";
 
   (window as any).SI = SI;
   (window as any).IEC = IEC;
   (window as any).Quantity = Quantity;
+
+  let fullscreen = false;
 </script>
 
 <main class="dark">
   <h1>Chartium test page</h1>
   {#await traces then traces}
-    <div style="height:500px;width:900px;" bind:this={wrapDiv}>
-      <Chart
-        {controller}
-        {traces}
-        title="Titulek"
-        subtitle="Podtitulek"
-        xLabel="Time"
-        yLabel="Amount"
-        defaultYUnit={IEC.parseUnit("MiB")}
-        legendPosition="right"
-        legendTracesShown={10}
-      >
-        <svelte:fragment slot="toolbar">
-          <ToolbarButton title="Fullscreen">
-            <Fa icon={faExpand} />
-          </ToolbarButton>
-          <ToolbarButton on:click={takeScreenshot} title="Screenshot">
-            <Fa icon={faCamera} />
-          </ToolbarButton>
-          <ToolbarButton title="Download png">
-            <Fa icon={faDownload} />
-          </ToolbarButton>
-          <ToolbarButton title="Autoscale Y axis">
-            <Fa icon={faUpDown} />
-          </ToolbarButton>
-          <ToolbarButton title="Change timezones">
-            <Fa icon={faUserClock} />
-          </ToolbarButton>
-        </svelte:fragment>
-
-        <svelte:fragment slot="infobox">
-          <Fa icon={faArrowRight} />&ensp;1<br />
-          <Fa icon={faArrowLeft} />&ensp;1000<br />
-          <Fa icon={faChartLine} />&ensp;3/3
-        </svelte:fragment>
-      </Chart>
+    <div style="height:800px;width:900px;" bind:this={wrapDiv}>
+      <div use:portal={fullscreen ? "body" : wrapDiv} class:fullscreen>
+        <Chart
+          {controller}
+          {traces}
+          title="Titulek"
+          subtitle="Podtitulek"
+          xLabel="Time"
+          yLabel="Amount"
+          defaultYUnit={IEC.parseUnit("MiB")}
+          legendPosition="right"
+        >
+          <svelte:fragment slot="toolbar">
+            <ToolFullscreen on:click={() => (fullscreen = !fullscreen)} />
+            <ToolExportToPng />
+            <ToolHideLegend />
+          </svelte:fragment>
+          <svelte:fragment slot="infobox">
+            <Fa icon={faArrowRight} />&ensp;1<br />
+            <Fa icon={faArrowLeft} />&ensp;1000<br />
+            <Fa icon={faChartLine} />&ensp;3/3
+          </svelte:fragment>
+        </Chart>
+      </div>
     </div>
   {/await}
 </main>
+
+<style>
+  .fullscreen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+  }
+</style>

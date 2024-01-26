@@ -1,5 +1,5 @@
 <script lang="ts">
-  import GenericTooltip from "../GenericTooltip.svelte";
+  import GenericTooltip from "../../GenericTooltip.svelte";
 
   /** Shown upon hover */
   export let title: string | undefined = undefined;
