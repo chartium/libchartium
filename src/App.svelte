@@ -1,7 +1,10 @@
 <script lang="ts">
   import Chart from "./lib/chart/Chart.svelte";
   import wasmUrl from "../dist/wasm/libchartium.wasm?url";
-  import ToolbarButton from "./lib/chart/ToolbarButton.svelte";
+  import ToolFullscreen from "./lib/ToolFullscreen.svelte";
+  import ToolExportToPng from "./lib/chart/Toolbar/ToolExportToPNG.svelte";
+  import ToolHideLegend from "./lib/chart/Toolbar/ToolHideLegend.svelte";
+  import { portal } from "svelte-portal";
   import { ChartiumController } from "./lib/data-worker/index.js";
   import {
     faArrowRight,
@@ -23,13 +26,13 @@
 
   const xs = Array.from(
     { length: numSteps },
-    (_, index) => from + index * stepSize
+    (_, index) => from + index * stepSize,
   );
 
   const ys = Array.from({ length: 100 }, (_, idx) => ({
     id: `trace_${idx}`,
     data: Float32Array.from(
-      xs.map((x) => 100 + 100 * Math.sin((x / to) * 2 * Math.PI + idx))
+      xs.map((x) => 100 + 100 * Math.sin((x / to) * 2 * Math.PI + idx)),
     ),
   }));
 
@@ -53,12 +56,6 @@
   });
 
   let wrapDiv: HTMLDivElement;
-  import { NumericDateFormat } from "./lib/index.js";
-  import { Quantity } from "unitlib";
-  import ToolFullscreen from "./lib/ToolFullscreen.svelte";
-  import ToolExportToPng from "./lib/chart/Toolbar/ToolExportToPNG.svelte";
-  import ToolHideLegend from "./lib/chart/Toolbar/ToolHideLegend.svelte";
-  import { portal } from "svelte-portal";
 
   (window as any).SI = SI;
   (window as any).IEC = IEC;
@@ -70,8 +67,12 @@
 <main class="dark">
   <h1>Chartium test page</h1>
   {#await traces then traces}
-    <div style="height:800px;width:900px;" bind:this={wrapDiv}>
-      <div use:portal={fullscreen ? "body" : wrapDiv} class:fullscreen>
+    <div style="height:400px;width:900px;" bind:this={wrapDiv}>
+      <div
+        use:portal={fullscreen ? "body" : wrapDiv}
+        class:fullscreen
+        style={"height: 100%; width: 100%;"}
+      >
         <Chart
           {controller}
           {traces}

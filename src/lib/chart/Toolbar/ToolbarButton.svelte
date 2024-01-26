@@ -1,10 +1,17 @@
 <script lang="ts">
+  import { onMount, tick } from "svelte";
   import GenericTooltip from "../../GenericTooltip.svelte";
 
   /** Shown upon hover */
   export let title: string | undefined = undefined;
 
   let button: HTMLButtonElement;
+
+  onMount(() => {
+    tick().then(() => {
+      buttonRect = button?.getBoundingClientRect();
+    });
+  });
   $: buttonRect = button?.getBoundingClientRect();
   $: tooltipPosition =
     buttonRect !== undefined
@@ -35,6 +42,9 @@
 
 <button
   bind:this={button}
+  on:click={() => {
+    showTooltip = !showTooltip;
+  }}
   on:click
   on:mouseenter={() => {
     showTooltip = true;
