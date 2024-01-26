@@ -200,7 +200,7 @@
           },
           tooltipTracesShown === "all"
             ? visibleTraces.traceCount
-            : tooltipTracesShown
+            : tooltipTracesShown,
         )
       : undefined;
   $: tracesInfo =
@@ -218,7 +218,7 @@
           traceInfo: TraceInfo;
           closestPoint: ChartValuePoint;
         }[]
-      | undefined
+      | undefined,
   ) {
     if (closestTraces === undefined || chart === undefined) {
       visibleAction.set({ highlightedPoints: [] });
@@ -321,17 +321,17 @@
       } else {
         forbiddenRectangle = undefined;
       }
-    })
+    }),
   );
 
   /** In fractions of graph height */
   let persistentYThresholds: (Quantity | number | Dayjs)[] = [];
   $: presYThreshFracs = persistentYThresholds.map(
-    (q) => chart?.quantitiesToFractions(q, "y") ?? 0
+    (q) => chart?.quantitiesToFractions(q, "y") ?? 0,
   );
   $: chart?.range.y.subscribe(() => {
     presYThreshFracs = persistentYThresholds.map(
-      (q) => chart?.quantitiesToFractions(q, "y") ?? 0
+      (q) => chart?.quantitiesToFractions(q, "y") ?? 0,
     );
   });
 
@@ -362,7 +362,7 @@
     previewStyle={legendPreviewStyle}
   />
 {/if}
-<div bind:this={wrapDiv}>
+<div bind:this={wrapDiv} style="height: 100%; width: 100%;">
   <ChartGrid bind:contentSize>
     <svelte:fragment slot="title">
       {title}
@@ -451,7 +451,7 @@
         if (t.detail.type === "persistent") {
           const thresholdQ = chart?.fractionsToQuantities(
             1 - t.detail.thresholdFrac,
-            "y"
+            "y",
           );
           if (thresholdQ) persistentYThresholds.push(thresholdQ);
           persistentYThresholds = persistentYThresholds;
@@ -490,7 +490,7 @@
       {#if legendPosition === "right" && !hideLegend}
         <ChartLegend
           {traces}
-          {hiddenTraceIDs}
+          {hiddenTraceIds}
           previewStyle={legendPreviewStyle}
           numberOfShownTraces={legendTracesShown === "all"
             ? traces.traceCount
@@ -502,7 +502,7 @@
       {#if legendPosition === "bottom" && !hideLegend}
         <ChartLegend
           {traces}
-          {hiddenTraceIDs}
+          {hiddenTraceIds}
           previewStyle={legendPreviewStyle}
           numberOfShownTraces={legendTracesShown === "all"
             ? traces.traceCount
