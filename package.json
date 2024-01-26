@@ -62,7 +62,9 @@
     "seedrandom": "^3.0.5",
     "svelte": "^4.2.9",
     "svelte-fa": "^4.0.2",
+    "svelte-fullscreen": "^2.0.0",
     "svelte-portal": "^2.2.1",
+    "svelte-typed-context": "^1.0.1",
     "unitlib": "^0.5.3"
   }
 }

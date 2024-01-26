@@ -50,9 +50,12 @@ dependencies:
   svelte-fa:
     specifier: ^4.0.2
     version: 4.0.2(svelte@4.2.9)
+  svelte-fullscreen:
+    specifier: ^2.0.0
+    version: 2.0.0
   svelte-portal:
-    specifier: ^2.2.1
-    version: 2.2.1
+    specifier: ^2.2.0
+    version: 2.2.0
   unitlib:
     specifier: ^0.5.3
     version: 0.5.3
@@ -1796,6 +1799,11 @@ packages:
       immutable: 4.3.5
       source-map-js: 1.0.2
 
+  /screenfull@5.2.0:
+    resolution: {integrity: sha512-9BakfsO2aUQN2K9Fdbj87RJIEZ82Q9IGim7FqM5OsebfoFC6ZHXgDq/KvniuLTPdeM8wY2o6Dj3WQ7KeQCj3cA==}
+    engines: {node: '>=0.10.0'}
+    dev: false
+
   /seedrandom@3.0.5:
     resolution: {integrity: sha512-8OwmbklUNzwezjGInmZ+2clQmExQPvomqjL7LFqOYqtmuxRgQYqOD3mHaU+MvZn5FLUeVxVfQjwLZW/n/JFuqg==}
     dev: false
@@ -1917,7 +1925,7 @@ packages:
       svelte: 4.2.9
     dev: false
 
-  /svelte-hmr@0.15.3(svelte@4.2.9):
+  /svelte-hmr@0.15.3(svelte@4.2.8):
     resolution: {integrity: sha512-41snaPswvSf8TJUhlkoJBekRrABDXDMdpNpT2tfHIv4JuhgvHqLMhEPGtaQn0BmbNSTkuz2Ed20DF2eHw0SmBQ==}
     engines: {node: ^12.20 || ^14.13.1 || >= 16}
     peerDependencies:
@@ -1978,6 +1986,14 @@ packages:
       svelte: 4.2.9
       typescript: 5.3.3
     dev: true
+
+  /svelte-typed-context@1.0.1(svelte@4.2.8):
+    resolution: {integrity: sha512-JX0XOntE0JGKh5rldnKwIQVHXVB15RcwTg7Al/nyLjX+2NSt4Y+hoZ3+apnBjX5K8ge0tklJMqZLCVD7bYZE9g==}
+    peerDependencies:
+      svelte: ^3.38.2
+    dependencies:
+      svelte: 4.2.8
+    dev: false
 
   /svelte2tsx@0.7.0(svelte@4.2.9)(typescript@5.3.3):
     resolution: {integrity: sha512-qAelcydnmuiDvD1HsrWi23RWx24RZTKRv6n4JaGC/pkoJfbLkJPQT2wa1qN0ZyfKTNLSyoj2FW9z62l/AUzUNA==}
