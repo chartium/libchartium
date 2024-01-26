@@ -64,8 +64,6 @@
   }
 
   .yticks > :global(span) {
-    writing-mode: vertical-rl;
-    text-orientation: mixed;
     transform: rotate(180deg);
   }
 
@@ -101,10 +99,12 @@
 
   .right-legend {
     grid-area: rl;
+    overflow: auto;
   }
 
   .bottom-legend {
     grid-area: bl;
+    overflow: auto;
   }
 
   .xticks,
