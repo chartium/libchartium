@@ -1,6 +1,6 @@
 <!-- Component for displaying a lil tooltip by the cursor that shows info about nearby traces -->
 <script lang="ts">
-  import GenericTooltip from "../GenericTooltip.svelte";
+  import GenericTooltip from "../utils/GenericTooltip.svelte";
   import type { Point } from "../types.js";
   import { globalMouseMove } from "../utils/mouseGestures.js";
   import type { TraceInfo } from "../data-worker/trace-list.js";

@@ -188,7 +188,9 @@
         <div class="y label">{labelText}</div>
       </RotatedBox>
     {:else}
-      <div class="{axis} label">{labelText}</div>
+      <div style="display: flex; justify-content: center; align-items: center;">
+        <div class="{axis} label">{labelText}</div>
+      </div>
     {/if}
   {/if}
 

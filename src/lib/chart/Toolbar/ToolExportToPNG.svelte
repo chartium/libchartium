@@ -1,12 +1,9 @@
 <script lang="ts">
   import domtoimage, { DomToImage } from "dom-to-image-more";
   import { faCamera } from "@fortawesome/free-solid-svg-icons";
-  // weird hack to import svelte-fa bc of NodeNext module resolution
-  import { default as Fa_1, type Fa as Fa_2 } from "svelte-fa";
   import ToolbarButton from "./ToolbarButton.svelte";
   import { toolKey } from "./toolKey.js";
   import { getContext } from "svelte-typed-context";
-  const Fa = Fa_1 as any as typeof Fa_2;
 
   const dti: DomToImage = domtoimage as any;
   const takeScreenshot = () => {
@@ -23,6 +20,8 @@
   };
 </script>
 
-<ToolbarButton on:click={takeScreenshot} title="Screenshot">
-  <Fa icon={faCamera} />
-</ToolbarButton>
+<ToolbarButton
+  on:click={takeScreenshot}
+  icon={faCamera}
+  title="Export to PNG"
+/>
