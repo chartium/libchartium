@@ -362,7 +362,10 @@
     previewStyle={legendPreviewStyle}
   />
 {/if}
-<div bind:this={wrapDiv} style="height: 100%; width: 100%;">
+<div
+  bind:this={wrapDiv}
+  style="height: 100%; width: 100%; background-color: var(--background-color)"
+>
   <ChartGrid bind:contentSize>
     <svelte:fragment slot="title">
       {title}
@@ -539,11 +542,7 @@
     white-space: nowrap;
     text-overflow: ellipsis;
 
-    background: rgba(255, 255, 255, 0.6);
-
-    :global(.dark) & {
-      background: rgba(70, 70, 70, 0.6);
-    }
+    background: var(--accent-color);
   }
 
   .toolbar {
@@ -560,11 +559,7 @@
 
     &:hover {
       opacity: 0.9;
-      background-color: #ececec;
-    }
-
-    :global(.dark) &:hover {
-      background-color: #505050;
+      background-color: var(--accent-color);
     }
   }
 </style>

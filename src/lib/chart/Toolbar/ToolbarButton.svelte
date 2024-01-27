@@ -1,18 +1,22 @@
 <script lang="ts">
-  import { onMount, tick } from "svelte";
-  import GenericTooltip from "../../GenericTooltip.svelte";
+  import { afterUpdate, onMount, tick } from "svelte";
+  import GenericTooltip from "../../utils/GenericTooltip.svelte";
+  import type { IconDefinition } from "@fortawesome/free-solid-svg-icons";
+  // weird hack to import svelte-fa bc of NodeNext module resolution
+  import { default as Fa_1, type Fa as Fa_2 } from "svelte-fa";
+  const Fa = Fa_1 as any as typeof Fa_2;
 
   /** Shown upon hover */
   export let title: string | undefined = undefined;
 
-  let button: HTMLButtonElement;
+  /** Shown in place of the slot */
+  export let icon: IconDefinition | undefined = undefined;
 
-  onMount(() => {
-    tick().then(() => {
-      buttonRect = button?.getBoundingClientRect();
-    });
+  let button: HTMLButtonElement;
+  let buttonRect: DOMRect;
+  afterUpdate(() => {
+    buttonRect = button?.getBoundingClientRect();
   });
-  $: buttonRect = button?.getBoundingClientRect();
   $: tooltipPosition =
     buttonRect !== undefined
       ? {
@@ -22,12 +26,6 @@
       : undefined;
   let showTooltip = false;
 </script>
-
-<svelte:window
-  on:resize={() => {
-    buttonRect = button?.getBoundingClientRect();
-  }}
-/>
 
 {#if title !== undefined}
   <GenericTooltip
@@ -41,6 +39,7 @@
 {/if}
 
 <button
+  bind:contentRect={buttonRect}
   bind:this={button}
   on:click={() => {
     showTooltip = !showTooltip;
@@ -59,7 +58,11 @@
     showTooltip = false;
   }}
 >
-  <slot />
+  <slot>
+    {#if icon}
+      <Fa {icon} />
+    {/if}
+  </slot>
 </button>
 
 <style>
@@ -78,12 +81,10 @@
   }
 
   .toolbar {
+    margin-top: 3px;
+    border-radius: 3px;
     padding: 3px;
     opacity: 0.9;
-    background-color: #ececec;
-  }
-
-  :global(.dark) .toolbar {
-    background-color: #505050;
+    background-color: var(--background-color);
   }
 </style>
