@@ -82,7 +82,7 @@
             previewedTrace={singleTraceInfo.styledTrace}
             simplified={previewStyle === "simplified"}
           />
-          {singleTraceInfo.styledTrace.label ?? singleTraceInfo.styledTrace.id}:
+          {singleTraceInfo.styledTrace.label ?? singleTraceInfo.styledTrace.id}
         </div>
         {#each Object.entries(singleTraceInfo) as [key, value]}
           {#if key !== "styledTrace"}
@@ -107,7 +107,7 @@
                 previewedTrace={info.styledTrace}
                 simplified={previewStyle === "simplified"}
               />
-              {info.styledTrace.label ?? info.styledTrace.id}:
+              {info.styledTrace.label ?? info.styledTrace.id}
             </div>
             <div class="value-value">
               {info.y}
@@ -133,6 +133,7 @@
     font-size: larger;
     display: flex;
     flex-direction: row;
+    align-items: center;
     justify-content: space-evenly;
     padding-left: 20px;
     padding-right: 20px;
