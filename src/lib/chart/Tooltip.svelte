@@ -2,7 +2,7 @@
 <script lang="ts">
   import GenericTooltip from "../utils/GenericTooltip.svelte";
   import type { Point } from "../types.js";
-  import { globalMouseMove } from "../utils/mouseGestures.js";
+  import { globalMouseMove } from "../utils/mouseActions.js";
   import type { TraceInfo } from "../data-worker/trace-list.js";
   import TracePreview from "./TracePreview.svelte";
 

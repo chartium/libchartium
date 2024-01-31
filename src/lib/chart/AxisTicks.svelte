@@ -2,11 +2,11 @@
 
 <script lang="ts">
   import { createEventDispatcher } from "svelte";
-  import { MouseButtons, mouseDrag } from "../utils/mouseGestures.js";
+  import { MouseButtons, mouseDrag } from "../utils/mouseActions.js";
   import {
     mouseClick,
     type MouseDragCallbacks,
-  } from "../utils/mouseGestures.js";
+  } from "../utils/mouseActions.js";
   import type { Point, Shift, Tick, Unit } from "../types.js";
   import type { VisibleAction } from "./ActionsOverlay.svelte";
   import {

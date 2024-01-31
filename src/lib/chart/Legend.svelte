@@ -6,6 +6,7 @@
   import TracePreview from "./TracePreview.svelte";
   import { map } from "../utils/collection.js";
   import type { WritableSignal } from "@mod.js/signals";
+  import { oneOrDoubleclick } from "../utils/mouseActions.js";
 
   export let numberOfShownTraces: number = 5;
 
@@ -79,18 +80,25 @@
     <div
       class="trace-legend"
       style:opacity={hidden ? "0.5" : 1}
-      on:click={() => {
-        if (hidden)
+      use:oneOrDoubleclick={{
+        single: () => {
           hiddenTraceIds.update((curr) => {
-            const tmp = curr; // fuck mutability
-            tmp.delete(styledTrace.id);
-            return tmp;
-          });
-        else
-          hiddenTraceIds.update((curr) => {
-            curr.add(styledTrace.id);
+            if (hidden) curr.delete(styledTrace.id);
+            else curr.add(styledTrace.id);
             return curr;
           });
+        },
+        double: () =>
+          hiddenTraceIds.update((curr) => {
+            if (
+              curr.size === 0 ||
+              (curr.size === 1 && curr.has(styledTrace.id))
+            ) {
+              curr = new Set(tracesWithStyles.map((t) => t.id));
+              curr.delete(styledTrace.id);
+            } else curr.clear();
+            return curr;
+          }),
       }}
       role="presentation"
     >

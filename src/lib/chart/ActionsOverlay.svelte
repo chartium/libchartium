@@ -15,14 +15,14 @@
     MouseButtons,
     mouseDrag,
     mouseClick,
-  } from "../utils/mouseGestures.js";
+  } from "../utils/mouseActions.js";
   import {
     drawArrow,
     drawCircle,
     drawSegment,
     type DrawStyle,
   } from "./canvas.js";
-  import type { MouseDragCallbacks } from "../utils/mouseGestures.js";
+  import type { MouseDragCallbacks } from "../utils/mouseActions.js";
   import type {
     ChartValue,
     HighlightPoint,

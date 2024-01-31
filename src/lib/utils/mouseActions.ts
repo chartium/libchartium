@@ -210,3 +210,40 @@ export function globalMouseMove(
     },
   };
 }
+
+/** 
+ * Action that registers events similar to on:click and on:dblclick but if doubleclick happens the single clicks don't get triggered
+ * @param node the node to attach the action to
+ * @param callbacks the callbacks to call on single and double click
+ * @param delayMS the delay in milliseconds to wait for the second click
+ */
+export function oneOrDoubleclick(
+  node: HTMLElement,
+  callbacks: {
+    single: (event: MouseEvent) => void;
+    double: (event: MouseEvent) => void;
+  },
+  delayMS: number = 300,
+) {
+  const handleFirstClick = (event: MouseEvent) => {
+    let secondClickHappened = false;
+    node.removeEventListener("click", handleFirstClick, true);
+
+    window.addEventListener("click", () => { secondClickHappened = true }, true);
+    setTimeout(() => {
+      window.removeEventListener("click", () => { secondClickHappened = true }, true);
+      node.addEventListener("click", handleFirstClick, true);
+
+      if (secondClickHappened) callbacks.double(event);
+      else callbacks.single(event);
+    }, delayMS);
+  };
+
+  node.addEventListener("click", handleFirstClick, true);
+
+  return {
+    destroy() {
+      node.removeEventListener("click", handleFirstClick, true);
+    },
+  };
+}
