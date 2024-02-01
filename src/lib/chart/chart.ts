@@ -225,7 +225,7 @@ export class Chart {
   }
 
   #updateTraces(traces: TraceList) {
-    this.#dataUnit = traces.getUnits()[0] ?? {};
+    this.#dataUnit = traces.getUnits()?.[0] ?? {};
     this.scheduleRender();
 
     if (!this.#initialized) return;

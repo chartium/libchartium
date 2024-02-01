@@ -12,7 +12,6 @@
     faChartLine,
   } from "@fortawesome/free-solid-svg-icons";
   import { SI, IEC } from "unitlib/systems";
-  import domToImage, { DomToImage } from "dom-to-image-more";
   import { NumericDateFormat } from "./lib/index.js";
   import { Quantity } from "unitlib";
 

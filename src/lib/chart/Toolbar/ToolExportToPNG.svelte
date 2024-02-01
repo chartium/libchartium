@@ -1,5 +1,6 @@
 <script lang="ts">
-  import domtoimage, { DomToImage } from "dom-to-image-more";
+  import domtoimage from "dom-to-image-more";
+
   import { faCamera } from "@fortawesome/free-solid-svg-icons";
   import ToolbarButton from "./ToolbarButton.svelte";
   import { toolKey } from "./toolKey.js";
