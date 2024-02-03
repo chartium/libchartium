@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use js_sys::{ArrayBuffer, Iterator};
 use num_traits::{FromPrimitive, Num, ToPrimitive};
 
 use crate::data::TraceHandle;
@@ -20,6 +21,76 @@ pub struct Batch<X: N, Y: N> {
 
     from: f64,
     to: f64,
+}
+
+fn export_to_csv(
+    batch: Batch<f64, f64>,
+    from: f64,
+    to: f64,
+    handles: Vec<TraceHandle>,
+    interpolate_holes: bool,
+) -> String {
+    // TODO: turn into byob
+    // TODO: think through the n² algorithm and whether we can go faster
+    // TODO: get the to_string() impl
+    // TODO: find a way to compare found_x and x
+    // TODO: research some string builders or something, we're smushing a bžilion strings
+    // TODO: rn ur doing it very statefully; maybe think of a way to make this more functional?
+    // we iterate over all xs in this batch
+    // and add only such ys for which we have x
+    //┌──┐ ┌───────────────────┐
+    //│xs│ │  traces_in_range  │
+    //│  │ ├───────┬───────┬───┤
+    //│  │ │trace_1│trace_2│...│
+    //├──┤ ├───────┼───────┼───┤
+    //│x1│ │ (x,y) │ (x,y) │ . │
+    //│  │ │       │       │   │
+    //│x2│ │ (x,y) │       │ . │
+    //│  │ │       │       │   │
+    //│x3│ │       │ (x,y) │ . │
+    //│  │ │       │       │   │
+    //│x4│ │ (x,y) │ (x,y) │ . │
+    //│  │ │       │       │   │
+    //│..│ │  ...  │  ...  │ . │
+
+    let xs = batch.x;
+    let trace_handles = batch.traces();
+    let traces_in_range = trace_handles
+        .into_iter()
+        .map(|handle: u32| batch.iter_in_range_f64(handle, from, to).peekable());
+
+    let mut output: String = String::new();
+    let record_x = |x: &f64| output.push_str(&format!("{},", x.to_string()));
+    let record_y = |y: &f64| output.push_str(&format!("{},", y.to_string()));
+    let record_no_y_found = || output.push_str(",");
+    let record_end_line = || output.push_str("\n");
+
+    xs.into_iter().for_each(|&x| {
+        record_x(x);
+
+        traces_in_range.for_each(|trace| {
+            // TODO: think through the n² algorithm
+            let first = trace.peek();
+            match first {
+                Some((found_x, found_y)) => {
+                    if found_x == x {
+                        // TODO: find a way to compare found_x and x
+                        record_y(found_y);
+                        trace.next();
+                    } else if interpolate_holes {
+                        // interpolate
+                    } else {
+                        record_no_y_found();
+                    }
+                }
+                None => {
+                    record_no_y_found();
+                }
+            }
+        });
+        record_end_line();
+    });
+    return output;
 }
 
 impl<X: N, Y: N> Batch<X, Y> {
