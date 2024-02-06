@@ -163,10 +163,9 @@
   }
 
   $: qndFormatOptions = {
-    decimals: 2,
     dayjsFormat: "MMM DD, hh:mm:ss",
     unit: $yDisplayUnit,
-  };
+  } satisfies Parameters<typeof qndFormat>[1];
   const visibleAction = mut<VisibleAction | undefined>(undefined);
 
   $: (window as any).chart = chart; // FIXME DEBUG

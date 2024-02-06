@@ -14,7 +14,7 @@ import {
   getRangeSpan,
 } from "./dateFormatter.js";
 import { toNumericRange } from "./quantityHelpers.js";
-import { uniqueDecimals } from "./format.js";
+import { qndFormat, uniqueDecimals } from "./format.js";
 import { NumericDateFormat } from "./numericDateFormat.js";
 
 function getNumericTicks({
@@ -47,9 +47,9 @@ function getNumericTicks({
       { length: tickNum + 1 },
       (_, n) => firstTickValue + n * ticksDist,
     );
-    const decimals = uniqueDecimals(tickValues);
+    const decimalPlaces = uniqueDecimals(tickValues);
     ticks = tickValues.map((val) => ({
-      label: val.toFixed(decimals),
+      label: qndFormat(val, { decimalPlaces }),
       position: (val - range.from) / rangeWidth,
     }));
     const tickSize = textMeasuringFunction(ticks.at(-1)?.label ?? ""); // upper estimate
@@ -59,7 +59,7 @@ function getNumericTicks({
   if (ticks.length == 0)
     ticks = [
       {
-        label: ((range.from + range.to) / 2).toString(),
+        label: qndFormat((range.from + range.to) / 2),
         position: 0.5,
       },
     ];

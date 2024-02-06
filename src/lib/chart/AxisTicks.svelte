@@ -208,10 +208,10 @@
     >
       {#each ticks as tick}
         <span style={tickSpanStyle(tick)}>
-          {@html tick.value}
+          {tick.value}
           {#if tick.subvalue}
             <br />
-            {@html tick.subvalue}
+            {tick.subvalue}
           {/if}
         </span>
       {/each}

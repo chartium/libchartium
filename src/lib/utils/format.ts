@@ -1,6 +1,6 @@
 import dayjs from "dayjs";
 import { Quantity, type Unit } from "../types.js";
-import type { FormatOptions } from "unitlib";
+import { formatFloat, type QuantityFormatOptions } from "unitlib";
 
 /** Writes exponential notation that doesn't make your eyes bleed */
 export function prettyExp(input: number, decimals: number): string {
@@ -73,22 +73,22 @@ export function doOverlap(
 /** Formats input based on options */
 export function qndFormat(
   input: number | Quantity | dayjs.Dayjs,
-  options: {
+  options: QuantityFormatOptions & {
     decimals?: number;
     dayjsFormat?: string;
-    quantityFormat?: FormatOptions;
     unit?: Unit;
-  },
+  } = {},
 ) {
+  options = { ...options };
+  options.decimalPlaces ??= 2;
+  options.digitGroupLength ??= 3;
+  options.fancyUnicode ??= true;
+
   if (typeof input === "number") {
-    return input.toFixed(options.decimals ?? 2);
+    return formatFloat(input, options);
   } else if (input instanceof Quantity) {
     input = input.inUnits(options.unit ?? input.unit);
-    return `${input.value.toFixed(
-      options.decimals ?? 2,
-    )} ${input.unit.toString()}`;
-    // FIXME fix this once this is implemented in unitlib
-    // return input.toString(options.quantityFormat ?? {});
+    return input.toString(options);
   } else {
     return input.format(options.dayjsFormat ?? "YYYY-MM-DD");
   }
