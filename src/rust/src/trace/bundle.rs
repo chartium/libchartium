@@ -30,6 +30,13 @@ pub trait Bundle {
         to: f64,
     ) -> Box<dyn Iterator<Item = (f64, f64)> + 'a>;
 
+    fn iter_many_in_range_f64<'a>(
+        &'a self,
+        trace: Vec<TraceHandle>,
+        from: f64,
+        to: f64,
+    ) -> Box<dyn Iterator<Item = Vec<f64>> + 'a>;
+
     fn value_at(
         &self,
         trace: TraceHandle,

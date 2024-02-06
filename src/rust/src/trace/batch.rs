@@ -65,6 +65,28 @@ impl<X: N, Y: N> Bundle for Batch<X, Y> {
         )
     }
 
+    fn iter_many_in_range_f64<'a>(
+        &'a self,
+        traces: Vec<TraceHandle>,
+        from: f64,
+        to: f64,
+    ) -> Box<dyn Iterator<Item = Vec<f64>> + 'a> {
+        let index = self
+            .x
+            .iter()
+            .enumerate()
+            .find(move |(_, x)| x.as_f64() >= from)
+            .map(|(i, _)| i)
+            .unwrap_or(usize::MAX);
+
+        Box::new(BatchManyIterator {
+            batch: self,
+            traces,
+            index,
+            to,
+        })
+    }
+
     fn value_at(
         &self,
         handle: TraceHandle,
@@ -115,5 +137,36 @@ impl<X: N, Y: N> Bundle for Batch<X, Y> {
         }
 
         None
+    }
+}
+
+struct BatchManyIterator<'a, X: N, Y: N> {
+    batch: &'a Batch<X, Y>,
+    traces: Vec<TraceHandle>,
+    to: f64,
+    index: usize,
+}
+
+impl<'a, X: N, Y: N> Iterator for BatchManyIterator<'a, X, Y> {
+    type Item = Vec<f64>;
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.index >= self.batch.x.len() {
+            return None;
+        }
+
+        let xi = self.batch.x[self.index].as_f64();
+        if xi > self.to {
+            return None;
+        }
+
+        let mut result = Vec::with_capacity(self.traces.len() + 1);
+        result.push(xi);
+
+        for t in &self.traces {
+            let y = &self.batch.ys[t];
+            result.push(y[self.index].as_f64());
+        }
+
+        Some(result)
     }
 }
