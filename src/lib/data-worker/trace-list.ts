@@ -5,6 +5,7 @@ import {
   type TraceHandle,
   type Unit,
   type ChartValue,
+  type DateRange,
 } from "../types.js";
 import { lib } from "./wasm.js";
 import {
@@ -650,5 +651,26 @@ export class TraceList {
     }
 
     return results;
+  }
+
+  lmaoJustExport(howMany: number) {
+    const firsts_handles = this.#bundles[0].traces();
+    const range = this.range;
+    let buffer = new Float64Array((1 + firsts_handles.length) * howMany);
+
+    console.log(
+      this.#bundles[0].export_to_buffer(
+        buffer,
+        firsts_handles,
+        (range.from as Dayjs).unix() / 60,
+        (range.to as Dayjs).unix() / 60,
+      ),
+    );
+
+    buffer.forEach((datapoint, index) => {
+      if (index % (1 + firsts_handles.length) === 0) {
+        console.log(NumericDateFormat.EpochMinutes.parseToDate(datapoint));
+      } else console.log(datapoint);
+    });
   }
 }

@@ -237,6 +237,7 @@ impl<'a, X: N, Y: N> Iterator for BatchManyIterator<'a, X, Y> {
             let y = &self.batch.ys[t];
             result.push(y[self.index].as_f64());
         }
+        self.index += 1;
 
         Some(result)
     }

@@ -351,6 +351,7 @@
   let filterByThreshold: () => void;
   $: (window as any).addPersistentThreshold = addPersistentThreshold;
   $: (window as any).filterByThreshold = filterByThreshold;
+  $: (window as any).tracelist = traces;
 </script>
 
 {#if !hideTooltip}

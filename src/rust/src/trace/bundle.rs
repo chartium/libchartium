@@ -25,14 +25,14 @@ pub trait Bundle {
 
     fn iter_in_range_f64<'a>(
         &'a self,
-        trace: TraceHandle,
+        handle: TraceHandle,
         from: f64,
         to: f64,
     ) -> Box<dyn Iterator<Item = (f64, f64)> + 'a>;
 
     fn iter_many_in_range_f64<'a>(
         &'a self,
-        trace: Vec<TraceHandle>,
+        handles: Vec<TraceHandle>,
         from: f64,
         to: f64,
     ) -> Box<dyn Iterator<Item = Vec<f64>> + 'a>;
@@ -88,5 +88,39 @@ impl BoxedBundle {
     }
     pub fn intersects(&self, from: f64, to: f64) -> bool {
         self.bundle.intersects(from, to)
+    }
+    /// ### Fills input buffer with trace data from input range and handle array, returns number of valid elements
+    /// * Buffer format is always \[x, y₁, y₂,… yₙ, x', y'₁, …], i.e. each datapoint takes up n+1 elements of the buffer (given n trace handles on input)
+    ///   * Therefore returned number is always a multiple of `trace_handles.length()+1`
+    ///   * Only whole datapoints are recorded. If there isn't space for n+1 more elements left the remaining space will remain unchanged
+    ///   * The same applies for the end of the range
+    // FIXME not used for batches? idk lol
+    // /// * If any trace doesn't have data for an x, the y datapoint get's interpolated via interpolation_strategy
+    // ///   * if interpolation_strategy == InterpolationStrategy::None, the y will be NaN
+    pub fn export_to_buffer(
+        &self,
+        buffer: &mut [f64],
+        trace_handles: &[u32],
+        range_from: f64,
+        range_to: f64,
+        //interpolation_strategy: InterpolationStrategy,
+    ) -> usize {
+        let datapoint_length = trace_handles.len() + 1;
+        let space_in_buffer = buffer.len() / datapoint_length;
+        if space_in_buffer == 0 {
+            return 0;
+        }
+        let mut iterator =
+            self.bundle
+                .iter_many_in_range_f64(trace_handles.to_vec(), range_from, range_to);
+        for i in 0..space_in_buffer {
+            if let Some(datapoint) = iterator.next() {
+                buffer[i * datapoint_length..(i + 1) * datapoint_length]
+                    .copy_from_slice(datapoint.as_slice());
+            } else {
+                return i * datapoint_length;
+            }
+        }
+        return space_in_buffer * datapoint_length;
     }
 }
