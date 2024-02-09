@@ -1,7 +1,7 @@
 <!-- Component creating both the X and Y axis -->
 
 <script lang="ts">
-  import { createEventDispatcher } from "svelte";
+  import { createEventDispatcher, onDestroy } from "svelte";
   import { MouseButtons, mouseDrag } from "../utils/mouseActions.js";
   import {
     mouseClick,
@@ -13,9 +13,16 @@
     type ContextItem,
     GenericContextMenu,
   } from "../contextMenu/index.js";
-  import { mut, Signal, WritableSignal, ZippedSignal } from "@mod.js/signals";
+  import {
+    FlockRegistry,
+    mut,
+    Signal,
+    WritableSignal,
+    ZippedSignal,
+  } from "@mod.js/signals";
   import { measureText } from "../utils/format.js";
   import RotatedBox from "../utils/RotatedBox.svelte";
+  import { noop } from "lodash-es";
 
   export const events = createEventDispatcher<{
     shift: Shift;
@@ -40,6 +47,12 @@
   export let disableInteractivity: boolean;
 
   export let visibleAction: WritableSignal<VisibleAction | undefined>;
+
+  export let dimensionFlock: FlockRegistry<number> | undefined;
+  let contentRect: DOMRect;
+  const minorDim = mut<number>(0);
+  $: minorDim.set(axis === "x" ? contentRect.height : contentRect.width);
+  $: onDestroy(dimensionFlock?.register(minorDim) ?? noop);
 
   type UnitAction = Signal<{ unit: Unit; callback: () => void } | undefined>;
   export let raiseFactor: UnitAction;
@@ -178,6 +191,7 @@
     callback: (e) => menu.open(e),
     button: MouseButtons.Right,
   }}
+  bind:contentRect
 >
   {#if label !== undefined}
     {@const labelText =

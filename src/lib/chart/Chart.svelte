@@ -18,7 +18,7 @@
   import ChartLegend from "./Legend.svelte";
   import Guidelines from "./Guidelines.svelte";
   import Tooltip from "./Tooltip.svelte";
-  import { mut, cons } from "@mod.js/signals";
+  import { mut, cons, FlockRegistry } from "@mod.js/signals";
   import type { Remote } from "comlink";
   import type dayjs from "dayjs";
   import { qndFormat } from "../utils/format.js";
@@ -28,6 +28,8 @@
   import { setContext } from "svelte-typed-context";
   import { toolKey } from "./Toolbar/toolKey.js";
   import Fullscreen from "svelte-fullscreen";
+  import { mapOpt } from "../utils/mapOpt.js";
+  import { flockReduce } from "../utils/collection.js";
 
   // SECTION Props
 
@@ -116,6 +118,17 @@
   /** Bind this property among several charts to make them all display an x axis ruler when one of them is hovered */
   export let commonXRuler = mut<ChartValue>();
 
+  /** Bind this property among several charts to make them all display an y axis ruler when one of them is hovered */
+  export let commonYRuler = mut<ChartValue>();
+
+  /** Charts supplied with the same FlockRegistry will have x axis of the same width */
+  export let commonXAxisHeight: FlockRegistry<number> | undefined = undefined;
+  $: xAxisHeight = flockReduce(commonXAxisHeight, Math.max);
+
+  /** Charts supplied with the same FlockRegistry will have y axis of the same width */
+  export let commonYAxisWidth: FlockRegistry<number> | undefined = undefined;
+  $: yAxisWidth = flockReduce(commonYAxisWidth, Math.max);
+
   /** Sets position of the lil infobox that shows number of traces and range */
   export let infoboxPosition:
     | "top-left"
@@ -188,6 +201,7 @@
     hoverXQuantity = chart.coordinatesToQuantities(e.offsetX * zoom, "x");
     hoverYQuantity = chart.coordinatesToQuantities(e.offsetY * zoom, "y");
     commonXRuler.set(hoverXQuantity);
+    commonYRuler.set(hoverYQuantity);
   };
 
   $: closestTraces =
@@ -365,7 +379,11 @@
   bind:this={wrapDiv}
   style="height: 100%; width: 100%; background-color: var(--background-color)"
 >
-  <ChartGrid bind:contentSize>
+  <ChartGrid
+    bind:contentSize
+    xAxisHeight={$xAxisHeight}
+    yAxisWidth={$yAxisWidth}
+  >
     <svelte:fragment slot="title">
       {title}
     </svelte:fragment>
@@ -390,6 +408,7 @@
       lowerFactor={chart?.lowerYFactorAction ?? cons(undefined)}
       resetUnit={chart?.resetYFactorAction ?? cons(undefined)}
       bind:textLength={yAxisTextSize}
+      dimensionFlock={commonYAxisWidth}
     />
 
     <AxisTicks
@@ -409,6 +428,7 @@
       lowerFactor={chart?.lowerXFactorAction ?? cons(undefined)}
       resetUnit={chart?.resetXFactorAction ?? cons(undefined)}
       bind:textLength={xAxisTextSize}
+      dimensionFlock={commonXAxisHeight}
     />
 
     <Guidelines
@@ -443,6 +463,7 @@
       {disableInteractivity}
       {presYThreshFracs}
       {commonXRuler}
+      {commonYRuler}
       bind:filterByThreshold
       bind:addPersistentThreshold
       traceHovered={selectedTrace !== undefined}
@@ -476,6 +497,7 @@
           highlightedPoints: [],
         }));
         commonXRuler.set(undefined);
+        commonYRuler.set(undefined);
       }}
       on:blur={() => {
         showTooltip = false;

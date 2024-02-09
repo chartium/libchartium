@@ -41,6 +41,8 @@
   import RulerBubble from "./RulerBubble.svelte";
   import { type Dayjs } from "dayjs";
   import type { Chart } from "./chart.js";
+  import { P, match } from "ts-pattern";
+  import { mapOpt } from "../utils/mapOpt.js";
 
   export const events = createEventDispatcher<{
     reset: undefined;
@@ -62,6 +64,7 @@
   export let disableInteractivity: boolean;
   export let traceHovered: boolean;
   export let commonXRuler: WritableSignal<ChartValue | undefined>;
+  export let commonYRuler: WritableSignal<ChartValue | undefined>;
 
   let thresholdFilterMode: boolean = false;
   export const filterByThreshold = () => {
@@ -89,6 +92,7 @@
   $: $visibleAction, scheduleDraw();
   $: mousePosition, scheduleDraw();
   $: $commonXRuler, scheduleDraw();
+  $: $commonYRuler, scheduleDraw();
   $: if ((thresholdFilterMode || thresholdAddMode) && mousePosition)
     visibleAction.update((a) => {
       return { ...a, yThreshold: 1 - mousePosition![1] / overlayHeight };
@@ -124,20 +128,27 @@
       } else if (action && action.yThreshold && !disableInteractivity) {
         drawThreshold(action.yThreshold);
       } else if (mousePosition) {
-        drawRuler(
-          {
-            x: mousePosition[0] / overlayWidth,
-            y: 1 - mousePosition[1] / overlayHeight,
-          },
-          false,
-        );
-      } else if (chart && commonXRuler.get()) {
+        drawRuler({
+          x: mousePosition[0] / overlayWidth,
+          y: 1 - mousePosition[1] / overlayHeight,
+        });
+      } else if (chart) {
         // Global Ruler
         // https://open.spotify.com/track/3vFZheR74pxUkzxqhXTZ2X
-        const xValue = commonXRuler.get()!;
-        const zoom = devicePixelRatio;
-        const x = chart.quantitiesToFractions(xValue, "x");
-        drawRuler({ x, y: 0 }, true);
+
+        const x = mapOpt(commonXRuler.get(), (v) =>
+          chart!.quantitiesToFractions(v, "x"),
+        );
+        const y = mapOpt(commonYRuler.get(), (v) =>
+          chart!.quantitiesToFractions(v, "y"),
+        );
+
+        match({ x, y })
+          .with({ x: P.number, y: P.number }, ({ x, y }) =>
+            drawRuler({ x, y }, "xy"),
+          )
+          .with({ x: P.number }, ({ x }) => drawRuler({ x, y: 0 }, "x"))
+          .with({ y: P.number }, ({ y }) => drawRuler({ x: 0, y }, "y"));
       }
 
       if (action && action.highlightedPoints && !hideHoverPoints) {
@@ -221,12 +232,12 @@
     }
   }
 
-  function drawRuler(point: Point, xOnly: boolean) {
+  function drawRuler(point: Point, axes: "x" | "y" | "xy" = "xy") {
     const style = {
       dash: [9, 3],
     };
 
-    if (!hideXRuler) {
+    if (!hideXRuler && axes.includes("x")) {
       drawSegment(
         ctx,
         [point.x * overlayWidth, 0],
@@ -235,7 +246,7 @@
       );
     }
 
-    if (!xOnly && !hideYRuler) {
+    if (!hideYRuler && axes.includes("y")) {
       drawSegment(
         ctx,
         [0, (1 - point.y) * overlayHeight],

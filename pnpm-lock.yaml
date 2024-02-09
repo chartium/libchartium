@@ -9,8 +9,8 @@ dependencies:
     specifier: ^6.5.1
     version: 6.5.1
   '@mod.js/signals':
-    specifier: ^0.0.18
-    version: 0.0.18
+    specifier: ^0.0.19
+    version: 0.0.19
   '@risai/bim':
     specifier: ^1.4.2
     version: 1.4.2
@@ -59,6 +59,9 @@ dependencies:
   svelte-typed-context:
     specifier: ^1.0.1
     version: 1.0.1(svelte@4.2.9)
+  ts-pattern:
+    specifier: ^5.0.6
+    version: 5.0.6
   unitlib:
     specifier: ^0.6.1
     version: 0.6.1
@@ -424,8 +427,8 @@ packages:
       '@jridgewell/resolve-uri': 3.1.1
       '@jridgewell/sourcemap-codec': 1.4.15
 
-  /@mod.js/signals@0.0.18:
-    resolution: {integrity: sha512-9+PvZJ/Ug1/85TeTub1/YrGqfsaw6OKtlCWae/Dp3kmg+Xb294tuLLR8Mr+tN5m6L+2TN+96J/knwrQb2Rw/+w==}
+  /@mod.js/signals@0.0.19:
+    resolution: {integrity: sha512-fKlzCZxy58K361kbyn8BJSIHC+eib6LDTDCOowTGWozID8QUKz5UUYUo2Vo1YGfuGxq90ZtQ6I9bJSptRVk7xw==}
     dev: false
 
   /@nodelib/fs.scandir@2.1.5:
@@ -2053,6 +2056,10 @@ packages:
     dependencies:
       typescript: 5.3.3
     dev: true
+
+  /ts-pattern@5.0.6:
+    resolution: {integrity: sha512-Y+jOjihlFriWzcBjncPCf2/am+Hgz7LtsWs77pWg5vQQKLQj07oNrJryo/wK2G0ndNaoVn2ownFMeoeAuReu3Q==}
+    dev: false
 
   /tslib@2.6.2:
     resolution: {integrity: sha512-AEYxH93jGFPn/a2iVAwW87VuUIkR1FVUKB77NwMF7nBTDkDrrT/Hpt/IrCJ0QXhW27jTBDcf5ZY7w6RiqTMw2Q==}

@@ -2,6 +2,8 @@
   import { observeResize } from "../utils/actions.js";
 
   export let contentSize: [number, number] = [1, 1];
+  export let xAxisHeight: number | undefined = undefined;
+  export let yAxisWidth: number | undefined = undefined;
 </script>
 
 <div class="graph-inner">
@@ -11,17 +13,17 @@
   <div class="subtitle">
     <slot name="subtitle" />
   </div>
-  <div class="ylabel">
-    <slot name="ylabel" />
-  </div>
-  <div class="yticks">
+  <div
+    class="yticks"
+    style:width={yAxisWidth === undefined ? "unset" : `${yAxisWidth}px`}
+  >
     <slot name="yticks" />
   </div>
-  <div class="xticks">
+  <div
+    class="xticks"
+    style:height={xAxisHeight === undefined ? "unset" : `${xAxisHeight}px`}
+  >
     <slot name="xticks" />
-  </div>
-  <div class="xlabel">
-    <slot name="xlabel" />
   </div>
   <div class="content" use:observeResize={(s) => (contentSize = s)}>
     <slot />

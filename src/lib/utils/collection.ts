@@ -1,3 +1,6 @@
+import { cons, type Flock, type Signal } from "@mod.js/signals";
+import { mapOpt } from "./mapOpt.js";
+
 export function* concat<T>(...iters: Iterable<T>[]): Iterable<T> {
   for (const iter of iters) {
     yield* iter;
@@ -199,4 +202,47 @@ export function intersection<T>(a: Iterable<T>, ...sets: Set<T>[]): Set<T> {
   }
 
   return toReturn;
+}
+
+export function flockReduce<T>(
+  flock: Flock<T>,
+  callbackfn: (previousValue: T, currentValue: T) => T,
+): Signal<T>;
+export function flockReduce<T>(
+  flock: Flock<T>,
+  callbackfn: (previousValue: T, currentValue: T) => T,
+  initialValue: T,
+): Signal<T>;
+export function flockReduce<T, U>(
+  flock: Flock<T>,
+  callbackfn: (previousValue: U, currentValue: T) => T,
+  initialValue: U,
+): Signal<U>;
+export function flockReduce<T>(
+  flock: Flock<T> | undefined,
+  callbackfn: (previousValue: T, currentValue: T) => T,
+): Signal<T | undefined>;
+export function flockReduce<T>(
+  flock: Flock<T> | undefined,
+  callbackfn: (previousValue: T, currentValue: T) => T,
+  initialValue: T,
+): Signal<T | undefined>;
+export function flockReduce<T, U>(
+  flock: Flock<T> | undefined,
+  callbackfn: (previousValue: U, currentValue: T) => T,
+  initialValue: U,
+): Signal<U | undefined>;
+
+export function flockReduce<T, U>(
+  flock: Flock<T> | undefined,
+  callbackfn: (previousValue: any, currentValue: T) => T,
+  initialValue?: U,
+): Signal<any> {
+  return (
+    mapOpt(flock, (f) => f.toSet())?.map((s) =>
+      arguments.length === 2
+        ? [...s].reduce(callbackfn)
+        : [...s].reduce(callbackfn, initialValue),
+    ) ?? cons(undefined)
+  );
 }
