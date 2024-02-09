@@ -51,7 +51,8 @@
   export let dimensionFlock: FlockRegistry<number> | undefined;
   let contentRect: DOMRect;
   const minorDim = mut<number>(0);
-  $: minorDim.set(axis === "x" ? contentRect.height : contentRect.width);
+  $: contentRect &&
+    minorDim.set(axis === "x" ? contentRect.height : contentRect.width);
   $: onDestroy(dimensionFlock?.register(minorDim) ?? noop);
 
   type UnitAction = Signal<{ unit: Unit; callback: () => void } | undefined>;

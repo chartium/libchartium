@@ -19,8 +19,8 @@
   export let singleTraceInfo:
     | {
         styledTrace: TraceInfo;
-        x: string;
-        y: string;
+        time: string;
+        value: string;
         min: string;
         max: string;
         avg: string;
@@ -77,7 +77,7 @@
   <GenericTooltip position={show ? position : undefined}>
     <div class="tooltip-container">
       {#if singleTraceInfo !== undefined}
-        <div class="header">
+        <div class="header" style:font-weight="500">
           <TracePreview
             previewedTrace={singleTraceInfo.styledTrace}
             simplified={previewStyle === "simplified"}
@@ -86,7 +86,11 @@
         </div>
         {#each Object.entries(singleTraceInfo) as [key, value]}
           {#if key !== "styledTrace"}
-            <div class="trace-info">
+            <div
+              class="trace-info"
+              style:line-height="20px"
+              style:font-size="14px"
+            >
               <div class="value-name">{key}:</div>
               <div class="value-value">
                 {value}
@@ -102,7 +106,7 @@
         </div>
         {#each nearestTracesInfo as info}
           <div class="trace-info">
-            <div class="value-name">
+            <div class="value-name" style:font-weight="500">
               <TracePreview
                 previewedTrace={info.styledTrace}
                 simplified={previewStyle === "simplified"}
@@ -138,7 +142,6 @@
     padding-left: 20px;
     padding-right: 20px;
     margin-bottom: 5px;
-    margin-top: 5px;
   }
 
   .trace-info {
@@ -150,7 +153,6 @@
   .value-name {
     display: flex;
     flex-direction: row;
-    font-weight: 600;
     padding-left: 4px;
     padding-right: 4px;
   }

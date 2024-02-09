@@ -96,7 +96,7 @@
   /** Hides the tooltips shown next to cursor */
   export let hideTooltip: boolean = false;
   /** Sets the number of traces that are shown in the tooltip by users keyboard */
-  export let tooltipTracesShown: number | "all" = 5;
+  export let tooltipTracesShown: number | "all" = 3;
   /** Hides the highlighted points on traces that the tooltip is showing info about */
   export let hideHoverPoints: boolean = false;
 
@@ -180,7 +180,6 @@
     unit: $yDisplayUnit,
   } satisfies Parameters<typeof qndFormat>[1];
   const visibleAction = mut<VisibleAction | undefined>(undefined);
-
   $: (window as any).chart = chart; // FIXME DEBUG
 
   let contentSize: [number, number] = [1, 1];
@@ -262,8 +261,8 @@
   let selectedTrace:
     | {
         styledTrace: TraceInfo;
-        x: string;
-        y: string;
+        time: string;
+        value: string;
         min: string;
         max: string;
         avg: string;
@@ -297,8 +296,8 @@
 
     selectedTrace = {
       styledTrace: closestTraces[0].traceInfo,
-      x: qndFormat(closestTraces[0].closestPoint.x, qndFormatOptions),
-      y: qndFormat(closestTraces[0].closestPoint.y, qndFormatOptions),
+      time: qndFormat(closestTraces[0].closestPoint.x, qndFormatOptions),
+      value: qndFormat(closestTraces[0].closestPoint.y, qndFormatOptions),
       min: qndFormat(statsOfClosest.min, qndFormatOptions),
       max: qndFormat(statsOfClosest.max, qndFormatOptions),
       avg: qndFormat(statsOfClosest.avg, qndFormatOptions),
