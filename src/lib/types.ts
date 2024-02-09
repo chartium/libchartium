@@ -168,3 +168,8 @@ export type RectanglePosition =
       width: number;
       height: number;
     };
+
+export type ExportHeader = {
+  x: number;
+  [traceId: string]: number;
+};

@@ -6,6 +6,8 @@ import {
   type Unit,
   type ChartValue,
   type DateRange,
+  type TypedArray,
+  type ExportHeader,
 } from "../types.js";
 import { lib } from "./wasm.js";
 import {
@@ -42,7 +44,7 @@ import {
   toQuantOrDayRange,
   unitEqual,
 } from "../utils/quantityHelpers.js";
-import { type Dayjs } from "dayjs";
+import dayjs, { type Dayjs } from "dayjs";
 import { NumericDateFormat } from "../index.js";
 
 export const BUNDLES = Symbol("bundles");
@@ -651,6 +653,105 @@ export class TraceList {
     }
 
     return results;
+  }
+
+  /**
+   * Export data of all traces into a stream.
+   * @param writer A writer that writes the output of transformer into whatever you want
+   * @param transformer Function that turns one "line" of data into whatever format the writer will write
+   * @param range From what range to export
+   * @param interpolationStrategy How to interpolate missing ys
+   */
+  async exportDdata(
+    writer: Pick<WritableStreamDefaultWriter, "ready" | "write">,
+    transformer: (
+      data: ExportHeader,
+    ) => ArrayBuffer | TypedArray | DataView | Blob | string,
+    range: Range,
+    interpolationStrategy: lib.InterpolationStrategy,
+  ) {
+    const writeLine = async (data: ExportHeader) => {
+      writer.ready.then(() => {
+        writer.write(transformer(data));
+      });
+    };
+    const linesPerBuffer = 100;
+    const buffers: Map<lib.BoxedBundle, Float64Array> = new Map(
+      this.#bundles.map((bundle) => [
+        bundle,
+        new Float64Array((bundle.traces().length + 1) * linesPerBuffer),
+      ]),
+    );
+
+    const fillBuffer = (bundle: lib.BoxedBundle, from: number): number => {
+      return bundle.export_to_buffer(
+        buffers.get(bundle)!,
+        bundle.traces(),
+        from,
+        toNumeric(range.to, this.getBundleUnits(bundle).x),
+      );
+    };
+    // these little fellas return true if their bundle has reached the end of the range
+    const linePoppers: Map<lib.BoxedBundle, () => ExportHeader | "bundleDone"> =
+      new Map(
+        this.#bundles.map((bundle) => {
+          const lineLength = bundle.traces().length + 1;
+          let currentIndex = -lineLength;
+          let currentX = toNumeric(range.from, this.getBundleUnits(bundle).x);
+          const buffer = buffers.get(bundle)!;
+          let availibleElements = buffer.length;
+
+          const popper = (): ExportHeader | "bundleDone" => {
+            currentIndex += lineLength;
+            if (currentIndex + lineLength >= availibleElements) {
+              // the buffer doesnt hold another line
+              if ((availibleElements = buffer.length)) {
+                // becuase the buffer short, just refresh it lmao
+                currentIndex = -lineLength;
+                const filledElements = fillBuffer(bundle, currentX);
+                availibleElements = filledElements;
+                if (availibleElements === 0) return "bundleDone";
+              } else {
+                // the buffer could hold more lines but rust didnt provide us with them
+                return "bundleDone";
+              }
+            }
+
+            const thisLine = buffer.slice(
+              currentIndex,
+              currentIndex + lineLength,
+            );
+            currentX = thisLine[0];
+            const header = bundle.traces().reduce(
+              (prev, handle, i) => ({
+                ...prev,
+                [traceIds.get(handle as TraceHandle)!]: thisLine[i + 1],
+              }),
+              { x: currentX },
+            );
+
+            return header;
+          };
+
+          return [bundle, popper];
+        }),
+      );
+
+    this.#bundles.forEach((bundle) =>
+      fillBuffer(bundle, toNumeric(range.from, this.getBundleUnits(bundle).x)),
+    );
+
+    let exportDone = false;
+    while (!exportDone) {
+      for (const bundle of this.#bundles) {
+        const popper = linePoppers.get(bundle)!;
+        const line = popper();
+        if (line === "bundleDone") {
+          exportDone = true;
+          break;
+        }
+      }
+    }
   }
 
   lmaoJustExport(howMany: number) {
