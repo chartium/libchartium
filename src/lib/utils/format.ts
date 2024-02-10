@@ -85,9 +85,10 @@ export function qndFormat(
   options.fancyUnicode ??= true;
 
   if (typeof input === "number") {
+    if (isNaN(input)) return "—";
     return formatFloat(input, options);
   } else if (input instanceof Quantity) {
-    input = input.inUnits(options.unit ?? input.unit);
+    if (isNaN(input.value)) return "—";
     return input.toString(options);
   } else {
     return input.format(options.dayjsFormat ?? "YYYY-MM-DD");

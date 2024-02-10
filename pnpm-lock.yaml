@@ -50,9 +50,6 @@ dependencies:
   svelte-fa:
     specifier: ^4.0.2
     version: 4.0.2(svelte@4.2.9)
-  svelte-fullscreen:
-    specifier: ^2.0.0
-    version: 2.0.0
   svelte-portal:
     specifier: ^2.2.1
     version: 2.2.1
@@ -63,8 +60,8 @@ dependencies:
     specifier: ^5.0.6
     version: 5.0.6
   unitlib:
-    specifier: ^0.6.1
-    version: 0.6.1
+    specifier: ^0.6.2
+    version: 0.6.2(typescript@5.3.3)
 
 devDependencies:
   '@sveltejs/package':
@@ -1805,11 +1802,6 @@ packages:
       immutable: 4.3.5
       source-map-js: 1.0.2
 
-  /screenfull@5.2.0:
-    resolution: {integrity: sha512-9BakfsO2aUQN2K9Fdbj87RJIEZ82Q9IGim7FqM5OsebfoFC6ZHXgDq/KvniuLTPdeM8wY2o6Dj3WQ7KeQCj3cA==}
-    engines: {node: '>=0.10.0'}
-    dev: false
-
   /seedrandom@3.0.5:
     resolution: {integrity: sha512-8OwmbklUNzwezjGInmZ+2clQmExQPvomqjL7LFqOYqtmuxRgQYqOD3mHaU+MvZn5FLUeVxVfQjwLZW/n/JFuqg==}
     dev: false
@@ -1929,12 +1921,6 @@ packages:
       svelte: ^4.0.0
     dependencies:
       svelte: 4.2.9
-    dev: false
-
-  /svelte-fullscreen@2.0.0:
-    resolution: {integrity: sha512-Sg03gZAyYtW7gqTA9WoFXY2m4CkFmRFu/+n7bmGJnYt/qxtO0N2tdQ61lZwbgN2AAMh2zF/185CTBI9vv3zvKQ==}
-    dependencies:
-      screenfull: 5.2.0
     dev: false
 
   /svelte-hmr@0.15.3(svelte@4.2.9):
@@ -2081,16 +2067,18 @@ packages:
     resolution: {integrity: sha512-pXWcraxM0uxAS+tN0AG/BF2TyqmHO014Z070UsJ+pFvYuRSq8KH8DmWpnbXe0pEPDHXZV3FcAbJkijJ5oNEnWw==}
     engines: {node: '>=14.17'}
     hasBin: true
-    dev: true
 
   /undici-types@5.26.5:
     resolution: {integrity: sha512-JlCMO+ehdEIKqlFxk6IfVoAUVmgz7cU7zD/h9XZ0qzeosSHmUJVOzSQvvYSYWXkFXC+IfLKSIffhv0sVZup6pA==}
     dev: true
 
-  /unitlib@0.6.1:
-    resolution: {integrity: sha512-o58tebAidIKlC1XIjHWR+U8UiQ+3zWPOZF0GC6d89n3HH2odPI7ogKhAmqCVN5AntBoZwXaxo3iI+I5fSZSsWA==}
+  /unitlib@0.6.2(typescript@5.3.3):
+    resolution: {integrity: sha512-Hyvtmcu1c/lc6/KNlUYu+xeKf3avkah3QlOUmtzSp0Rn3/ggm4RgqFRNrSv4umd9XMXgVMHIfpL22wWPHHWA9w==}
     dependencies:
       fraction.js: 4.3.7
+      yeet-ts: 1.0.3(typescript@5.3.3)
+    transitivePeerDependencies:
+      - typescript
     dev: false
 
   /uri-js@4.4.1:
@@ -2171,6 +2159,14 @@ packages:
     resolution: {integrity: sha512-r3vXyErRCYJ7wg28yvBY5VSoAF8ZvlcW9/BwUzEtUsjvX/DKs24dIkuwjtuprwJJHsbyUbLApepYTR1BN4uHrg==}
     engines: {node: '>= 6'}
     dev: true
+
+  /yeet-ts@1.0.3(typescript@5.3.3):
+    resolution: {integrity: sha512-VO+UV4KAhLBAO9ZzETLkSEoRZR+D7J/5LLBnhlzf8ogffXbPDQJ9/jEuU4ZroGAEV4VfRtYuUYJCg6yOthWtIg==}
+    peerDependencies:
+      typescript: ^5.3.3
+    dependencies:
+      typescript: 5.3.3
+    dev: false
 
   /yocto-queue@0.1.0:
     resolution: {integrity: sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==}

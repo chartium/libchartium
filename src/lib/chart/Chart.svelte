@@ -20,15 +20,12 @@
   import Tooltip from "./Tooltip.svelte";
   import { mut, cons, FlockRegistry } from "@mod.js/signals";
   import type { Remote } from "comlink";
-  import type dayjs from "dayjs";
   import { qndFormat } from "../utils/format.js";
   import type { Dayjs } from "dayjs";
   import type { RangeMargins } from "../utils/rangeMargins.js";
   import DefaultToolbar from "./Toolbar/DefaultToolbar.svelte";
   import { setContext } from "svelte-typed-context";
   import { toolKey } from "./Toolbar/toolKey.js";
-  import Fullscreen from "svelte-fullscreen";
-  import { mapOpt } from "../utils/mapOpt.js";
   import { flockReduce } from "../utils/collection.js";
 
   // SECTION Props

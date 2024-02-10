@@ -23,6 +23,7 @@
   import { measureText } from "../utils/format.js";
   import RotatedBox from "../utils/RotatedBox.svelte";
   import { noop } from "lodash-es";
+  import { mapOpt } from "../utils/mapOpt.js";
 
   export const events = createEventDispatcher<{
     shift: Shift;
@@ -49,10 +50,11 @@
   export let visibleAction: WritableSignal<VisibleAction | undefined>;
 
   export let dimensionFlock: FlockRegistry<number> | undefined;
-  let contentRect: DOMRect;
+  let contentRect: DOMRect | undefined;
   const minorDim = mut<number>(0);
-  $: contentRect &&
-    minorDim.set(axis === "x" ? contentRect.height : contentRect.width);
+  $: mapOpt(axis === "x" ? contentRect?.height : contentRect?.width, (d) =>
+    minorDim.set(d),
+  );
   $: onDestroy(dimensionFlock?.register(minorDim) ?? noop);
 
   type UnitAction = Signal<{ unit: Unit; callback: () => void } | undefined>;
