@@ -3,7 +3,7 @@
   import type { TraceInfo } from "../data-worker/trace-list.js";
   import * as canvas from "./canvas.js";
 
-  export let previewedTrace: TraceInfo;
+  export let previewedTrace: Omit<TraceInfo, "xDataUnit" | "yDataUnit">;
   $: color = `rgb( ${previewedTrace.color[0]}, ${previewedTrace.color[1]}, ${previewedTrace.color[2]} )`;
 
   export let previewWidth: number = 20;
@@ -29,7 +29,7 @@
     previewWidth,
   }: {
     ctx: CanvasRenderingContext2D | undefined;
-    trace: TraceInfo;
+    trace: Omit<TraceInfo, "xDataUnit" | "yDataUnit">;
     color: string;
     previewHeight: number;
     previewWidth: number;

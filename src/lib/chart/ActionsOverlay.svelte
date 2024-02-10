@@ -76,6 +76,7 @@
 
   let thresholdAddMode: boolean = false;
   export const addPersistentThreshold = () => {
+    console.log("uwuuwu");
     thresholdAddMode = true;
   };
 
