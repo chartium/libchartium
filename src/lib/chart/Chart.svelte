@@ -352,6 +352,21 @@
   $: (window as any).addPersistentThreshold = addPersistentThreshold;
   $: (window as any).filterByThreshold = filterByThreshold;
   $: (window as any).tracelist = traces;
+
+  $: (window as any).mockupWriter = {
+    ready: Promise.resolve(),
+    write: (data: any) => {
+      console.log(data);
+      return Promise.resolve();
+    },
+  };
+  $: (window as any).mockupTransformer = (
+    data: { x: number; [id: string]: any }[],
+  ) =>
+    data.reduce(
+      (last, curr) => [...last, `${new Date(curr.x * 60)}, ${curr}`],
+      [] as string[],
+    );
 </script>
 
 {#if !hideTooltip}

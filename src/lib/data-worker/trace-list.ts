@@ -46,6 +46,8 @@ import {
 } from "../utils/quantityHelpers.js";
 import dayjs, { type Dayjs } from "dayjs";
 import { NumericDateFormat } from "../index.js";
+import { Queue } from "../utils/queue.js";
+import type { BoxedBundle } from "../../../dist/wasm/libchartium.js";
 
 export const BUNDLES = Symbol("bundles");
 export const HANDLES = Symbol("handles");
@@ -668,110 +670,124 @@ export class TraceList {
       data: ExportHeader,
     ) => ArrayBuffer | TypedArray | DataView | Blob | string,
     range: Range,
-    interpolationStrategy: lib.InterpolationStrategy,
   ) {
+    const linesPerBuffer = 1000;
     const writeLine = async (data: ExportHeader) => {
       writer.ready.then(() => {
         writer.write(transformer(data));
       });
     };
-    const linesPerBuffer = 100;
-    const buffers: Map<lib.BoxedBundle, Float64Array> = new Map(
-      this.#bundles.map((bundle) => [
-        bundle,
-        new Float64Array((bundle.traces().length + 1) * linesPerBuffer),
-      ]),
-    );
 
-    const fillBuffer = (bundle: lib.BoxedBundle, from: number): number => {
-      return bundle.export_to_buffer(
-        buffers.get(bundle)!,
-        bundle.traces(),
+    let unfinishedBundles = this.#bundles.slice();
+    const buffers: Map<BoxedBundle, Float64Array> = unfinishedBundles.reduce(
+      (map, bundle) => {
+        map.set(
+          bundle,
+          new Float64Array((bundle.traces().length + 1) * linesPerBuffer),
+        );
+        return map;
+      },
+      new Map(),
+    );
+    // fill up queues for all buffrs
+    const queues: Map<BoxedBundle, Queue<ExportHeader>> = new Map(
+      unfinishedBundles.map((bundle) => [bundle, new Queue<ExportHeader>()]),
+    );
+    const bundleAvailibleEls: Map<BoxedBundle, number> = new Map();
+    const fillUpQueue = (bundle: lib.BoxedBundle, from: number) => {
+      const buffer = buffers.get(bundle)!;
+      const handles = bundle.traces();
+      const availibleElements = bundle.export_to_buffer(
+        buffer,
+        handles,
         from,
-        toNumeric(range.to, this.getBundleUnits(bundle).x),
+        dayjs(range.to as any).unix() / 60, // FIXME ughhh what is the proper toNumeric way to do this:
       );
-    };
-    // these little fellas return true if their bundle has reached the end of the range
-    const linePoppers: Map<lib.BoxedBundle, () => ExportHeader | "bundleDone"> =
-      new Map(
-        this.#bundles.map((bundle) => {
-          const lineLength = bundle.traces().length + 1;
-          let currentIndex = -lineLength;
-          let currentX = toNumeric(range.from, this.getBundleUnits(bundle).x);
-          const buffer = buffers.get(bundle)!;
-          let availibleElements = buffer.length;
+      bundleAvailibleEls.set(bundle, availibleElements);
 
-          const popper = (): ExportHeader | "bundleDone" => {
-            currentIndex += lineLength;
-            if (currentIndex + lineLength >= availibleElements) {
-              // the buffer doesnt hold another line
-              if ((availibleElements = buffer.length)) {
-                // becuase the buffer short, just refresh it lmao
-                currentIndex = -lineLength;
-                const filledElements = fillBuffer(bundle, currentX);
-                availibleElements = filledElements;
-                if (availibleElements === 0) return "bundleDone";
-              } else {
-                // the buffer could hold more lines but rust didnt provide us with them
-                return "bundleDone";
-              }
-            }
-
-            const thisLine = buffer.slice(
-              currentIndex,
-              currentIndex + lineLength,
-            );
-            currentX = thisLine[0];
-            const header = bundle.traces().reduce(
-              (prev, handle, i) => ({
-                ...prev,
-                [traceIds.get(handle as TraceHandle)!]: thisLine[i + 1],
-              }),
-              { x: currentX },
-            );
-
-            return header;
-          };
-
-          return [bundle, popper];
-        }),
-      );
-
-    this.#bundles.forEach((bundle) =>
-      fillBuffer(bundle, toNumeric(range.from, this.getBundleUnits(bundle).x)),
-    );
-
-    let exportDone = false;
-    while (!exportDone) {
-      for (const bundle of this.#bundles) {
-        const popper = linePoppers.get(bundle)!;
-        const line = popper();
-        if (line === "bundleDone") {
-          exportDone = true;
+      const queue = queues.get(bundle)!;
+      let header: ExportHeader = { x: Number.NaN };
+      for (const [i, el] of buffer.entries()) {
+        if (i >= availibleElements) {
           break;
         }
+        if (i % (handles.length + 1) === 0) {
+          queue.enqueue(header);
+          header = { x: el };
+        } else {
+          header[traceIds.get(handles[i] as TraceHandle)!] = el;
+        }
       }
-    }
-  }
+      // get rid of the first {x: NaN} header
+      queue.dequeue();
+    };
 
-  lmaoJustExport(howMany: number) {
-    const firsts_handles = this.#bundles[0].traces();
-    const range = this.range;
-    let buffer = new Float64Array((1 + firsts_handles.length) * howMany);
-
-    console.log(
-      this.#bundles[0].export_to_buffer(
-        buffer,
-        firsts_handles,
-        (range.from as Dayjs).unix() / 60,
-        (range.to as Dayjs).unix() / 60,
-      ),
+    unfinishedBundles.forEach((b) =>
+      fillUpQueue(b, dayjs(range.from as any).unix() / 60),
+    );
+    unfinishedBundles = unfinishedBundles.filter(
+      (b) => queues.get(b)!.length !== 0,
     );
 
-    buffer.forEach((datapoint, index) => {
-      if (index % (1 + firsts_handles.length) === 0) {
-        console.log(NumericDateFormat.EpochMinutes.parseToDate(datapoint));
-      } else console.log(datapoint);
-    });
+    const lastLines: Map<BoxedBundle, ExportHeader> = new Map(
+      unfinishedBundles.map((b) => [b, queues.get(b)!.peek()]),
+    );
+
+    const getOrInterpolate = (
+      x: number,
+      bundle: BoxedBundle,
+      lastLine: ExportHeader,
+    ) => {
+      const thisQueue = queues.get(bundle)!;
+      const nextLine = thisQueue.peek();
+      if (x === nextLine.x) return thisQueue.dequeue()!;
+      // FIXME match the strategy
+      const fraction = (x - lastLine.x) / (nextLine.x - lastLine.x);
+      const toReturn: ExportHeader = { x };
+      for (const id of Object.keys(lastLine)) {
+        toReturn[id] = fraction * (nextLine[id] - lastLine[id]) + lastLine[id];
+      }
+      return toReturn;
+    };
+    // cycle
+    while (unfinishedBundles.length > 0) {
+      const toWrite: ExportHeader[] = [];
+      const xs = Array.from(
+        new Set(
+          unfinishedBundles.reduce((last, b) => {
+            const buffer = buffers.get(b)!;
+            return [
+              ...last,
+              ...buffer.filter(
+                (_, i) =>
+                  i % (b.traces().length + 1) === 0 &&
+                  i < bundleAvailibleEls.get(b)!,
+              ),
+            ];
+          }, [] as number[]),
+        ),
+      ).toSorted((a, b) => a - b);
+      if (xs[0] >= dayjs(range.to as any).unix() / 60) break;
+      console.log(xs);
+
+      for (const x of xs) {
+        let header: ExportHeader = { x };
+        for (const bundle of unfinishedBundles) {
+          if (queues.get(bundle)!.peek()?.x === x)
+            lastLines.set(bundle, queues.get(bundle)!.peek());
+
+          header = {
+            ...header,
+            ...getOrInterpolate(x, bundle, lastLines.get(bundle)!),
+          };
+        }
+        toWrite.push(header);
+      }
+      toWrite.forEach((el) => writeLine(el));
+      unfinishedBundles.forEach((b) => fillUpQueue(b, xs.at(-1)!));
+      unfinishedBundles = unfinishedBundles.filter(
+        (b) => queues.get(b)!.length !== 0,
+      );
+    }
   }
 }
