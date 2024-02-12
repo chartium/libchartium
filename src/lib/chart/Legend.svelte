@@ -84,7 +84,9 @@
   {#each [...thresholds, ...tracesWithStyles.slice(0, numberOfShownTraces)] as styledTrace}
     {@const isThreshold = "threshold" in styledTrace}
     {@const id = styledTrace.id}
-    {@const hidden = isThreshold ? false : $hiddenTraceIds.has(id)}
+    {@const hidden = isThreshold
+      ? $hiddenThresholdIds.has(id)
+      : $hiddenTraceIds.has(id)}
     <div
       class="trace-legend"
       style:opacity={hidden ? "0.5" : 1}

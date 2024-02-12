@@ -30,6 +30,11 @@
   import { setContext } from "svelte-typed-context";
   import { toolKey } from "./Toolbar/toolKey.js";
   import { flockReduce } from "../utils/collection.js";
+  import {
+    type ThresholdInfo,
+    defaultThresholdStyle,
+    createThreshold,
+  } from "../utils/thresholds.js";
 
   // SECTION Props
 
@@ -353,25 +358,7 @@
     }),
   );
 
-  const thresholdStyle: Omit<TraceInfo, "xDataUnit" | "yDataUnit"> = {
-    color: [255, 255, 255],
-    display: "line",
-    width: 1,
-    label: "threshold",
-    id: "placeholder",
-  };
-  let yThresholds: (Omit<TraceInfo, "xDataUnit" | "yDataUnit"> & {
-    y: Quantity | number | Dayjs;
-  })[] = [];
-  $: presYThreshFracs = yThresholds
-    .filter((t) => $hiddenThresholdIds.has(t.id))
-    .map((q) => chart?.quantitiesToFractions(q.y, "y") ?? 0);
-  $: console.log(presYThreshFracs);
-  $: chart?.range.y.subscribe(() => {
-    presYThreshFracs = yThresholds.map(
-      (q) => chart?.quantitiesToFractions(q.y, "y") ?? 0,
-    );
-  });
+  let yThresholds: ThresholdInfo[] = [];
 
   let wrapDiv: HTMLDivElement;
   export function getWrapDiv(): HTMLDivElement {
@@ -500,7 +487,8 @@
       {hoverXQuantity}
       {hoverYQuantity}
       {disableInteractivity}
-      {presYThreshFracs}
+      {yThresholds}
+      {hiddenThresholdIds}
       {commonXRuler}
       {commonYRuler}
       bind:filterByThreshold
@@ -516,12 +504,7 @@
             "y",
           );
           if (!thresholdQ) return;
-          const fullThresholdInfo = {
-            y: thresholdQ,
-            ...thresholdStyle,
-            id: Math.random().toString(),
-          };
-          yThresholds.push(fullThresholdInfo);
+          yThresholds.push(createThreshold(thresholdQ));
           yThresholds = yThresholds;
         }
         if (t.detail.type === "filtering")

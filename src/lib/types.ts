@@ -1,4 +1,4 @@
-import dayjs from "dayjs";
+import dayjs, { Dayjs } from "dayjs";
 import type { Color } from "./utils/color.js";
 
 import type { Unit as Unit_ } from "unitlib";
@@ -6,6 +6,7 @@ export type Unit = Unit_<any, any, any>;
 
 import { Quantity as Quantity_ } from "unitlib";
 import { toNumeric } from "./utils/quantityHelpers.js";
+import type { TraceInfo } from "./index.js";
 export type Quantity = Quantity_<any, any, any>;
 export const Quantity = Quantity_;
 

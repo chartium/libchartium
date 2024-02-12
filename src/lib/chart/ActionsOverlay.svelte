@@ -5,7 +5,7 @@
     shift?: Shift;
     highlightedPoints?: HighlightPoint[];
     /** fraction of y range */
-    yThreshold?: number;
+    mouseThreshold?: number;
   };
 </script>
 
@@ -43,6 +43,11 @@
   import type { Chart } from "./chart.js";
   import { P, match } from "ts-pattern";
   import { mapOpt } from "../utils/mapOpt.js";
+  import {
+    createThreshold,
+    defaultThresholdStyle,
+    type ThresholdInfo,
+  } from "../utils/thresholds.js";
 
   export const events = createEventDispatcher<{
     reset: undefined;
@@ -72,13 +77,13 @@
   };
 
   /** Fractions of the graphs width representing persistent thresholds */
-  export let presYThreshFracs: number[] = [];
+  export let yThresholds: ThresholdInfo[] = [];
 
   let thresholdAddMode: boolean = false;
   export const addPersistentThreshold = () => {
-    console.log("uwuuwu");
     thresholdAddMode = true;
   };
+  export let hiddenThresholdIds: WritableSignal<Set<string>>;
 
   let canvasRef: HTMLCanvasElement;
   let ctx: CanvasRenderingContext2D;
@@ -94,9 +99,10 @@
   $: mousePosition, scheduleDraw();
   $: $commonXRuler, scheduleDraw();
   $: $commonYRuler, scheduleDraw();
+  $: $hiddenThresholdIds, scheduleDraw();
   $: if ((thresholdFilterMode || thresholdAddMode) && mousePosition)
     visibleAction.update((a) => {
-      return { ...a, yThreshold: 1 - mousePosition![1] / overlayHeight };
+      return { ...a, mouseThreshold: 1 - mousePosition![1] / overlayHeight };
     });
 
   let drawScheduled = false;
@@ -120,14 +126,23 @@
       ctx.strokeStyle = color;
       ctx.lineWidth = 1;
 
-      presYThreshFracs.forEach(drawThreshold);
+      yThresholds.forEach(drawThreshold);
 
       if (action && action.zoom && !disableInteractivity) {
         drawZoom(action.zoom);
       } else if (action && action.shift && !disableInteractivity) {
         drawShift(action.shift);
-      } else if (action && action.yThreshold && !disableInteractivity) {
-        drawThreshold(action.yThreshold);
+      } else if (
+        action &&
+        action.mouseThreshold &&
+        !disableInteractivity &&
+        chart
+      ) {
+        drawThreshold(
+          createThreshold(
+            chart.fractionsToQuantities(1 - action.mouseThreshold, "y"),
+          ),
+        );
       } else if (mousePosition) {
         drawRuler({
           x: mousePosition[0] / overlayWidth,
@@ -337,15 +352,19 @@
     }
   }
 
-  function drawThreshold(thresholdFrac: number) {
-    const style = {
-      dash: [9, 3],
-    };
+  function drawThreshold(threshold: ThresholdInfo) {
+    if (!chart) return;
+    if ($hiddenThresholdIds.has(threshold.id)) return;
+    const thresholdFrac = chart.quantitiesToFractions(threshold.y, "y");
     drawSegment(
       ctx,
       [0, (1 - thresholdFrac) * overlayHeight],
       [overlayWidth, (1 - thresholdFrac) * overlayHeight],
-      style,
+      {
+        lineWidth: defaultThresholdStyle.width,
+        strokeStyle: defaultThresholdStyle.color,
+        fillStyle: defaultThresholdStyle.color,
+      },
     );
   }
 
@@ -374,11 +393,11 @@
   };
 
   const leftClickCallback = (_e: MouseEvent) => {
-    const yThreshold = visibleAction.get()?.yThreshold;
+    const yThreshold = visibleAction.get()?.mouseThreshold;
     if (yThreshold) {
       visibleAction.update((a) => ({
         ...a,
-        yThreshold: undefined,
+        mouseThreshold: undefined,
       }));
       if (thresholdFilterMode) {
         events("yThreshold", { thresholdFrac: yThreshold, type: "filtering" });
