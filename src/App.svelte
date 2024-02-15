@@ -16,6 +16,7 @@
   import { Quantity } from "unitlib";
 
   import Fa from "svelte-fa";
+  import ToolExportToScv from "./lib/chart/Toolbar/ToolExportToSCV.svelte";
 
   // autogenerate a lot of data
   const from = 0;
@@ -28,7 +29,7 @@
     (_, index) => from + index * stepSize,
   );
 
-  const ys = Array.from({ length: 100 }, (_, idx) => ({
+  const ys = Array.from({ length: 2 }, (_, idx) => ({
     id: `trace_${idx}`,
     data: Float32Array.from(
       xs.map((x) => 100 + 100 * Math.sin((x / to) * 2 * Math.PI + idx)),
@@ -86,6 +87,7 @@
             <ToolFullscreen on:click={() => (fullscreen = !fullscreen)} />
             <ToolExportToPng />
             <ToolHideLegend />
+            <ToolExportToScv />
           </svelte:fragment>
           <svelte:fragment slot="infobox">
             <Fa icon={faArrowRight} />&ensp;1<br />

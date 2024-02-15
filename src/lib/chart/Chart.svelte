@@ -20,6 +20,7 @@
   import Tooltip from "./Tooltip.svelte";
   import { mut, cons, FlockRegistry } from "@mod.js/signals";
   import type { Remote } from "comlink";
+  import dayjs from "dayjs";
   import { qndFormat } from "../utils/format.js";
   import type { Dayjs } from "dayjs";
   import type { RangeMargins } from "../utils/rangeMargins.js";
@@ -353,6 +354,7 @@
     toggleLegend: () => {
       hideLegend = !hideLegend;
     },
+    getTracelist: () => traces,
   });
 
   // FIXME DEBUG
@@ -360,6 +362,20 @@
   let filterByThreshold: () => void;
   $: (window as any).addPersistentThreshold = addPersistentThreshold;
   $: (window as any).filterByThreshold = filterByThreshold;
+  $: (window as any).tracelist = traces;
+
+  $: (window as any).mockupWriter = {
+    ready: Promise.resolve(),
+    write: (data: any) => {
+      console.log(data);
+      return Promise.resolve();
+    },
+  };
+  $: (window as any).mockupTransformer = (data: {
+    x: number;
+    [id: string]: any;
+  }) =>
+    `x: ${dayjs(data.x * 60)}, ${Object.entries(data).map(([id, val]) => (id === "x" ? "" : `${id}: ${val}, `))}`;
 </script>
 
 {#if !hideTooltip}
