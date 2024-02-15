@@ -701,21 +701,25 @@ export class TraceList {
         buffer,
         handles,
         from,
-        dayjs(range.to as any).unix() / 60, // FIXME ughhh what is the proper toNumeric way to do this:
+        toNumeric(range.to, this.getBundleUnits(bundle).x),
       );
       bundleAvailibleEls.set(bundle, availibleElements);
 
       const queue = queues.get(bundle)!;
       let header: ExportHeader = { x: Number.NaN };
       for (const [i, el] of buffer.entries()) {
-        if (i >= availibleElements) {
+        if (i >= availibleElements + 1) {
           break;
         }
         if (i % (handles.length + 1) === 0) {
           queue.enqueue(header);
           header = { x: el };
         } else {
-          header[traceIds.get(handles[i] as TraceHandle)!] = el;
+          header[
+            traceIds.get(
+              handles[(i % (handles.length + 1)) - 1] as TraceHandle,
+            )!
+          ] = el;
         }
       }
       // get rid of the first {x: NaN} header
@@ -723,7 +727,7 @@ export class TraceList {
     };
 
     unfinishedBundles.forEach((b) =>
-      fillUpQueue(b, dayjs(range.from as any).unix() / 60),
+      fillUpQueue(b, toNumeric(range.from, this.getBundleUnits(b).x)),
     );
     unfinishedBundles = unfinishedBundles.filter(
       (b) => queues.get(b)!.length !== 0,
@@ -750,26 +754,31 @@ export class TraceList {
       return toReturn;
     };
     // cycle
+    let lastX = Number.NEGATIVE_INFINITY;
     while (unfinishedBundles.length > 0) {
       const toWrite: ExportHeader[] = [];
       const xs = Array.from(
         new Set(
-          unfinishedBundles.reduce((last, b) => {
-            const buffer = buffers.get(b)!;
-            return [
-              ...last,
-              ...buffer.filter(
-                (_, i) =>
-                  i % (b.traces().length + 1) === 0 &&
-                  i < bundleAvailibleEls.get(b)!,
-              ),
-            ];
-          }, [] as number[]),
+          unfinishedBundles.map((b) =>
+            queues
+              .get(b)!
+              .peekAll()
+              .map((h) => h.x),
+          ),
         ),
-      ).toSorted((a, b) => a - b);
-      if (xs[0] >= dayjs(range.to as any).unix() / 60) break;
-      console.log(xs);
-
+      )
+        .flat()
+        .toSorted((a, b) => a - b);
+      if (xs[0] === lastX) {
+        xs.shift();
+        for (const q of queues.values()) if (q.peek().x === lastX) q.dequeue();
+      }
+      const rangeToInLatest = Math.max(
+        ...unfinishedBundles.map((b) =>
+          toNumeric(range.to, this.getBundleUnits(b).x),
+        ),
+      );
+      if (xs[0] >= rangeToInLatest || xs.length === 0) break;
       for (const x of xs) {
         let header: ExportHeader = { x };
         for (const bundle of unfinishedBundles) {
@@ -783,8 +792,12 @@ export class TraceList {
         }
         toWrite.push(header);
       }
-      toWrite.forEach((el) => writeLine(el));
-      unfinishedBundles.forEach((b) => fillUpQueue(b, xs.at(-1)!));
+
+      for (const line of toWrite) {
+        await writeLine(line);
+      }
+      lastX = xs.at(-1)!;
+      unfinishedBundles.forEach((b) => fillUpQueue(b, lastX));
       unfinishedBundles = unfinishedBundles.filter(
         (b) => queues.get(b)!.length !== 0,
       );

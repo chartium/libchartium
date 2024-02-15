@@ -90,7 +90,7 @@ impl BoxedBundle {
     pub fn intersects(&self, from: f64, to: f64) -> bool {
         self.bundle.intersects(from, to)
     }
-    /// ### Fills input buffer with trace data from input range and handle array, returns number of valid elements
+    /// ### Fills input buffer with trace data from input range (including both endpoints) and handle array, returns number of valid elements
     /// * Buffer format is always \[x, y₁, y₂,… yₙ, x', y'₁, …], i.e. each datapoint takes up n+1 elements of the buffer (given n trace handles on input)
     ///   * Therefore returned number is always a multiple of `trace_handles.length()+1`
     ///   * Only whole datapoints are recorded. If there isn't space for n+1 more elements left the remaining space will remain unchanged

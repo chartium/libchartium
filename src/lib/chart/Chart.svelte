@@ -20,7 +20,7 @@
   import Tooltip from "./Tooltip.svelte";
   import { mut, cons } from "@mod.js/signals";
   import type { Remote } from "comlink";
-  import type dayjs from "dayjs";
+  import dayjs from "dayjs";
   import { qndFormat } from "../utils/format.js";
   import type { Dayjs } from "dayjs";
   import type { RangeMargins } from "../utils/rangeMargins.js";
@@ -344,6 +344,7 @@
     toggleLegend: () => {
       hideLegend = !hideLegend;
     },
+    getTracelist: () => traces,
   });
 
   // FIXME DEBUG
@@ -360,13 +361,11 @@
       return Promise.resolve();
     },
   };
-  $: (window as any).mockupTransformer = (
-    data: { x: number; [id: string]: any }[],
-  ) =>
-    data.reduce(
-      (last, curr) => [...last, `${new Date(curr.x * 60)}, ${curr}`],
-      [] as string[],
-    );
+  $: (window as any).mockupTransformer = (data: {
+    x: number;
+    [id: string]: any;
+  }) =>
+    `x: ${dayjs(data.x * 60)}, ${Object.entries(data).map(([id, val]) => (id === "x" ? "" : `${id}: ${val}, `))}`;
 </script>
 
 {#if !hideTooltip}

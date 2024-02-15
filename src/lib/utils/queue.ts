@@ -13,6 +13,10 @@ export class Queue<T> {
     return this.queue[0];
   }
 
+  peekAll() {
+    return this.queue.slice();
+  }
+
   dequeue() {
     return this.queue.shift();
   }
