@@ -4,27 +4,32 @@
   import { toolKey } from "./toolKey.js";
   import { getContext } from "svelte-typed-context";
   import type { ExportHeader } from "../../types.js";
+  import {
+    downloadCSVSensibly,
+    downloadCSVUnhingedly,
+  } from "../../utils/downloaders.js";
   const getTracelist = getContext(toolKey)?.getTracelist;
+  const getTitle = getContext(toolKey)?.getTitle;
+
   function exportCSV() {
     if (getTracelist === undefined) return;
-    const NO_DATA = "";
 
-    const traceList = getTracelist();
-    const ids = Array.from(traceList.traces());
-    const header = `timestamp,${ids.join(",")}`;
-    const transformer = (row: ExportHeader) =>
-      `${row.x},${ids.map((id) => row[id] ?? NO_DATA).join(",")}\n`;
+    const filename = `${getTitle?.() ?? "chartium"}.csv`;
+    const supportsFileSystemAccess =
+      "showSaveFilePicker" in window &&
+      (() => {
+        try {
+          return window.self === window.top;
+        } catch {
+          return false;
+        }
+      })();
 
-    const writer = {
-      ready: Promise.resolve(undefined),
-      write: (x: string) => {
-        console.log(x);
-        return Promise.resolve();
-      },
-    };
-
-    writer.write(header);
-    traceList.exportDdata(writer, transformer, traceList.range);
+    if (supportsFileSystemAccess) {
+      downloadCSVSensibly(getTracelist(), filename);
+    } else {
+      downloadCSVUnhingedly(getTracelist(), filename);
+    }
   }
 </script>
 

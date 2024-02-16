@@ -9,12 +9,13 @@
   const dti: DomToImage = domtoimage as any;
   const takeScreenshot = () => {
     const wrappingDiv = getContext(toolKey)?.getWrapDiv();
+    const filename = getContext(toolKey)?.getTitle?.() ?? "chartium";
     if (!wrappingDiv) {
       return;
     }
     dti.toPng(wrappingDiv).then((url) => {
       const link = document.createElement("a");
-      link.download = `graph.png`;
+      link.download = filename + ".png";
       link.href = url;
       link.click();
     });

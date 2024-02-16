@@ -5,6 +5,7 @@ export type ToolContext = {
   getWrapDiv: () => HTMLDivElement;
   toggleLegend: () => void;
   getTracelist: () => TraceList;
+  getTitle: () => string;
 };
 
 export const toolKey: InjectionKey<ToolContext> = Symbol("toolKey");

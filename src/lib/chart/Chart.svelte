@@ -355,6 +355,7 @@
       hideLegend = !hideLegend;
     },
     getTracelist: () => traces,
+    getTitle: () => title,
   });
 
   // FIXME DEBUG
