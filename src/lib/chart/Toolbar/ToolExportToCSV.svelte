@@ -3,7 +3,6 @@
   import ToolbarButton from "./ToolbarButton.svelte";
   import { toolKey } from "./toolKey.js";
   import { getContext } from "svelte-typed-context";
-  import type { ExportHeader } from "../../types.js";
   import {
     downloadCSVSensibly,
     downloadCSVUnhingedly,

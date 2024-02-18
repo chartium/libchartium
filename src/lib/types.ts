@@ -169,7 +169,8 @@ export type RectanglePosition =
       height: number;
     };
 
-export type ExportHeader = {
-  x: number;
+export const X = Symbol("x");
+export type ExportRow = {
+  [X]: number;
   [traceId: string]: number;
 };

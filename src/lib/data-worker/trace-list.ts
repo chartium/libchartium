@@ -5,9 +5,6 @@ import {
   type TraceHandle,
   type Unit,
   type ChartValue,
-  type DateRange,
-  type TypedArray,
-  type ExportHeader,
 } from "../types.js";
 import { lib } from "./wasm.js";
 import {
@@ -44,10 +41,11 @@ import {
   toQuantOrDayRange,
   unitEqual,
 } from "../utils/quantityHelpers.js";
-import dayjs, { type Dayjs } from "dayjs";
-import { NumericDateFormat } from "../index.js";
-import { Queue } from "../utils/queue.js";
-import type { BoxedBundle } from "../../../dist/wasm/libchartium.js";
+import {
+  exportTraceListData,
+  type TraceListExportOptions,
+} from "./trace-export.js";
+import type { NumericDateFormat } from "../index.js";
 
 export const BUNDLES = Symbol("bundles");
 export const HANDLES = Symbol("handles");
@@ -664,143 +662,7 @@ export class TraceList {
    * @param range From what range to export
    * @param interpolationStrategy How to interpolate missing ys
    */
-  async exportDdata(
-    writer: Pick<WritableStreamDefaultWriter, "ready" | "write">,
-    transformer: (
-      data: ExportHeader,
-    ) => ArrayBuffer | TypedArray | DataView | Blob | string,
-    range: Range,
-  ) {
-    const linesPerBuffer = 1000;
-    const writeLine = async (data: ExportHeader) => {
-      writer.ready.then(() => {
-        writer.write(transformer(data));
-      });
-    };
-
-    let unfinishedBundles = this.#bundles.slice();
-    const buffers: Map<BoxedBundle, Float64Array> = unfinishedBundles.reduce(
-      (map, bundle) => {
-        map.set(
-          bundle,
-          new Float64Array((bundle.traces().length + 1) * linesPerBuffer),
-        );
-        return map;
-      },
-      new Map(),
-    );
-    // fill up queues for all buffrs
-    const queues: Map<BoxedBundle, Queue<ExportHeader>> = new Map(
-      unfinishedBundles.map((bundle) => [bundle, new Queue<ExportHeader>()]),
-    );
-    const bundleAvailibleEls: Map<BoxedBundle, number> = new Map();
-    const fillUpQueue = (bundle: lib.BoxedBundle, from: number) => {
-      const buffer = buffers.get(bundle)!;
-      const handles = bundle.traces();
-      const availibleElements = bundle.export_to_buffer(
-        buffer,
-        handles,
-        from,
-        toNumeric(range.to, this.getBundleUnits(bundle).x),
-      );
-      bundleAvailibleEls.set(bundle, availibleElements);
-
-      const queue = queues.get(bundle)!;
-      let header: ExportHeader = { x: Number.NaN };
-      for (const [i, el] of buffer.entries()) {
-        if (i >= availibleElements + 1) {
-          break;
-        }
-        if (i % (handles.length + 1) === 0) {
-          queue.enqueue(header);
-          header = { x: el };
-        } else {
-          header[
-            traceIds.get(
-              handles[(i % (handles.length + 1)) - 1] as TraceHandle,
-            )!
-          ] = el;
-        }
-      }
-      // get rid of the first {x: NaN} header
-      queue.dequeue();
-    };
-
-    unfinishedBundles.forEach((b) =>
-      fillUpQueue(b, toNumeric(range.from, this.getBundleUnits(b).x)),
-    );
-    unfinishedBundles = unfinishedBundles.filter(
-      (b) => queues.get(b)!.length !== 0,
-    );
-
-    const lastLines: Map<BoxedBundle, ExportHeader> = new Map(
-      unfinishedBundles.map((b) => [b, queues.get(b)!.peek()]),
-    );
-
-    const getOrInterpolate = (
-      x: number,
-      bundle: BoxedBundle,
-      lastLine: ExportHeader,
-    ) => {
-      const thisQueue = queues.get(bundle)!;
-      const nextLine = thisQueue.peek();
-      if (x === nextLine.x) return thisQueue.dequeue()!;
-      // FIXME match the strategy
-      const fraction = (x - lastLine.x) / (nextLine.x - lastLine.x);
-      const toReturn: ExportHeader = { x };
-      for (const id of Object.keys(lastLine)) {
-        toReturn[id] = fraction * (nextLine[id] - lastLine[id]) + lastLine[id];
-      }
-      return toReturn;
-    };
-    // cycle
-    let lastX = Number.NEGATIVE_INFINITY;
-    while (unfinishedBundles.length > 0) {
-      const toWrite: ExportHeader[] = [];
-      const xs = Array.from(
-        new Set(
-          unfinishedBundles.map((b) =>
-            queues
-              .get(b)!
-              .peekAll()
-              .map((h) => h.x),
-          ),
-        ),
-      )
-        .flat()
-        .toSorted((a, b) => a - b);
-      if (xs[0] === lastX) {
-        xs.shift();
-        for (const q of queues.values()) if (q.peek().x === lastX) q.dequeue();
-      }
-      const rangeToInLatest = Math.max(
-        ...unfinishedBundles.map((b) =>
-          toNumeric(range.to, this.getBundleUnits(b).x),
-        ),
-      );
-      if (xs[0] >= rangeToInLatest || xs.length === 0) break;
-      for (const x of xs) {
-        let header: ExportHeader = { x };
-        for (const bundle of unfinishedBundles) {
-          if (queues.get(bundle)!.peek()?.x === x)
-            lastLines.set(bundle, queues.get(bundle)!.peek());
-
-          header = {
-            ...header,
-            ...getOrInterpolate(x, bundle, lastLines.get(bundle)!),
-          };
-        }
-        toWrite.push(header);
-      }
-
-      for (const line of toWrite) {
-        await writeLine(line);
-      }
-      lastX = xs.at(-1)!;
-      unfinishedBundles.forEach((b) => fillUpQueue(b, lastX));
-      unfinishedBundles = unfinishedBundles.filter(
-        (b) => queues.get(b)!.length !== 0,
-      );
-    }
+  async exportData(opts: TraceListExportOptions) {
+    return exportTraceListData(this, opts);
   }
 }

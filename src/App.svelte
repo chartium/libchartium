@@ -16,7 +16,7 @@
   import { Quantity } from "unitlib";
 
   import Fa from "svelte-fa";
-  import ToolExportToScv from "./lib/chart/Toolbar/ToolExportToSCV.svelte";
+  import ToolExportToCsv from "./lib/chart/Toolbar/ToolExportToCSV.svelte";
 
   // autogenerate a lot of data
   const from = 0;
@@ -87,7 +87,7 @@
             <ToolFullscreen on:click={() => (fullscreen = !fullscreen)} />
             <ToolExportToPng />
             <ToolHideLegend />
-            <ToolExportToScv />
+            <ToolExportToCsv />
           </svelte:fragment>
           <svelte:fragment slot="infobox">
             <Fa icon={faArrowRight} />&ensp;1<br />

@@ -1,10 +1,12 @@
 <script lang="ts">
   import type { ChartiumController } from "../data-worker/index.js";
-  import type {
-    Quantity,
-    Unit,
-    ChartValuePoint,
-    ChartValue,
+  import {
+    type Quantity,
+    type Unit,
+    type ChartValuePoint,
+    type ChartValue,
+    X,
+    type ExportRow as ExportRow,
   } from "../types.js";
   import type { TraceInfo, TraceList } from "../data-worker/trace-list.js";
   import type { VisibleAction } from "./ActionsOverlay.svelte";
@@ -365,6 +367,7 @@
   $: (window as any).filterByThreshold = filterByThreshold;
   $: (window as any).tracelist = traces;
 
+  (window as any).dayjs = dayjs;
   $: (window as any).mockupWriter = {
     ready: Promise.resolve(),
     write: (data: any) => {
@@ -372,11 +375,8 @@
       return Promise.resolve();
     },
   };
-  $: (window as any).mockupTransformer = (data: {
-    x: number;
-    [id: string]: any;
-  }) =>
-    `x: ${dayjs(data.x * 60)}, ${Object.entries(data).map(([id, val]) => (id === "x" ? "" : `${id}: ${val}, `))}`;
+  $: (window as any).mockupTransformer = (data: ExportRow) =>
+    `x: ${dayjs(data[X] * 60)}, ${Object.entries(data).map(([id, val]) => (id === "x" ? "" : `${id}: ${val}, `))}`;
 </script>
 
 {#if !hideTooltip}

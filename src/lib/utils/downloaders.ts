@@ -1,5 +1,5 @@
 import type { TraceList } from "../index.js";
-import type { ExportHeader } from "../types.js";
+import type { ExportRow } from "../types.js";
 
 export async function downloadCSVUnhingedly(
   tracelist: TraceList,
@@ -9,7 +9,7 @@ export async function downloadCSVUnhingedly(
 
   const ids = Array.from(tracelist.traces());
   const header = `timestamp,${ids.join(",")}\n`;
-  const transformer = (row: ExportHeader) =>
+  const transformer = (row: ExportRow) =>
     `${row.x},${ids.map((id) => row[id] ?? NO_DATA).join(",")}\n`;
 
   const rows: string[] = [];
@@ -20,7 +20,7 @@ export async function downloadCSVUnhingedly(
       return Promise.resolve();
     },
   };
-  await tracelist.exportDdata(writer, transformer, tracelist.range);
+  await tracelist.exportData({ writer, transformer });
 
   const blob = new Blob([header, ...rows], { type: "text/csv" });
   const url = URL.createObjectURL(blob);
@@ -46,10 +46,10 @@ export async function downloadCSVSensibly(
 
   const ids = Array.from(tracelist.traces());
   const header = `timestamp,${ids.join(",")}\n`;
-  const transformer = (row: ExportHeader) =>
+  const transformer = (row: ExportRow) =>
     `${row.x},${ids.map((id) => row[id] ?? NO_DATA).join(",")}\n`;
 
   writer.ready.then(() => writer.write(header));
 
-  return tracelist.exportDdata(writer, transformer, tracelist.range);
+  return tracelist.exportData({ writer, transformer });
 }
