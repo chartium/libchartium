@@ -19,7 +19,7 @@
   import AxisTicks from "./AxisTicks.svelte";
   import ChartLegend from "./Legend.svelte";
   import Guidelines from "./Guidelines.svelte";
-  import Tooltip from "./Tooltip.svelte";
+  import Tooltip from "./TraceTooltip.svelte";
   import { mut, cons, FlockRegistry } from "@mod.js/signals";
   import type { Remote } from "comlink";
   import dayjs from "dayjs";

@@ -88,7 +88,7 @@
           {#if key !== "styledTrace"}
             <div
               class="trace-info"
-              style:line-height="20px"
+              style:line-height="17px"
               style:font-size="14px"
             >
               <div class="value-name">{key}:</div>

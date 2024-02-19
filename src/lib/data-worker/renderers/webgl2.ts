@@ -190,7 +190,15 @@ export class WebGL2Renderer implements Renderer {
       const buffers = map(handles, (h) =>
         lib.WebGlRenderer.create_trace_buffer(this.#context, bundle, h),
       );
-      rj.add_traces(bundle, handles.length, buffers, styles);
+      const length_alongs = map(handles, (h) =>
+        this.#renderer.create_lengths_along_buffer(
+          rj,
+          this.#context,
+          h,
+          bundle,
+        ),
+      );
+      rj.add_traces(bundle, handles.length, buffers, styles, length_alongs);
     }
 
     if (job.clear !== undefined) rj.clear = job.clear;

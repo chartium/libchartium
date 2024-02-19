@@ -1,6 +1,7 @@
 import type { TraceList } from "../index.js";
 import type { ExportRow } from "../types.js";
 
+/** Copies the tracelist data and makes an anchor element to download it and clicks it */
 export async function downloadCSVUnhingedly(
   tracelist: TraceList,
   filename: string,
@@ -31,6 +32,7 @@ export async function downloadCSVUnhingedly(
   URL.revokeObjectURL(url);
 }
 
+/** Streams tracelist data into a csv file */
 export async function downloadCSVSensibly(
   tracelist: TraceList,
   filename: string,
