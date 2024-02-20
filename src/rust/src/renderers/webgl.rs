@@ -312,7 +312,6 @@ impl WebGlRenderer {
         Ok(())
     }
 
-    /// Creates an interator where each value will be how far from the start of the trace in pxs given point is
     pub fn create_lengths_along_buffer(
         &self,
         context: &WebGl2RenderingContext,
