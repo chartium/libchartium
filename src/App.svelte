@@ -29,7 +29,7 @@
     (_, index) => from + index * stepSize,
   );
 
-  const ys = Array.from({ length: 100 }, (_, idx) => ({
+  const ys = Array.from({ length: 2 }, (_, idx) => ({
     id: `trace_${idx}`,
     data: Float32Array.from(
       xs.map((x) => 100 + 100 * Math.sin((x / to) * 2 * Math.PI + idx)),

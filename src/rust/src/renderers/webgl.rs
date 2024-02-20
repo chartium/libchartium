@@ -1,4 +1,5 @@
 use js_sys::{try_iter, Float32Array};
+use num_traits::Pow;
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::{prelude::*, JsCast, JsValue};
 use web_sys::{
@@ -97,7 +98,6 @@ impl WebGlRenderJob {
         let from = bundle.from();
         let to = bundle.to();
         let points = bundle.point_count();
-
         self.traces.reserve(trace_count);
         for ((buffer, style), length_along) in try_iter(&trace_buffers)
             .unwrap()
@@ -105,8 +105,8 @@ impl WebGlRenderJob {
             .zip(try_iter(&trace_styles).unwrap().unwrap())
             .zip(try_iter(&length_alongs).unwrap().unwrap())
         {
-            let length_along: WebGlBuffer = length_along.unwrap().into();
             let buffer: WebGlBuffer = buffer.unwrap().into();
+            let length_along: WebGlBuffer = length_along.unwrap().into();
             let style: TraceStyle = serde_wasm_bindgen::from_value(style.unwrap()).unwrap();
 
             self.traces.push(WebGlTrace {
@@ -243,9 +243,33 @@ impl WebGlRenderer {
                 1.0,
             );
 
+            let a_length_along =
+                gl.get_attrib_location(&self.programs.trace_program, "aLengthAlong") as u32;
+            gl.bind_buffer(
+                WebGl2RenderingContext::ARRAY_BUFFER,
+                Some(&trace.length_along),
+            );
+            gl.vertex_attrib_pointer_with_i32(
+                a_length_along,
+                1,
+                WebGl2RenderingContext::FLOAT,
+                false,
+                0,
+                0,
+            );
+            gl.enable_vertex_attrib_array(a_length_along);
+            let a_position_name =
+                gl.get_attrib_location(&self.programs.trace_program, "aVertexPosition") as u32;
             gl.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, Some(&trace.buffer));
-            gl.vertex_attrib_pointer_with_i32(0, 2, WebGl2RenderingContext::FLOAT, false, 0, 0);
-            gl.enable_vertex_attrib_array(0);
+            gl.vertex_attrib_pointer_with_i32(
+                a_position_name,
+                2,
+                WebGl2RenderingContext::FLOAT,
+                false,
+                0,
+                0,
+            );
+            gl.enable_vertex_attrib_array(a_position_name);
 
             if width < self.line_width_limit + 0.1 {
                 gl.line_width(width);
@@ -291,14 +315,16 @@ impl WebGlRenderer {
     /// Creates an interator where each value will be how far from the start of the trace in pxs given point is
     pub fn create_lengths_along_buffer(
         &self,
-        job: WebGlRenderJob,
         context: &WebGl2RenderingContext,
         bundle: &BoxedBundle,
         trace: TraceHandle,
+        x_from: f64,
+        x_to: f64,
+        y_from: f64,
+        y_to: f64,
     ) -> WebGlBuffer {
         let from = bundle.from();
         let to = bundle.to();
-
         // FIXME data already gets calculated in `create_trace_buffer`; if performance is an issue maybe try getting rid of this redundancy
         let data: Vec<(f64, f64)> = bundle
             .unwrap()
@@ -306,45 +332,43 @@ impl WebGlRenderer {
             .with_origin_at(from, 0.0)
             .collect();
 
+        #[derive(Clone, Debug)]
         struct State {
-            length_so_far: f32,
-            last_x: Option<u32>,
-            last_y: Option<u32>,
+            length_so_far: f64,
+            last_x: f64,
+            last_y: f64,
         }
+
+        let (last_x, last_y) = (
+            ((self.width as f64) * (data[0].0 - x_from) / (x_to - x_from)),
+            ((self.height as f64) * (data[0].1 - y_from) / (y_to - y_from)),
+        );
 
         let initial_state = State {
             length_so_far: 0.0,
-            last_y: None, // gets filled during the first map in pixel space
-            last_x: None,
+            last_y,
+            last_x,
         };
 
         let lengths: Vec<f32> = data
-            .chunks(2)
-            .filter_map(|chunk| match chunk {
-                [(x, y)] => Some((x, y)), // If the conversion succeeds, return the tuple
-                _ => None,                // If the conversion fails, filter out the chunk
-            })
+            .into_iter()
             .map(|(x, y)| {
                 (
-                    (self.width as f64) * (x - job.x_from) / (job.x_to - job.x_from),
-                    (self.height as f64) * (y - job.y_from) / (job.y_to - job.y_from),
+                    (self.width as f64) * (x - x_from) / (x_to - x_from),
+                    (self.height as f64) * (y - y_from) / (y_to - y_from),
                 )
             })
-            .map(|(x, y)| (x.round() as u32, y.round() as u32))
-            .scan(initial_state, |state: &mut State, curr: (u32, u32)| {
+            .scan(initial_state, |state: &mut State, curr: (f64, f64)| {
                 let (x, y) = curr;
-                let curr_length_square =
-                    (state.last_x.unwrap_or(x) - x).pow(2) + (state.last_y.unwrap_or(y) - y).pow(2);
-
+                let curr_length_square: f64 = (state.last_x - x).pow(2) + (state.last_y - y).pow(2);
                 return Some(State {
-                    last_x: Some(x),
-                    last_y: Some(y),
-                    length_so_far: state.length_so_far + (curr_length_square as f32).sqrt(),
+                    last_x: x,
+                    last_y: y,
+                    length_so_far: state.length_so_far + (curr_length_square).sqrt(),
                 });
             })
-            .map(|state| state.length_so_far)
+            .map(|state| state.length_so_far as f32)
             .collect();
-
         let buffer = context.create_buffer().unwrap();
         context.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, Some(&buffer));
         context.buffer_data_with_array_buffer_view(
@@ -358,7 +382,7 @@ impl WebGlRenderer {
             WebGl2RenderingContext::STATIC_DRAW,
         );
 
-        return buffer; // and then give it to webgl which it will nom up like nomnomnom
+        buffer // and then give it to webgl which it will nom up like nomnomnom
     }
 
     pub fn create_trace_buffer(
@@ -376,7 +400,6 @@ impl WebGlRenderer {
             .with_origin_at(from, 0.0)
             .map(|(x, y)| (x as f32, y as f32))
             .collect();
-
         context.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, Some(&buffer));
         context.buffer_data_with_array_buffer_view(
             WebGl2RenderingContext::ARRAY_BUFFER,
