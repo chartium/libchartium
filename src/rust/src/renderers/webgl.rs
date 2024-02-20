@@ -1,5 +1,4 @@
 use js_sys::{try_iter, Float32Array};
-use num_traits::Pow;
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::{prelude::*, JsCast, JsValue};
 use web_sys::{
@@ -338,36 +337,38 @@ impl WebGlRenderer {
             last_y: f64,
         }
 
-        let (last_x, last_y) = (
-            ((self.width as f64) * (data[0].0 - x_from) / (x_to - x_from)),
-            ((self.height as f64) * (data[0].1 - y_from) / (y_to - y_from)),
+        let (x_pixel_ratio, y_pixel_ratio) = (
+            (self.width as f64) / (x_to - x_from),
+            (self.height as f64) / (y_to - y_from),
+        );
+
+        let (first_x, first_y) = (
+            x_pixel_ratio * (data[0].0 - x_from),
+            y_pixel_ratio * (data[0].1 - y_from),
         );
 
         let initial_state = State {
             length_so_far: 0.0,
-            last_y,
-            last_x,
+            last_x: first_x,
+            last_y: first_y,
         };
 
         let lengths: Vec<f32> = data
             .into_iter()
-            .map(|(x, y)| {
-                (
-                    (self.width as f64) * (x - x_from) / (x_to - x_from),
-                    (self.height as f64) * (y - y_from) / (y_to - y_from),
-                )
-            })
-            .scan(initial_state, |state: &mut State, curr: (f64, f64)| {
-                let (x, y) = curr;
-                let curr_length_square: f64 = (state.last_x - x).pow(2) + (state.last_y - y).pow(2);
-                return Some(State {
+            .map(|(x, y)| (x_pixel_ratio * (x - x_from), y_pixel_ratio * (y - y_from)))
+            .scan(initial_state, |state: &mut State, (x, y): (f64, f64)| {
+                let len_sqr: f64 = (state.last_x - x).powi(2) + (state.last_y - y).powi(2);
+
+                *state = State {
                     last_x: x,
                     last_y: y,
-                    length_so_far: state.length_so_far + (curr_length_square).sqrt(),
-                });
+                    length_so_far: state.length_so_far + len_sqr.sqrt(),
+                };
+
+                Some(state.length_so_far as f32)
             })
-            .map(|state| state.length_so_far as f32)
             .collect();
+
         let buffer = context.create_buffer().unwrap();
         context.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, Some(&buffer));
         context.buffer_data_with_array_buffer_view(

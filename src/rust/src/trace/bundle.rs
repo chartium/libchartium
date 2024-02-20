@@ -122,6 +122,7 @@ impl BoxedBundle {
                 return i * datapoint_length;
             }
         }
-        return space_in_buffer * datapoint_length;
+
+        space_in_buffer * datapoint_length
     }
 }
