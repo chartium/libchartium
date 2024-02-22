@@ -83,12 +83,12 @@ export async function exportTraceListData(
       const isLastColumn = columnIndex === columnCount - 1;
 
       if (isFirstColumn) row = { [X]: el };
-      else if (isLastColumn) queue.enqueue(row);
       else {
         row[
           traceIds.get(handles[(i % (handles.length + 1)) - 1] as TraceHandle)!
         ] = el;
       }
+      if (isLastColumn) queue.enqueue(row);
     }
   };
 
@@ -119,7 +119,6 @@ export async function exportTraceListData(
     }
     return toReturn;
   };
-  // cycle
   let lastX = Number.NEGATIVE_INFINITY;
   while (unfinishedBundles.length > 0) {
     const toWrite: ExportRow[] = [];

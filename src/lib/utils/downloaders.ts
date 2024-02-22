@@ -1,5 +1,5 @@
 import type { TraceList } from "../index.js";
-import type { ExportRow } from "../types.js";
+import { X, type ExportRow } from "../types.js";
 
 /** Copies the tracelist data and makes an anchor element to download it and clicks it */
 export async function downloadCSVUnhingedly(
@@ -11,7 +11,7 @@ export async function downloadCSVUnhingedly(
   const ids = Array.from(tracelist.traces());
   const header = `timestamp,${ids.join(",")}\n`;
   const transformer = (row: ExportRow) =>
-    `${row.x},${ids.map((id) => row[id] ?? NO_DATA).join(",")}\n`;
+    `${row[X]},${ids.map((id) => row[id] ?? NO_DATA).join(",")}\n`;
 
   const rows: string[] = [];
   const writer: Pick<WritableStreamDefaultWriter, "ready" | "write"> = {
@@ -49,7 +49,7 @@ export async function downloadCSVSensibly(
   const ids = Array.from(tracelist.traces());
   const header = `timestamp,${ids.join(",")}\n`;
   const transformer = (row: ExportRow) =>
-    `${row.x},${ids.map((id) => row[id] ?? NO_DATA).join(",")}\n`;
+    `${row[X]},${ids.map((id) => row[id] ?? NO_DATA).join(",")}\n`;
 
   writer.ready.then(() => writer.write(header));
 
