@@ -23,7 +23,7 @@
   import { mut, cons, FlockRegistry } from "@mod.js/signals";
   import type { Remote } from "comlink";
   import dayjs from "dayjs";
-  import { qndFormat } from "../utils/format.js";
+  import { qndFormat, type QndFormatOptions } from "../utils/format.js";
   import type { Dayjs } from "dayjs";
   import type { RangeMargins } from "../utils/rangeMargins.js";
   import DefaultToolbar from "./Toolbar/DefaultToolbar.svelte";
@@ -167,6 +167,18 @@
   let xAxisTextSize: ((text: string) => number) | undefined;
   let yAxisTextSize: ((text: string) => number) | undefined;
 
+  const QND_FORMAT_OPTIONS: QndFormatOptions = {
+    dateFormat: "MMM DD, hh:mm:ss",
+  };
+  $: xFormatOptions = {
+    ...QND_FORMAT_OPTIONS,
+    unit: $xDisplayUnit,
+  };
+  $: yFormatOptions = {
+    ...QND_FORMAT_OPTIONS,
+    unit: $yDisplayUnit,
+  };
+
   // walkaround for svelte 4 random reactivity bug
   $: chartUpdated(chart);
   function chartUpdated(chart: Chart | undefined) {
@@ -175,10 +187,6 @@
     chart.textSize.y = yAxisTextSize;
   }
 
-  $: qndFormatOptions = {
-    dayjsFormat: "MMM DD, hh:mm:ss",
-    unit: $yDisplayUnit,
-  } satisfies Parameters<typeof qndFormat>[1];
   const visibleAction = mut<VisibleAction | undefined>(undefined);
   $: (window as any).chart = chart; // FIXME DEBUG
 
@@ -216,11 +224,17 @@
         )
       : undefined;
   $: tracesInfo =
+    (console.log(
+      "tracesInfo. yDisplayUnit:",
+      $yDisplayUnit?.toString(),
+      "yValue:",
+      closestTraces?.[0]?.closestPoint.y.toString(),
+    ),
     closestTraces?.map((trace) => ({
       styledTrace: trace.traceInfo,
-      x: qndFormat(trace.closestPoint.x, qndFormatOptions),
-      y: qndFormat(trace.closestPoint.y, qndFormatOptions),
-    })) ?? [];
+      x: qndFormat(trace.closestPoint.x, xFormatOptions),
+      y: qndFormat(trace.closestPoint.y, yFormatOptions),
+    })) ?? []);
 
   /** updates highilghted points in visibleAction */
   function updateHighlightPoints(
@@ -261,8 +275,8 @@
   let selectedTrace:
     | {
         styledTrace: TraceInfo;
-        time: string;
-        value: string;
+        x: string;
+        y: string;
         min: string;
         max: string;
         avg: string;
@@ -296,11 +310,11 @@
 
     selectedTrace = {
       styledTrace: closestTraces[0].traceInfo,
-      time: qndFormat(closestTraces[0].closestPoint.x, qndFormatOptions),
-      value: qndFormat(closestTraces[0].closestPoint.y, qndFormatOptions),
-      min: qndFormat(statsOfClosest.min, qndFormatOptions),
-      max: qndFormat(statsOfClosest.max, qndFormatOptions),
-      avg: qndFormat(statsOfClosest.avg, qndFormatOptions),
+      x: qndFormat(closestTraces[0].closestPoint.x, xFormatOptions),
+      y: qndFormat(closestTraces[0].closestPoint.y, yFormatOptions),
+      min: qndFormat(statsOfClosest.min, yFormatOptions),
+      max: qndFormat(statsOfClosest.max, yFormatOptions),
+      avg: qndFormat(statsOfClosest.avg, yFormatOptions),
     };
   } else {
     selectedTrace = undefined;

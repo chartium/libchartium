@@ -19,8 +19,8 @@
   export let singleTraceInfo:
     | {
         styledTrace: TraceInfo;
-        time: string;
-        value: string;
+        x: string;
+        y: string;
         min: string;
         max: string;
         avg: string;

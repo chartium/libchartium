@@ -39,6 +39,7 @@ import {
   addZeroToRange,
   type RangeMargins,
 } from "../utils/rangeMargins.js";
+import Fraction from "fraction.js";
 
 export interface UnitChangeAction {
   unit: Unit;
@@ -608,12 +609,12 @@ export class Chart {
       if (!unit || unit instanceof NumericDateFormat) return;
 
       const factorsEqual = (a: FactorDefinition, b: FactorDefinition) =>
-        a.mul === b.mul && a.base === b.base && a.exp === b.exp;
+        a.mul === b.mul && a.base === b.base && a.exp.equals(b.exp);
 
       const factors = Object.entries<FactorDefinition>(unit.unitSystem.factors);
 
       // add prefix-less factor
-      factors.push(["(unitless)", { mul: 1, base: 1, exp: 1 }]);
+      factors.push(["(unitless)", { mul: 1, base: 1, exp: new Fraction(1) }]);
 
       // if the current factor is non-standard, add it to the list
       if (!factors.find(([_, f]) => factorsEqual(unit.factor, f))) {
@@ -622,7 +623,8 @@ export class Chart {
 
       // sort by value
       factors.sort(
-        ([_, a], [__, b]) => a.mul * a.base ** a.exp - b.mul * b.base ** b.exp,
+        ([_, a], [__, b]) =>
+          a.mul * a.base ** +a.exp - b.mul * b.base ** +b.exp,
       );
 
       const currentIndex = factors.findIndex(([_, f]) =>

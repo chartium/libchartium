@@ -39,5 +39,6 @@ module.exports = {
       },
     ],
     "svelte/no-at-html-tags": "off",
+    "no-empty": ["warn", { allowEmptyCatch: true }],
   },
 };

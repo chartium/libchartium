@@ -70,14 +70,16 @@ export function doOverlap(
   return false;
 }
 
+export interface QndFormatOptions extends QuantityFormatOptions {
+  decimals?: number;
+  dateFormat?: string;
+  unit?: Unit;
+}
+
 /** Formats input based on options */
 export function qndFormat(
   input: number | Quantity | dayjs.Dayjs,
-  options: QuantityFormatOptions & {
-    decimals?: number;
-    dayjsFormat?: string;
-    unit?: Unit;
-  } = {},
+  options: QndFormatOptions = {},
 ) {
   options = { ...options };
   options.decimalPlaces ??= 2;
@@ -89,8 +91,13 @@ export function qndFormat(
     return formatFloat(input, options);
   } else if (input instanceof Quantity) {
     if (isNaN(input.value)) return "—";
+    if (options.unit) {
+      try {
+        input = input.inUnits(options.unit);
+      } catch {}
+    }
     return input.toString(options);
   } else {
-    return input.format(options.dayjsFormat ?? "YYYY-MM-DD");
+    return input.format(options.dateFormat ?? "YYYY-MM-DD");
   }
 }

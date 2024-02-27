@@ -33,7 +33,7 @@
   bind:clientWidth
   use:portal
 >
-  {qndFormat(value ?? 0, { decimals: 2, dayjsFormat: "YYYY-MM-DD\nHH:mm:ss" })}
+  {qndFormat(value ?? 0, { decimals: 2, dateFormat: "YYYY-MM-DD\nHH:mm:ss" })}
 </div>
 
 <style lang="scss">

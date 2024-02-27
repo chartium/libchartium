@@ -4,7 +4,7 @@ The documentation is getting ready, please check back soon!
 
 ## Installation
 ```sh
-npm add libchartium
+npm add libchartium unitlib fraction.js
 ```
 
 ## Example
