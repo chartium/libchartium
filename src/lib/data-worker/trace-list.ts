@@ -107,7 +107,7 @@ export class TraceList {
   static empty() {
     return new TraceList({
       handles: [],
-      range: { from: 0, to: 0 },
+      range: { from: 0, to: 1 },
       bundles: [],
       traceInfo: [],
       labels: new Map(),
@@ -258,6 +258,7 @@ export class TraceList {
       flatMap(bundles, (b) => b.traces() as Iterable<TraceHandle>),
     );
     const handles = this.#traceHandles.filter((t) => availableHandles.has(t));
+    if (handles.length === 0) return TraceList.empty();
 
     return new TraceList({
       handles,
@@ -281,6 +282,7 @@ export class TraceList {
     );
 
     const handles = this.#traceHandles.filter((h) => !exclude.has(h));
+    if (handles.length === 0) return TraceList.empty();
 
     return new TraceList({
       handles,
@@ -315,6 +317,7 @@ export class TraceList {
     );
 
     const handles = this.#traceHandles.filter((h) => include.has(h));
+    if (handles.length === 0) return TraceList.empty();
 
     return new TraceList({
       handles,
@@ -380,6 +383,7 @@ export class TraceList {
   static union(...lists: TraceList[]): TraceList {
     const bundles = Array.from(unique(flatMap(lists, (l) => l[BUNDLES])));
     const handles = Array.from(unique(flatMap(lists, (l) => l[HANDLES])));
+    if (handles.length === 0) return TraceList.empty();
 
     const from = reduce(
       map(bundles, (b) => b.from()),

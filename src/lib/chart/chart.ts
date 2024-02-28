@@ -169,6 +169,12 @@ export class Chart {
     public readonly canvas: OffscreenCanvas,
     traces?: TraceList,
   ) {
+    if (controller.initialized !== true) {
+      throw new Error(
+        "Tried to initialize Chart while ChartiumController is still unitialized.",
+      );
+    }
+
     // signals
     traces ??= TraceList.empty();
 

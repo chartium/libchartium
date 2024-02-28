@@ -37,6 +37,13 @@
   let chart: Chart | undefined = undefined;
   let canvas: HTMLCanvasElement;
 
+  if (controller.initialized !== true) {
+    console.warn(
+      "Trying to create a Chart while the ChartiumController is still not initialized.",
+    );
+    controller.initialized.then(() => chartCanvasChanged(offscreenCanvas));
+  }
+
   /** All traces in the chart */
   export let traces: TraceList;
   let hiddenTraceIds = mut(new Set<string>());
@@ -153,6 +160,7 @@
   $: offscreenCanvas = canvas ? canvas.transferControlToOffscreen() : undefined;
   $: chartCanvasChanged(offscreenCanvas);
   function chartCanvasChanged(offscreenCanvas: OffscreenCanvas | undefined) {
+    if (controller.initialized !== true) return (chart = undefined);
     if (!offscreenCanvas) return (chart = undefined);
     chart = new Chart(controller, offscreenCanvas, visibleTraces);
   }
