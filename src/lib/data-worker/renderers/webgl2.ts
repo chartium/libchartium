@@ -95,8 +95,8 @@ export class WebGL2Controller implements RenderingController {
       gl.VERTEX_SHADER,
       `
         attribute vec2 aVertexPosition;
-        attribute float aLengthAlong;
-        varying float vLengthAlong;
+        // attribute float aLengthAlong;
+        // varying float vLengthAlong;
 
         uniform vec2 transform;
         uniform vec2 origin;
@@ -107,7 +107,7 @@ export class WebGL2Controller implements RenderingController {
         void main() {
             gl_Position = vec4(csoffset + vec2(-1,-1) + vec2(2,2) * (aVertexPosition * vec2(1,transform.x) + vec2(0, transform.y) - origin) / size, 0, 1);
             gl_PointSize = 8.0;
-            vLengthAlong = aLengthAlong;
+            // vLengthAlong = aLengthAlong;
         }
       `,
     );
@@ -118,16 +118,16 @@ export class WebGL2Controller implements RenderingController {
       `
         precision mediump float;
         uniform vec4 color;
-        varying float vLengthAlong;
+        // varying float vLengthAlong;
 
         void main() {
 
-            if ( mod(vLengthAlong, 20.0) < 10.0 ) {
-              discard;
-            }
-            else {
+            // if ( mod(vLengthAlong, 20.0) < 10.0 ) {
+            //   discard;
+            // }
+            // else {
               gl_FragColor = color;
-            }
+            // }
         }
       `,
     );
@@ -200,18 +200,24 @@ export class WebGL2Renderer implements Renderer {
       const buffers = map(handles, (h) =>
         lib.WebGlRenderer.create_trace_buffer(this.#context, bundle, h),
       );
-      const length_alongs = map(handles, (h) =>
-        this.#renderer.create_lengths_along_buffer(
-          this.#context,
-          bundle,
-          h,
-          +xRange.from,
-          +xRange.to,
-          +yRange.from,
-          +yRange.to,
-        ),
+      // const length_alongs = map(handles, (h) =>
+      //   this.#renderer.create_lengths_along_buffer(
+      //     this.#context,
+      //     bundle,
+      //     h,
+      //     +xRange.from,
+      //     +xRange.to,
+      //     +yRange.from,
+      //     +yRange.to,
+      //   ),
+      // );
+      rj.add_traces(
+        bundle,
+        handles.length,
+        buffers,
+        styles,
+        // length_alongs,
       );
-      rj.add_traces(bundle, handles.length, buffers, styles, length_alongs);
     }
 
     if (job.clear !== undefined) rj.clear = job.clear;

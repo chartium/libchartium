@@ -23,7 +23,7 @@ pub struct WebGlTrace {
     pub points: usize,
     pub buffer: WebGlBuffer,
     pub style: TraceStyle,
-    pub length_along: WebGlBuffer,
+    // pub length_along: WebGlBuffer,
 }
 
 fn color_to_webgl(color: [u8; 3]) -> [f32; 3] {
@@ -92,20 +92,21 @@ impl WebGlRenderJob {
         trace_count: usize,
         trace_buffers: JsValue,
         trace_styles: JsValue,
-        length_alongs: JsValue,
+        // length_alongs: JsValue,
     ) {
         let from = bundle.from();
         let to = bundle.to();
         let points = bundle.point_count();
         self.traces.reserve(trace_count);
-        for ((buffer, style), length_along) in try_iter(&trace_buffers)
+        // for ((buffer, style), length_along) in try_iter(&trace_buffers)
+        for (buffer, style) in try_iter(&trace_buffers)
             .unwrap()
             .unwrap()
             .zip(try_iter(&trace_styles).unwrap().unwrap())
-            .zip(try_iter(&length_alongs).unwrap().unwrap())
+        // .zip(try_iter(&length_alongs).unwrap().unwrap())
         {
             let buffer: WebGlBuffer = buffer.unwrap().into();
-            let length_along: WebGlBuffer = length_along.unwrap().into();
+            // let length_along: WebGlBuffer = length_along.unwrap().into();
             let style: TraceStyle = serde_wasm_bindgen::from_value(style.unwrap()).unwrap();
 
             self.traces.push(WebGlTrace {
@@ -114,7 +115,7 @@ impl WebGlRenderJob {
                 points,
                 buffer,
                 style,
-                length_along,
+                // length_along,
             });
         }
     }
@@ -242,33 +243,39 @@ impl WebGlRenderer {
                 1.0,
             );
 
-            let a_length_along =
-                gl.get_attrib_location(&self.programs.trace_program, "aLengthAlong") as u32;
-            gl.bind_buffer(
-                WebGl2RenderingContext::ARRAY_BUFFER,
-                Some(&trace.length_along),
-            );
-            gl.vertex_attrib_pointer_with_i32(
-                a_length_along,
-                1,
-                WebGl2RenderingContext::FLOAT,
-                false,
-                0,
-                0,
-            );
-            gl.enable_vertex_attrib_array(a_length_along);
-            let a_position_name =
-                gl.get_attrib_location(&self.programs.trace_program, "aVertexPosition") as u32;
+            // let a_length_along =
+            //     gl.get_attrib_location(&self.programs.trace_program, "aLengthAlong") as u32;
+            // gl.bind_buffer(
+            //     WebGl2RenderingContext::ARRAY_BUFFER,
+            //     Some(&trace.length_along),
+            // );
+            // gl.vertex_attrib_pointer_with_i32(
+            //     a_length_along,
+            //     1,
+            //     WebGl2RenderingContext::FLOAT,
+            //     false,
+            //     0,
+            //     0,
+            // );
+            // gl.enable_vertex_attrib_array(a_length_along);
+            // let a_position_name =
+            //     gl.get_attrib_location(&self.programs.trace_program, "aVertexPosition") as u32;
             gl.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, Some(&trace.buffer));
-            gl.vertex_attrib_pointer_with_i32(
-                a_position_name,
-                2,
-                WebGl2RenderingContext::FLOAT,
-                false,
-                0,
-                0,
-            );
-            gl.enable_vertex_attrib_array(a_position_name);
+
+            // REMOVE
+            gl.vertex_attrib_pointer_with_i32(0, 2, WebGl2RenderingContext::FLOAT, false, 0, 0);
+            gl.enable_vertex_attrib_array(0);
+            // END REMOVE
+
+            // gl.vertex_attrib_pointer_with_i32(
+            //     a_position_name,
+            //     2,
+            //     WebGl2RenderingContext::FLOAT,
+            //     false,
+            //     0,
+            //     0,
+            // );
+            // gl.enable_vertex_attrib_array(a_position_name);
 
             if width < self.line_width_limit + 0.1 {
                 gl.line_width(width);

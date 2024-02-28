@@ -232,17 +232,11 @@
         )
       : undefined;
   $: tracesInfo =
-    (console.log(
-      "tracesInfo. yDisplayUnit:",
-      $yDisplayUnit?.toString(),
-      "yValue:",
-      closestTraces?.[0]?.closestPoint.y.toString(),
-    ),
     closestTraces?.map((trace) => ({
       styledTrace: trace.traceInfo,
       x: qndFormat(trace.closestPoint.x, xFormatOptions),
       y: qndFormat(trace.closestPoint.y, yFormatOptions),
-    })) ?? []);
+    })) ?? [];
 
   /** updates highilghted points in visibleAction */
   function updateHighlightPoints(
