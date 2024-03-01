@@ -10,12 +10,14 @@ import { UnknownTraceHandleError } from "../errors.js";
 import type { TraceHandle, Unit } from "../types.js";
 import { map } from "../utils/collection.js";
 import type { NumericDateFormat } from "../index.js";
+import { lib } from "./wasm.js";
 
 export interface TraceStyle {
   width: number;
   // eslint-disable-next-line @typescript-eslint/ban-types
   color: TraceColor | (string & {});
-  display: "line" | "points";
+  showPoints: boolean;
+  traceMode: TraceMode;
 }
 
 export type TraceStylesheet = Record<string, Partial<TraceStyle>>;
@@ -24,6 +26,10 @@ export interface TraceDataUnits {
   xDataUnit?: Unit | NumericDateFormat;
   yDataUnit?: Unit | NumericDateFormat;
 }
+
+type Dash = { dashLength: number; gapLength: number };
+type DoubleDash = { firstDash: Dash; secondDash: Dash };
+export type TraceMode = "none" | "line" | Dash | DoubleDash;
 
 export type ResolvedTraceInfo = Array<
   [traces: Set<string>, info: TraceStyle & TraceDataUnits]
@@ -40,13 +46,15 @@ export enum TraceColor {
 export const defaultStyle: TraceStyle = {
   width: 1,
   color: TraceColor.ContrastWithBoth,
-  display: "line",
+  showPoints: false,
+  traceMode: "line" as TraceMode,
 };
 
 interface RawTraceStyle {
   width: number;
   color: Color;
   points_mode: boolean;
+  trace_mode: lib.TraceMode;
 }
 
 /**
@@ -123,7 +131,8 @@ export function simplifyTraceInfo(
   for (const [ts, info] of traceInfo) {
     const serializedInfo = {
       color: info.color,
-      display: info.display,
+      showPoints: info.showPoints,
+      traceMode: info.traceMode,
       width: info.width,
       xDataUnit: info.xDataUnit,
       yDataUnit: info.yDataUnit,
@@ -155,6 +164,18 @@ export function computeTraceColor(id: string, color: TraceStyle["color"]) {
       return colorStringToColor(color);
   }
 }
+export function rustifyTraceMode(mode: TraceMode): lib.TraceMode {
+  if (mode === "none") return lib.TraceMode.none();
+  if (mode === "line") return lib.TraceMode.line();
+  if ("firstDash" in mode)
+    return lib.TraceMode.double_dash(
+      mode.firstDash.dashLength,
+      mode.firstDash.gapLength,
+      mode.secondDash.dashLength,
+      mode.secondDash.gapLength,
+    );
+  return lib.TraceMode.dash(mode.dashLength, mode.gapLength);
+}
 
 export function* computeStyles(
   info: ResolvedTraceInfo,
@@ -168,14 +189,16 @@ export function* computeStyles(
 
   for (const handle of traces) {
     const id = ids.get(handle) ?? yeet(UnknownTraceHandleError, handle);
-    const { width, display, color } = getStyle(id) ?? defaultStyle;
+    const { width, showPoints, color, traceMode } =
+      getStyle(id) ?? defaultStyle;
 
     const [r, g, b] = computeTraceColor(id, color);
 
     yield {
       width,
       color: [r, g, b],
-      points_mode: display === "points",
+      points_mode: showPoints,
+      trace_mode: rustifyTraceMode(traceMode),
     };
   }
 }
@@ -199,14 +222,16 @@ export function reduceStylesheet(
 
 const deleteSuperfluous = (base: TraceStyle, derived: Partial<TraceStyle>) => {
   if (derived.color === base.color) delete derived.color;
-  if (derived.display === base.display) delete derived.display;
+  if (derived.showPoints === base.showPoints) delete derived.showPoints;
   if (derived.width === base.width) delete derived.width;
+  if (derived.traceMode === base.traceMode) delete derived.traceMode;
 };
 
 const isEmptyStyle = (style: Partial<TraceStyle>) =>
   style.color === undefined &&
-  style.display === undefined &&
-  style.width === undefined;
+  style.showPoints === undefined &&
+  style.width === undefined &&
+  style.traceMode === undefined;
 
 export function stylesheetNormalForm(
   stylesheet: TraceStylesheet,

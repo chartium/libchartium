@@ -33,6 +33,65 @@ fn color_to_webgl(color: [u8; 3]) -> [f32; 3] {
         color[2] as f32 / 255.0,
     ]
 }
+#[wasm_bindgen]
+#[derive(Clone, Serialize, Deserialize)]
+pub enum TraceModeEnum {
+    None,
+    Line,
+    Dashed,
+    DoubleDashed,
+}
+#[wasm_bindgen]
+#[derive(Clone, Serialize, Deserialize)]
+pub struct TraceMode {
+    first_dash_gap: Option<[f32; 2]>,
+    second_dash_gap: Option<[f32; 2]>,
+    trace_mode_enum: TraceModeEnum,
+}
+#[wasm_bindgen]
+impl TraceMode {
+    #[wasm_bindgen]
+    pub fn none() -> JsValue {
+        let mode = TraceMode {
+            first_dash_gap: None,
+            second_dash_gap: None,
+            trace_mode_enum: TraceModeEnum::None,
+        };
+        serde_wasm_bindgen::to_value(&mode).unwrap()
+    }
+    #[wasm_bindgen]
+    pub fn line() -> JsValue {
+        let mode = TraceMode {
+            first_dash_gap: None,
+            second_dash_gap: None,
+            trace_mode_enum: TraceModeEnum::Line,
+        };
+        serde_wasm_bindgen::to_value(&mode).unwrap()
+    }
+    #[wasm_bindgen]
+    pub fn dash(dash_length: f32, gap_length: f32) -> JsValue {
+        let mode = TraceMode {
+            first_dash_gap: Some([dash_length, gap_length]),
+            second_dash_gap: None,
+            trace_mode_enum: TraceModeEnum::Dashed,
+        };
+        serde_wasm_bindgen::to_value(&mode).unwrap()
+    }
+    #[wasm_bindgen]
+    pub fn double_dash(
+        first_dash_length: f32,
+        first_gap_length: f32,
+        second_dash_length: f32,
+        second_gap_length: f32,
+    ) -> JsValue {
+        let mode = TraceMode {
+            first_dash_gap: Some([first_dash_length, first_gap_length]),
+            second_dash_gap: Some([second_dash_length, second_gap_length]),
+            trace_mode_enum: TraceModeEnum::DoubleDashed,
+        };
+        serde_wasm_bindgen::to_value(&mode).unwrap()
+    }
+}
 
 #[wasm_bindgen]
 #[derive(Clone, Serialize, Deserialize)]
@@ -40,16 +99,25 @@ pub struct TraceStyle {
     width: u32,
     color: [u8; 3],
     points_mode: bool,
+    trace_mode: TraceMode,
 }
 
 #[wasm_bindgen]
 impl TraceStyle {
     #[wasm_bindgen(constructor)]
-    pub fn new(width: u32, red: u8, green: u8, blue: u8, points_mode: bool) -> TraceStyle {
+    pub fn new(
+        width: u32,
+        red: u8,
+        green: u8,
+        blue: u8,
+        points_mode: bool,
+        trace_mode: TraceMode,
+    ) -> TraceStyle {
         TraceStyle {
             width,
             color: [red, green, blue],
             points_mode,
+            trace_mode,
         }
     }
 }
@@ -140,6 +208,7 @@ pub struct WebGlPrograms {
     trace_size: WebGlUniformLocation,
     trace_csoffset: WebGlUniformLocation,
     trace_color: WebGlUniformLocation,
+    dash_gap_length: WebGlUniformLocation,
 }
 
 #[wasm_bindgen]
@@ -153,6 +222,7 @@ impl WebGlPrograms {
         trace_size: WebGlUniformLocation,
         trace_csoffset: WebGlUniformLocation,
         trace_color: WebGlUniformLocation,
+        dash_gap_length: WebGlUniformLocation,
     ) -> WebGlPrograms {
         WebGlPrograms {
             trace_program,
@@ -161,6 +231,7 @@ impl WebGlPrograms {
             trace_size,
             trace_csoffset,
             trace_color,
+            dash_gap_length,
         }
     }
 }
@@ -228,6 +299,7 @@ impl WebGlRenderer {
             let points = trace.points as i32;
             let width = trace.style.width as f32;
             let color = color_to_webgl(trace.style.color);
+            let trace_mode = &trace.style.trace_mode;
 
             gl.uniform2f(
                 Some(&self.programs.trace_origin),
@@ -242,6 +314,36 @@ impl WebGlRenderer {
                 color[2],
                 1.0,
             );
+            match trace_mode.trace_mode_enum {
+                TraceModeEnum::None => gl.uniform4f(
+                    Some(&self.programs.dash_gap_length),
+                    0.0 as f32,
+                    1.0 as f32,
+                    0.0 as f32,
+                    0.0 as f32,
+                ),
+                TraceModeEnum::Line => gl.uniform4f(
+                    Some(&self.programs.dash_gap_length),
+                    1.0 as f32,
+                    0.0 as f32,
+                    0.0 as f32,
+                    0.0 as f32,
+                ),
+                TraceModeEnum::Dashed => gl.uniform4f(
+                    Some(&self.programs.dash_gap_length),
+                    trace.style.trace_mode.first_dash_gap.unwrap()[0],
+                    trace.style.trace_mode.first_dash_gap.unwrap()[1],
+                    trace.style.trace_mode.first_dash_gap.unwrap()[0],
+                    trace.style.trace_mode.first_dash_gap.unwrap()[1],
+                ),
+                TraceModeEnum::DoubleDashed => gl.uniform4f(
+                    Some(&self.programs.dash_gap_length),
+                    trace.style.trace_mode.first_dash_gap.unwrap()[0],
+                    trace.style.trace_mode.first_dash_gap.unwrap()[1],
+                    trace.style.trace_mode.second_dash_gap.unwrap()[0],
+                    trace.style.trace_mode.second_dash_gap.unwrap()[1],
+                ),
+            }
 
             // let a_length_along =
             //     gl.get_attrib_location(&self.programs.trace_program, "aLengthAlong") as u32;

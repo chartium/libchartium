@@ -63,6 +63,7 @@ export class WebGL2Controller implements RenderingController {
       traceOrigin,
       traceSize,
       traceTransform,
+      traceDashGapLengths,
     } = this.#initTraceProgram();
     this.#programs = new lib.WebGlPrograms(
       traceProgram,
@@ -71,6 +72,7 @@ export class WebGL2Controller implements RenderingController {
       traceSize,
       traceCsoffset,
       traceColor,
+      traceDashGapLengths,
     );
   }
 
@@ -94,9 +96,9 @@ export class WebGL2Controller implements RenderingController {
       gl,
       gl.VERTEX_SHADER,
       `
-        attribute vec2 aVertexPosition;
-        // attribute float aLengthAlong;
-        // varying float vLengthAlong;
+      attribute vec2 aVertexPosition;
+      attribute float aLengthAlong;
+      varying float vLengthAlong;
 
         uniform vec2 transform;
         uniform vec2 origin;
@@ -118,16 +120,21 @@ export class WebGL2Controller implements RenderingController {
       `
         precision mediump float;
         uniform vec4 color;
-        // varying float vLengthAlong;
-
+        // lengths of the dashes and gaps in pixels, expected to be in order [dash, gap, dash, gap]
+        uniform vec4 dashGapLengths;
+        varying float vLengthAlong;
+        
         void main() {
-
-            // if ( mod(vLengthAlong, 20.0) < 10.0 ) {
-            //   discard;
-            // }
-            // else {
+            float totalLength = dashGapLengths[0] + dashGapLengths[1] + dashGapLengths[2] + dashGapLengths[3];
+            float currentCycleLength = mod(vLengthAlong, totalLength);
+            float firstDashGap = dashGapLengths[0] + dashGapLengths[1];
+            bool shouldBeDrawn = currentCycleLength < dashGapLengths[0] || (currentCycleLength > firstDashGap && currentCycleLength < firstDashGap + dashGapLengths[2]);
+            if (shouldBeDrawn) {
               gl_FragColor = color;
-            // }
+            }
+            else {
+              discard;
+            }
         }
       `,
     );
@@ -138,6 +145,10 @@ export class WebGL2Controller implements RenderingController {
     const traceSize = gl.getUniformLocation(traceProgram, "size")!;
     const traceCsoffset = gl.getUniformLocation(traceProgram, "csoffset")!;
     const traceColor = gl.getUniformLocation(traceProgram, "color")!;
+    const traceDashGapLengths = gl.getUniformLocation(
+      traceProgram,
+      "dashGapLengths",
+    )!;
 
     return {
       traceProgram,
@@ -146,6 +157,7 @@ export class WebGL2Controller implements RenderingController {
       traceSize,
       traceCsoffset,
       traceColor,
+      traceDashGapLengths,
     };
   }
 }
@@ -200,24 +212,18 @@ export class WebGL2Renderer implements Renderer {
       const buffers = map(handles, (h) =>
         lib.WebGlRenderer.create_trace_buffer(this.#context, bundle, h),
       );
-      // const length_alongs = map(handles, (h) =>
-      //   this.#renderer.create_lengths_along_buffer(
-      //     this.#context,
-      //     bundle,
-      //     h,
-      //     +xRange.from,
-      //     +xRange.to,
-      //     +yRange.from,
-      //     +yRange.to,
-      //   ),
-      // );
-      rj.add_traces(
-        bundle,
-        handles.length,
-        buffers,
-        styles,
-        // length_alongs,
+      const length_alongs = map(handles, (h) =>
+        this.#renderer.create_lengths_along_buffer(
+          this.#context,
+          bundle,
+          h,
+          +xRange.from,
+          +xRange.to,
+          +yRange.from,
+          +yRange.to,
+        ),
       );
+      rj.add_traces(bundle, handles.length, buffers, styles, length_alongs);
     }
 
     if (job.clear !== undefined) rj.clear = job.clear;
