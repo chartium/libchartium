@@ -6,7 +6,6 @@ use web_sys::{
 };
 
 use crate::{
-    console_log,
     data::TraceHandle,
     trace::{extensions::PointIteratorExtension, BoxedBundle},
 };
@@ -52,28 +51,31 @@ pub struct TraceMode {
 #[wasm_bindgen]
 impl TraceMode {
     #[wasm_bindgen]
-    pub fn none() -> TraceMode {
-        TraceMode {
+    pub fn none() -> JsValue {
+        let mode = TraceMode {
             first_dash_gap: None,
             second_dash_gap: None,
             trace_mode_enum: TraceModeEnum::None,
-        }
+        };
+        serde_wasm_bindgen::to_value(&mode).unwrap()
     }
     #[wasm_bindgen]
-    pub fn line() -> TraceMode {
-        TraceMode {
+    pub fn line() -> JsValue {
+        let mode = TraceMode {
             first_dash_gap: None,
             second_dash_gap: None,
             trace_mode_enum: TraceModeEnum::Line,
-        }
+        };
+        serde_wasm_bindgen::to_value(&mode).unwrap()
     }
     #[wasm_bindgen]
-    pub fn dash(dash_length: f32, gap_length: f32) -> TraceMode {
-        TraceMode {
+    pub fn dash(dash_length: f32, gap_length: f32) -> JsValue {
+        let mode = TraceMode {
             first_dash_gap: Some([dash_length, gap_length]),
             second_dash_gap: None,
             trace_mode_enum: TraceModeEnum::Dashed,
-        }
+        };
+        serde_wasm_bindgen::to_value(&mode).unwrap()
     }
     #[wasm_bindgen]
     pub fn double_dash(
@@ -81,12 +83,13 @@ impl TraceMode {
         first_gap_length: f32,
         second_dash_length: f32,
         second_gap_length: f32,
-    ) -> TraceMode {
-        TraceMode {
+    ) -> JsValue {
+        let mode = TraceMode {
             first_dash_gap: Some([first_dash_length, first_gap_length]),
             second_dash_gap: Some([second_dash_length, second_gap_length]),
             trace_mode_enum: TraceModeEnum::DoubleDashed,
-        }
+        };
+        serde_wasm_bindgen::to_value(&mode).unwrap()
     }
 }
 
@@ -171,7 +174,6 @@ impl WebGlRenderJob {
         {
             let buffer: WebGlBuffer = buffer.unwrap().into();
             let length_along: WebGlBuffer = length_along.unwrap().into();
-            console_log!("{:?}", style);
             let style: TraceStyle = serde_wasm_bindgen::from_value(style.unwrap()).unwrap();
 
             self.traces.push(WebGlTrace {
@@ -314,17 +316,17 @@ impl WebGlRenderer {
             match trace_mode.trace_mode_enum {
                 TraceModeEnum::None => gl.uniform4f(
                     Some(&self.programs.dash_gap_length),
-                    0 as f32,
-                    1 as f32,
-                    0 as f32,
-                    0 as f32,
+                    0.0 as f32,
+                    1.0 as f32,
+                    0.0 as f32,
+                    0.0 as f32,
                 ),
                 TraceModeEnum::Line => gl.uniform4f(
                     Some(&self.programs.dash_gap_length),
-                    1 as f32,
-                    0 as f32,
-                    0 as f32,
-                    0 as f32,
+                    1.0 as f32,
+                    0.0 as f32,
+                    0.0 as f32,
+                    0.0 as f32,
                 ),
                 TraceModeEnum::Dashed => gl.uniform4f(
                     Some(&self.programs.dash_gap_length),
