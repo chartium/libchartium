@@ -196,7 +196,6 @@
   }
 
   const visibleAction = mut<VisibleAction | undefined>(undefined);
-  $: (window as any).chart = chart; // FIXME DEBUG
 
   let contentSize: [number, number] = [1, 1];
   $: if (chart) {
@@ -381,18 +380,6 @@
   let filterByThreshold: () => void;
   $: (window as any).addPersistentThreshold = addPersistentThreshold;
   $: (window as any).filterByThreshold = filterByThreshold;
-  $: (window as any).tracelist = traces;
-
-  (window as any).dayjs = dayjs;
-  $: (window as any).mockupWriter = {
-    ready: Promise.resolve(),
-    write: (data: any) => {
-      console.log(data);
-      return Promise.resolve();
-    },
-  };
-  $: (window as any).mockupTransformer = (data: ExportRow) =>
-    `x: ${dayjs(data[X] * 60)}, ${Object.entries(data).map(([id, val]) => (id === "x" ? "" : `${id}: ${val}, `))}`;
 </script>
 
 {#if !hideTooltip}

@@ -57,10 +57,6 @@
 
   let wrapDiv: HTMLDivElement;
 
-  (window as any).SI = SI;
-  (window as any).IEC = IEC;
-  (window as any).Quantity = Quantity;
-
   let fullscreen = false;
 </script>
 
