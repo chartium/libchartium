@@ -38,7 +38,7 @@
 
     ctx.clearRect(0, 0, previewWidth, previewHeight);
     const width = trace.width;
-    const points = trace.display === "points" ? true : false;
+    const points = trace.showPoints;
     const style: canvas.DrawStyle = { fillStyle: color, strokeStyle: color };
     style.lineWidth = width;
 

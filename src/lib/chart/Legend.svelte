@@ -33,8 +33,7 @@
     for (const [index, canvasRef] of canvasRefs.entries()) {
       const color = tracesWithStyles[index].color;
       const width = tracesWithStyles[index].width;
-      const points =
-        tracesWithStyles[index].display === "points" ? true : false;
+      const points = tracesWithStyles[index].showPoints;
 
       const ctx = canvasRef.getContext("2d");
       if (!ctx) {

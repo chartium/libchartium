@@ -58,7 +58,7 @@ export interface TraceInfo {
 
   width: number;
   color: Color;
-  display: "line" | "points";
+  showPoints: boolean;
 
   xDataUnit: Unit | NumericDateFormat | undefined;
   yDataUnit: Unit | NumericDateFormat | undefined;
