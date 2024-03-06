@@ -1,5 +1,5 @@
 import type { Dayjs } from "dayjs";
-import type { Chart, TraceInfo } from "../index.js";
+import type { Chart, TraceInfo, TraceStyle } from "../index.js";
 import type { Color } from "./color.js";
 import type { Quantity } from "../types.js";
 
@@ -8,7 +8,11 @@ export type ThresholdInfo = Omit<TraceInfo, "xDataUnit" | "yDataUnit"> & {
 };
 export const defaultThresholdStyle = {
   color: [255, 255, 255] as Color,
-  display: "line" as "line" | "points",
+  traceMode: {
+    dashLength: 10,
+    gapLength: 10,
+  },
+  showPoints: false,
   width: 1,
 };
 

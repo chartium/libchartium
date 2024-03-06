@@ -33,7 +33,7 @@
   import {
     type ThresholdInfo,
     defaultThresholdStyle,
-    createThreshold,
+    createThreshold as createPersistentThreshold,
   } from "../utils/thresholds.js";
 
   // SECTION Props
@@ -379,17 +379,6 @@
   $: (window as any).addPersistentThreshold = addPersistentThreshold;
   $: (window as any).filterByThreshold = filterByThreshold;
   $: (window as any).tracelist = traces;
-
-  (window as any).dayjs = dayjs;
-  $: (window as any).mockupWriter = {
-    ready: Promise.resolve(),
-    write: (data: any) => {
-      console.log(data);
-      return Promise.resolve();
-    },
-  };
-  $: (window as any).mockupTransformer = (data: ExportRow) =>
-    `x: ${dayjs(data[X] * 60)}, ${Object.entries(data).map(([id, val]) => (id === "x" ? "" : `${id}: ${val}, `))}`;
 </script>
 
 {#if !hideTooltip}
@@ -504,7 +493,7 @@
             "y",
           );
           if (!thresholdQ) return;
-          yThresholds.push(createThreshold(thresholdQ));
+          yThresholds.push(createPersistentThreshold(thresholdQ));
           yThresholds = yThresholds;
         }
         if (t.detail.type === "filtering")

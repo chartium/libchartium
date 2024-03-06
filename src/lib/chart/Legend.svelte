@@ -39,8 +39,8 @@
     for (const [index, canvasRef] of canvasRefs.entries()) {
       const color = tracesWithStyles[index].color;
       const width = tracesWithStyles[index].width;
-      const points =
-        tracesWithStyles[index].display === "points" ? true : false;
+      const points = tracesWithStyles[index].showPoints;
+      const mode = tracesWithStyles[index].traceMode;
 
       const ctx = canvasRef.getContext("2d");
       if (!ctx) {
@@ -62,8 +62,35 @@
           style,
         );
         canvas.drawCircle(ctx, [width, previewSize - width], width, style);
-      } else {
+      }
+      if (mode == "line" || mode == "none") {
         canvas.drawSegment(ctx, [0, previewSize], [previewSize, 0], style);
+      } else if ("dashLength" in mode) {
+        canvas.drawSegment(
+          ctx,
+          [0, previewSize],
+          [previewSize / 3, (2 / 3) * previewSize],
+          style,
+        );
+        canvas.drawSegment(
+          ctx,
+          [(previewSize * 2) / 3, previewSize / 3],
+          [previewSize, 0],
+          style,
+        );
+      } else if ("firstDash" in mode) {
+        canvas.drawSegment(
+          ctx,
+          [0, previewSize],
+          [previewSize / 3, (2 / 3) * previewSize],
+          style,
+        );
+        canvas.drawSegment(
+          ctx,
+          [(previewSize * 2) / 3, previewSize / 3],
+          [previewSize, 0],
+          style,
+        );
       }
     }
   });

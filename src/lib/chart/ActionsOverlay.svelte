@@ -48,6 +48,7 @@
     defaultThresholdStyle,
     type ThresholdInfo,
   } from "../utils/thresholds.js";
+  import { traceModeToDashArr } from "../data-worker/trace-styles.js";
 
   export const events = createEventDispatcher<{
     reset: undefined;
@@ -361,9 +362,10 @@
       [0, (1 - thresholdFrac) * overlayHeight],
       [overlayWidth, (1 - thresholdFrac) * overlayHeight],
       {
-        lineWidth: defaultThresholdStyle.width,
-        strokeStyle: defaultThresholdStyle.color,
-        fillStyle: defaultThresholdStyle.color,
+        lineWidth: threshold.width,
+        strokeStyle: threshold.color,
+        fillStyle: threshold.color,
+        dash: traceModeToDashArr(threshold.traceMode),
       },
     );
   }

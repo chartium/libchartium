@@ -16,6 +16,7 @@ import {
   type TraceStylesheet,
   type TraceDataUnits,
   simplifyTraceInfo,
+  type TraceMode,
 } from "./trace-styles.js";
 import { yeet } from "../utils/yeet.js";
 import { UnknownTraceHandleError } from "../errors.js";
@@ -46,6 +47,7 @@ import {
   type TraceListExportOptions,
 } from "./trace-export.js";
 import type { NumericDateFormat } from "../index.js";
+import { pick } from "lodash-es";
 
 export const BUNDLES = Symbol("bundles");
 export const HANDLES = Symbol("handles");
@@ -58,7 +60,8 @@ export interface TraceInfo {
 
   width: number;
   color: Color;
-  display: "line" | "points";
+  traceMode: TraceMode;
+  showPoints: boolean;
 
   xDataUnit: Unit | NumericDateFormat | undefined;
   yDataUnit: Unit | NumericDateFormat | undefined;
@@ -375,6 +378,25 @@ export class TraceList {
   }
 
   /**
+   * Returns the same tracelist but traces below the threshold will have TraceMode "none" so they don't get drawn
+   * if your traces are sin(x) and x^2, then filterByThreshold(1.1) only leaves the x^2
+   */
+  withHiddenUnderThreshold(qThreshold: number | Quantity): TraceList {
+    const tracesAbove = this.withOverThreshold(qThreshold);
+    const tracesBelow = this.withoutTraces(tracesAbove.traces());
+    const underStyles: TraceStylesheet = Object.fromEntries(
+      map(tracesBelow.traces(), (id) => [
+        id,
+        {
+          traceMode: "none",
+        },
+      ]),
+    );
+
+    return TraceList.union(tracesAbove, tracesBelow.withStyle(underStyles)); // FIXME ASK CSHA IF THIS UPDATES OR OVERWRITES STYLE
+  }
+
+  /**
    * Creates a new trace list by concatenating the provided trace lists together.
    * The resulting range will be a bounding interval of all the individual lists'
    * ranges. Each trace's style will be preserved – if a trace is present in multiple
@@ -423,6 +445,7 @@ export class TraceList {
     from: ChartValue;
     to: ChartValue;
   }> = {}) {
+    // FIXME exclude invisible traces
     const unfiltered =
       from === undefined && to === undefined && traces === undefined;
 
@@ -595,6 +618,7 @@ export class TraceList {
     traceInfo: TraceInfo;
     closestPoint: ChartValuePoint;
   }[] {
+    // FIXME only search those that are visible
     // FIXME make TraceList auto update its ranges based on ranges of bundles
 
     interface FoundPoint {

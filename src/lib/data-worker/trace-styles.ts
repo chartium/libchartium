@@ -27,9 +27,22 @@ export interface TraceDataUnits {
   yDataUnit?: Unit | NumericDateFormat;
 }
 
-type Dash = { dashLength: number; gapLength: number };
-type DoubleDash = { firstDash: Dash; secondDash: Dash };
+export type Dash = { dashLength: number; gapLength: number };
+export type DoubleDash = { firstDash: Dash; secondDash: Dash };
 export type TraceMode = "none" | "line" | Dash | DoubleDash;
+
+export function traceModeToDashArr(mode: TraceMode): number[] | undefined {
+  if (mode === "none") return undefined;
+  if (mode === "line") return undefined;
+  if ("firstDash" in mode)
+    return [
+      mode.firstDash.dashLength,
+      mode.firstDash.gapLength,
+      mode.secondDash.dashLength,
+      mode.secondDash.gapLength,
+    ];
+  return [mode.dashLength, mode.gapLength];
+}
 
 export type ResolvedTraceInfo = Array<
   [traces: Set<string>, info: TraceStyle & TraceDataUnits]
