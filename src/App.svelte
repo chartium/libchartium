@@ -79,12 +79,12 @@
           defaultYUnit={IEC.parseUnit("MiB")}
           legendPosition="right"
         >
-          <svelte:fragment slot="toolbar">
+          <!-- <svelte:fragment slot="toolbar">
             <ToolFullscreen on:click={() => (fullscreen = !fullscreen)} />
             <ToolExportToPng />
             <ToolHideLegend />
             <ToolExportToCsv />
-          </svelte:fragment>
+          </svelte:fragment> -->
           <svelte:fragment slot="infobox">
             <Fa icon={faArrowRight} />&ensp;1<br />
             <Fa icon={faArrowLeft} />&ensp;1000<br />
