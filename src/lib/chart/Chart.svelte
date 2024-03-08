@@ -30,11 +30,7 @@
   import { setContext } from "svelte-typed-context";
   import { toolKey } from "./Toolbar/toolKey.js";
   import { flockReduce } from "../utils/collection.js";
-  import {
-    type ThresholdInfo,
-    defaultThresholdStyle,
-    createThreshold as createPersistentThreshold,
-  } from "../utils/thresholds.js";
+  import { type ThresholdInfo } from "../utils/thresholds.js";
 
   // SECTION Props
 
@@ -52,7 +48,6 @@
   /** All traces in the chart */
   export let traces: TraceList;
   let hiddenTraceIds = mut(new Set<string>());
-  let hiddenThresholdIds = mut(new Set<string>());
   $: visibleTraces = traces.withoutTraces($hiddenTraceIds);
   $: chart?.traces.set(visibleTraces);
 
@@ -358,8 +353,6 @@
     }),
   );
 
-  let yThresholds: ThresholdInfo[] = [];
-
   let wrapDiv: HTMLDivElement;
   export function getWrapDiv(): HTMLDivElement {
     return wrapDiv;
@@ -476,29 +469,18 @@
       {hoverXQuantity}
       {hoverYQuantity}
       {disableInteractivity}
-      {yThresholds}
-      {hiddenThresholdIds}
       {commonXRuler}
       {commonYRuler}
       bind:filterByThreshold
-      bind:addPersistentThreshold
       traceHovered={selectedTrace !== undefined}
       on:reset={() => chart?.resetZoom("xy")}
       on:zoom={(d) => chart?.zoomRange(d)}
       on:shift={(d) => chart?.shiftRange(d)}
       on:yThreshold={(t) => {
-        if (t.detail.type === "persistent") {
-          const thresholdQ = chart?.fractionsToQuantities(
-            1 - t.detail.thresholdFrac,
-            "y",
-          );
-          if (!thresholdQ) return;
-          yThresholds.push(createPersistentThreshold(thresholdQ));
-          yThresholds = yThresholds;
-        }
         if (t.detail.type === "filtering")
           hiddenTraceIds.update((curr) => {
             for (const id of chart?.idsUnderThreshold(t) ?? []) curr.add(id);
+            console.log(curr);
             return curr;
           });
       }}
@@ -530,10 +512,8 @@
     <svelte:fragment slot="right-legend">
       {#if legendPosition === "right" && !hideLegend}
         <ChartLegend
-          {yThresholds}
           {traces}
           {hiddenTraceIds}
-          {hiddenThresholdIds}
           previewStyle={legendPreviewStyle}
           numberOfShownTraces={legendTracesShown === "all"
             ? traces.traceCount
@@ -544,10 +524,8 @@
     <svelte:fragment slot="bottom-legend">
       {#if legendPosition === "bottom" && !hideLegend}
         <ChartLegend
-          {yThresholds}
           {traces}
           {hiddenTraceIds}
-          {hiddenThresholdIds}
           previewStyle={legendPreviewStyle}
           numberOfShownTraces={legendTracesShown === "all"
             ? traces.traceCount

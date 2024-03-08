@@ -16,14 +16,11 @@
   export let previewStyle: "simplified" | "full";
 
   export let traces: TraceList;
-  export let yThresholds: Omit<TraceInfo, "xDataUnit" | "yDataUnit">[];
-  $: thresholds = yThresholds.map((t) => ({ ...t, threshold: true }));
   $: tracesWithStyles = Array.from(
     map(traces.traces(), (t) => traces.getTraceInfo(t)), // FIXME replace with first(traces, n)
   );
 
   export let hiddenTraceIds: WritableSignal<Set<string>>;
-  export let hiddenThresholdIds: WritableSignal<Set<string>>;
 
   let canvasRefs: HTMLCanvasElement[] = [];
 
@@ -108,32 +105,27 @@
   {#each {length: numberOfShownTraces} as _, i} <!-- a lil trick ti break after numberOfShownTraces - ->
   {@const styledTrace = tracesWithStyles[i]}
 -->
-  {#each [...thresholds, ...tracesWithStyles.slice(0, numberOfShownTraces)] as styledTrace}
-    {@const isThreshold = "threshold" in styledTrace}
+  {#each [...tracesWithStyles.slice(0, numberOfShownTraces)] as styledTrace}
     {@const id = styledTrace.id}
-    {@const hidden = isThreshold
-      ? $hiddenThresholdIds.has(id)
-      : $hiddenTraceIds.has(id)}
+    {@const hidden = $hiddenTraceIds.has(id)}
     <div
       class="trace-legend"
       style:opacity={hidden ? "0.5" : 1}
       use:oneOrDoubleclick={{
         single: () => {
-          (isThreshold ? hiddenThresholdIds : hiddenTraceIds).update((curr) => {
+          hiddenTraceIds.update((curr) => {
             if (hidden) curr.delete(id);
             else curr.add(id);
             return curr;
           });
         },
         double: () =>
-          (isThreshold ? hiddenThresholdIds : hiddenTraceIds).update((curr) => {
+          hiddenTraceIds.update((curr) => {
             if (
               curr.size === 0 ||
               (curr.size === 1 && curr.has(styledTrace.id))
             ) {
-              curr = new Set(
-                (isThreshold ? yThresholds : tracesWithStyles).map((t) => t.id),
-              );
+              curr = new Set(tracesWithStyles.map((t) => t.id));
               curr.delete(id);
             } else curr.clear();
             return curr;

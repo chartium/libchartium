@@ -43,11 +43,7 @@
   import type { Chart } from "./chart.js";
   import { P, match } from "ts-pattern";
   import { mapOpt } from "../utils/mapOpt.js";
-  import {
-    createThreshold,
-    defaultThresholdStyle,
-    type ThresholdInfo,
-  } from "../utils/thresholds.js";
+  import { type ThresholdInfo } from "../utils/thresholds.js";
   import { traceModeToDashArr } from "../data-worker/trace-styles.js";
 
   export const events = createEventDispatcher<{
@@ -77,15 +73,6 @@
     thresholdFilterMode = true;
   };
 
-  /** Fractions of the graphs width representing persistent thresholds */
-  export let yThresholds: ThresholdInfo[] = [];
-
-  let thresholdAddMode: boolean = false;
-  export const addPersistentThreshold = () => {
-    thresholdAddMode = true;
-  };
-  export let hiddenThresholdIds: WritableSignal<Set<string>>;
-
   let canvasRef: HTMLCanvasElement;
   let ctx: CanvasRenderingContext2D;
 
@@ -100,8 +87,7 @@
   $: mousePosition, scheduleDraw();
   $: $commonXRuler, scheduleDraw();
   $: $commonYRuler, scheduleDraw();
-  $: $hiddenThresholdIds, scheduleDraw();
-  $: if ((thresholdFilterMode || thresholdAddMode) && mousePosition)
+  $: if (thresholdFilterMode && mousePosition)
     visibleAction.update((a) => {
       return { ...a, mouseThreshold: 1 - mousePosition![1] / overlayHeight };
     });
@@ -127,23 +113,10 @@
       ctx.strokeStyle = color;
       ctx.lineWidth = 1;
 
-      yThresholds.forEach(drawThreshold);
-
       if (action && action.zoom && !disableInteractivity) {
         drawZoom(action.zoom);
       } else if (action && action.shift && !disableInteractivity) {
         drawShift(action.shift);
-      } else if (
-        action &&
-        action.mouseThreshold &&
-        !disableInteractivity &&
-        chart
-      ) {
-        drawThreshold(
-          createThreshold(
-            chart.fractionsToQuantities(1 - action.mouseThreshold, "y"),
-          ),
-        );
       } else if (mousePosition) {
         drawRuler({
           x: mousePosition[0] / overlayWidth,
@@ -353,23 +326,6 @@
     }
   }
 
-  function drawThreshold(threshold: ThresholdInfo) {
-    if (!chart) return;
-    if ($hiddenThresholdIds.has(threshold.id)) return;
-    const thresholdFrac = chart.quantitiesToFractions(threshold.y, "y");
-    drawSegment(
-      ctx,
-      [0, (1 - thresholdFrac) * overlayHeight],
-      [overlayWidth, (1 - thresholdFrac) * overlayHeight],
-      {
-        lineWidth: threshold.width,
-        strokeStyle: threshold.color,
-        fillStyle: threshold.color,
-        dash: traceModeToDashArr(threshold.traceMode),
-      },
-    );
-  }
-
   const rightDragCallbacks: MouseDragCallbacks = {
     start: () => {},
     move: (_, status) => {
@@ -404,10 +360,6 @@
       if (thresholdFilterMode) {
         events("yThreshold", { thresholdFrac: yThreshold, type: "filtering" });
         thresholdFilterMode = false;
-      }
-      if (thresholdAddMode) {
-        events("yThreshold", { thresholdFrac: yThreshold, type: "persistent" });
-        thresholdAddMode = false;
       }
     }
   };

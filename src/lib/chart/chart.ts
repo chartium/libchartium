@@ -128,6 +128,11 @@ export class Chart {
   readonly traces: WritableSignal<TraceList>;
 
   /**
+   * The list of persistent thresholds to be rendered in this chart
+   */
+  readonly thresholds: WritableSignal<TraceList>;
+
+  /**
    * The visible range (in display units) of the x & y axes, changes with user
    * interaction (eg. zooming and panning). To reset one or both axes to fit
    * the data, use the `resetZoom` method.
@@ -179,6 +184,9 @@ export class Chart {
     traces ??= TraceList.empty();
 
     this.traces = withSubscriber(mut(traces), (t) => this.#updateTraces(t));
+    this.thresholds = withSubscriber(mut(TraceList.empty()), (t) =>
+      this.#updateTraces(t),
+    );
 
     this.range = {
       x: withListener(mut(traces.range), () => {
