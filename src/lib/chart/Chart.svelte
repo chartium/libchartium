@@ -22,7 +22,6 @@
   import Tooltip from "./TraceTooltip.svelte";
   import { mut, cons, FlockRegistry } from "@mod.js/signals";
   import type { Remote } from "comlink";
-  import dayjs from "dayjs";
   import { qndFormat, type QndFormatOptions } from "../utils/format.js";
   import type { Dayjs } from "dayjs";
   import type { RangeMargins } from "../utils/rangeMargins.js";
@@ -384,7 +383,6 @@
   let filterByThreshold: () => void;
   $: (window as any).addPersistentThreshold = addPersistentThreshold;
   $: (window as any).filterByThreshold = filterByThreshold;
-
   let fullscreen = false;
 </script>
 
@@ -577,6 +575,7 @@
     width: 100vw;
     height: 100vh;
     background-color: inherit;
+    z-index: 100;
   }
   canvas {
     position: absolute;
