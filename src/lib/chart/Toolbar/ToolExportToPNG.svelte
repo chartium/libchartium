@@ -6,11 +6,12 @@
   import ToolbarButton from "./ToolbarButton.svelte";
   import { toolKey } from "./toolKey.js";
   import { getContext } from "svelte-typed-context";
-
+  const getWrapDiv = getContext(toolKey)?.getWrapDiv;
+  const getTitle = getContext(toolKey)?.getTitle;
   const dti: DomToImage = domtoimage as any;
   const takeScreenshot = () => {
-    const wrappingDiv = getContext(toolKey)?.getWrapDiv();
-    const filename = getContext(toolKey)?.getTitle?.() ?? "chartium";
+    const wrappingDiv = getWrapDiv!();
+    const filename = getTitle?.() || "chartium";
     if (!wrappingDiv) {
       return;
     }

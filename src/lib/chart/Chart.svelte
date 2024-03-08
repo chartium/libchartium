@@ -30,6 +30,7 @@
   import { setContext } from "svelte-typed-context";
   import { toolKey } from "./Toolbar/toolKey.js";
   import { flockReduce } from "../utils/collection.js";
+  import { portal } from "svelte-portal";
 
   // SECTION Props
 
@@ -373,6 +374,9 @@
     },
     getTracelist: () => traces,
     getTitle: () => title,
+    toggleFullscreen: () => {
+      fullscreen = !fullscreen;
+    },
   });
 
   // FIXME DEBUG
@@ -380,6 +384,8 @@
   let filterByThreshold: () => void;
   $: (window as any).addPersistentThreshold = addPersistentThreshold;
   $: (window as any).filterByThreshold = filterByThreshold;
+
+  let fullscreen = false;
 </script>
 
 {#if !hideTooltip}
@@ -395,162 +401,168 @@
   bind:this={wrapDiv}
   style="height: 100%; width: 100%; background-color: var(--background-color)"
 >
-  <ChartGrid
-    bind:contentSize
-    xAxisHeight={$xAxisHeight}
-    yAxisWidth={$yAxisWidth}
+  <div
+    use:portal={fullscreen ? "body" : wrapDiv}
+    class:fullscreen
+    style={"height: 100%; width: 100%;"}
   >
-    <svelte:fragment slot="title">
-      {title}
-    </svelte:fragment>
-    <svelte:fragment slot="subtitle">
-      {subtitle}
-    </svelte:fragment>
+    <ChartGrid
+      bind:contentSize
+      xAxisHeight={$xAxisHeight}
+      yAxisWidth={$yAxisWidth}
+    >
+      <svelte:fragment slot="title">
+        {title}
+      </svelte:fragment>
+      <svelte:fragment slot="subtitle">
+        {subtitle}
+      </svelte:fragment>
 
-    <AxisTicks
-      slot="yticks"
-      axis="y"
-      ticks={$yTicks ?? []}
-      label={yLabel}
-      unit={$yDisplayUnit}
-      hideLabelUnits={hideYLabelUnits}
-      {visibleAction}
-      {disableInteractivity}
-      disableUnitChange={disableYUnitChanges}
-      hideTicks={hideYTicks}
-      on:shift={(d) => chart?.shiftRange(d)}
-      on:reset={() => chart?.resetZoom("y")}
-      raiseFactor={chart?.raiseYFactorAction ?? cons(undefined)}
-      lowerFactor={chart?.lowerYFactorAction ?? cons(undefined)}
-      resetUnit={chart?.resetYFactorAction ?? cons(undefined)}
-      bind:textLength={yAxisTextSize}
-      dimensionFlock={commonYAxisWidth}
-    />
+      <AxisTicks
+        slot="yticks"
+        axis="y"
+        ticks={$yTicks ?? []}
+        label={yLabel}
+        unit={$yDisplayUnit}
+        hideLabelUnits={hideYLabelUnits}
+        {visibleAction}
+        {disableInteractivity}
+        disableUnitChange={disableYUnitChanges}
+        hideTicks={hideYTicks}
+        on:shift={(d) => chart?.shiftRange(d)}
+        on:reset={() => chart?.resetZoom("y")}
+        raiseFactor={chart?.raiseYFactorAction ?? cons(undefined)}
+        lowerFactor={chart?.lowerYFactorAction ?? cons(undefined)}
+        resetUnit={chart?.resetYFactorAction ?? cons(undefined)}
+        bind:textLength={yAxisTextSize}
+        dimensionFlock={commonYAxisWidth}
+      />
 
-    <AxisTicks
-      slot="xticks"
-      axis="x"
-      ticks={$xTicks ?? []}
-      label={xLabel}
-      unit={$xDisplayUnit}
-      hideLabelUnits={hideXLabelUnits}
-      {visibleAction}
-      {disableInteractivity}
-      disableUnitChange={disableXUnitChanges}
-      hideTicks={hideXTicks}
-      on:shift={(d) => chart?.shiftRange(d)}
-      on:reset={() => chart?.resetZoom("x")}
-      raiseFactor={chart?.raiseXFactorAction ?? cons(undefined)}
-      lowerFactor={chart?.lowerXFactorAction ?? cons(undefined)}
-      resetUnit={chart?.resetXFactorAction ?? cons(undefined)}
-      bind:textLength={xAxisTextSize}
-      dimensionFlock={commonXAxisHeight}
-    />
+      <AxisTicks
+        slot="xticks"
+        axis="x"
+        ticks={$xTicks ?? []}
+        label={xLabel}
+        unit={$xDisplayUnit}
+        hideLabelUnits={hideXLabelUnits}
+        {visibleAction}
+        {disableInteractivity}
+        disableUnitChange={disableXUnitChanges}
+        hideTicks={hideXTicks}
+        on:shift={(d) => chart?.shiftRange(d)}
+        on:reset={() => chart?.resetZoom("x")}
+        raiseFactor={chart?.raiseXFactorAction ?? cons(undefined)}
+        lowerFactor={chart?.lowerXFactorAction ?? cons(undefined)}
+        resetUnit={chart?.resetXFactorAction ?? cons(undefined)}
+        bind:textLength={xAxisTextSize}
+        dimensionFlock={commonXAxisHeight}
+      />
 
-    <Guidelines
-      xTicks={hideXGuidelines ? [] : $xTicks ?? []}
-      yTicks={hideYGruidelines ? [] : $yTicks ?? []}
-      renderXAxis={!hideXAxisLine}
-      renderYAxis={!hideYAxisLine}
-    />
+      <Guidelines
+        xTicks={hideXGuidelines ? [] : $xTicks ?? []}
+        yTicks={hideYGruidelines ? [] : $yTicks ?? []}
+        renderXAxis={!hideXAxisLine}
+        renderYAxis={!hideYAxisLine}
+      />
 
-    <canvas bind:this={canvas} on:contextmenu|preventDefault />
+      <canvas bind:this={canvas} on:contextmenu|preventDefault />
 
-    {#if $$slots.infobox && infoboxPosition !== "none"}
-      <div
-        class="infobox"
-        style="{infoboxPosition.includes('top') ? 'top' : 'bottom'} : 0.5rem;
+      {#if $$slots.infobox && infoboxPosition !== "none"}
+        <div
+          class="infobox"
+          style="{infoboxPosition.includes('top') ? 'top' : 'bottom'} : 0.5rem;
       {infoboxPosition.includes('left') ? 'left' : 'right'} : 0.5rem; "
-      >
-        <slot name="infobox" />
+        >
+          <slot name="infobox" />
+        </div>
+      {/if}
+
+      <ActionsOverlay
+        {chart}
+        {visibleAction}
+        {hideHoverPoints}
+        {hideXRuler}
+        {hideYRuler}
+        {hideXBubble}
+        {hideYBubble}
+        {hoverXQuantity}
+        {hoverYQuantity}
+        {disableInteractivity}
+        {presYThreshFracs}
+        {commonXRuler}
+        {commonYRuler}
+        bind:filterByThreshold
+        bind:addPersistentThreshold
+        traceHovered={selectedTrace !== undefined}
+        on:reset={() => chart?.resetZoom("xy")}
+        on:zoom={(d) => chart?.zoomRange(d)}
+        on:shift={(d) => chart?.shiftRange(d)}
+        on:yThreshold={(t) => {
+          if (t.detail.type === "persistent") {
+            const thresholdQ = chart?.fractionsToQuantities(
+              1 - t.detail.thresholdFrac,
+              "y",
+            );
+            if (thresholdQ) persistentYThresholds.push(thresholdQ);
+            persistentYThresholds = persistentYThresholds;
+          }
+          if (t.detail.type === "filtering")
+            hiddenTraceIds.update((curr) => {
+              for (const id of chart?.idsUnderThreshold(t) ?? []) curr.add(id);
+              return curr;
+            });
+        }}
+        on:mousemove={(e) => {
+          showTooltip = true;
+          updateHoverQuantities(e);
+        }}
+        on:mouseout={() => {
+          showTooltip = false;
+          closestTraces = [];
+          visibleAction.update((action) => ({
+            ...action,
+            highlightedPoints: [],
+          }));
+          commonXRuler.set(undefined);
+          commonYRuler.set(undefined);
+        }}
+        on:blur={() => {
+          showTooltip = false;
+        }}
+      />
+
+      <div class="toolbar" slot="overlay">
+        <slot name="toolbar">
+          <DefaultToolbar />
+        </slot>
       </div>
-    {/if}
 
-    <ActionsOverlay
-      {chart}
-      {visibleAction}
-      {hideHoverPoints}
-      {hideXRuler}
-      {hideYRuler}
-      {hideXBubble}
-      {hideYBubble}
-      {hoverXQuantity}
-      {hoverYQuantity}
-      {disableInteractivity}
-      {presYThreshFracs}
-      {commonXRuler}
-      {commonYRuler}
-      bind:filterByThreshold
-      bind:addPersistentThreshold
-      traceHovered={selectedTrace !== undefined}
-      on:reset={() => chart?.resetZoom("xy")}
-      on:zoom={(d) => chart?.zoomRange(d)}
-      on:shift={(d) => chart?.shiftRange(d)}
-      on:yThreshold={(t) => {
-        if (t.detail.type === "persistent") {
-          const thresholdQ = chart?.fractionsToQuantities(
-            1 - t.detail.thresholdFrac,
-            "y",
-          );
-          if (thresholdQ) persistentYThresholds.push(thresholdQ);
-          persistentYThresholds = persistentYThresholds;
-        }
-        if (t.detail.type === "filtering")
-          hiddenTraceIds.update((curr) => {
-            for (const id of chart?.idsUnderThreshold(t) ?? []) curr.add(id);
-            return curr;
-          });
-      }}
-      on:mousemove={(e) => {
-        showTooltip = true;
-        updateHoverQuantities(e);
-      }}
-      on:mouseout={() => {
-        showTooltip = false;
-        closestTraces = [];
-        visibleAction.update((action) => ({
-          ...action,
-          highlightedPoints: [],
-        }));
-        commonXRuler.set(undefined);
-        commonYRuler.set(undefined);
-      }}
-      on:blur={() => {
-        showTooltip = false;
-      }}
-    />
-
-    <div class="toolbar" slot="overlay">
-      <slot name="toolbar">
-        <DefaultToolbar />
-      </slot>
-    </div>
-
-    <svelte:fragment slot="right-legend">
-      {#if legendPosition === "right" && !hideLegend}
-        <ChartLegend
-          {traces}
-          {hiddenTraceIds}
-          previewStyle={legendPreviewStyle}
-          numberOfShownTraces={legendTracesShown === "all"
-            ? traces.traceCount
-            : legendTracesShown}
-        />
-      {/if}
-    </svelte:fragment>
-    <svelte:fragment slot="bottom-legend">
-      {#if legendPosition === "bottom" && !hideLegend}
-        <ChartLegend
-          {traces}
-          {hiddenTraceIds}
-          previewStyle={legendPreviewStyle}
-          numberOfShownTraces={legendTracesShown === "all"
-            ? traces.traceCount
-            : legendTracesShown}
-        />
-      {/if}
-    </svelte:fragment>
-  </ChartGrid>
+      <svelte:fragment slot="right-legend">
+        {#if legendPosition === "right" && !hideLegend}
+          <ChartLegend
+            {traces}
+            {hiddenTraceIds}
+            previewStyle={legendPreviewStyle}
+            numberOfShownTraces={legendTracesShown === "all"
+              ? traces.traceCount
+              : legendTracesShown}
+          />
+        {/if}
+      </svelte:fragment>
+      <svelte:fragment slot="bottom-legend">
+        {#if legendPosition === "bottom" && !hideLegend}
+          <ChartLegend
+            {traces}
+            {hiddenTraceIds}
+            previewStyle={legendPreviewStyle}
+            numberOfShownTraces={legendTracesShown === "all"
+              ? traces.traceCount
+              : legendTracesShown}
+          />
+        {/if}
+      </svelte:fragment>
+    </ChartGrid>
+  </div>
 </div>
 
 <style lang="scss">
@@ -558,7 +570,14 @@
     --libchartium-secondary-background: rgb(51, 51, 51);
     --libchartium-highlight-background: rgb(75, 75, 75);
   }
-
+  .fullscreen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: inherit;
+  }
   canvas {
     position: absolute;
     inset: 0;

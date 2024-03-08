@@ -12,8 +12,7 @@
 
   function exportCSV() {
     if (getTracelist === undefined) return;
-
-    const filename = `${getTitle?.() ?? "chartium"}.csv`;
+    const filename = `${getTitle?.() || "chartium"}.csv`;
     const supportsFileSystemAccess =
       "showSaveFilePicker" in window &&
       (() => {

@@ -6,6 +6,7 @@ export type ToolContext = {
   toggleLegend: () => void;
   getTracelist: () => TraceList;
   getTitle: () => string;
+  toggleFullscreen: () => void;
 };
 
 export const toolKey: InjectionKey<ToolContext> = Symbol("toolKey");

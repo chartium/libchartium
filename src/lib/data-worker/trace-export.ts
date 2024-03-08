@@ -100,7 +100,9 @@ export async function exportTraceListData(
   );
 
   const lastLines: Map<BoxedBundle, ExportRow> = new Map(
-    unfinishedBundles.map((b) => [b, queues.get(b)!.peek()]),
+    unfinishedBundles
+      .map((b) => [b, queues.get(b)!.peek()] as const)
+      .filter((_, q) => q !== undefined) as [BoxedBundle, ExportRow][],
   );
 
   const getOrInterpolate = (
@@ -109,7 +111,7 @@ export async function exportTraceListData(
     lastLine: ExportRow,
   ) => {
     const thisQueue = queues.get(bundle)!;
-    const nextLine = thisQueue.peek();
+    const nextLine = thisQueue.peek()!;
     if (x === nextLine[X]) return thisQueue.dequeue()!;
     // FIXME match the strategy
     const fraction = (x - lastLine[X]) / (nextLine[X] - lastLine[X]);
@@ -136,7 +138,7 @@ export async function exportTraceListData(
       .toSorted((a, b) => a - b);
     if (xs[0] === lastX) {
       xs.shift();
-      for (const q of queues.values()) if (q.peek()[X] === lastX) q.dequeue();
+      for (const q of queues.values()) if (q.peek()?.[X] === lastX) q.dequeue();
     }
     const rangeToInLatest = Math.max(
       ...unfinishedBundles.map((b) =>
@@ -145,17 +147,20 @@ export async function exportTraceListData(
     );
     if (xs[0] >= rangeToInLatest || xs.length === 0) break;
     for (const x of xs) {
-      let header: ExportRow = { [X]: x };
+      let row: ExportRow = { [X]: x };
       for (const bundle of unfinishedBundles) {
+        if (queues.get(bundle)!.peek() === undefined) {
+          continue;
+        }
         if (queues.get(bundle)!.peek()?.[X] === x)
-          lastLines.set(bundle, queues.get(bundle)!.peek());
+          lastLines.set(bundle, queues.get(bundle)!.peek()!);
 
-        header = {
-          ...header,
+        row = {
+          ...row,
           ...getOrInterpolate(x, bundle, lastLines.get(bundle)!),
         };
       }
-      toWrite.push(header);
+      toWrite.push(row);
     }
 
     for (const line of toWrite) {

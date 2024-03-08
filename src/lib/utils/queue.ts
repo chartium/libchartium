@@ -10,6 +10,9 @@ export class Queue<T> {
   }
 
   peek() {
+    if (this.length === 0) {
+      return undefined;
+    }
     return this.queue[0];
   }
 

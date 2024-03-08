@@ -1,7 +1,7 @@
 <script lang="ts">
   import Chart from "./lib/chart/Chart.svelte";
   import wasmUrl from "../dist/wasm/libchartium.wasm?url";
-  import ToolFullscreen from "./lib/ToolFullscreen.svelte";
+  import ToolFullscreen from "./lib/chart/Toolbar/ToolFullscreen.svelte";
   import ToolExportToPng from "./lib/chart/Toolbar/ToolExportToPNG.svelte";
   import ToolHideLegend from "./lib/chart/Toolbar/ToolHideLegend.svelte";
   import { portal } from "svelte-portal";
@@ -56,52 +56,34 @@
   });
 
   let wrapDiv: HTMLDivElement;
-
-  let fullscreen = false;
 </script>
 
 <main class="dark">
   <h1>Chartium test page</h1>
   {#await traces then traces}
     <div style="height:400px;width:900px;" bind:this={wrapDiv}>
-      <div
-        use:portal={fullscreen ? "body" : wrapDiv}
-        class:fullscreen
-        style={"height: 100%; width: 100%;"}
+      <Chart
+        {controller}
+        {traces}
+        title="Titulek"
+        subtitle="Podtitulek"
+        xLabel="Time"
+        yLabel="Amount"
+        defaultYUnit={IEC.parseUnit("MiB")}
+        legendPosition="right"
       >
-        <Chart
-          {controller}
-          {traces}
-          title="Titulek"
-          subtitle="Podtitulek"
-          xLabel="Time"
-          yLabel="Amount"
-          defaultYUnit={IEC.parseUnit("MiB")}
-          legendPosition="right"
-        >
-          <!-- <svelte:fragment slot="toolbar">
+        <!-- <svelte:fragment slot="toolbar">
             <ToolFullscreen on:click={() => (fullscreen = !fullscreen)} />
             <ToolExportToPng />
             <ToolHideLegend />
             <ToolExportToCsv />
           </svelte:fragment> -->
-          <svelte:fragment slot="infobox">
-            <Fa icon={faArrowRight} />&ensp;1<br />
-            <Fa icon={faArrowLeft} />&ensp;1000<br />
-            <Fa icon={faChartLine} />&ensp;3/3
-          </svelte:fragment>
-        </Chart>
-      </div>
+        <svelte:fragment slot="infobox">
+          <Fa icon={faArrowRight} />&ensp;1<br />
+          <Fa icon={faArrowLeft} />&ensp;1000<br />
+          <Fa icon={faChartLine} />&ensp;3/3
+        </svelte:fragment>
+      </Chart>
     </div>
   {/await}
 </main>
-
-<style>
-  .fullscreen {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-  }
-</style>

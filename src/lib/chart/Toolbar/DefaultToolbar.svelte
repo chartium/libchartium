@@ -6,7 +6,7 @@
   import ToolHideLegend from "./ToolHideLegend.svelte";
   import ToolExportToPNG from "./ToolExportToPNG.svelte";
   import ToolExportToCsv from "./ToolExportToCSV.svelte";
-  import ToolFullscreen from "../../ToolFullscreen.svelte";
+  import ToolFullscreen from "./ToolFullscreen.svelte";
   const Fa = Fa_1 as any as typeof Fa_2;
 </script>
 

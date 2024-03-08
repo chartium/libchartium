@@ -8,8 +8,7 @@
   background-color: var(--background-color);
   --background-color: #242424;
   --secondary-background-color: #505050;
-  --accent-color: rgba(70, 70, 70, 0.6);
-
+  --accent-color: rgba(58, 3, 3, 0.6);
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -72,12 +71,9 @@ button:focus-visible {
 
 @media (prefers-color-scheme: light) {
   :root {
-  --secondary-background-color: #ececec;
-  --accent-color: rgba(255, 255, 255, 0.6)
-
-
-    color: #213547;
-    --background-color:  #ffffff;
+    --secondary-background-color: #ececec;
+    --accent-color: rgba(255, 255, 255, 0.6) color: #213547;
+    --background-color: #ffffff;
     background-color: var(--background-color);
   }
   a:hover {
