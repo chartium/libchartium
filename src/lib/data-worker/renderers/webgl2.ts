@@ -210,7 +210,13 @@ export class WebGL2Renderer implements Renderer {
       );
       const styles = computeStyles(traceList[TRACE_INFO], handles, traceIds);
       const buffers = map(handles, (h) =>
-        lib.WebGlRenderer.create_trace_buffer(this.#context, bundle, h),
+        lib.WebGlRenderer.create_trace_buffer(
+          this.#context,
+          bundle,
+          h,
+          +xRange.from,
+          +xRange.to,
+        ),
       );
       const length_alongs = map(handles, (h) =>
         this.#renderer.create_lengths_along_buffer(

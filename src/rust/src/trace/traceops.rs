@@ -7,7 +7,7 @@ use crate::{
     trace::{BoxedBundle, TraceMetas},
 };
 
-use super::{InterpolationStrategy::Linear, TracePoint};
+use super::{BundleRange, InterpolationStrategy::Linear, TracePoint};
 
 #[wasm_bindgen]
 impl BoxedBundle {
@@ -22,12 +22,9 @@ impl BoxedBundle {
     ) -> Box<[JsValue]> {
         // clamp x to the range we are working with
         // NOTE this may lead to wrong results
-        let x: f64 = if x < self.from() {
-            self.from()
-        } else if x > self.to() {
-            self.to()
-        } else {
-            x
+        let x = match serde_wasm_bindgen::from_value::<BundleRange>(self.range()).unwrap() {
+            BundleRange::Everywhere => x,
+            BundleRange::Bounded { from, to } => (x.max(from)).min(to),
         };
 
         let mut dists: Vec<_> = traces

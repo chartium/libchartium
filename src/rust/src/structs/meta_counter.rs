@@ -1,8 +1,8 @@
-use wasm_bindgen::prelude::wasm_bindgen;
+use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
 
 use crate::{
     data::TraceHandle,
-    trace::{BoxedBundle, TraceMetas},
+    trace::{BoxedBundle, BundleRange, TraceMetas},
 };
 
 #[wasm_bindgen]
@@ -49,12 +49,7 @@ impl MetaCounter {
         }
     }
 
-    pub fn add_from_counter(
-        &mut self,
-        col: usize,
-        other: &MetaCounter,
-        other_col: usize,
-    ) {
+    pub fn add_from_counter(&mut self, col: usize, other: &MetaCounter, other_col: usize) {
         self.sums[col] += other.sums[other_col];
         self.lens[col] += other.lens[other_col];
         self.nz_lens[col] += other.nz_lens[other_col];
@@ -66,12 +61,15 @@ impl MetaCounter {
         &mut self,
         bundle: &BoxedBundle,
         traces: &[TraceHandle],
-        from: f64,
-        to: f64,
+        bundle_range: JsValue,
     ) {
+        let bundle_range = serde_wasm_bindgen::from_value::<BundleRange>(bundle_range).unwrap();
         for (i, trace_data) in traces
             .iter()
-            .map(|&t| bundle.unwrap().iter_in_range_f64(t, from, to))
+            .map(|&t| match bundle_range {
+                BundleRange::Bounded { from, to } => bundle.unwrap().iter_in_range_f64(t, from, to),
+                BundleRange::Everywhere => bundle.unwrap().iter_in_range_f64(t, 0.0, 1.0),
+            })
             .enumerate()
         {
             for (_, y) in trace_data {

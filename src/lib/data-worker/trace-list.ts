@@ -354,17 +354,20 @@ export class TraceList {
         threshold,
         this.getBundleUnits(bundle).y,
       );
+      const range = bundle.range();
+      const { from, to } =
+        range.type === "Bounded" ? range.value : { from: 0, to: 1 };
       const filter = bundle.are_traces_over_threshold(
         ptrs,
-        bundle.from(),
-        bundle.to(),
+        from,
+        to,
         thresholdInBundleUnits,
       );
       return bundle
         .get_multiple_traces_metas(
           ptrs.filter((_, i) => !filter[i]),
-          bundle.from(),
-          bundle.to(),
+          from,
+          to,
         )
         .map((meta) => meta.handle);
     });
@@ -386,11 +389,17 @@ export class TraceList {
     if (handles.length === 0) return TraceList.empty();
 
     const from = reduce(
-      map(bundles, (b) => b.from()),
+      map(
+        filter(bundles, (b) => b.range().type === "Bounded"),
+        (b) => b.range().value.from,
+      ),
       Math.min,
     );
     const to = reduce(
-      map(bundles, (b) => b.to()),
+      map(
+        filter(bundles, (b) => b.range().type === "Bounded"),
+        (b) => b.range().value.to,
+      ),
       Math.max,
     );
     const labels = new Map(flatMap(lists, (l) => l[LABELS].entries()));
@@ -435,15 +444,25 @@ export class TraceList {
     const counter = new lib.MetaCounter(handles.length);
 
     for (const bundle of this.#bundles) {
-      const xUnit = this.getBundleUnits(bundle).x;
-      const a = Math.max(
-        from ? toNumeric(from, xUnit) : bundle.from(),
-        bundle.from(),
-      );
-      const b = Math.min(to ? toNumeric(to, xUnit) : bundle.to(), bundle.to());
-      if (a >= b) continue;
-
-      counter.add_bundle(bundle, handles, a, b);
+      const bundleRange = bundle.range();
+      if (bundleRange.type === "Everywhere")
+        counter.add_bundle(bundle, handles, bundleRange);
+      else {
+        const xUnit = this.getBundleUnits(bundle).x;
+        const a = Math.max(
+          from ? toNumeric(from, xUnit) : bundleRange.value.from,
+          bundleRange.value.from,
+        );
+        const b = Math.min(
+          to ? toNumeric(to, xUnit) : bundleRange.value.to,
+          bundleRange.value.to,
+        );
+        if (a >= b) continue;
+        counter.add_bundle(bundle, handles, {
+          type: "Bounded",
+          value: { from: a, to: b },
+        });
+      }
     }
 
     const metas: lib.TraceMetas[] = counter.to_array();

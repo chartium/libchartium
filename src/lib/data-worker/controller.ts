@@ -12,6 +12,7 @@ import { BiMap } from "@risai/bim";
 import { init, lib } from "./wasm.js";
 
 import type {
+  Range,
   Size,
   TraceHandle,
   TypedArray,
@@ -212,7 +213,7 @@ export class ChartiumController {
 
     let tl = new TraceList({
       handles,
-      range: { from: bundle.from(), to: bundle.to() },
+      range: bundle.range().value,
       bundles: [bundle],
       labels: new Map(),
       traceInfo: null,
@@ -280,10 +281,9 @@ export class ChartiumController {
       xBuffer,
       yBuffers,
     );
-
     let tl = new TraceList({
       handles,
-      range: { from: bundle.from(), to: bundle.to() },
+      range: bundle.range().value,
       bundles: [bundle],
       labels: new Map(),
       traceInfo: null,
@@ -291,6 +291,56 @@ export class ChartiumController {
 
     if (style) tl = tl.withStyle(style);
     if (x.unit || y.unit) tl = tl.withDataUnits({ x: x.unit, y: y.unit });
+    if (labels) tl = tl.withLabels(labels);
+
+    return tl;
+  }
+
+  public async addThresholdTracelist({
+    ids,
+    ys,
+    yUnit,
+    style,
+    labels,
+    tracelistsRange,
+  }: {
+    ids: string[];
+    ys: Float64Array;
+    yUnit?: Unit | NumericDateFormat;
+    style?: TraceStylesheet;
+    labels?: Iterable<[string, string | undefined]>;
+    tracelistsRange: Range;
+  }): Promise<TraceList> {
+    await this.initialized;
+    if (ids.length === 0) return TraceList.empty();
+
+    const handles: TraceHandle[] = [];
+
+    for (const id of ids) {
+      let handle = traceIds.getKey(id);
+
+      if (!handle) {
+        handle = this.#getNewTraceHandle();
+        traceIds.set(handle, id);
+      }
+
+      handles.push(handle);
+    }
+
+    const bundle = lib.Bulkloader.threshold_from_array(
+      new Uint32Array(handles),
+      ys,
+    );
+
+    let tl = new TraceList({
+      handles,
+      range: tracelistsRange,
+      bundles: [bundle],
+      labels: new Map(),
+      traceInfo: null,
+    });
+    if (style) tl = tl.withStyle(style);
+    if (yUnit) tl = tl.withDataUnits({ y: yUnit });
     if (labels) tl = tl.withLabels(labels);
 
     return tl;
