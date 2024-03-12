@@ -22,6 +22,17 @@ export interface TraceStyle {
 
 export type TraceStylesheet = Record<string, Partial<TraceStyle>>;
 
+export const thresholdStylesheet: TraceStylesheet = {
+  "*": {
+    showPoints: false,
+    width: 2,
+    traceMode: {
+      dashLength: 5,
+      gapLength: 5,
+    },
+  },
+};
+
 export interface TraceDataUnits {
   xDataUnit?: Unit | NumericDateFormat;
   yDataUnit?: Unit | NumericDateFormat;

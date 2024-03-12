@@ -11,12 +11,10 @@
     faArrowLeft,
     faChartLine,
   } from "@fortawesome/free-solid-svg-icons";
-  import { SI, IEC } from "unitlib/systems";
-  import { NumericDateFormat } from "./lib/index.js";
-  import { Quantity } from "unitlib";
+  import { IEC } from "unitlib/systems";
+  import { NumericDateFormat, TraceList } from "./lib/index.js";
 
   import Fa from "svelte-fa";
-  import ToolExportToCsv from "./lib/components/Toolbar/ToolExportToCSV.svelte";
 
   // autogenerate a lot of data
   const from = 0;
@@ -38,7 +36,7 @@
 
   const controller = ChartiumController.instantiateInThisThread({ wasmUrl });
 
-  const traces = controller.addFromColumnarArrayBuffers({
+  const normalTraces = controller.addFromColumnarArrayBuffers({
     x: {
       type: "f32",
       unit: NumericDateFormat.EpochSeconds,
@@ -54,6 +52,17 @@
       sin: { color: "red" },
     },
   });
+  const threshold = controller.addThresholdTracelist({
+    ids: ["threshold"],
+    ys: new Float64Array([100]),
+    xUnit: NumericDateFormat.EpochSeconds,
+    yUnit: IEC.parseUnit("KiB"),
+    tracelistsRange: { from: 0, to: 1 },
+  });
+
+  const traces = Promise.all([normalTraces, threshold]).then((ts) =>
+    TraceList.union(...ts),
+  );
 
   let wrapDiv: HTMLDivElement;
 </script>

@@ -174,3 +174,12 @@ export type ExportRow = {
   [X]: number;
   [traceId: string]: number;
 };
+
+export type BundleRange =
+  | {
+      type: "Everywhere";
+    }
+  | {
+      type: "Bounded";
+      value: NumericRange;
+    };

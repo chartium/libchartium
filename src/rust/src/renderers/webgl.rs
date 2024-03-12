@@ -7,7 +7,7 @@ use web_sys::{
 
 use crate::{
     data::TraceHandle,
-    trace::{extensions::PointIteratorExtension, BoxedBundle},
+    trace::{extensions::PointIteratorExtension, BoxedBundle, BundleRange},
 };
 
 use super::RenderJobResult;
@@ -161,8 +161,12 @@ impl WebGlRenderJob {
         trace_styles: JsValue,
         length_alongs: JsValue,
     ) {
-        let from = bundle.from();
-        let to = bundle.to();
+        let (from, to) =
+            match serde_wasm_bindgen::from_value::<BundleRange>(bundle.range()).unwrap() {
+                BundleRange::Bounded { from, to } => (from, to),
+                BundleRange::Everywhere => (self.x_from, self.x_to),
+            };
+
         let points = bundle.point_count();
         self.traces.reserve(trace_count);
         for ((buffer, style), length_along) in try_iter(&trace_buffers)
@@ -312,20 +316,12 @@ impl WebGlRenderer {
                 1.0,
             );
             match trace_mode.trace_mode_enum {
-                TraceModeEnum::None => gl.uniform4f(
-                    Some(&self.programs.dash_gap_length),
-                    0.0 as f32,
-                    1.0 as f32,
-                    0.0 as f32,
-                    0.0 as f32,
-                ),
-                TraceModeEnum::Line => gl.uniform4f(
-                    Some(&self.programs.dash_gap_length),
-                    1.0 as f32,
-                    0.0 as f32,
-                    0.0 as f32,
-                    0.0 as f32,
-                ),
+                TraceModeEnum::None => {
+                    gl.uniform4f(Some(&self.programs.dash_gap_length), 0.0, 1.0, 0.0, 0.0)
+                }
+                TraceModeEnum::Line => {
+                    gl.uniform4f(Some(&self.programs.dash_gap_length), 1.0, 0.0, 0.0, 0.0)
+                }
                 TraceModeEnum::Dashed => gl.uniform4f(
                     Some(&self.programs.dash_gap_length),
                     trace.style.trace_mode.first_dash_gap.unwrap()[0],
@@ -427,8 +423,11 @@ impl WebGlRenderer {
         y_from: f64,
         y_to: f64,
     ) -> WebGlBuffer {
-        let from = bundle.from();
-        let to = bundle.to();
+        let (from, to) =
+            match serde_wasm_bindgen::from_value::<BundleRange>(bundle.range()).unwrap() {
+                BundleRange::Bounded { from, to } => (from, to),
+                BundleRange::Everywhere => (x_from, x_to),
+            };
         // FIXME data already gets calculated in `create_trace_buffer`; if performance is an issue maybe try getting rid of this redundancy
         let data: Vec<(f64, f64)> = bundle
             .unwrap()
@@ -495,10 +494,15 @@ impl WebGlRenderer {
         context: &WebGl2RenderingContext,
         bundle: &BoxedBundle,
         trace: TraceHandle,
+        x_from: f64,
+        x_to: f64,
     ) -> WebGlBuffer {
         let buffer = context.create_buffer().unwrap();
-        let from = bundle.from();
-        let to = bundle.to();
+        let (from, to) =
+            match serde_wasm_bindgen::from_value::<BundleRange>(bundle.range()).unwrap() {
+                BundleRange::Bounded { from, to } => (from, to),
+                BundleRange::Everywhere => (x_from, x_to),
+            };
 
         let data: Vec<(f32, f32)> = bundle
             .unwrap()

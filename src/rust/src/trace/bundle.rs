@@ -1,5 +1,6 @@
 use crate::data::TraceHandle;
-use wasm_bindgen::prelude::wasm_bindgen;
+use serde::{Deserialize, Serialize};
+use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
 
 #[wasm_bindgen]
 pub enum InterpolationStrategy {
@@ -9,19 +10,30 @@ pub enum InterpolationStrategy {
     Previous,
     Next,
 }
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "type", content = "value")]
+pub enum BundleRange {
+    Bounded { from: f64, to: f64 },
+    Everywhere,
+}
 
 pub trait Bundle {
     fn traces(&self) -> Vec<TraceHandle>;
-    fn from(&self) -> f64;
-    fn to(&self) -> f64;
+    fn range(&self) -> BundleRange;
     fn point_count(&self) -> usize;
 
     fn contains(&self, point: f64) -> bool {
-        self.from() <= point && self.to() >= point
+        match self.range() {
+            BundleRange::Bounded { from, to } => from <= point && to >= point,
+            BundleRange::Everywhere => false,
+        }
     }
 
-    fn intersects(&self, from: f64, to: f64) -> bool {
-        self.from() <= to && self.to() >= from
+    fn intersects(&self, x_from: f64, x_to: f64) -> bool {
+        match self.range() {
+            BundleRange::Bounded { from, to } => from <= x_to && to >= x_from,
+            BundleRange::Everywhere => true,
+        }
     }
 
     fn iter_in_range_f64<'a>(
@@ -75,12 +87,10 @@ impl BoxedBundle {
     pub fn traces(&self) -> Box<[TraceHandle]> {
         self.bundle.traces().into_boxed_slice()
     }
-    pub fn from(&self) -> f64 {
-        self.bundle.from()
+    pub fn range(&self) -> JsValue {
+        serde_wasm_bindgen::to_value(&self.bundle.range()).unwrap()
     }
-    pub fn to(&self) -> f64 {
-        self.bundle.to()
-    }
+
     pub fn point_count(&self) -> usize {
         self.bundle.point_count()
     }

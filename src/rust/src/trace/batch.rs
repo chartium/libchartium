@@ -4,7 +4,7 @@ use num_traits::{FromPrimitive, Num, ToPrimitive};
 
 use crate::data::TraceHandle;
 
-use super::{Bundle, InterpolationStrategy};
+use super::{Bundle, BundleRange, InterpolationStrategy};
 
 pub trait N: Num + Clone + ToPrimitive + FromPrimitive {
     fn as_f64(&self) -> f64 {
@@ -36,12 +36,11 @@ impl<X: N, Y: N> Bundle for Batch<X, Y> {
         self.ys.keys().copied().collect()
     }
 
-    fn from(&self) -> f64 {
-        self.from.as_f64()
-    }
-
-    fn to(&self) -> f64 {
-        self.to.as_f64()
+    fn range(&self) -> BundleRange {
+        BundleRange::Bounded {
+            from: self.from.as_f64(),
+            to: self.to.as_f64(),
+        }
     }
 
     fn point_count(&self) -> usize {

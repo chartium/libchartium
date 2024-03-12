@@ -187,7 +187,7 @@ export class WebGL2Renderer implements Renderer {
     const traceList = job.traces;
     const availableHandles = new Set(traceList[HANDLES]);
     const rj = new lib.WebGlRenderJob(job.xType);
-    const xRange = job.xRange ?? traceList.range;
+    const xRange = job.xRange;
 
     // prettier-ignore
     const yRange = job.yRange ?? (() => {
@@ -210,7 +210,13 @@ export class WebGL2Renderer implements Renderer {
       );
       const styles = computeStyles(traceList[TRACE_INFO], handles, traceIds);
       const buffers = map(handles, (h) =>
-        lib.WebGlRenderer.create_trace_buffer(this.#context, bundle, h),
+        lib.WebGlRenderer.create_trace_buffer(
+          this.#context,
+          bundle,
+          h,
+          +xRange.from,
+          +xRange.to,
+        ),
       );
       const length_alongs = map(handles, (h) =>
         this.#renderer.create_lengths_along_buffer(
