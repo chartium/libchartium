@@ -1,9 +1,9 @@
 <script lang="ts">
-  import Chart from "./lib/chart/Chart.svelte";
+  import Chart from "./lib/components/Chart.svelte";
   import wasmUrl from "../dist/wasm/libchartium.wasm?url";
-  import ToolFullscreen from "./lib/chart/Toolbar/ToolFullscreen.svelte";
-  import ToolExportToPng from "./lib/chart/Toolbar/ToolExportToPNG.svelte";
-  import ToolHideLegend from "./lib/chart/Toolbar/ToolHideLegend.svelte";
+  import ToolFullscreen from "./lib/components/Toolbar/ToolFullscreen.svelte";
+  import ToolExportToPng from "./lib/components/Toolbar/ToolExportToPNG.svelte";
+  import ToolHideLegend from "./lib/components/Toolbar/ToolHideLegend.svelte";
   import { portal } from "svelte-portal";
   import { ChartiumController } from "./lib/data-worker/index.js";
   import {
@@ -16,7 +16,7 @@
   import { Quantity } from "unitlib";
 
   import Fa from "svelte-fa";
-  import ToolExportToCsv from "./lib/chart/Toolbar/ToolExportToCSV.svelte";
+  import ToolExportToCsv from "./lib/components/Toolbar/ToolExportToCSV.svelte";
 
   // autogenerate a lot of data
   const from = 0;

@@ -12,7 +12,7 @@
   import type { VisibleAction } from "./ActionsOverlay.svelte";
 
   import { onDestroy } from "svelte";
-  import { Chart } from "./chart.js";
+  import { Chart } from "../chart/chart.js";
 
   import ActionsOverlay from "./ActionsOverlay.svelte";
   import ChartGrid from "./ChartGrid.svelte";

@@ -33,7 +33,7 @@ import {
 } from "../utils/quantityHelpers.js";
 import dayjs from "dayjs";
 import { NumericDateFormat } from "../index.js";
-import { norm } from "./position.js";
+import { norm } from "../components/position.js";
 import {
   addMarginsToRange,
   addZeroToRange,
