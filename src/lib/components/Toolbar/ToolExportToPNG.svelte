@@ -15,12 +15,19 @@
     if (!wrappingDiv) {
       return;
     }
-    dti.toPng(wrappingDiv).then((url) => {
-      const link = document.createElement("a");
-      link.download = filename + ".png";
-      link.href = url;
-      link.click();
-    });
+    dti
+      .toPng(wrappingDiv, {
+        width: wrappingDiv.clientWidth,
+        height: wrappingDiv.clientHeight,
+        filter: (node) =>
+          !(node instanceof Element && node.classList.contains("toolbar")),
+      })
+      .then((url) => {
+        const link = document.createElement("a");
+        link.download = filename + ".png";
+        link.href = url;
+        link.click();
+      });
   };
 </script>
 

@@ -362,6 +362,7 @@
     );
   });
 
+  let parentDiv: HTMLDivElement;
   let wrapDiv: HTMLDivElement;
   export function getWrapDiv(): HTMLDivElement {
     return wrapDiv;
@@ -404,13 +405,14 @@
   />
 {/if}
 <div
-  bind:this={wrapDiv}
+  bind:this={parentDiv}
   style="height: 100%; width: 100%; background-color: var(--background-color)"
 >
   <div
-    use:portal={fullscreen ? "body" : wrapDiv}
+    bind:this={wrapDiv}
+    use:portal={fullscreen ? "body" : parentDiv}
     class:fullscreen
-    style={"height: 100%; width: 100%;"}
+    style={"height: 100%; width: 100%; background-color: var(--background-color)"}
   >
     <ChartGrid
       bind:contentSize
@@ -582,7 +584,6 @@
     left: 0;
     width: 100vw;
     height: 100vh;
-    background-color: inherit;
     z-index: 100;
   }
   canvas {
