@@ -375,6 +375,14 @@
     getTitle: () => title,
     toggleFullscreen: () => {
       fullscreen = !fullscreen;
+      if (fullscreen) {
+        document.addEventListener("keydown", function callback(e) {
+          if (e.key === "Escape") {
+            fullscreen = false;
+            document.removeEventListener("keydown", callback);
+          }
+        });
+      }
     },
   });
 

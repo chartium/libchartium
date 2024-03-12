@@ -42,7 +42,7 @@
   bind:contentRect={buttonRect}
   bind:this={button}
   on:click={() => {
-    showTooltip = !showTooltip;
+    showTooltip = false;
   }}
   on:click
   on:mouseenter={() => {
