@@ -32,6 +32,8 @@
   import { portal } from "svelte-portal";
 
   // SECTION Props
+  let klass: string = "";
+  export { klass as class };
 
   export let controller: ChartiumController | Remote<ChartiumController>;
   let chart: Chart | undefined = undefined;
@@ -404,15 +406,13 @@
     previewStyle={legendPreviewStyle}
   />
 {/if}
-<div
-  bind:this={parentDiv}
-  style="height: 100%; width: 100%; background-color: var(--background-color)"
->
+<div bind:this={parentDiv} style="height: 100%; width: 100%">
   <div
     bind:this={wrapDiv}
     use:portal={fullscreen ? "body" : parentDiv}
     class:fullscreen
-    style={"height: 100%; width: 100%; background-color: var(--background-color)"}
+    class={klass}
+    style={"height: 100%; width: 100%"}
   >
     <ChartGrid
       bind:contentSize
@@ -606,7 +606,7 @@
     white-space: nowrap;
     text-overflow: ellipsis;
 
-    background: var(--accent-color);
+    background: rgba(58, 3, 3, 0.6);
   }
 
   .toolbar {
@@ -623,7 +623,7 @@
 
     &:hover {
       opacity: 0.9;
-      background-color: var(--accent-color);
+      background-color: rgba(58, 3, 3, 0.6);
     }
   }
 </style>

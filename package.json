@@ -1,6 +1,6 @@
 {
   "name": "libchartium",
-  "version": "0.0.44",
+  "version": "0.0.51",
   "type": "module",
   "files": [
     "dist"
@@ -34,7 +34,6 @@
     "@sveltejs/package": "^2.2.6",
     "@sveltejs/vite-plugin-svelte": "^3.0.2",
     "@tsconfig/svelte": "^5.0.2",
-    "@types/dom-to-image": "^2.6.7",
     "@types/node": "^20.11.8",
     "@typescript-eslint/eslint-plugin": "^6.19.1",
     "@typescript-eslint/parser": "^6.19.1",
@@ -55,7 +54,7 @@
     "@types/seedrandom": "^3.0.8",
     "comlink": "^4.4.1",
     "dayjs": "^1.11.10",
-    "dom-to-image-more": "^3.3.0",
+    "html-to-image": "^1.11.11",
     "lodash-es": "^4.17.21",
     "random": "^4.1.0",
     "sass": "^1.70.0",
