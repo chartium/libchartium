@@ -24,6 +24,7 @@ import { WebGL2Controller } from "./renderers/webgl2.js";
 import { proxyMarker } from "comlink";
 import { TraceList } from "./trace-list.js";
 import type { NumericDateFormat, TraceStylesheet } from "../index.js";
+import { thresholdStylesheet } from "./trace-styles.js";
 
 let wasmMemory: WebAssembly.Memory | undefined;
 
@@ -300,6 +301,7 @@ export class ChartiumController {
     ids,
     ys,
     yUnit,
+    xUnit,
     style,
     labels,
     tracelistsRange,
@@ -307,6 +309,7 @@ export class ChartiumController {
     ids: string[];
     ys: Float64Array;
     yUnit?: Unit | NumericDateFormat;
+    xUnit?: Unit | NumericDateFormat;
     style?: TraceStylesheet;
     labels?: Iterable<[string, string | undefined]>;
     tracelistsRange: Range;
@@ -340,7 +343,8 @@ export class ChartiumController {
       traceInfo: null,
     });
     if (style) tl = tl.withStyle(style);
-    if (yUnit) tl = tl.withDataUnits({ y: yUnit });
+    else tl = tl.withStyle(thresholdStylesheet);
+    if (yUnit || xUnit) tl = tl.withDataUnits({ y: yUnit, x: xUnit });
     if (labels) tl = tl.withLabels(labels);
 
     return tl;

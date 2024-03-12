@@ -187,7 +187,7 @@ export class WebGL2Renderer implements Renderer {
     const traceList = job.traces;
     const availableHandles = new Set(traceList[HANDLES]);
     const rj = new lib.WebGlRenderJob(job.xType);
-    const xRange = job.xRange ?? traceList.range;
+    const xRange = job.xRange;
 
     // prettier-ignore
     const yRange = job.yRange ?? (() => {

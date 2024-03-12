@@ -54,7 +54,8 @@
   });
   const threshold = controller.addThresholdTracelist({
     ids: ["threshold"],
-    ys: new Float64Array(100),
+    ys: new Float64Array([100]),
+    xUnit: NumericDateFormat.EpochSeconds,
     yUnit: IEC.parseUnit("KiB"),
     tracelistsRange: { from: 0, to: 1 },
   });

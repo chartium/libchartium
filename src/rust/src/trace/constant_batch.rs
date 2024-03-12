@@ -34,8 +34,10 @@ impl<Y: N> Bundle for ConstantBatch<Y> {
         from: f64,
         to: f64,
     ) -> Box<dyn Iterator<Item = (f64, f64)> + 'a> {
-        let y = self.ys.get(&handle).unwrap().as_f64();
-        Box::new([(from, y), (to, y)].into_iter())
+        match self.ys.get(&handle).map(|y| y.as_f64()) {
+            Some(y) => Box::new([(from, y), (to, y)].into_iter()),
+            None => Box::new(std::iter::empty()),
+        }
     }
 
     fn iter_many_in_range_f64<'a>(
