@@ -1,5 +1,4 @@
-import { cons, type Flock, type Signal } from "@mod.js/signals";
-import { mapOpt } from "./mapOpt.js";
+import { type Flock, type Signal } from "@mod.js/signals";
 
 export function* concat<T>(...iters: Iterable<T>[]): Iterable<T> {
   for (const iter of iters) {
