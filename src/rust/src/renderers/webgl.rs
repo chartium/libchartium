@@ -463,11 +463,12 @@ impl WebGlRenderer {
             .map(|(x, y)| (x_pixel_ratio * (x - x_from), y_pixel_ratio * (y - y_from)))
             .scan(initial_state, |state: &mut State, (x, y): (f64, f64)| {
                 let len_sqr: f64 = (state.last_x - x).powi(2) + (state.last_y - y).powi(2);
-
-                *state = State {
-                    last_x: x,
-                    last_y: y,
-                    length_so_far: state.length_so_far + len_sqr.sqrt(),
+                if !len_sqr.is_nan() {
+                    *state = State {
+                        last_x: x,
+                        last_y: y,
+                        length_so_far: state.length_so_far + len_sqr.sqrt(),
+                    };
                 };
 
                 Some(state.length_so_far as f32)
@@ -510,6 +511,7 @@ impl WebGlRenderer {
             .with_origin_at(from, 0.0)
             .map(|(x, y)| (x as f32, y as f32))
             .collect();
+
         context.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, Some(&buffer));
         context.buffer_data_with_array_buffer_view(
             WebGl2RenderingContext::ARRAY_BUFFER,
