@@ -233,6 +233,6 @@
 
     position: fixed;
     user-select: none;
-    z-index: 1;
+    z-index: var(--libchartium-popup-z-index, 100);
   }
 </style>

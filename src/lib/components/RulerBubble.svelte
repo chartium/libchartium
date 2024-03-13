@@ -46,7 +46,7 @@
     border-radius: 4px;
     padding: 4px;
     font-size: 0.8rem;
-    z-index: 1;
+    z-index: var(--libchartium-popup-z-index, 100);
     width: max-content;
     height: max-content;
     overflow: visible;

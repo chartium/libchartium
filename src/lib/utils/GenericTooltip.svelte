@@ -112,7 +112,7 @@
     position: fixed;
     height: fit-content;
     width: fit-content;
-    z-index: 100;
+    z-index: var(--libchartium-popup-z-index, 100);
     pointer-events: none;
     user-select: none;
   }
