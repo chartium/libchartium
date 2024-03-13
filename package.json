@@ -63,7 +63,8 @@
     "svelte-fa": "^4.0.2",
     "svelte-portal": "^2.2.1",
     "svelte-typed-context": "^1.0.1",
-    "ts-pattern": "^5.0.6"
+    "ts-pattern": "^5.0.6",
+    "yeet-ts": "^1.0.3"
   },
   "peerDependencies": {
     "fraction.js": "^4.3.7",

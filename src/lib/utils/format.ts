@@ -71,7 +71,6 @@ export function doOverlap(
 }
 
 export interface QndFormatOptions extends QuantityFormatOptions {
-  decimals?: number;
   dateFormat?: string;
   unit?: Unit;
 }

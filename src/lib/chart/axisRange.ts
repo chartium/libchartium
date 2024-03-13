@@ -1,10 +1,9 @@
 import { derived, mutDerived, type Signal } from "@mod.js/signals";
 import { NumericDateFormat, type TraceList } from "../index.js";
-import type { DataUnit, DisplayUnit, RangeMarginValue } from "./axis.js";
+import type { DataUnit } from "./axis.js";
 import {
   rangesHaveMeaningfulIntersection,
   type Range,
-  type Zoom,
   type NumericRange,
   Quantity,
 } from "../types.js";
@@ -15,7 +14,6 @@ export interface AxisRangeProps {
   axis: "x" | "y";
   resetAllRanges: () => void;
   traces$: Signal<TraceList>;
-  dataUnit$: Signal<DataUnit>;
   showZero$: Signal<boolean>;
   fractionalMargins$: Signal<[number, number]>;
 }
@@ -23,13 +21,14 @@ export interface AxisRangeProps {
 export interface AxisRange {
   range$: Signal<Range>;
   resetRange: () => void;
+  zoomRange: (fractionalRange: NumericRange) => void;
+  shiftRange: (fractionalShift: number) => void;
 }
 
 export const axisRange$ = ({
   axis,
   resetAllRanges,
   traces$,
-  dataUnit$,
   showZero$,
   fractionalMargins$,
 }: AxisRangeProps): AxisRange => {
@@ -70,7 +69,17 @@ export const axisRange$ = ({
     range$.set(defaultRange$.get());
   };
 
-  return { range$: range$.toReadonly(), resetRange };
+  const zoomRange = (r: NumericRange) => {
+    isAutozoomed = false;
+    range$.set(computeZoomedRange(range$.get(), r));
+  };
+
+  const shiftRange = (s: number) => {
+    isAutozoomed = false;
+    range$.set(computeShiftedRange(range$.get(), s));
+  };
+
+  return { range$: range$.toReadonly(), resetRange, zoomRange, shiftRange };
 };
 
 const addFractionalMarginsToRange = (

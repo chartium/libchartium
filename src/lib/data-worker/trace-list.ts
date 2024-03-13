@@ -17,7 +17,7 @@ import {
   type TraceDataUnits,
   simplifyTraceInfo,
 } from "./trace-styles.js";
-import { yeet } from "../utils/yeet.js";
+import { yeet } from "yeet-ts";
 import { UnknownTraceHandleError } from "../errors.js";
 import { traceIds } from "./controller.js";
 import {

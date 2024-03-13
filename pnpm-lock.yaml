@@ -62,6 +62,9 @@ dependencies:
   unitlib:
     specifier: ^0.8.0
     version: 0.8.0(fraction.js@4.3.7)(typescript@5.3.3)
+  yeet-ts:
+    specifier: ^1.0.3
+    version: 1.0.3(typescript@5.3.3)
 
 devDependencies:
   '@sveltejs/package':

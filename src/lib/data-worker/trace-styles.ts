@@ -5,7 +5,7 @@ import {
   randomContrastingColor,
   type Color,
 } from "../utils/color.js";
-import { yeet } from "../utils/yeet.js";
+import { yeet } from "yeet-ts";
 import { UnknownTraceHandleError } from "../errors.js";
 import type { TraceHandle, Unit } from "../types.js";
 import { map } from "../utils/collection.js";
