@@ -1,5 +1,5 @@
 import { lib } from "../wasm.js";
-import { yeet } from "../../utils/yeet.js";
+import { yeet } from "yeet-ts";
 import {
   type RenderJob,
   type RenderJobResult,

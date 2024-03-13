@@ -1,8 +1,15 @@
-import { cons, derived, mut, type Signal } from "@mod.js/signals";
+import { cons, type Signal } from "@mod.js/signals";
 import { NumericDateFormat, type TraceList } from "../index.js";
-import { Quantity, type Range, type Unit } from "../types.js";
+import {
+  Quantity,
+  type NumericRange,
+  type Range,
+  type Unit,
+  type Tick,
+} from "../types.js";
 import { axisUnits$ } from "./axisUnits.js";
 import { axisRange$ } from "./axisRange.js";
+import { axisTicks$ } from "./axisTicks.js";
 
 export type DataUnit = NumericDateFormat | Unit | undefined;
 export type DisplayUnit = Unit | undefined;
@@ -26,23 +33,38 @@ export interface AxisProps {
   displayUnitPreference$: Signal<DisplayUnitPreference>;
   showZero$: Signal<boolean>;
   textSize$: Signal<(text: string) => number>;
+  lengthInPx$: Signal<number>;
 }
 
-export const axisState = ({
+export interface Axis {
+  range$: Signal<Range>;
+  resetRange: () => void;
+  shiftRange: (fractionalShift: number) => void;
+  zoomRange: (fractionalRange: NumericRange) => void;
+
+  currentDisplayUnit$: Signal<DisplayUnit>;
+  unitChangeActions$: Signal<{
+    raise?: UnitChangeAction;
+    reset?: UnitChangeAction;
+    lower?: UnitChangeAction;
+  }>;
+
+  ticks$: Signal<Tick[]>;
+}
+
+export const axis$ = ({
   axis,
   resetAllRanges,
   traces$,
   displayUnitPreference$,
   showZero$,
   textSize$,
-}: AxisProps) => {
-  const dataUnit$ = derived(($) => $(traces$).getUnits()?.[0][axis]);
-
-  const { range$ } = axisRange$({
+  lengthInPx$,
+}: AxisProps): Axis => {
+  const { range$, resetRange, shiftRange, zoomRange } = axisRange$({
     axis,
     resetAllRanges,
     traces$,
-    dataUnit$,
     showZero$,
     fractionalMargins$: cons([0, 0]),
   });
@@ -50,7 +72,24 @@ export const axisState = ({
   const { currentDisplayUnit$, unitChangeActions$ } = axisUnits$({
     axis,
     range$,
-    dataUnit$,
+    traces$,
     displayUnitPreference$,
   });
+
+  const { ticks$ } = axisTicks$({
+    range$,
+    currentDisplayUnit$,
+    textSize$,
+    lengthInPx$,
+  });
+
+  return {
+    range$,
+    resetRange,
+    shiftRange,
+    zoomRange,
+    currentDisplayUnit$,
+    unitChangeActions$,
+    ticks$,
+  };
 };

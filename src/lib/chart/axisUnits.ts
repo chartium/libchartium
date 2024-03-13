@@ -2,7 +2,7 @@ import { derived, mutDerived, type Signal } from "@mod.js/signals";
 import type { FactorDefinition } from "unitlib";
 import Fraction from "fraction.js";
 
-import { NumericDateFormat } from "../index.js";
+import { NumericDateFormat, TraceList } from "../index.js";
 import { Quantity, type Range, type Unit } from "../types.js";
 import { mapOpt } from "../utils/mapOpt.js";
 
@@ -15,7 +15,7 @@ import type {
 
 export interface AxisUnitsProps {
   axis: "x" | "y";
-  dataUnit$: Signal<DataUnit>;
+  traces$: Signal<TraceList>;
   range$: Signal<Range>;
   displayUnitPreference$: Signal<DisplayUnitPreference>;
 }
@@ -30,10 +30,13 @@ export interface AxisUnits {
 }
 
 export const axisUnits$ = ({
-  dataUnit$,
+  axis,
+  traces$,
   range$,
   displayUnitPreference$,
 }: AxisUnitsProps): AxisUnits => {
+  const dataUnit$ = derived(($) => $(traces$).getUnits()?.[0][axis]);
+
   const defaultDisplayUnit$ = createDefaultUnit$(
     dataUnit$,
     displayUnitPreference$,
