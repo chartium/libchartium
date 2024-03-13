@@ -10,12 +10,12 @@
   const Fa = Fa_1 as any as typeof Fa_2;
 </script>
 
-<ToolbarButton title="Autoscale Y axis">
+<!-- <ToolbarButton title="Autoscale Y axis">
   <Fa icon={faUpDown} />
 </ToolbarButton>
 <ToolbarButton title="Change timezones">
   <Fa icon={faUserClock} />
-</ToolbarButton>
+</ToolbarButton> -->
 <ToolExportToPNG />
 <ToolExportToCsv />
 <ToolFullscreen />

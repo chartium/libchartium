@@ -12,10 +12,10 @@
 
   let clientHeight: number;
   let clientWidth: number;
-
-  $: style = `top: ${position.y}px; left: ${
-    position.x - (axis === "y" ? clientWidth + 4 : 0)
-  }px; ${
+  $: expectedLeft = position.x - (axis === "y" ? clientWidth + 4 : 0);
+  $: overlapsRight = expectedLeft + clientWidth > window.innerWidth;
+  $: overlapsLeft = expectedLeft < 0;
+  $: style = `top: ${position.y + +(axis === "y") * 4}px; left: ${expectedLeft + (+overlapsLeft - +overlapsRight) * clientWidth}px; ${
     rotated
       ? axis === "y"
         ? `transform-origin: bottom right; transform: rotate(-90deg) translateX(${clientHeight}px)`

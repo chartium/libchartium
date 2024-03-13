@@ -86,12 +86,14 @@
         </div>
         {#each Object.entries(singleTraceInfo) as [key, value]}
           {#if key !== "styledTrace"}
+            {@const keyToShow =
+              key === "x" ? "date" : key === "y" ? "value" : key}
             <div
               class="trace-info"
               style:line-height="17px"
               style:font-size="14px"
             >
-              <div class="value-name">{key}:</div>
+              <div class="value-name">{keyToShow}:</div>
               <div class="value-value">
                 {value}
               </div>
