@@ -8,13 +8,9 @@ import {
   toQuantOrDay,
 } from "./quantityHelpers.js";
 import type { NumericDateFormat } from "./numericDateFormat.js";
+import type { RangeMarginValue } from "../chart/axis.js";
 
 export type Test = HTMLButtonElement;
-export type RangeMarginValue =
-  | { percent: number }
-  | { value: number | Quantity }
-  | { px: number }
-  | 0;
 
 export type RangeMargins =
   | { all: RangeMarginValue }
