@@ -207,10 +207,6 @@ export function intersection<T>(a: Iterable<T>, ...sets: Set<T>[]): Set<T> {
 export function flockReduce<T>(
   flock: Flock<T>,
   callbackfn: (previousValue: T, currentValue: T) => T,
-): Signal<T>;
-export function flockReduce<T>(
-  flock: Flock<T>,
-  callbackfn: (previousValue: T, currentValue: T) => T,
   initialValue: T,
 ): Signal<T>;
 export function flockReduce<T, U>(
@@ -218,31 +214,11 @@ export function flockReduce<T, U>(
   callbackfn: (previousValue: U, currentValue: T) => T,
   initialValue: U,
 ): Signal<U>;
-export function flockReduce<T>(
-  flock: Flock<T> | undefined,
-  callbackfn: (previousValue: T, currentValue: T) => T,
-): Signal<T | undefined>;
-export function flockReduce<T>(
-  flock: Flock<T> | undefined,
-  callbackfn: (previousValue: T, currentValue: T) => T,
-  initialValue: T,
-): Signal<T | undefined>;
-export function flockReduce<T, U>(
-  flock: Flock<T> | undefined,
-  callbackfn: (previousValue: U, currentValue: T) => T,
-  initialValue: U,
-): Signal<U | undefined>;
 
 export function flockReduce<T, U>(
-  flock: Flock<T> | undefined,
+  flock: Flock<T>,
   callbackfn: (previousValue: any, currentValue: T) => T,
-  initialValue?: U,
+  initialValue: U,
 ): Signal<any> {
-  return (
-    mapOpt(flock, (f) => f.toSet())?.map((s) =>
-      arguments.length === 2
-        ? [...s].reduce(callbackfn)
-        : [...s].reduce(callbackfn, initialValue),
-    ) ?? cons(undefined)
-  );
+  return flock.toSet().map((s) => [...s].reduce(callbackfn, initialValue));
 }

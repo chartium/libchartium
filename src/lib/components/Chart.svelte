@@ -30,6 +30,7 @@
   import { toolKey } from "./Toolbar/toolKey.js";
   import { flockReduce } from "../utils/collection.js";
   import { portal } from "svelte-portal";
+  import { mapOpt } from "../utils/mapOpt.js";
 
   // SECTION Props
   let klass: string = "";
@@ -132,11 +133,19 @@
 
   /** Charts supplied with the same FlockRegistry will have x axis of the same width */
   export let commonXAxisHeight: FlockRegistry<number> | undefined = undefined;
-  $: xAxisHeight = flockReduce(commonXAxisHeight, Math.max);
+  $: xAxisHeight = mapOpt(commonXAxisHeight, (f) =>
+    flockReduce(f, (a, b) => Math.max(a, b), 0),
+  );
 
   /** Charts supplied with the same FlockRegistry will have y axis of the same width */
   export let commonYAxisWidth: FlockRegistry<number> | undefined = undefined;
-  $: yAxisWidth = flockReduce(commonYAxisWidth, Math.max);
+  $: yAxisWidth = mapOpt(commonYAxisWidth, (f) =>
+    flockReduce(f, (a, b) => Math.max(a, b), 0),
+  );
+
+  $: ywidthset = commonYAxisWidth?.toSet();
+  $: console.log("y width set: ", $ywidthset);
+  $: console.log("y width max: ", $yAxisWidth);
 
   /** Sets position of the lil infobox that shows number of traces and range */
   export let infoboxPosition:
