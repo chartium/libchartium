@@ -143,10 +143,6 @@
     flockReduce(f, (a, b) => Math.max(a, b), 0),
   );
 
-  $: ywidthset = commonYAxisWidth?.toSet();
-  $: console.log("y width set: ", $ywidthset);
-  $: console.log("y width max: ", $yAxisWidth);
-
   /** Sets position of the lil infobox that shows number of traces and range */
   export let infoboxPosition:
     | "top-left"
