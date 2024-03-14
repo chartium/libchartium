@@ -70,6 +70,6 @@
   }
 
   .focused {
-    background-color: var(--highlight-background);
+    background-color: var(--libchartium-accent-background);
   }
 </style>

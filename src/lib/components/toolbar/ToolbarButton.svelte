@@ -85,6 +85,6 @@
     border-radius: 3px;
     padding: 3px;
     opacity: 0.9;
-    background-color: var(--background-color);
+    background-color: var(--libchartium-secondary-background);
   }
 </style>

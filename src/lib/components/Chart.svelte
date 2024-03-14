@@ -19,15 +19,15 @@
   import AxisTicks from "./AxisTicks.svelte";
   import ChartLegend from "./Legend.svelte";
   import Guidelines from "./Guidelines.svelte";
-  import Tooltip from "./TraceTooltip.svelte";
+  import Tooltip from "./tooltip/TraceTooltip.svelte";
   import { mut, cons, FlockRegistry } from "@mod.js/signals";
   import type { Remote } from "comlink";
   import { qndFormat, type QndFormatOptions } from "../utils/format.js";
   import type { Dayjs } from "dayjs";
   import type { RangeMargins } from "../utils/rangeMargins.js";
-  import DefaultToolbar from "./Toolbar/DefaultToolbar.svelte";
+  import DefaultToolbar from "./toolbar/DefaultToolbar.svelte";
   import { setContext } from "svelte-typed-context";
-  import { toolKey } from "./Toolbar/toolKey.js";
+  import { toolKey } from "./toolbar/toolKey.js";
   import { flockReduce } from "../utils/collection.js";
   import { portal } from "svelte-portal";
   import { mapOpt } from "../utils/mapOpt.js";
