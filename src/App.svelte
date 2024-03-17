@@ -27,7 +27,7 @@
     (_, index) => from + index * stepSize,
   );
 
-  const ys = Array.from({ length: 2 }, (_, idx) => ({
+  const ys = Array.from({ length: 27 }, (_, idx) => ({
     id: `trace_${idx}`,
     data: Float32Array.from(
       xs.map((x) => 100 + 100 * Math.sin((x / to) * 2 * Math.PI + idx)),
@@ -60,7 +60,7 @@
     tracelistsRange: { from: 0, to: 1 },
   });
 
-  const traces = Promise.all([normalTraces, threshold]).then((ts) =>
+  const traces = Promise.all([threshold, normalTraces]).then((ts) =>
     TraceList.union(...ts),
   );
 
@@ -79,7 +79,7 @@
         xLabel="Time"
         yLabel="Amount"
         defaultYUnit={IEC.parseUnit("MiB")}
-        legendPosition="right"
+        legendPosition="bottom"
       >
         <!-- <svelte:fragment slot="toolbar">
             <ToolFullscreen on:click={() => (fullscreen = !fullscreen)} />

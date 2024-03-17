@@ -1,12 +1,11 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { onMount, tick } from "svelte";
 
   import type { TraceList } from "../data-worker/trace-list.js";
   import * as canvas from "./canvas.js";
-  import TracePreview from "./TracePreview.svelte";
   import { map } from "../utils/collection.js";
   import type { WritableSignal } from "@mod.js/signals";
-  import { oneOrDoubleclick } from "../utils/mouseActions.js";
+  import LegendEntry from "./LegendEntry.svelte";
 
   export let numberOfShownTraces: number = 5;
 
@@ -23,12 +22,14 @@
 
   let container: HTMLElement; // FIXME this is a lame workaround for the @container css query which for some reason (??) doesn't work in svelte altho the github issue says it is closed
   let wide = false;
-
+  $: legendContainerStyle = wide ? "" : "";
   onMount(() => {
-    if (container.clientWidth > 300) {
-      // FIXME delet when @container
-      wide = true;
-    }
+    tick().then(() => {
+      if (container.clientWidth > 300) {
+        // FIXME delet when @container
+        wide = true;
+      }
+    });
 
     for (const [index, canvasRef] of canvasRefs.entries()) {
       const color = tracesWithStyles[index].color;
@@ -63,12 +64,22 @@
 
   /** Width and height of the lil preview window */
   const previewSize = 20;
+
+  let widestLegend: number = 0;
+  const updateMaxWidth = (width: number) => {
+    if (width > widestLegend) {
+      widestLegend = width;
+    }
+  };
 </script>
 
 <div
   class="legend-container"
   bind:this={container}
   style:flex-direction={wide ? "row" : "column"}
+  style:grid-template-columns={wide
+    ? `repeat(auto-fill, minmax(${widestLegend}px, 1fr))`
+    : ""}
 >
   <!--
   {#each {length: numberOfShownTraces} as _, i} <!-- a lil trick ti break after numberOfShownTraces - ->
@@ -76,64 +87,23 @@
 -->
   {#each tracesWithStyles.slice(0, numberOfShownTraces) as styledTrace}
     {@const hidden = $hiddenTraceIds.has(styledTrace.id)}
-    <div
-      class="trace-legend"
-      style:opacity={hidden ? "0.5" : 1}
-      use:oneOrDoubleclick={{
-        single: () => {
-          hiddenTraceIds.update((curr) => {
-            if (hidden) curr.delete(styledTrace.id);
-            else curr.add(styledTrace.id);
-            return curr;
-          });
-        },
-        double: () =>
-          hiddenTraceIds.update((curr) => {
-            if (
-              curr.size === 0 ||
-              (curr.size === 1 && curr.has(styledTrace.id))
-            ) {
-              curr = new Set(tracesWithStyles.map((t) => t.id));
-              curr.delete(styledTrace.id);
-            } else curr.clear();
-            return curr;
-          }),
-      }}
-      role="presentation"
-    >
-      <div
-        class="trace-preview"
-        class:simplified={previewStyle === "simplified"}
-      >
-        <TracePreview
-          previewedTrace={styledTrace}
-          previewHeight={previewSize}
-          previewWidth={previewSize}
-          simplified={previewStyle === "simplified"}
-        />
-      </div>
-      {styledTrace.label ?? styledTrace.id}
-    </div>
+    <LegendEntry
+      {hidden}
+      {previewSize}
+      {previewStyle}
+      {styledTrace}
+      {updateMaxWidth}
+      updateHiddenTraceIds={hiddenTraceIds.update}
+      allIDs={tracesWithStyles.map((t) => t.id)}
+    />
   {/each}
 </div>
 
 <style lang="scss">
   .legend-container {
-    display: flex;
+    display: grid;
     gap: 3px;
-    justify-content: flex-start;
-    flex-wrap: wrap;
     margin: 0.5rem;
     overflow-y: auto;
-
-    .trace-legend {
-      user-select: none;
-      cursor: pointer;
-      display: flex;
-      flex: 1;
-      flex-direction: row;
-      align-items: flex-start;
-      text-wrap: nowrap;
-    }
   }
 </style>
