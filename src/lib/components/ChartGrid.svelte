@@ -45,7 +45,7 @@
       "subtitle subtitle subtitle" auto
       "yticks graph rl" 1fr
       "b xticks c" auto
-      "d bl bl" auto / auto 1fr auto;
+      "bl bl bl" auto / auto 1fr auto;
 
     /* gap: 0.5rem;  <- exchanged for padding so the "gap" is still clickable*/
     /*  -        Title      -        */

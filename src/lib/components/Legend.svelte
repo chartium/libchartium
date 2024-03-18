@@ -22,7 +22,6 @@
 
   let container: HTMLElement; // FIXME this is a lame workaround for the @container css query which for some reason (??) doesn't work in svelte altho the github issue says it is closed
   let wide = false;
-  $: legendContainerStyle = wide ? "" : "";
   onMount(() => {
     tick().then(() => {
       if (container.clientWidth > 300) {
@@ -73,37 +72,43 @@
   };
 </script>
 
-<div
-  class="legend-container"
-  bind:this={container}
-  style:flex-direction={wide ? "row" : "column"}
-  style:grid-template-columns={wide
-    ? `repeat(auto-fill, minmax(${widestLegend}px, 1fr))`
-    : ""}
->
-  <!--
+<div class="legend-container">
+  <div
+    class="legend-grid"
+    bind:this={container}
+    style:width={`min(${(widestLegend + 3) * numberOfShownTraces}px, 100%)`}
+    style:flex-direction={wide ? "row" : "column"}
+    style:grid-template-columns={`repeat(auto-fill, minmax(${widestLegend}px, 1fr))`}
+  >
+    <!--
   {#each {length: numberOfShownTraces} as _, i} <!-- a lil trick ti break after numberOfShownTraces - ->
   {@const styledTrace = tracesWithStyles[i]}
 -->
-  {#each tracesWithStyles.slice(0, numberOfShownTraces) as styledTrace}
-    {@const hidden = $hiddenTraceIds.has(styledTrace.id)}
-    <LegendEntry
-      {hidden}
-      {previewSize}
-      {previewStyle}
-      {styledTrace}
-      {updateMaxWidth}
-      updateHiddenTraceIds={hiddenTraceIds.update}
-      allIDs={tracesWithStyles.map((t) => t.id)}
-    />
-  {/each}
+    {#each tracesWithStyles.slice(0, numberOfShownTraces) as styledTrace}
+      {@const hidden = $hiddenTraceIds.has(styledTrace.id)}
+      <LegendEntry
+        {hidden}
+        {previewSize}
+        {previewStyle}
+        {styledTrace}
+        {updateMaxWidth}
+        updateHiddenTraceIds={hiddenTraceIds.update}
+        allIDs={tracesWithStyles.map((t) => t.id)}
+      />
+    {/each}
+  </div>
 </div>
 
 <style lang="scss">
-  .legend-container {
+  .legend-grid {
     display: grid;
     gap: 3px;
     margin: 0.5rem;
     overflow-y: auto;
+  }
+  .legend-container {
+    display: flex;
+    justify-content: center;
+    width: 100%;
   }
 </style>

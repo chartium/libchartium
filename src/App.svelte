@@ -1,10 +1,7 @@
 <script lang="ts">
   import Chart from "./lib/components/Chart.svelte";
   import wasmUrl from "../dist/wasm/libchartium.wasm?url";
-  import ToolFullscreen from "./lib/components/toolbar/ToolFullscreen.svelte";
-  import ToolExportToPng from "./lib/components/toolbar/ToolExportToPNG.svelte";
-  import ToolHideLegend from "./lib/components/toolbar/ToolHideLegend.svelte";
-  import { portal } from "svelte-portal";
+
   import { ChartiumController } from "./lib/data-worker/index.js";
   import {
     faArrowRight,
@@ -27,7 +24,7 @@
     (_, index) => from + index * stepSize,
   );
 
-  const ys = Array.from({ length: 27 }, (_, idx) => ({
+  const ys = Array.from({ length: 8 }, (_, idx) => ({
     id: `trace_${idx}`,
     data: Float32Array.from(
       xs.map((x) => 100 + 100 * Math.sin((x / to) * 2 * Math.PI + idx)),
