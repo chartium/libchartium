@@ -61,25 +61,15 @@ export function toNumericRange(
 export function toQuantOrDay(
   x: number,
   units?: Unit | NumericDateFormat,
-  displayUnits?: Unit,
+  dataUnits?: Unit,
 ): Quantity | Dayjs | number {
   if (units instanceof NumericDateFormat) return units.parseToDayjs(x);
   if (typeof x === "number" && units) {
     const q = new Quantity(x, units);
-    if (displayUnits) return q.inUnits(displayUnits);
+    if (dataUnits) return q.inUnits(dataUnits);
     return q;
   }
   return x;
-}
-
-export function toQuantOrDayRange(
-  r: NumericRange,
-  units?: Unit | NumericDateFormat,
-): Range {
-  return {
-    from: toQuantOrDay(r.from, units),
-    to: toQuantOrDay(r.to, units),
-  } as Range;
 }
 
 /** Returns range in units if defined, otherwise returns numeric range */
