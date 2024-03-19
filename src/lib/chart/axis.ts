@@ -32,7 +32,7 @@ export interface AxisProps {
   traces$: Signal<TraceList>;
   displayUnitPreference$: Signal<DisplayUnitPreference>;
   showZero$: Signal<boolean>;
-  textSize$: Signal<(text: string) => number>;
+  measureTextSize$: Signal<(text: string) => number>;
   lengthInPx$: Signal<number>;
 }
 
@@ -58,7 +58,7 @@ export const axis$ = ({
   traces$,
   displayUnitPreference$,
   showZero$,
-  textSize$,
+  measureTextSize$,
   lengthInPx$,
 }: AxisProps): Axis => {
   const { range$, resetRange, shiftRange, zoomRange } = axisRange$({
@@ -79,7 +79,7 @@ export const axis$ = ({
   const { ticks$ } = axisTicks$({
     range$,
     currentDisplayUnit$,
-    textSize$,
+    measureTextSize$,
     lengthInPx$,
   });
 

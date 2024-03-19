@@ -37,9 +37,8 @@ export const axisRange$ = ({
   );
 
   const defaultRange$ = derived(($) => {
-    const rangeWithMargins = addFractionalMarginsToRange(
-      $(tracesRange$),
-      $(fractionalMargins$),
+    const rangeWithMargins = preventEmptyRange(
+      addFractionalMarginsToRange($(tracesRange$), $(fractionalMargins$)),
     );
     if ($(showZero$)) {
       return addZeroToRange(rangeWithMargins);
@@ -109,6 +108,15 @@ const addFractionalMarginsToRange = (
     },
     unit,
   );
+};
+
+const preventEmptyRange = (currentRange: Range) => {
+  const unit = unitOf(currentRange.from);
+  const from = toNumeric(currentRange.from, unit);
+  const to = toNumeric(currentRange.to, unit);
+
+  if (from === to) return toRange({ from: from - 1, to: to + 1 }, unit);
+  return currentRange;
 };
 
 const addZeroToRange = (range: Range): Range => {
