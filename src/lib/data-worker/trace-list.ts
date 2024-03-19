@@ -38,7 +38,7 @@ import {
   toNumeric,
   toNumericRange,
   toQuantOrDay,
-  toQuantOrDayRange,
+  toRange,
   unitEqual,
 } from "../utils/quantityHelpers.js";
 import {
@@ -411,7 +411,7 @@ export class TraceList {
 
     return new TraceList({
       handles,
-      range: toQuantOrDayRange({ from, to }, traceInfo[0]?.[1]?.xDataUnit),
+      range: toRange({ from, to }, traceInfo[0]?.[1]?.xDataUnit),
       bundles,
       labels,
       traceInfo,

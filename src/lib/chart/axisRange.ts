@@ -13,7 +13,7 @@ import { toNumeric, toRange } from "../utils/quantityHelpers.js";
 export interface AxisRangeProps {
   axis: "x" | "y";
   resetAllRanges: () => void;
-  traces$: Signal<TraceList>;
+  visibleTraces$: Signal<TraceList>;
   showZero$: Signal<boolean>;
   fractionalMargins$: Signal<[number, number]>;
 }
@@ -28,12 +28,12 @@ export interface AxisRange {
 export const axisRange$ = ({
   axis,
   resetAllRanges,
-  traces$,
+  visibleTraces$,
   showZero$,
   fractionalMargins$,
 }: AxisRangeProps): AxisRange => {
   const tracesRange$ = derived(($) =>
-    axis === "x" ? $(traces$).range : $(traces$).getYRange(),
+    axis === "x" ? $(visibleTraces$).range : $(visibleTraces$).getYRange(),
   );
 
   const defaultRange$ = derived(($) => {
@@ -170,7 +170,7 @@ const computeShiftedRange = (
   );
 };
 
-const unitOf = (v: number | Dayjs | Quantity): DataUnit =>
+export const unitOf = (v: number | Dayjs | Quantity): DataUnit =>
   v instanceof Quantity
     ? v.unit
     : dayjs.isDayjs(v)

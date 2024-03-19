@@ -17,10 +17,12 @@ import {
   getRangeSpan,
 } from "../utils/dateFormatter.js";
 
+export type TextMeasuringFunction = (text: string) => number;
+
 export interface AxisTicksProps {
   range$: Signal<Range>;
   currentDisplayUnit$: Signal<DisplayUnit>;
-  measureTextSize$: Signal<(text: string) => number>;
+  measureTextSize$: Signal<TextMeasuringFunction | undefined>;
   lengthInPx$: Signal<number>;
 }
 
@@ -40,7 +42,7 @@ export const axisTicks$ = ({
     linearTicks(
       $(range$),
       $(lengthInPx$),
-      $(measureTextSize$),
+      $(measureTextSize$) ?? ((s) => s.length * 10), // FIXME find a better solution
       $(currentDisplayUnit$),
     ),
   );

@@ -1,17 +1,28 @@
 import { cons, type Signal, type Unsubscriber } from "@mod.js/signals";
 import type { ChartiumController, TraceList } from "../index.js";
-import { axis$, type Axis } from "./axis.js";
+import { axis$, type Axis, type DisplayUnitPreference } from "./axis.js";
 import { chartCanvas$ } from "./chartCanvas.js";
 import { chartRenderer$ } from "./chartRenderer.js";
+import type { TextMeasuringFunction } from "./axisTicks.js";
+import {
+  chartAffineSpace,
+  type PointInChartFactory,
+  type ValueOnAxisFactory,
+} from "./chartAffineSpace.js";
 
 export interface ChartProps {
   controller$: Signal<ChartiumController | undefined>;
-  canvas$: Signal<HTMLCanvasElement>;
+  canvas$: Signal<HTMLCanvasElement | undefined>;
 
-  traces$: Signal<TraceList>;
+  visibleTraces$: Signal<TraceList>;
 
-  measureXAxisTextSize$: Signal<(text: string) => number>;
-  measureYAxisTextSize$: Signal<(text: string) => number>;
+  measureXAxisTextSize$: Signal<TextMeasuringFunction | undefined>;
+  measureYAxisTextSize$: Signal<TextMeasuringFunction | undefined>;
+
+  showXAxisZero$: Signal<boolean>;
+  showYAxisZero$: Signal<boolean>;
+  xAxisDisplayUnitPreference$: Signal<DisplayUnitPreference>;
+  yAxisDisplayUnitPreference$: Signal<DisplayUnitPreference>;
 
   defer: (u: Unsubscriber) => void;
 }
@@ -21,14 +32,23 @@ export interface Chart {
     x: Axis;
     y: Axis;
   };
+
+  resetAllRanges(): void;
+
+  valueOnAxis(axis: "x" | "y"): ValueOnAxisFactory;
+  point(): PointInChartFactory;
 }
 
 export const chart$ = ({
-  controller$,
+  controller$: maybeUninitializedController$,
   canvas$,
-  traces$,
+  visibleTraces$,
   measureXAxisTextSize$,
   measureYAxisTextSize$,
+  showXAxisZero$,
+  showYAxisZero$,
+  xAxisDisplayUnitPreference$,
+  yAxisDisplayUnitPreference$,
   defer,
 }: ChartProps): Chart => {
   const resetAllRanges = () => {
@@ -38,21 +58,21 @@ export const chart$ = ({
   const axes = {
     x: axis$({
       axis: "x",
-      traces$,
-      measureTextSize$: measureXAxisTextSize$,
+      visibleTraces$,
       lengthInPx$: cons(100),
-      displayUnitPreference$: cons("auto"),
+      measureTextSize$: measureXAxisTextSize$,
+      displayUnitPreference$: xAxisDisplayUnitPreference$,
+      showZero$: showXAxisZero$,
       resetAllRanges,
-      showZero$: cons(false),
     }),
     y: axis$({
       axis: "y",
-      traces$,
-      measureTextSize$: measureYAxisTextSize$,
+      visibleTraces$,
       lengthInPx$: cons(100),
-      displayUnitPreference$: cons("auto"),
+      measureTextSize$: measureYAxisTextSize$,
+      displayUnitPreference$: yAxisDisplayUnitPreference$,
+      showZero$: showYAxisZero$,
       resetAllRanges,
-      showZero$: cons(false),
     }),
   };
 
@@ -60,17 +80,32 @@ export const chart$ = ({
     canvas$,
   });
 
+  const { point, valueOnAxis } = chartAffineSpace({
+    canvasSize$: canvasSize$.map((size) => size ?? { width: 300, height: 150 }),
+    xRange$: axes.x.range$,
+    yRange$: axes.y.range$,
+  });
+
+  // TODO remove once we change uninitialized Controller to Promise<Controller>
+  const controller$ = maybeUninitializedController$
+    .map(async (controller) => {
+      await controller?.initialized;
+      return controller;
+    })
+    .awaited()
+    .currentlyFulfilled();
+
   chartRenderer$({
     controller$,
     canvasSize$,
     offscreenCanvas$,
 
-    traces$,
+    visibleTraces$,
     xRange$: axes.x.range$,
     yRange$: axes.y.range$,
 
     defer,
   });
 
-  return { axes };
+  return { axes, resetAllRanges, point, valueOnAxis };
 };

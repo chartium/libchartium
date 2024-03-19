@@ -12,7 +12,7 @@
   import type { VisibleAction } from "./ActionsOverlay.svelte";
 
   import { onDestroy } from "svelte";
-  import { Chart } from "../chart/chart.js";
+  import { chart$ as createChart$ } from "../chart/chart.js";
 
   import ActionsOverlay from "./ActionsOverlay.svelte";
   import ChartGrid from "./ChartGrid.svelte";
@@ -20,7 +20,7 @@
   import ChartLegend from "./Legend.svelte";
   import Guidelines from "./Guidelines.svelte";
   import Tooltip from "./tooltip/TraceTooltip.svelte";
-  import { mut, cons, FlockRegistry } from "@mod.js/signals";
+  import { mut, FlockRegistry, derived, effect } from "@mod.js/signals";
   import type { Remote } from "comlink";
   import { qndFormat, type QndFormatOptions } from "../utils/format.js";
   import type { Dayjs } from "dayjs";
@@ -31,27 +31,34 @@
   import { flockReduce } from "../utils/collection.js";
   import { portal } from "svelte-portal";
   import { mapOpt } from "../utils/mapOpt.js";
+  import type { DisplayUnitPreference } from "../chart/axis.js";
+  import type { TextMeasuringFunction } from "../chart/axisTicks.js";
+  import type { Qdn } from "../chart/chartAffineSpace.js";
 
   // SECTION Props
   let klass: string = "";
   export { klass as class };
 
-  export let controller: ChartiumController | Remote<ChartiumController>;
-  let chart: Chart | undefined = undefined;
-  let canvas: HTMLCanvasElement;
+  let contentSize: [number, number] | undefined; // TODO maybe remove
 
-  if (controller.initialized !== true) {
-    console.warn(
-      "Trying to create a Chart while the ChartiumController is still not initialized.",
-    );
-    controller.initialized.then(() => chartCanvasChanged(offscreenCanvas));
-  }
+  export let controller: ChartiumController;
+  const controller$ = mut(controller);
+  $: controller$.set(controller);
+
+  let canvas: HTMLCanvasElement | undefined;
+  const canvas$ = mut(canvas);
+  $: canvas$.set(canvas);
 
   /** All traces in the chart */
   export let traces: TraceList;
-  let hiddenTraceIds = mut(new Set<string>());
-  $: visibleTraces = traces.withoutTraces($hiddenTraceIds);
-  $: chart?.traces.set(visibleTraces);
+  const traces$ = mut(traces);
+  $: traces$.set(traces);
+
+  // TODO change to Flock
+  const hiddenTraceIds$ = mut(new Set<string>());
+  const visibleTraces$ = traces$
+    .zip(hiddenTraceIds$)
+    .map(([traces, hiddenIds]) => traces.withoutTraces(hiddenIds));
 
   export let title: string = "";
   export let subtitle: string = "";
@@ -65,14 +72,18 @@
    * The "data" option will display the units of the provided data.
    * The "auto" option (default) will choose the best factor according to the range.
    */
-  export let defaultXUnit: Unit | undefined | "auto" | "data" = "auto";
+  export let defaultXUnit: DisplayUnitPreference = "auto";
+  const defaultXUnit$ = mut(defaultXUnit);
+  $: defaultXUnit$.set(defaultXUnit);
 
   /**
    * Units that should be displayed on the y axis.
    * The "data" option will display the units of the provided data.
    * The "auto" option (default) will choose the best factor according to the range.
    */
-  export let defaultYUnit: Unit | "auto" | "data" = "auto";
+  export let defaultYUnit: DisplayUnitPreference = "auto";
+  const defaultYUnit$ = mut(defaultYUnit);
+  $: defaultYUnit$.set(defaultYUnit);
 
   /** Hides the thick line at the edge of the graph */
   export let hideXAxisLine: boolean = false;
@@ -126,10 +137,10 @@
   export let disableYUnitChanges: boolean = false;
 
   /** Bind this property among several charts to make them all display an x axis ruler when one of them is hovered */
-  export let commonXRuler = mut<ChartValue>();
+  export let commonXRuler$ = mut<ChartValue>();
 
   /** Bind this property among several charts to make them all display an y axis ruler when one of them is hovered */
-  export let commonYRuler = mut<ChartValue>();
+  export let commonYRuler$ = mut<ChartValue>();
 
   /** Charts supplied with the same FlockRegistry will have x axis of the same width */
   export let commonXAxisHeight: FlockRegistry<number> | undefined = undefined;
@@ -153,108 +164,101 @@
 
   /** Forces autozoom to show x = 0 */
   export let showXAxisZero: boolean = false;
-  $: chart?.showXAxisZero.set(showXAxisZero);
+  const showXAxisZero$ = mut(showXAxisZero);
+  $: showXAxisZero$.set(showXAxisZero);
 
   /** Forces autozoom to show y = 0 */
   export let showYAxisZero: boolean = false;
-  $: chart?.showYAxisZero.set(showYAxisZero);
+  const showYAxisZero$ = mut(showYAxisZero);
+  $: showYAxisZero$.set(showYAxisZero);
 
   export let margins: RangeMargins | undefined = undefined;
-  $: chart?.margins.set(margins);
+  const margins$ = mut(margins);
+  $: margins$.set(margins);
+
+  let measureXAxisTextSize: TextMeasuringFunction | undefined;
+  const measureXAxisTextSize$ = mut(measureXAxisTextSize);
+  $: measureXAxisTextSize$.set(measureXAxisTextSize);
+
+  let measureYAxisTextSize: TextMeasuringFunction | undefined;
+  const measureYAxisTextSize$ = mut(measureYAxisTextSize);
+  $: measureYAxisTextSize$.set(measureYAxisTextSize);
+
+  const chart$ = createChart$({
+    controller$,
+    canvas$,
+    visibleTraces$,
+    measureXAxisTextSize$,
+    measureYAxisTextSize$,
+    showXAxisZero$,
+    showYAxisZero$,
+    xAxisDisplayUnitPreference$: defaultXUnit$,
+    yAxisDisplayUnitPreference$: defaultYUnit$,
+    defer: onDestroy,
+  });
 
   //!SECTION
 
-  $: offscreenCanvas = canvas ? canvas.transferControlToOffscreen() : undefined;
-  $: chartCanvasChanged(offscreenCanvas);
-  function chartCanvasChanged(offscreenCanvas: OffscreenCanvas | undefined) {
-    if (controller.initialized !== true) return (chart = undefined);
-    if (!offscreenCanvas) return (chart = undefined);
-    chart = new Chart(controller, offscreenCanvas, visibleTraces);
-  }
-
-  $: xTicks = chart?.ticks.x;
-  $: yTicks = chart?.ticks.y;
-
-  $: chart?.defaultDisplayUnit.x.set(defaultXUnit);
-  $: chart?.defaultDisplayUnit.y.set(defaultYUnit);
-  $: xDisplayUnit = chart?.currentDisplayUnit.x;
-  $: yDisplayUnit = chart?.currentDisplayUnit.y;
-  let xAxisTextSize: ((text: string) => number) | undefined;
-  let yAxisTextSize: ((text: string) => number) | undefined;
+  const xTicks$ = chart$.axes.x.ticks$;
+  const yTicks$ = chart$.axes.y.ticks$;
+  const xDisplayUnit$ = chart$.axes.x.currentDisplayUnit$;
+  const yDisplayUnit$ = chart$.axes.y.currentDisplayUnit$;
 
   const QND_FORMAT_OPTIONS: QndFormatOptions = {
     dateFormat: "MMM DD, hh:mm:ss",
   };
   $: xFormatOptions = {
     ...QND_FORMAT_OPTIONS,
-    unit: $xDisplayUnit,
+    unit: $xDisplayUnit$,
   };
   $: yFormatOptions = {
     ...QND_FORMAT_OPTIONS,
-    unit: $yDisplayUnit,
+    unit: $yDisplayUnit$,
   };
-
-  // walkaround for svelte 4 random reactivity bug
-  $: chartUpdated(chart);
-  function chartUpdated(chart: Chart | undefined) {
-    if (!chart) return;
-    chart.textSize.x = xAxisTextSize;
-    chart.textSize.y = yAxisTextSize;
-  }
 
   const visibleAction = mut<VisibleAction | undefined>(undefined);
 
-  let contentSize: [number, number] = [1, 1];
-  $: if (chart) {
-    chart.size.set({
-      width: contentSize[0] * devicePixelRatio,
-      height: contentSize[1] * devicePixelRatio,
-    });
-  }
-
   let showTooltip: boolean = false;
-  let hoverXQuantity: ChartValue;
-  let hoverYQuantity: ChartValue;
+  const hoverXQuantity$ = mut<Qdn>();
+  const hoverYQuantity$ = mut<Qdn>();
 
   const updateHoverQuantities = (e: MouseEvent) => {
-    if (!chart) return;
-    const zoom = devicePixelRatio;
-    hoverXQuantity = chart.coordinatesToQuantities(e.offsetX * zoom, "x");
-    hoverYQuantity = chart.coordinatesToQuantities(e.offsetY * zoom, "y");
-    commonXRuler.set(hoverXQuantity);
-    commonYRuler.set(hoverYQuantity);
+    const { x, y } = chart$
+      .point()
+      .fromLogicalPixels(e.offsetX, e.offsetY)
+      .toQuantitites();
+
+    hoverXQuantity$.set(x);
+    hoverYQuantity$.set(y);
+    commonXRuler$.set(x);
+    commonYRuler$.set(y);
   };
 
-  $: closestTraces =
-    chart && hoverXQuantity && hoverYQuantity
-      ? visibleTraces.findClosestTracesToPoint(
-          {
-            x: hoverXQuantity,
-            y: hoverYQuantity,
-          },
-          tooltipTracesShown === "all"
-            ? visibleTraces.traceCount
-            : tooltipTracesShown,
-        )
-      : undefined;
-  $: tracesInfo =
-    closestTraces?.map((trace) => ({
-      styledTrace: trace.traceInfo,
-      x: qndFormat(trace.closestPoint.x, xFormatOptions),
-      y: qndFormat(trace.closestPoint.y, yFormatOptions),
-    })) ?? [];
+  const closestTraces$ = derived(($) => {
+    const x = $(hoverXQuantity$);
+    const y = $(hoverYQuantity$);
+    if (x === undefined || y === undefined) return;
+
+    const showCount =
+      tooltipTracesShown === "all"
+        ? $(visibleTraces$).traceCount
+        : tooltipTracesShown;
+
+    return $(visibleTraces$).findClosestTracesToPoint({ x, y }, showCount);
+  });
+
+  const tracesInfo$ = closestTraces$.map((traces = []) =>
+    traces.map(({ traceInfo, closestPoint: { x, y } }) => ({
+      styledTrace: traceInfo,
+      x: qndFormat(x, xFormatOptions),
+      y: qndFormat(y, yFormatOptions),
+    })),
+  );
 
   /** updates highilghted points in visibleAction */
-  function updateHighlightPoints(
-    chart: Chart | undefined,
-    closestTraces:
-      | {
-          traceInfo: TraceInfo;
-          closestPoint: ChartValuePoint;
-        }[]
-      | undefined,
-  ) {
-    if (closestTraces === undefined || chart === undefined) {
+  effect(($) => {
+    const closestTraces = $(closestTraces$);
+    if (!closestTraces) {
       visibleAction.set({ highlightedPoints: [] });
     } else {
       const points = closestTraces.map((trace) => ({
@@ -269,64 +273,61 @@
         highlightedPoints: points,
       }));
     }
-  }
-  $: updateHighlightPoints(chart, closestTraces);
+  }).pipe(onDestroy);
 
-  $: if (chart) {
-    // ideally this would just update but without mousemove we don't know where the mouse is
-    chart.range.x.subscribe(() => updateHighlightPoints(chart, []));
-    chart.range.y.subscribe(() => updateHighlightPoints(chart, []));
-  }
+  // $: if (chart$) {
+  //   // ideally this would just update but without mousemove we don't know where the mouse is
+  //   chart$.range.x.subscribe(() => updateHighlightPoints(chart$, []));
+  //   chart$.range.y.subscribe(() => updateHighlightPoints(chart$, []));
+  // }
 
   /** How close to a trace is considered close enough to get only one trace info */
   const closenessDistance = 5;
-  let selectedTrace:
-    | {
-        styledTrace: TraceInfo;
-        x: string;
-        y: string;
-        min: string;
-        max: string;
-        avg: string;
-      }
-    | undefined = undefined;
 
-  let traceCloseEnough: boolean;
+  const traceCloseEnough$ = derived(($) => {
+    const trace = $(closestTraces$)?.[0];
+    if (!trace) return false;
 
-  $: if (chart && closestTraces && closestTraces?.length !== 0) {
-    // FIXME rethink this, this is ew
-    traceCloseEnough =
-      chart.distanceInPx(closestTraces[0].closestPoint, {
-        x: hoverXQuantity,
-        y: hoverYQuantity,
-      }) < closenessDistance;
-  }
+    const [x, y] = [$(hoverXQuantity$), $(hoverYQuantity$)];
+    if (x === undefined || y === undefined) return false;
+
+    const hoverPoint = chart$.point().fromQuantities(x, y);
+    const closestPoint = chart$
+      .point()
+      .fromQuantities(trace.closestPoint.x, trace.closestPoint.y);
+
+    return (
+      hoverPoint.vectorTo(closestPoint).magnitudeInLogicalPixels() <
+      closenessDistance
+    );
+  });
 
   // look for the closest trace to the mouse and if it's close enough, show more info
-  $: if (
-    chart &&
-    closestTraces !== undefined &&
-    closestTraces?.length !== 0 &&
-    traceCloseEnough
-  ) {
-    const { from, to } = chart.range.x.get();
-    const statsOfClosest = visibleTraces.calculateStatistics({
-      traces: [closestTraces[0].traceInfo.id],
+  const selectedTrace$ = derived(($) => {
+    const { from, to } = $(chart$.axes.x.range$);
+    const trace = $(closestTraces$)?.[0];
+    if (!trace) return;
+
+    const {
+      traceInfo,
+      closestPoint: { x, y },
+    } = trace;
+
+    const { min, max, avg } = $(visibleTraces$).calculateStatistics({
+      traces: [trace.traceInfo.id],
       from,
       to,
     })[0];
 
-    selectedTrace = {
-      styledTrace: closestTraces[0].traceInfo,
-      x: qndFormat(closestTraces[0].closestPoint.x, xFormatOptions),
-      y: qndFormat(closestTraces[0].closestPoint.y, yFormatOptions),
-      min: qndFormat(statsOfClosest.min, yFormatOptions),
-      max: qndFormat(statsOfClosest.max, yFormatOptions),
-      avg: qndFormat(statsOfClosest.avg, yFormatOptions),
+    return {
+      styledTrace: traceInfo,
+      x: qndFormat(x, xFormatOptions),
+      y: qndFormat(y, yFormatOptions),
+      min: qndFormat(min, yFormatOptions),
+      max: qndFormat(max, yFormatOptions),
+      avg: qndFormat(avg, yFormatOptions),
     };
-  } else {
-    selectedTrace = undefined;
-  }
+  });
 
   // forbidden rectangle for tooltip to avoid
   let forbiddenRectangle:
@@ -337,20 +338,20 @@
         height: number;
       }
     | undefined = undefined;
+
   // and subscribing it to the zoom action
   onDestroy(
     visibleAction.subscribe((action) => {
-      if (!chart) return;
+      if (!canvas) return;
       if (action?.zoom) {
         const canvasRect = canvas.getBoundingClientRect();
         const offsetX = canvasRect.x;
         const offsetY = canvasRect.y;
         forbiddenRectangle = {
-          x: action.zoom.x.from * chart.canvas!.width + offsetX,
-          y: (1 - action.zoom.y.from) * chart.canvas!.height + offsetY,
-          width: (action.zoom.x.to - action.zoom.x.from) * chart.canvas!.width,
-          height:
-            (action.zoom.y.to - action.zoom.y.from) * chart.canvas!.height,
+          x: action.zoom.x.from * canvas.width + offsetX,
+          y: (1 - action.zoom.y.from) * canvas.height + offsetY,
+          width: (action.zoom.x.to - action.zoom.x.from) * canvas.width,
+          height: (action.zoom.y.to - action.zoom.y.from) * canvas.height,
         };
       } else {
         forbiddenRectangle = undefined;
@@ -360,12 +361,13 @@
 
   /** In fractions of graph height */
   let persistentYThresholds: (Quantity | number | Dayjs)[] = [];
-  $: presYThreshFracs = persistentYThresholds.map(
-    (q) => chart?.quantitiesToFractions(q, "y") ?? 0,
+  $: presYThreshFracs = persistentYThresholds.map((q) =>
+    chart$.valueOnAxis("y").fromQuantity(q).toFraction(),
   );
-  $: chart?.range.y.subscribe(() => {
-    presYThreshFracs = persistentYThresholds.map(
-      (q) => chart?.quantitiesToFractions(q, "y") ?? 0,
+  // TODO make ValueOnAxis properly reactive
+  chart$.axes.y.range$.subscribe(() => {
+    presYThreshFracs = persistentYThresholds.map((q) =>
+      chart$.valueOnAxis("y").fromQuantity(q).toFraction(),
     );
   });
 
@@ -405,8 +407,8 @@
 {#if !hideTooltip}
   <Tooltip
     {forbiddenRectangle}
-    nearestTracesInfo={tracesInfo}
-    singleTraceInfo={selectedTrace}
+    nearestTracesInfo={$tracesInfo$}
+    singleTraceInfo={$selectedTrace$}
     show={showTooltip}
     previewStyle={legendPreviewStyle}
   />
@@ -434,46 +436,46 @@
       <AxisTicks
         slot="yticks"
         axis="y"
-        ticks={$yTicks ?? []}
+        ticks={$yTicks$ ?? []}
         label={yLabel}
-        unit={$yDisplayUnit}
+        unit={$yDisplayUnit$}
         hideLabelUnits={hideYLabelUnits}
         {visibleAction}
         {disableInteractivity}
         disableUnitChange={disableYUnitChanges}
         hideTicks={hideYTicks}
-        on:shift={(d) => chart?.shiftRange(d)}
-        on:reset={() => chart?.resetZoom("y")}
-        raiseFactor={chart?.raiseYFactorAction ?? cons(undefined)}
-        lowerFactor={chart?.lowerYFactorAction ?? cons(undefined)}
-        resetUnit={chart?.resetYFactorAction ?? cons(undefined)}
-        bind:textLength={yAxisTextSize}
+        on:shift={(d) => chart$.axes.y.shiftRange(d.detail.dy ?? 0)}
+        on:reset={() => chart$.axes.y.resetRange()}
+        raiseFactor={chart$.axes.y.unitChangeActions$.map(({ raise }) => raise)}
+        lowerFactor={chart$.axes.y.unitChangeActions$.map(({ lower }) => lower)}
+        resetUnit={chart$.axes.y.unitChangeActions$.map(({ reset }) => reset)}
+        bind:textLength={measureYAxisTextSize}
         dimensionFlock={commonYAxisWidth}
       />
 
       <AxisTicks
         slot="xticks"
         axis="x"
-        ticks={$xTicks ?? []}
+        ticks={$xTicks$ ?? []}
         label={xLabel}
-        unit={$xDisplayUnit}
+        unit={$xDisplayUnit$}
         hideLabelUnits={hideXLabelUnits}
         {visibleAction}
         {disableInteractivity}
         disableUnitChange={disableXUnitChanges}
         hideTicks={hideXTicks}
-        on:shift={(d) => chart?.shiftRange(d)}
-        on:reset={() => chart?.resetZoom("x")}
-        raiseFactor={chart?.raiseXFactorAction ?? cons(undefined)}
-        lowerFactor={chart?.lowerXFactorAction ?? cons(undefined)}
-        resetUnit={chart?.resetXFactorAction ?? cons(undefined)}
-        bind:textLength={xAxisTextSize}
+        on:shift={(d) => chart$.axes.x.shiftRange(d.detail.dx ?? 0)}
+        on:reset={() => chart$.axes.x.resetRange()}
+        raiseFactor={chart$.axes.x.unitChangeActions$.map(({ raise }) => raise)}
+        lowerFactor={chart$.axes.x.unitChangeActions$.map(({ lower }) => lower)}
+        resetUnit={chart$.axes.x.unitChangeActions$.map(({ reset }) => reset)}
+        bind:textLength={measureXAxisTextSize}
         dimensionFlock={commonXAxisHeight}
       />
 
       <Guidelines
-        xTicks={hideXGuidelines ? [] : $xTicks ?? []}
-        yTicks={hideYGruidelines ? [] : $yTicks ?? []}
+        xTicks={hideXGuidelines ? [] : $xTicks$ ?? []}
+        yTicks={hideYGruidelines ? [] : $yTicks$ ?? []}
         renderXAxis={!hideXAxisLine}
         renderYAxis={!hideYAxisLine}
       />
@@ -491,37 +493,43 @@
       {/if}
 
       <ActionsOverlay
-        {chart}
+        chart={chart$}
         {visibleAction}
         {hideHoverPoints}
         {hideXRuler}
         {hideYRuler}
         {hideXBubble}
         {hideYBubble}
-        {hoverXQuantity}
-        {hoverYQuantity}
+        hoverXQuantity={$hoverXQuantity$ ?? 0}
+        hoverYQuantity={$hoverYQuantity$ ?? 0}
         {disableInteractivity}
         {presYThreshFracs}
-        {commonXRuler}
-        {commonYRuler}
+        commonXRuler={commonXRuler$}
+        commonYRuler={commonYRuler$}
         bind:filterByThreshold
         bind:addPersistentThreshold
-        traceHovered={selectedTrace !== undefined}
-        on:reset={() => chart?.resetZoom("xy")}
-        on:zoom={(d) => chart?.zoomRange(d)}
-        on:shift={(d) => chart?.shiftRange(d)}
+        traceHovered={$selectedTrace$ !== undefined}
+        on:reset={() => chart$.resetAllRanges()}
+        on:zoom={(d) => {
+          chart$.axes.x.zoomRange(d.detail.x);
+          chart$.axes.y.zoomRange(d.detail.y);
+        }}
+        on:shift={(d) => {
+          chart$.axes.x.shiftRange(d.detail.dx ?? 0);
+          chart$.axes.y.shiftRange(d.detail.dy ?? 0);
+        }}
         on:yThreshold={(t) => {
           if (t.detail.type === "persistent") {
-            const thresholdQ = chart?.fractionsToQuantities(
-              1 - t.detail.thresholdFrac,
-              "y",
-            );
+            const thresholdQ = chart$
+              .valueOnAxis("y")
+              .fromFraction(1 - t.detail.thresholdFrac)
+              .toQuantity();
             if (thresholdQ) persistentYThresholds.push(thresholdQ);
             persistentYThresholds = persistentYThresholds;
           }
           if (t.detail.type === "filtering")
-            hiddenTraceIds.update((curr) => {
-              for (const id of chart?.idsUnderThreshold(t) ?? []) curr.add(id);
+            hiddenTraceIds$.update((curr) => {
+              // for (const id of chart$?.idsUnderThreshold(t) ?? []) curr.add(id);
               return curr;
             });
         }}
@@ -531,13 +539,13 @@
         }}
         on:mouseout={() => {
           showTooltip = false;
-          closestTraces = [];
+          // closestTraces$.set([]);
           visibleAction.update((action) => ({
             ...action,
             highlightedPoints: [],
           }));
-          commonXRuler.set(undefined);
-          commonYRuler.set(undefined);
+          commonXRuler$.set(undefined);
+          commonYRuler$.set(undefined);
         }}
         on:blur={() => {
           showTooltip = false;
@@ -554,7 +562,7 @@
         {#if legendPosition === "right" && !hideLegend}
           <ChartLegend
             {traces}
-            {hiddenTraceIds}
+            hiddenTraceIds={hiddenTraceIds$}
             previewStyle={legendPreviewStyle}
             numberOfShownTraces={legendTracesShown === "all"
               ? traces.traceCount
@@ -566,7 +574,7 @@
         {#if legendPosition === "bottom" && !hideLegend}
           <ChartLegend
             {traces}
-            {hiddenTraceIds}
+            hiddenTraceIds={hiddenTraceIds$}
             previewStyle={legendPreviewStyle}
             numberOfShownTraces={legendTracesShown === "all"
               ? traces.traceCount

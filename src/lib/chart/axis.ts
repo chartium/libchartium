@@ -9,7 +9,7 @@ import {
 } from "../types.js";
 import { axisUnits$ } from "./axisUnits.js";
 import { axisRange$ } from "./axisRange.js";
-import { axisTicks$ } from "./axisTicks.js";
+import { axisTicks$, type TextMeasuringFunction } from "./axisTicks.js";
 
 export type DataUnit = NumericDateFormat | Unit | undefined;
 export type DisplayUnit = Unit | undefined;
@@ -29,10 +29,10 @@ export type RangeMarginValue =
 export interface AxisProps {
   axis: "x" | "y";
   resetAllRanges: () => void;
-  traces$: Signal<TraceList>;
+  visibleTraces$: Signal<TraceList>;
   displayUnitPreference$: Signal<DisplayUnitPreference>;
   showZero$: Signal<boolean>;
-  measureTextSize$: Signal<(text: string) => number>;
+  measureTextSize$: Signal<TextMeasuringFunction | undefined>;
   lengthInPx$: Signal<number>;
 }
 
@@ -55,7 +55,7 @@ export interface Axis {
 export const axis$ = ({
   axis,
   resetAllRanges,
-  traces$,
+  visibleTraces$,
   displayUnitPreference$,
   showZero$,
   measureTextSize$,
@@ -64,7 +64,7 @@ export const axis$ = ({
   const { range$, resetRange, shiftRange, zoomRange } = axisRange$({
     axis,
     resetAllRanges,
-    traces$,
+    visibleTraces$,
     showZero$,
     fractionalMargins$: cons([0, 0]),
   });
@@ -72,7 +72,7 @@ export const axis$ = ({
   const { currentDisplayUnit$, unitChangeActions$ } = axisUnits$({
     axis,
     range$,
-    traces$,
+    visibleTraces$,
     displayUnitPreference$,
   });
 

@@ -15,7 +15,7 @@ import type {
 
 export interface AxisUnitsProps {
   axis: "x" | "y";
-  traces$: Signal<TraceList>;
+  visibleTraces$: Signal<TraceList>;
   range$: Signal<Range>;
   displayUnitPreference$: Signal<DisplayUnitPreference>;
 }
@@ -31,11 +31,11 @@ export interface AxisUnits {
 
 export const axisUnits$ = ({
   axis,
-  traces$,
+  visibleTraces$,
   range$,
   displayUnitPreference$,
 }: AxisUnitsProps): AxisUnits => {
-  const dataUnit$ = derived(($) => $(traces$).getUnits()?.[0][axis]);
+  const dataUnit$ = derived(($) => $(visibleTraces$).getUnits()?.[0][axis]);
 
   const defaultDisplayUnit$ = createDefaultUnit$(
     dataUnit$,

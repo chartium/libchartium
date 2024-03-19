@@ -6,10 +6,10 @@ import { toNumericRange } from "../utils/quantityHelpers.js";
 
 export interface ChartRendererProps {
   controller$: Signal<ChartiumController | undefined>;
-  offscreenCanvas$: Signal<OffscreenCanvas>;
-  canvasSize$: Signal<Size>;
+  offscreenCanvas$: Signal<OffscreenCanvas | undefined>;
+  canvasSize$: Signal<Size | undefined>;
 
-  traces$: Signal<TraceList>;
+  visibleTraces$: Signal<TraceList>;
   xRange$: Signal<Range>;
   yRange$: Signal<Range>;
 
@@ -20,7 +20,7 @@ export const chartRenderer$ = ({
   controller$,
   offscreenCanvas$,
   canvasSize$,
-  traces$,
+  visibleTraces$,
   xRange$,
   yRange$,
   defer,
@@ -28,7 +28,9 @@ export const chartRenderer$ = ({
   // create a renderer
   const renderer$ = controller$.flatMap((controller) =>
     offscreenCanvas$
-      .map((canvas) => controller?.createRenderer(canvas))
+      .map((canvas) =>
+        !canvas ? undefined : controller?.createRenderer(canvas),
+      )
       .awaited()
       .currentlyFulfilled(),
   );
@@ -38,13 +40,13 @@ export const chartRenderer$ = ({
   // reactively re-render
   effect(($) => {
     const renderer = $(renderer$);
-    if (renderer === undefined) return;
+    const size = $(canvasSize$);
+    if (!renderer || !size) return;
 
-    const { width, height } = $(canvasSize$);
-    $(renderer$)?.setSize(width, height);
+    renderer.setSize(size.width, size.height);
 
     let firstRun = true;
-    for (const [units, traces] of $(traces$).getUnitsToTraceMap()) {
+    for (const [units, traces] of $(visibleTraces$).getUnitsToTraceMap()) {
       const clear = firstRun;
       firstRun = false;
 
