@@ -1,35 +1,17 @@
 <script lang="ts">
   import type { ChartiumController } from "../data-worker/index.js";
-  import {
-    type Quantity,
-    type Unit,
-    type ChartValuePoint,
-    type ChartValue,
-    X,
-    type ExportRow as ExportRow,
-  } from "../types.js";
-  import type { TraceInfo, TraceList } from "../data-worker/trace-list.js";
+  import { type Quantity, type ChartValue } from "../types.js";
+  import type { TraceList } from "../data-worker/trace-list.js";
   import type { VisibleAction } from "./ActionsOverlay.svelte";
 
   import { onDestroy } from "svelte";
   import { chart$ as createChart$ } from "../chart/chart.js";
 
-  import ActionsOverlay from "./ActionsOverlay.svelte";
-  import ChartGrid from "./ChartGrid.svelte";
-  import AxisTicks from "./AxisTicks.svelte";
-  import ChartLegend from "./Legend.svelte";
-  import Guidelines from "./Guidelines.svelte";
-  import Tooltip from "./tooltip/TraceTooltip.svelte";
-  import { mut, FlockRegistry, derived, effect } from "@mod.js/signals";
-  import type { Remote } from "comlink";
-  import { qndFormat, type QndFormatOptions } from "../utils/format.js";
-  import type { Dayjs } from "dayjs";
+  import { mut, FlockRegistry } from "@mod.js/signals";
   import type { RangeMargins } from "../utils/rangeMargins.js";
-  import DefaultToolbar from "./toolbar/DefaultToolbar.svelte";
   import { setContext } from "svelte-typed-context";
   import { toolKey } from "./toolbar/toolKey.js";
   import { flockReduce } from "../utils/collection.js";
-  import { portal } from "svelte-portal";
   import { mapOpt } from "../utils/mapOpt.js";
   import type { DisplayUnitPreference } from "../chart/axis.js";
   import type { TextMeasuringFunction } from "../chart/axisTicks.js";
@@ -197,6 +179,16 @@
     defer: onDestroy,
   });
 
+  $: console.log("controller:", $controller$);
+  $: console.log("canvas:", $canvas$);
+  $: console.log("visible traces:", $visibleTraces$);
+  $: console.log("measureXAxis:", $measureXAxisTextSize$);
+  $: console.log("measureYAxis:", $measureYAxisTextSize$);
+  $: console.log("show x axis zero:", $showXAxisZero$);
+  $: console.log("show y axis zero:", $showYAxisZero$);
+  $: console.log("x axis display unit preference:", $defaultXUnit$);
+  $: console.log("y axis display unit preference:", $defaultYUnit$);
+
   //!SECTION
 
   const xTicks$ = chart$.axes.x.ticks$;
@@ -204,76 +196,77 @@
   const xDisplayUnit$ = chart$.axes.x.currentDisplayUnit$;
   const yDisplayUnit$ = chart$.axes.y.currentDisplayUnit$;
 
-  const QND_FORMAT_OPTIONS: QndFormatOptions = {
-    dateFormat: "MMM DD, hh:mm:ss",
-  };
-  $: xFormatOptions = {
-    ...QND_FORMAT_OPTIONS,
-    unit: $xDisplayUnit$,
-  };
-  $: yFormatOptions = {
-    ...QND_FORMAT_OPTIONS,
-    unit: $yDisplayUnit$,
-  };
+  // const QND_FORMAT_OPTIONS: QndFormatOptions = {
+  //   dateFormat: "MMM DD, hh:mm:ss",
+  // };
+  // const xFormatOptions$ = xDisplayUnit$.map((unit) => ({
+  //   ...QND_FORMAT_OPTIONS,
+  //   unit,
+  // }));
+  // const yFormatOptions$ = yDisplayUnit$.map((unit) => ({
+  //   ...QND_FORMAT_OPTIONS,
+  //   unit,
+  // }));
 
-  const visibleAction = mut<VisibleAction | undefined>(undefined);
+  // const visibleAction = mut<VisibleAction | undefined>(undefined);
 
-  let showTooltip: boolean = false;
-  const hoverXQuantity$ = mut<Qdn>();
-  const hoverYQuantity$ = mut<Qdn>();
+  // let showTooltip: boolean = false;
+  // const hoverXQuantity$ = mut<Qdn>();
+  // const hoverYQuantity$ = mut<Qdn>();
 
-  const updateHoverQuantities = (e: MouseEvent) => {
-    const { x, y } = chart$
-      .point()
-      .fromLogicalPixels(e.offsetX, e.offsetY)
-      .toQuantitites();
+  // const updateHoverQuantities = (e: MouseEvent) => {
+  //   const { x, y } = chart$
+  //     .point()
+  //     .fromLogicalPixels(e.offsetX, e.offsetY)
+  //     .toQuantitites();
 
-    hoverXQuantity$.set(x);
-    hoverYQuantity$.set(y);
-    commonXRuler$.set(x);
-    commonYRuler$.set(y);
-  };
+  //   hoverXQuantity$.set(x);
+  //   hoverYQuantity$.set(y);
+  //   commonXRuler$.set(x);
+  //   commonYRuler$.set(y);
+  // };
 
-  const closestTraces$ = derived(($) => {
-    const x = $(hoverXQuantity$);
-    const y = $(hoverYQuantity$);
-    if (x === undefined || y === undefined) return;
+  // const closestTraces$ = derived(($) => {
+  //   const x = $(hoverXQuantity$);
+  //   const y = $(hoverYQuantity$);
+  //   if (x === undefined || y === undefined) return;
 
-    const showCount =
-      tooltipTracesShown === "all"
-        ? $(visibleTraces$).traceCount
-        : tooltipTracesShown;
+  //   const showCount =
+  //     tooltipTracesShown === "all"
+  //       ? $(visibleTraces$).traceCount
+  //       : tooltipTracesShown;
 
-    return $(visibleTraces$).findClosestTracesToPoint({ x, y }, showCount);
-  });
+  //   return $(visibleTraces$).findClosestTracesToPoint({ x, y }, showCount);
+  // });
 
-  const tracesInfo$ = closestTraces$.map((traces = []) =>
-    traces.map(({ traceInfo, closestPoint: { x, y } }) => ({
-      styledTrace: traceInfo,
-      x: qndFormat(x, xFormatOptions),
-      y: qndFormat(y, yFormatOptions),
-    })),
-  );
+  // const tracesInfo$ = derived(
+  //   ($) =>
+  //     $(closestTraces$)?.map(({ traceInfo, closestPoint: { x, y } }) => ({
+  //       styledTrace: traceInfo,
+  //       x: qndFormat(x, $(xFormatOptions$)),
+  //       y: qndFormat(y, $(yFormatOptions$)),
+  //     })) ?? [],
+  // );
 
   /** updates highilghted points in visibleAction */
-  effect(($) => {
-    const closestTraces = $(closestTraces$);
-    if (!closestTraces) {
-      visibleAction.set({ highlightedPoints: [] });
-    } else {
-      const points = closestTraces.map((trace) => ({
-        x: trace.closestPoint.x,
-        y: trace.closestPoint.y,
-        color: trace.traceInfo.color,
-        radius: trace.traceInfo.width,
-      }));
+  // effect(($) => {
+  //   const closestTraces = $(closestTraces$);
+  //   if (!closestTraces) {
+  //     visibleAction.set({ highlightedPoints: [] });
+  //   } else {
+  //     const points = closestTraces.map((trace) => ({
+  //       x: trace.closestPoint.x,
+  //       y: trace.closestPoint.y,
+  //       color: trace.traceInfo.color,
+  //       radius: trace.traceInfo.width,
+  //     }));
 
-      visibleAction.update((action) => ({
-        ...action,
-        highlightedPoints: points,
-      }));
-    }
-  }).pipe(onDestroy);
+  //     visibleAction.update((action) => ({
+  //       ...action,
+  //       highlightedPoints: points,
+  //     }));
+  //   }
+  // }).pipe(onDestroy);
 
   // $: if (chart$) {
   //   // ideally this would just update but without mousemove we don't know where the mouse is
@@ -282,94 +275,96 @@
   // }
 
   /** How close to a trace is considered close enough to get only one trace info */
-  const closenessDistance = 5;
+  // const closenessDistance = 5;
 
-  const traceCloseEnough$ = derived(($) => {
-    const trace = $(closestTraces$)?.[0];
-    if (!trace) return false;
+  // const traceCloseEnough$ = derived(($) => {
+  //   const trace = $(closestTraces$)?.[0];
+  //   if (!trace) return false;
 
-    const [x, y] = [$(hoverXQuantity$), $(hoverYQuantity$)];
-    if (x === undefined || y === undefined) return false;
+  //   const [x, y] = [$(hoverXQuantity$), $(hoverYQuantity$)];
+  //   if (x === undefined || y === undefined) return false;
 
-    const hoverPoint = chart$.point().fromQuantities(x, y);
-    const closestPoint = chart$
-      .point()
-      .fromQuantities(trace.closestPoint.x, trace.closestPoint.y);
+  //   const hoverPoint = chart$.point().fromQuantities(x, y);
+  //   const closestPoint = chart$
+  //     .point()
+  //     .fromQuantities(trace.closestPoint.x, trace.closestPoint.y);
 
-    return (
-      hoverPoint.vectorTo(closestPoint).magnitudeInLogicalPixels() <
-      closenessDistance
-    );
-  });
+  //   return (
+  //     hoverPoint.vectorTo(closestPoint).magnitudeInLogicalPixels() <
+  //     closenessDistance
+  //   );
+  // });
 
   // look for the closest trace to the mouse and if it's close enough, show more info
-  const selectedTrace$ = derived(($) => {
-    const { from, to } = $(chart$.axes.x.range$);
-    const trace = $(closestTraces$)?.[0];
-    if (!trace) return;
+  // const selectedTrace$ = derived(($) => {
+  //   if (!$(traceCloseEnough$)) return;
 
-    const {
-      traceInfo,
-      closestPoint: { x, y },
-    } = trace;
+  //   const { from, to } = $(chart$.axes.x.range$);
+  //   const trace = $(closestTraces$)?.[0];
+  //   if (!trace) return;
 
-    const { min, max, avg } = $(visibleTraces$).calculateStatistics({
-      traces: [trace.traceInfo.id],
-      from,
-      to,
-    })[0];
+  //   const {
+  //     traceInfo,
+  //     closestPoint: { x, y },
+  //   } = trace;
 
-    return {
-      styledTrace: traceInfo,
-      x: qndFormat(x, xFormatOptions),
-      y: qndFormat(y, yFormatOptions),
-      min: qndFormat(min, yFormatOptions),
-      max: qndFormat(max, yFormatOptions),
-      avg: qndFormat(avg, yFormatOptions),
-    };
-  });
+  //   const { min, max, avg } = $(visibleTraces$).calculateStatistics({
+  //     traces: [trace.traceInfo.id],
+  //     from,
+  //     to,
+  //   })[0];
+
+  //   return {
+  //     styledTrace: traceInfo,
+  //     x: qndFormat(x, $(xFormatOptions$)),
+  //     y: qndFormat(y, $(yFormatOptions$)),
+  //     min: qndFormat(min, $(yFormatOptions$)),
+  //     max: qndFormat(max, $(yFormatOptions$)),
+  //     avg: qndFormat(avg, $(yFormatOptions$)),
+  //   };
+  // });
 
   // forbidden rectangle for tooltip to avoid
-  let forbiddenRectangle:
-    | {
-        x: number;
-        y: number;
-        width: number;
-        height: number;
-      }
-    | undefined = undefined;
+  // let forbiddenRectangle:
+  //   | {
+  //       x: number;
+  //       y: number;
+  //       width: number;
+  //       height: number;
+  //     }
+  //   | undefined = undefined;
 
   // and subscribing it to the zoom action
-  onDestroy(
-    visibleAction.subscribe((action) => {
-      if (!canvas) return;
-      if (action?.zoom) {
-        const canvasRect = canvas.getBoundingClientRect();
-        const offsetX = canvasRect.x;
-        const offsetY = canvasRect.y;
-        forbiddenRectangle = {
-          x: action.zoom.x.from * canvas.width + offsetX,
-          y: (1 - action.zoom.y.from) * canvas.height + offsetY,
-          width: (action.zoom.x.to - action.zoom.x.from) * canvas.width,
-          height: (action.zoom.y.to - action.zoom.y.from) * canvas.height,
-        };
-      } else {
-        forbiddenRectangle = undefined;
-      }
-    }),
-  );
+  // visibleAction
+  //   .subscribe((action) => {
+  //     if (!canvas) return;
+  //     if (action?.zoom) {
+  //       const canvasRect = canvas.getBoundingClientRect();
+  //       const offsetX = canvasRect.x;
+  //       const offsetY = canvasRect.y;
+  //       forbiddenRectangle = {
+  //         x: action.zoom.x.from * canvas.width + offsetX,
+  //         y: (1 - action.zoom.y.from) * canvas.height + offsetY,
+  //         width: (action.zoom.x.to - action.zoom.x.from) * canvas.width,
+  //         height: (action.zoom.y.to - action.zoom.y.from) * canvas.height,
+  //       };
+  //     } else {
+  //       forbiddenRectangle = undefined;
+  //     }
+  //   })
+  //   .pipe(onDestroy);
 
   /** In fractions of graph height */
-  let persistentYThresholds: (Quantity | number | Dayjs)[] = [];
-  $: presYThreshFracs = persistentYThresholds.map((q) =>
-    chart$.valueOnAxis("y").fromQuantity(q).toFraction(),
-  );
-  // TODO make ValueOnAxis properly reactive
-  chart$.axes.y.range$.subscribe(() => {
-    presYThreshFracs = persistentYThresholds.map((q) =>
-      chart$.valueOnAxis("y").fromQuantity(q).toFraction(),
-    );
-  });
+  // let persistentYThresholds: (Quantity | number | Dayjs)[] = [];
+  // $: presYThreshFracs = persistentYThresholds.map((q) =>
+  //   chart$.valueOnAxis("y").fromQuantity(q).toFraction(),
+  // );
+  // // TODO make ValueOnAxis properly reactive
+  // chart$.axes.y.range$.subscribe(() => {
+  //   presYThreshFracs = persistentYThresholds.map((q) =>
+  //     chart$.valueOnAxis("y").fromQuantity(q).toFraction(),
+  //   );
+  // });
 
   let parentDiv: HTMLDivElement;
   let wrapDiv: HTMLDivElement;
@@ -399,11 +394,14 @@
   // FIXME DEBUG
   let addPersistentThreshold: () => void;
   let filterByThreshold: () => void;
-  $: (window as any).addPersistentThreshold = addPersistentThreshold;
-  $: (window as any).filterByThreshold = filterByThreshold;
+  // $: (window as any).addPersistentThreshold = addPersistentThreshold;
+  // $: (window as any).filterByThreshold = filterByThreshold;
   let fullscreen = false;
 </script>
 
+<canvas bind:this={canvas} on:contextmenu|preventDefault />
+
+<!--
 {#if !hideTooltip}
   <Tooltip
     {forbiddenRectangle}
@@ -503,7 +501,7 @@
         hoverXQuantity={$hoverXQuantity$ ?? 0}
         hoverYQuantity={$hoverYQuantity$ ?? 0}
         {disableInteractivity}
-        {presYThreshFracs}
+        presYThreshFracs={[]}
         commonXRuler={commonXRuler$}
         commonYRuler={commonYRuler$}
         bind:filterByThreshold
@@ -519,6 +517,7 @@
           chart$.axes.y.shiftRange(d.detail.dy ?? 0);
         }}
         on:yThreshold={(t) => {
+          /*
           if (t.detail.type === "persistent") {
             const thresholdQ = chart$
               .valueOnAxis("y")
@@ -532,6 +531,7 @@
               // for (const id of chart$?.idsUnderThreshold(t) ?? []) curr.add(id);
               return curr;
             });
+          */
         }}
         on:mousemove={(e) => {
           showTooltip = true;
@@ -585,7 +585,7 @@
     </ChartGrid>
   </div>
 </div>
-
+-->
 <style lang="scss">
   :global(:root) {
     --libchartium-secondary-background: rgb(51, 51, 51);

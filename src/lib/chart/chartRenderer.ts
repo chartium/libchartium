@@ -1,13 +1,19 @@
-import { effect, type Signal, type Unsubscriber } from "@mod.js/signals";
+import {
+  derived,
+  effect,
+  type Signal,
+  type Unsubscriber,
+} from "@mod.js/signals";
 import type { ChartiumController, TraceList } from "../index.js";
 import type { Range, Size } from "../types.js";
 import type { RenderJob } from "../data-worker/renderers/mod.js";
 import { toNumericRange } from "../utils/quantityHelpers.js";
+import { devicePixelRatio$ } from "../utils/reactive-globals.js";
 
 export interface ChartRendererProps {
   controller$: Signal<ChartiumController | undefined>;
   offscreenCanvas$: Signal<OffscreenCanvas | undefined>;
-  canvasSize$: Signal<Size | undefined>;
+  canvasLogicalSize$: Signal<Size | undefined>;
 
   visibleTraces$: Signal<TraceList>;
   xRange$: Signal<Range>;
@@ -19,7 +25,7 @@ export interface ChartRendererProps {
 export const chartRenderer$ = ({
   controller$,
   offscreenCanvas$,
-  canvasSize$,
+  canvasLogicalSize$,
   visibleTraces$,
   xRange$,
   yRange$,
@@ -37,10 +43,21 @@ export const chartRenderer$ = ({
 
   // TODO destroy the renderer
 
+  const canvasPhysicalSize$ = derived(($) => {
+    const logicalSize = $(canvasLogicalSize$);
+    if (!logicalSize) return;
+    const { width, height } = logicalSize;
+    const zoom = $(devicePixelRatio$);
+    return {
+      width: width * zoom,
+      height: height * zoom,
+    };
+  });
+
   // reactively re-render
   effect(($) => {
     const renderer = $(renderer$);
-    const size = $(canvasSize$);
+    const size = $(canvasPhysicalSize$);
     if (!renderer || !size) return;
 
     renderer.setSize(size.width, size.height);
