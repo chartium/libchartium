@@ -1,4 +1,4 @@
-import { derived, mutDerived, type Signal } from "@mod.js/signals";
+import { cons, derived, mutDerived, type Signal } from "@mod.js/signals";
 import type { FactorDefinition } from "unitlib";
 import Fraction from "fraction.js";
 
@@ -35,7 +35,9 @@ export const axisUnits$ = ({
   range$,
   displayUnitPreference$,
 }: AxisUnitsProps): AxisUnits => {
-  const dataUnit$ = derived(($) => $(visibleTraces$).getUnits()?.[0][axis]);
+  const dataUnit$ = derived(
+    ($) => $(visibleTraces$).getUnits()?.[0][axis],
+  ).skipEqual();
 
   const defaultDisplayUnit$ = createDefaultUnit$(
     dataUnit$,
@@ -49,14 +51,21 @@ export const axisUnits$ = ({
       defaultDisplayUnit$,
     });
 
-  const unitChangeActions$ = createUnitChangeActions$({
-    defaultDisplayUnit$,
-    currentDisplayUnit$,
-    resetDisplayUnit,
-    setDisplayUnit,
-  });
+  const unitChangeActions$ = (true as boolean)
+    ? cons({})
+    : createUnitChangeActions$({
+        defaultDisplayUnit$,
+        currentDisplayUnit$,
+        resetDisplayUnit,
+        setDisplayUnit,
+      });
 
-  return { currentDisplayUnit$, unitChangeActions$ };
+  return {
+    currentDisplayUnit$: currentDisplayUnit$.tap((u) =>
+      console.log("CURRENT DISPLAY UNIT!", axis, u),
+    ),
+    unitChangeActions$,
+  };
 };
 
 const createDefaultUnit$ = (
@@ -84,7 +93,7 @@ const createDefaultUnit$ = (
           return dataUnitToDisplayUnit(dat);
         }
     }
-  });
+  }).skipEqual();
 
 const createCurrentUnit$ = ({
   dataUnit$,
