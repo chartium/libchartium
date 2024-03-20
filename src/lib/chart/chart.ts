@@ -41,7 +41,7 @@ export interface Chart {
 
 export const chart$ = ({
   controller$: maybeUninitializedController$,
-  canvas$,
+  canvas$: maybeReassignedCanvas$,
   visibleTraces$,
   measureXAxisTextSize$,
   measureYAxisTextSize$,
@@ -51,6 +51,8 @@ export const chart$ = ({
   yAxisDisplayUnitPreference$,
   defer,
 }: ChartProps): Chart => {
+  const canvas$ = maybeReassignedCanvas$.skipEqual();
+
   const resetAllRanges = () => {
     axes.x.resetRange();
     axes.y.resetRange();
@@ -76,12 +78,14 @@ export const chart$ = ({
     }),
   };
 
-  const { canvasSize$, offscreenCanvas$ } = chartCanvas$({
+  const { canvasLogicalSize$, offscreenCanvas$ } = chartCanvas$({
     canvas$,
   });
 
   const { point, valueOnAxis } = chartAffineSpace({
-    canvasSize$: canvasSize$.map((size) => size ?? { width: 300, height: 150 }),
+    canvasSize$: canvasLogicalSize$.map(
+      (size) => size ?? { width: NaN, height: NaN },
+    ),
     xRange$: axes.x.range$,
     yRange$: axes.y.range$,
   });
@@ -97,7 +101,7 @@ export const chart$ = ({
 
   chartRenderer$({
     controller$,
-    canvasSize$,
+    canvasLogicalSize$,
     offscreenCanvas$,
 
     visibleTraces$,

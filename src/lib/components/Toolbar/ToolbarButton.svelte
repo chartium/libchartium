@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { afterUpdate, onMount, tick } from "svelte";
+  import { afterUpdate } from "svelte";
   import GenericTooltip from "../../utils/GenericTooltip.svelte";
   import type { IconDefinition } from "@fortawesome/free-solid-svg-icons";
   // weird hack to import svelte-fa bc of NodeNext module resolution

@@ -1,22 +1,16 @@
 <script lang="ts">
   import Chart from "./lib/components/Chart.svelte";
   import wasmUrl from "../dist/wasm/libchartium.wasm?url";
-  import ToolFullscreen from "./lib/components/Toolbar/ToolFullscreen.svelte";
-  import ToolExportToPng from "./lib/components/Toolbar/ToolExportToPNG.svelte";
-  import ToolHideLegend from "./lib/components/Toolbar/ToolHideLegend.svelte";
-  import { portal } from "svelte-portal";
   import { ChartiumController } from "./lib/data-worker/index.js";
   import {
     faArrowRight,
     faArrowLeft,
     faChartLine,
   } from "@fortawesome/free-solid-svg-icons";
-  import { SI, IEC } from "unitlib/systems";
+  import { IEC } from "unitlib/systems";
   import { NumericDateFormat } from "./lib/index.js";
-  import { Quantity } from "unitlib";
 
   import Fa from "svelte-fa";
-  import ToolExportToCsv from "./lib/components/Toolbar/ToolExportToCSV.svelte";
 
   // autogenerate a lot of data
   const from = 0;

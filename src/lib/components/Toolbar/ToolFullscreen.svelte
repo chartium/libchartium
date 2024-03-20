@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { faList, faExpand } from "@fortawesome/free-solid-svg-icons";
+  import { faExpand } from "@fortawesome/free-solid-svg-icons";
   // weird hack to import svelte-fa bc of NodeNext module resolution
   import { default as Fa_1, type Fa as Fa_2 } from "svelte-fa";
   import ToolbarButton from "./ToolbarButton.svelte";

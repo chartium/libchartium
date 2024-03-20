@@ -1,4 +1,4 @@
-import { mut, type Signal } from "@mod.js/signals";
+import { derived, mut, type Signal } from "@mod.js/signals";
 import type { Size } from "../types.js";
 
 export interface ChartCanvasProps {
@@ -7,18 +7,18 @@ export interface ChartCanvasProps {
 
 export interface ChartCanvas {
   offscreenCanvas$: Signal<OffscreenCanvas | undefined>;
-  canvasSize$: Signal<Size | undefined>;
+  canvasLogicalSize$: Signal<Size | undefined>;
 }
 
 export const chartCanvas$ = ({ canvas$ }: ChartCanvasProps): ChartCanvas => {
-  const canvasSize$ = canvas$.flatMap((canvas, { defer }) => {
+  const canvasLogicalSize$ = canvas$.flatMap((canvas, { defer }) => {
     if (!canvas) return;
 
     const currSize = (): Size | undefined => {
       const { width, height } = canvas.getBoundingClientRect();
       return {
-        width: width * devicePixelRatio,
-        height: height * devicePixelRatio,
+        width: width,
+        height: height,
       };
     };
 
@@ -30,9 +30,26 @@ export const chartCanvas$ = ({ canvas$ }: ChartCanvasProps): ChartCanvas => {
     return size;
   });
 
-  const offscreenCanvas$ = canvas$
-    .skipEqual()
-    .map((c) => c?.transferControlToOffscreen());
+  const offscreenCanvasCache = new WeakMap<
+    HTMLCanvasElement,
+    OffscreenCanvas
+  >();
+  const offscreenCanvas$ = derived(($) => {
+    const onscreen = $(canvas$);
+    if (!onscreen) return undefined;
 
-  return { offscreenCanvas$, canvasSize$ };
+    const offscreen = offscreenCanvasCache.get(onscreen);
+    if (offscreen) return offscreen;
+
+    try {
+      const offscreen = onscreen.transferControlToOffscreen();
+      offscreenCanvasCache.set(onscreen, offscreen);
+      return offscreen;
+    } catch (e) {
+      console.error(e);
+      return undefined;
+    }
+  }).skipEqual();
+
+  return { offscreenCanvas$, canvasLogicalSize$ };
 };
