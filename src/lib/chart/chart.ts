@@ -1,4 +1,4 @@
-import { cons, type Signal, type Unsubscriber } from "@mod.js/signals";
+import { cons, Defer, type DeferLike, type Signal } from "@mod.js/signals";
 import type { ChartiumController, TraceList } from "../index.js";
 import { axis$, type Axis, type DisplayUnitPreference } from "./axis.js";
 import { chartCanvas$ } from "./chartCanvas.js";
@@ -24,7 +24,7 @@ export interface ChartProps {
   xAxisDisplayUnitPreference$: Signal<DisplayUnitPreference>;
   yAxisDisplayUnitPreference$: Signal<DisplayUnitPreference>;
 
-  defer: (u: Unsubscriber) => void;
+  defer: DeferLike;
 }
 
 export interface Chart {
@@ -40,8 +40,8 @@ export interface Chart {
 }
 
 export const chart$ = ({
-  controller$: maybeUninitializedController$,
-  canvas$: maybeReassignedCanvas$,
+  controller$,
+  canvas$,
   visibleTraces$,
   measureXAxisTextSize$,
   measureYAxisTextSize$,
@@ -51,8 +51,44 @@ export const chart$ = ({
   yAxisDisplayUnitPreference$,
   defer,
 }: ChartProps): Chart => {
-  const canvas$ = maybeReassignedCanvas$.skipEqual();
+  return sanitizedChart$({
+    // await uninitialized controllers
+    // TODO remove once we change uninitialized Controller to Promise<Controller>
+    controller$: controller$
+      .skipEqual()
+      .map(async (controller) => {
+        await controller?.initialized;
+        return controller;
+      })
+      .awaited()
+      .currentlyFulfilled(),
 
+    canvas$: canvas$.skipEqual(),
+    visibleTraces$: visibleTraces$.skipEqual(),
+
+    measureXAxisTextSize$,
+    measureYAxisTextSize$,
+    showXAxisZero$,
+    showYAxisZero$,
+    xAxisDisplayUnitPreference$,
+    yAxisDisplayUnitPreference$,
+
+    defer: Defer.from(defer),
+  });
+};
+
+const sanitizedChart$ = ({
+  controller$,
+  canvas$,
+  visibleTraces$,
+  measureXAxisTextSize$,
+  measureYAxisTextSize$,
+  showXAxisZero$,
+  showYAxisZero$,
+  xAxisDisplayUnitPreference$,
+  yAxisDisplayUnitPreference$,
+  defer,
+}: ChartProps & { defer: Defer }): Chart => {
   const resetAllRanges = () => {
     axes.x.resetRange();
     axes.y.resetRange();
@@ -83,21 +119,10 @@ export const chart$ = ({
   });
 
   const { point, valueOnAxis } = chartAffineSpace({
-    canvasSize$: canvasLogicalSize$.map(
-      (size) => size ?? { width: NaN, height: NaN },
-    ),
+    canvasLogicalSize$,
     xRange$: axes.x.range$,
     yRange$: axes.y.range$,
   });
-
-  // TODO remove once we change uninitialized Controller to Promise<Controller>
-  const controller$ = maybeUninitializedController$
-    .map(async (controller) => {
-      await controller?.initialized;
-      return controller;
-    })
-    .awaited()
-    .currentlyFulfilled();
 
   chartRenderer$({
     controller$,

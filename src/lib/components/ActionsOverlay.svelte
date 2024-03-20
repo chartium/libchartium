@@ -40,7 +40,7 @@
   import type { WritableSignal } from "@mod.js/signals";
   import RulerBubble from "./RulerBubble.svelte";
   import { type Dayjs } from "dayjs";
-  import type { Chart } from "./chart.js";
+  import type { Chart } from "../chart/chart.js";
   import { P, match } from "ts-pattern";
   import { mapOpt } from "../utils/mapOpt.js";
 
@@ -53,7 +53,7 @@
 
   export let visibleAction: WritableSignal<VisibleAction | undefined>;
 
-  export let chart: Chart | undefined;
+  export let chart: Chart;
   export let hideHoverPoints: boolean;
   export let hideXRuler: boolean;
   export let hideYRuler: boolean;
@@ -137,10 +137,10 @@
         // https://open.spotify.com/track/3vFZheR74pxUkzxqhXTZ2X
 
         const x = mapOpt(commonXRuler.get(), (v) =>
-          chart!.quantitiesToFractions(v, "x"),
+          chart.valueOnAxis("x").fromQuantity(v).toFraction(),
         );
         const y = mapOpt(commonYRuler.get(), (v) =>
-          chart!.quantitiesToFractions(v, "y"),
+          chart.valueOnAxis("y").fromQuantity(v).toFraction(),
         );
 
         match({ x, y })
@@ -162,12 +162,14 @@
   function drawHighlightPoint(point: HighlightPoint) {
     if (!chart) return;
 
+    const { x, y } = chart
+      .point()
+      .fromQuantities(point.x, point.y)
+      .toFractions();
+
     drawCircle(
       ctx,
-      [
-        chart.quantitiesToFractions(point.x, "x") * overlayWidth,
-        (1 - chart.quantitiesToFractions(point.y, "y")) * overlayHeight,
-      ],
+      [x * overlayWidth, (1 - y) * overlayHeight],
       point.radius * 2.5,
       {
         fillStyle: point.color,

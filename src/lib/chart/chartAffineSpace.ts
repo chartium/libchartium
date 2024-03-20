@@ -9,7 +9,7 @@ export type Qdn = Quantity | dayjs.Dayjs | number;
 export interface ChartAffineSpaceProps {
   xRange$: Signal<Range>;
   yRange$: Signal<Range>;
-  canvasSize$: Signal<Size>;
+  canvasLogicalSize$: Signal<Size | undefined>;
 }
 
 export interface ValueOnAxis {
@@ -59,14 +59,20 @@ export interface ChartAffineSpace {
 // TODO optimize implementation to allocate fewer objects
 
 export const chartAffineSpace = ({
-  canvasSize$,
+  canvasLogicalSize$: maybeCanvasLogicalSize$,
   xRange$,
   yRange$,
 }: ChartAffineSpaceProps): ChartAffineSpace => {
+  const canvasLogicalSize$ = maybeCanvasLogicalSize$.map(
+    (s) => s ?? { width: NaN, height: NaN },
+  );
+
   const valueOnAxis = (axis: "x" | "y") => {
-    const physicalSize = canvasSize$.get()[axis === "x" ? "width" : "height"];
+    const logicalSize =
+      canvasLogicalSize$.get()[axis === "x" ? "width" : "height"];
+
     const zoom = devicePixelRatio;
-    const logicalSize = physicalSize / zoom;
+    const physicalSize = logicalSize * zoom;
     const range = (axis === "x" ? xRange$ : yRange$).get();
     const unit = unitOf(range.from);
     const from = toNumeric(range.from, unit);
