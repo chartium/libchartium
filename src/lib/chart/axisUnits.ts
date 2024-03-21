@@ -1,4 +1,4 @@
-import { cons, derived, mutDerived, type Signal } from "@mod.js/signals";
+import { derived, mutDerived, type Signal } from "@mod.js/signals";
 import type { FactorDefinition } from "unitlib";
 import Fraction from "fraction.js";
 
@@ -36,7 +36,7 @@ export const axisUnits$ = ({
   displayUnitPreference$,
 }: AxisUnitsProps): AxisUnits => {
   const dataUnit$ = derived(
-    ($) => $(visibleTraces$).getUnits()?.[0][axis],
+    ($) => $(visibleTraces$).getUnits()?.[0]?.[axis],
   ).skipEqual();
 
   const defaultDisplayUnit$ = createDefaultUnit$(
@@ -51,19 +51,15 @@ export const axisUnits$ = ({
       defaultDisplayUnit$,
     });
 
-  const unitChangeActions$ = (true as boolean)
-    ? cons({})
-    : createUnitChangeActions$({
-        defaultDisplayUnit$,
-        currentDisplayUnit$,
-        resetDisplayUnit,
-        setDisplayUnit,
-      });
+  const unitChangeActions$ = createUnitChangeActions$({
+    defaultDisplayUnit$,
+    currentDisplayUnit$,
+    resetDisplayUnit,
+    setDisplayUnit,
+  });
 
   return {
-    currentDisplayUnit$: currentDisplayUnit$.tap((u) =>
-      console.log("CURRENT DISPLAY UNIT!", axis, u),
-    ),
+    currentDisplayUnit$,
     unitChangeActions$,
   };
 };
@@ -72,8 +68,11 @@ const createDefaultUnit$ = (
   dataUnit$: Signal<DataUnit>,
   displayUnitPreference$: Signal<DisplayUnitPreference>,
   range$: Signal<Range>,
-) =>
-  derived(($): DisplayUnit => {
+) => {
+  const best$ = bestDisplayUnit(dataUnit$, range$);
+
+  return derived(($): DisplayUnit => {
+    console.log("computing default unit");
     const pref = $(displayUnitPreference$);
     const dat = $(dataUnit$);
     switch (pref) {
@@ -81,7 +80,7 @@ const createDefaultUnit$ = (
         return dataUnitToDisplayUnit(dat);
 
       case "auto":
-        return $(bestDisplayUnit(dataUnit$, range$));
+        return $(best$);
 
       default:
         if (isDisplayUnitValidForDataUnit(pref, dat)) {
@@ -94,6 +93,7 @@ const createDefaultUnit$ = (
         }
     }
   }).skipEqual();
+};
 
 const createCurrentUnit$ = ({
   dataUnit$,
@@ -191,7 +191,7 @@ const dataUnitToDisplayUnit = (u: DataUnit): DisplayUnit =>
 const bestDisplayUnit = (dataUnit: Signal<DataUnit>, _range: Signal<Range>) =>
   derived(($): DisplayUnit => {
     return dataUnitToDisplayUnit($(dataUnit));
-  });
+  }).skipEqual();
 
 const changeFactor = ({
   direction,

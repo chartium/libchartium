@@ -14,6 +14,7 @@ export interface ChartAffineSpaceProps {
 
 export interface ValueOnAxis {
   toFraction(): number;
+  toClipSpace(): number;
   toPhysicalPixels(): number;
   toLogicalPixels(): number;
   toQuantity(): Qdn;
@@ -21,6 +22,7 @@ export interface ValueOnAxis {
 
 export interface CoordinatesInChart {
   toFractions(): { x: number; y: number };
+  toClipSpace(): { x: number; y: number };
   toPhysicalPixels(): { x: number; y: number };
   toLogicalPixels(): { x: number; y: number };
   toQuantitites(): { x: Qdn; y: Qdn };
@@ -39,6 +41,7 @@ export interface VectorInChart extends CoordinatesInChart {
 
 export interface ValueOnAxisFactory {
   fromFraction(value: number): ValueOnAxis;
+  fromClipSpace(value: number): ValueOnAxis;
   fromPhysicalPixels(value: number): ValueOnAxis;
   fromLogicalPixels(value: number): ValueOnAxis;
   fromQuantity(value: Qdn): ValueOnAxis;
@@ -46,6 +49,7 @@ export interface ValueOnAxisFactory {
 
 export interface PointInChartFactory {
   fromFractions(x: number, y: number): PointInChart;
+  fromClipSpace(x: number, y: number): PointInChart;
   fromPhysicalPixels(x: number, y: number): PointInChart;
   fromLogicalPixels(x: number, y: number): PointInChart;
   fromQuantities(x: Qdn, y: Qdn): PointInChart;
@@ -81,10 +85,19 @@ export const chartAffineSpace = ({
 
     const fromFraction = (v: number): ValueOnAxis => ({
       toFraction: () => v,
+      toClipSpace: () => {
+        const sign = axis === "y" ? -1 : 1;
+        return sign * (2 * v - 1);
+      },
       toPhysicalPixels: () => v * physicalSize,
       toLogicalPixels: () => v * logicalSize,
       toQuantity: () => toQuantOrDay(length * v + from, unit),
     });
+
+    const fromClipSpace = (v: number) => {
+      const sign = axis === "y" ? -1 : 1;
+      return fromFraction((sign * (v + 1)) / 2);
+    };
 
     const fromPhysicalPixels = (v: number) => fromFraction(v / physicalSize);
     const fromLogicalPixels = (v: number) => fromFraction(v / logicalSize);
@@ -92,18 +105,22 @@ export const chartAffineSpace = ({
 
     return {
       fromFraction,
+      fromClipSpace,
       fromPhysicalPixels,
       fromLogicalPixels,
       fromQuantity,
     };
   };
 
-  const point = () => {
+  const point = (): PointInChartFactory => {
     const X = valueOnAxis("x");
     const Y = valueOnAxis("y");
 
     const fromFractions = (x: number, y: number) =>
       pointFromValues(X.fromFraction(x), Y.fromFraction(y));
+
+    const fromClipSpace = (x: number, y: number) =>
+      pointFromValues(X.fromClipSpace(x), Y.fromClipSpace(y));
 
     const fromPhysicalPixels = (x: number, y: number) =>
       pointFromValues(X.fromPhysicalPixels(x), Y.fromPhysicalPixels(y));
@@ -119,6 +136,7 @@ export const chartAffineSpace = ({
       y: ValueOnAxis,
     ): CoordinatesInChart => ({
       toFractions: () => ({ x: x.toFraction(), y: y.toFraction() }),
+      toClipSpace: () => ({ x: x.toClipSpace(), y: y.toClipSpace() }),
       toPhysicalPixels: () => ({
         x: x.toPhysicalPixels(),
         y: y.toPhysicalPixels(),
@@ -162,6 +180,7 @@ export const chartAffineSpace = ({
 
     return {
       fromFractions,
+      fromClipSpace,
       fromPhysicalPixels,
       fromLogicalPixels,
       fromQuantities,
