@@ -72,7 +72,6 @@ const createDefaultUnit$ = (
   const best$ = bestDisplayUnit(dataUnit$, range$);
 
   return derived(($): DisplayUnit => {
-    console.log("computing default unit");
     const pref = $(displayUnitPreference$);
     const dat = $(dataUnit$);
     switch (pref) {

@@ -188,27 +188,12 @@
     defer: onDestroy,
   });
 
-  $: console.log("controller:", $controller$);
-  $: console.log("canvas:", $canvas$);
-  $: console.log("visible traces:", $visibleTraces$);
-  $: console.log("measure x axis:", $measureXAxisTextSize$);
-  $: console.log("measure y axis:", $measureYAxisTextSize$);
-  $: console.log("show x axis zero:", $showXAxisZero$);
-  $: console.log("show y axis zero:", $showYAxisZero$);
-  $: console.log("x axis display unit preference:", $defaultXUnit$);
-  $: console.log("y axis display unit preference:", $defaultYUnit$);
-
   //!SECTION
 
   const xTicks$ = chart$.axes.x.ticks$;
   const yTicks$ = chart$.axes.y.ticks$;
   const xDisplayUnit$ = chart$.axes.x.currentDisplayUnit$;
   const yDisplayUnit$ = chart$.axes.y.currentDisplayUnit$;
-
-  $: console.log("x ticks", $xTicks$);
-  $: console.log("y ticks", $yTicks$);
-  $: console.log("x display unit", $xDisplayUnit$);
-  $: console.log("y display unit", $yDisplayUnit$);
 
   const QND_FORMAT_OPTIONS: QndFormatOptions = {
     dateFormat: "MMM DD, hh:mm:ss",

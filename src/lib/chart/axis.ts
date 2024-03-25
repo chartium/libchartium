@@ -66,7 +66,7 @@ export const axis$ = ({
     resetAllRanges,
     visibleTraces$,
     showZero$,
-    fractionalMargins$: cons([0, 0]),
+    fractionalMargins$: axis === "y" ? cons([0.1, 0.1]) : cons([0, 0]),
   });
 
   const { currentDisplayUnit$, unitChangeActions$ } = axisUnits$({

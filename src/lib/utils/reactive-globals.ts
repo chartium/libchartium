@@ -1,22 +1,22 @@
 import { Defer, mut } from "@mod.js/signals";
 
-const mutDevicePixelRatio$ = mut(window.devicePixelRatio, {
+const mutDevicePixelRatio$ = mut(globalThis.devicePixelRatio ?? 1, {
   onStart({ defer: onStop }) {
     const { defer, cleanup } = Defer.create();
     onStop(cleanup);
 
     const listenToUpdates = () => {
-      matchMedia(
-        `(resolution: ${window.devicePixelRatio}dppx)`,
-      ).addEventListener(
-        "change",
-        () => {
-          mutDevicePixelRatio$.set(window.devicePixelRatio);
-          cleanup();
-          listenToUpdates();
-        },
-        { once: true, signal: defer.toAbortSignal() },
-      );
+      globalThis
+        .matchMedia?.(`(resolution: ${globalThis.devicePixelRatio}dppx)`)
+        .addEventListener(
+          "change",
+          () => {
+            mutDevicePixelRatio$.set(globalThis.devicePixelRatio);
+            cleanup();
+            listenToUpdates();
+          },
+          { once: true, signal: defer.toAbortSignal() },
+        );
     };
     listenToUpdates();
   },

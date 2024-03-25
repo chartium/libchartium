@@ -7,7 +7,7 @@ import {
   type NumericRange,
   Quantity,
 } from "../types.js";
-import dayjs, { Dayjs } from "dayjs";
+import dayjs, { type Dayjs } from "dayjs";
 import { toNumeric, toRange } from "../utils/quantityHelpers.js";
 
 export interface AxisRangeProps {
