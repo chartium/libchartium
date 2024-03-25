@@ -91,7 +91,10 @@ export const chartAffineSpace = ({
       },
       toPhysicalPixels: () => v * physicalSize,
       toLogicalPixels: () => v * logicalSize,
-      toQuantity: () => toQuantOrDay(length * v + from, unit),
+      toQuantity: () =>
+        axis === "y"
+          ? toQuantOrDay(to - length * v, unit)
+          : toQuantOrDay(length * v + from, unit),
     });
 
     const fromClipSpace = (v: number) => {
@@ -101,7 +104,10 @@ export const chartAffineSpace = ({
 
     const fromPhysicalPixels = (v: number) => fromFraction(v / physicalSize);
     const fromLogicalPixels = (v: number) => fromFraction(v / logicalSize);
-    const fromQuantity = (v: Qdn) => fromFraction(toNumeric(v, unit) / length);
+    const fromQuantity = (v: Qdn) =>
+      axis === "y"
+        ? fromFraction(1 - toNumeric(v, unit) / length)
+        : fromFraction(toNumeric(v, unit) / length);
 
     return {
       fromFraction,

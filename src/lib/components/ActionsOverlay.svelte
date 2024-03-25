@@ -167,15 +167,10 @@
       .fromQuantities(point.x, point.y)
       .toFractions();
 
-    drawCircle(
-      ctx,
-      [x * overlayWidth, (1 - y) * overlayHeight],
-      point.radius * 2.5,
-      {
-        fillStyle: point.color,
-        strokeStyle: point.color,
-      },
-    );
+    drawCircle(ctx, [x * overlayWidth, y * overlayHeight], point.radius * 2.5, {
+      fillStyle: point.color,
+      strokeStyle: point.color,
+    });
   }
 
   function drawZoom(zoom: Zoom) {
