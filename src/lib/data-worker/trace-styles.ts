@@ -1,10 +1,6 @@
 import { omit } from "lodash-es";
 
-import {
-  colorStringToColor,
-  randomContrastingColor,
-  type Color,
-} from "../utils/color.js";
+import { colorStringToColor, type Color } from "../utils/color.js";
 import { yeet } from "yeet-ts";
 import { UnknownTraceHandleError } from "../errors.js";
 import type { TraceHandle, Unit } from "../types.js";
@@ -12,23 +8,35 @@ import { map } from "../utils/collection.js";
 import type { NumericDateFormat } from "../index.js";
 import { lib } from "./wasm.js";
 
+export type TraceColor = lib.TraceColor;
+export type TraceRandomColorSpace = lib.TraceRandomColorSpace;
+export type TraceLineStyle = lib.TraceLineStyle;
+export type TracePointsStyle = lib.TracePointsStyle;
+
 export interface TraceStyle {
-  width: number;
-  // eslint-disable-next-line @typescript-eslint/ban-types
-  color: TraceColor | (string & {});
-  showPoints: boolean;
-  traceMode: TraceMode;
+  width: number | "unset";
+  color:
+    | TraceRandomColorSpace
+    | "bright"
+    | "rainbow"
+    | (string & NonNullable<unknown>)
+    | "unset";
+  points: TracePointsStyle | "unset";
+  line: TraceLineStyle | "unset";
+  "palette-index": number | "unset";
 }
 
-export type TraceStylesheet = Record<string, Partial<TraceStyle>>;
+export type TraceStylesheet = Record<
+  "*" | (string & NonNullable<unknown>),
+  Partial<TraceStyle>
+>;
 
 export const thresholdStylesheet: TraceStylesheet = {
   "*": {
-    showPoints: false,
+    points: "none",
     width: 2,
-    traceMode: {
-      dashLength: 5,
-      gapLength: 5,
+    line: {
+      dashed: [5, 5],
     },
   },
 };
@@ -38,27 +46,15 @@ export interface TraceDataUnits {
   yDataUnit?: Unit | NumericDateFormat;
 }
 
-type Dash = { dashLength: number; gapLength: number };
-type DoubleDash = { firstDash: Dash; secondDash: Dash };
-export type TraceMode = "none" | "line" | Dash | DoubleDash;
-
 export type ResolvedTraceInfo = Array<
   [traces: Set<string>, info: TraceStyle & TraceDataUnits]
 >;
 
-// the `as any` casts guarantee that the `TraceColor | string`
-// type isn't automatically reduced to just `string`
-export enum TraceColor {
-  ContrastWithBoth = "contrast-with-both",
-  ContrastWithLight = "contrast-with-light",
-  ContrastWithDark = "contrast-with-dark",
-}
-
 export const defaultStyle: TraceStyle = {
   width: 1,
-  color: TraceColor.ContrastWithBoth,
-  showPoints: false,
-  traceMode: "line" as TraceMode,
+  color: TraceColor.Random("contrast-with-both"),
+  points: TracePoints.None,
+  line: TraceLine.Solid,
 };
 
 interface RawTraceStyle {
@@ -142,8 +138,8 @@ export function simplifyTraceInfo(
   for (const [ts, info] of traceInfo) {
     const serializedInfo = {
       color: info.color,
-      showPoints: info.showPoints,
-      traceMode: info.traceMode,
+      points: info.points,
+      line: info.line,
       width: info.width,
       xDataUnit: info.xDataUnit,
       yDataUnit: info.yDataUnit,
@@ -163,29 +159,37 @@ export function simplifyTraceInfo(
   return Array.from(map(newInfo, ([info, traces]) => [traces, info]));
 }
 
-export function computeTraceColor(id: string, color: TraceStyle["color"]) {
-  switch (color) {
-    case TraceColor.ContrastWithBoth:
-      return randomContrastingColor(id, true, true);
-    case TraceColor.ContrastWithLight:
-      return randomContrastingColor(id, true, false);
-    case TraceColor.ContrastWithDark:
-      return randomContrastingColor(id, false, true);
-    default:
-      return colorStringToColor(color);
+export function computeTraceColor(
+  id: string,
+  color: TraceColor,
+): Color | "palette" {
+  if (typeof color === "string") return colorStringToColor(color);
+  switch (color.strategy) {
+    case "random":
+      switch (color.space) {
+        case "contrast-with-both":
+          return randomContrastingColor(id, true, true);
+        case "contrast-with-light":
+          return randomContrastingColor(id, true, false);
+        case "contrast-with-dark":
+          return randomContrastingColor(id, false, true);
+      }
+      break;
+    case "palette":
+      return "palette";
   }
 }
-export function rustifyTraceMode(mode: TraceMode): lib.TraceMode {
-  if (mode === "none") return lib.TraceMode.none();
-  if (mode === "line") return lib.TraceMode.line();
-  if ("firstDash" in mode)
+export function rustifyTraceLine(line: TraceLine): lib.TraceMode {
+  if (line === "none") return lib.TraceMode.none();
+  if (line === "solid") return lib.TraceMode.line();
+  if ("firstDash" in line)
     return lib.TraceMode.double_dash(
-      mode.firstDash.dashLength,
-      mode.firstDash.gapLength,
-      mode.secondDash.dashLength,
-      mode.secondDash.gapLength,
+      line.firstDash.dashLength,
+      line.firstDash.gapLength,
+      line.secondDash.dashLength,
+      line.secondDash.gapLength,
     );
-  return lib.TraceMode.dash(mode.dashLength, mode.gapLength);
+  return lib.TraceMode.dash(line.dashLength, line.gapLength);
 }
 
 export function* computeStyles(
@@ -200,8 +204,12 @@ export function* computeStyles(
 
   for (const handle of traces) {
     const id = ids.get(handle) ?? yeet(UnknownTraceHandleError, handle);
-    const { width, showPoints, color, traceMode } =
-      getStyle(id) ?? defaultStyle;
+    const {
+      width,
+      points,
+      color,
+      line: traceMode,
+    } = getStyle(id) ?? defaultStyle;
 
     const [r, g, b] = computeTraceColor(id, color);
 
@@ -209,7 +217,7 @@ export function* computeStyles(
       width,
       color: [r, g, b],
       points_mode: showPoints,
-      trace_mode: rustifyTraceMode(traceMode),
+      trace_mode: rustifyTraceLine(traceMode),
     };
   }
 }
@@ -235,14 +243,14 @@ const deleteSuperfluous = (base: TraceStyle, derived: Partial<TraceStyle>) => {
   if (derived.color === base.color) delete derived.color;
   if (derived.showPoints === base.showPoints) delete derived.showPoints;
   if (derived.width === base.width) delete derived.width;
-  if (derived.traceMode === base.traceMode) delete derived.traceMode;
+  if (derived.line === base.line) delete derived.line;
 };
 
 const isEmptyStyle = (style: Partial<TraceStyle>) =>
   style.color === undefined &&
   style.showPoints === undefined &&
   style.width === undefined &&
-  style.traceMode === undefined;
+  style.line === undefined;
 
 export function stylesheetNormalForm(
   stylesheet: TraceStylesheet,
