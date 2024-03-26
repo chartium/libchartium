@@ -1,7 +1,10 @@
 [package]
 name = "libchartium"
 version = "0.3.0"
-authors = ["Richard Ivanek <richard.ivanek@gmail.com>"]
+authors = [
+    "Richard Ivanek <richard.ivanek@gmail.com>",
+    "Michal Grno <csha@tutanota.com>",
+]
 edition = "2021"
 
 [lib]
@@ -11,20 +14,22 @@ crate-type = ["cdylib", "rlib"]
 default = ["console_error_panic_hook"]
 
 [dependencies]
-serde = { version = "1.0.175", features = ["derive"] }
-wasm-bindgen = { version = "0.2.87", features = [ "serde-serialize" ] }
-js-sys = "0.3.64"
-dyn-clone = "1.0.12"
+serde = { version = "1.0.197", features = ["derive"] }
+wasm-bindgen = { version = "0.2.92", features = ["serde-serialize"] }
+js-sys = "0.3.69"
+dyn-clone = "1.0.17"
 console_error_panic_hook = { version = "0.1.7", optional = true }
 lazy_static = "1.4.0"
-chrono = { version = "0.4.26", features=[ "wasmbind" ] }
-wasm-streams = "0.3.0"
-wasm-bindgen-futures = "0.4.37"
-serde-wasm-bindgen = "0.5.0"
-num-traits = "0.2.16"
+chrono = { version = "0.4.26", features = ["wasmbind"] }
+wasm-streams = "0.4.0"
+wasm-bindgen-futures = "0.4.42"
+serde-wasm-bindgen = "0.6.5"
+num-traits = "0.2.18"
+tsify = "0.4.5"
+optfield = "0.3.0"
 
 [dependencies.web-sys]
-version = "0.3.64"
+version = "0.3.69"
 features = [
     'Document',
     'Element',
@@ -41,10 +46,9 @@ features = [
 ]
 
 [dev-dependencies]
-wasm-bindgen-test = "0.3.37"
+wasm-bindgen-test = "0.3.42"
 
 [profile.release]
 opt-level = 3
 debug = true
 # strip = true
-
