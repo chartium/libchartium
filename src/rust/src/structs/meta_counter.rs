@@ -16,6 +16,9 @@ pub struct MetaCounter {
 
 impl MetaCounter {
     pub fn add(&mut self, col: usize, val: f64) {
+        if val.is_nan() {
+            return;
+        };
         self.sums[col] += val;
         self.lens[col] += 1;
         self.maxs[col] = val.max(self.maxs[col]);

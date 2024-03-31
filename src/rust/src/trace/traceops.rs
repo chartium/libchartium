@@ -63,6 +63,9 @@ impl BoxedBundle {
         let mut nz_pts = 0;
 
         for (_, y) in self.unwrap().iter_in_range_f64(trace, from, to) {
+            if y.is_nan() {
+                continue;
+            }
             metas.avg += y;
             metas.min = f64::min(metas.min, y);
             metas.max = f64::max(metas.max, y);
