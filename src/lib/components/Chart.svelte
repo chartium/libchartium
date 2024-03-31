@@ -196,7 +196,7 @@
   const yDisplayUnit$ = chart$.axes.y.currentDisplayUnit$;
 
   const QND_FORMAT_OPTIONS: QndFormatOptions = {
-    dateFormat: "MMM DD, hh:mm:ss",
+    dateFormat: "DD.MM. hh:mm (UTC)",
   };
   const xFormatOptions$ = xDisplayUnit$.map((unit) => ({
     ...QND_FORMAT_OPTIONS,

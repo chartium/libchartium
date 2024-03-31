@@ -1,7 +1,8 @@
 import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc.js";
+dayjs.extend(utc);
 import { Quantity, type Unit } from "../types.js";
 import { formatFloat, type QuantityFormatOptions } from "unitlib";
-
 /** Writes exponential notation that doesn't make your eyes bleed */
 export function prettyExp(input: number, decimals: number): string {
   const exp = Math.floor(Math.log10(input));
@@ -97,6 +98,6 @@ export function qndFormat(
     }
     return input.toString(options);
   } else {
-    return input.format(options.dateFormat ?? "YYYY-MM-DD");
+    return input.utc().format(options.dateFormat ?? "YYYY-MM-DD");
   }
 }

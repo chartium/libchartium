@@ -94,18 +94,18 @@
 </script>
 
 <svelte:window bind:innerHeight bind:innerWidth />
-
-<div
-  bind:clientHeight={containerHeight}
-  bind:clientWidth={containerWidth}
-  use:portal
-  class="tooltip"
-  style:visibility={position === undefined ? "hidden" : "visible"}
-  style:top={renderPosition?.y + "px"}
-  style:left={renderPosition?.x + "px"}
->
-  <slot />
-</div>
+{#if position !== undefined}
+  <div
+    bind:clientHeight={containerHeight}
+    bind:clientWidth={containerWidth}
+    use:portal
+    class="tooltip"
+    style:top={renderPosition?.y + "px"}
+    style:left={renderPosition?.x + "px"}
+  >
+    <slot />
+  </div>
+{/if}
 
 <style lang="scss">
   .tooltip {
