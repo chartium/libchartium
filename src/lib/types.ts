@@ -6,6 +6,7 @@ export type Unit = Unit_<any, any, any>;
 
 import { Quantity as Quantity_ } from "unitlib";
 import { toNumeric } from "./utils/quantityHelpers.js";
+import type { NumericDateFormat } from "./index.js";
 export type Quantity = Quantity_<any, any, any>;
 export const Quantity = Quantity_;
 
@@ -150,9 +151,9 @@ export interface TraceMetas {
  * fraction of axis length/height the tick should be placed.
  */
 export interface Tick {
-  value: string;
-  subvalue?: string;
-  unit: Unit | undefined;
+  text: string;
+  subtext?: string;
+  unit: Unit | NumericDateFormat | undefined;
   position: number;
 }
 

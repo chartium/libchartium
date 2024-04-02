@@ -170,8 +170,7 @@
     let maxSize = 0;
     for (const tick of ticks) {
       const content =
-        tick.value +
-        (tick.subvalue !== undefined ? "<br/>" + tick.subvalue : "");
+        tick.text + (tick.subtext !== undefined ? "<br/>" + tick.subtext : "");
       const size = measureText(content, measuringSpan, direction);
 
       if (size > maxSize) {
@@ -225,10 +224,10 @@
     >
       {#each ticks as tick}
         <span style={tickSpanStyle(tick)}>
-          {tick.value}
-          {#if tick.subvalue}
+          {tick.text}
+          {#if tick.subtext}
             <br />
-            {tick.subvalue}
+            {tick.subtext}
           {/if}
         </span>
       {/each}

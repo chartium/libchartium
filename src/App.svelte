@@ -15,8 +15,10 @@
 
   // autogenerate a lot of data
   const from = 0;
-  const to = 6000;
-  const numSteps = to;
+  const to = new Date(1973, 1, 1).getTime() / 1000;
+  const numSteps = 5000;
+  // const to = 5000;
+  // const numSteps = to;
   const stepSize = (to - from) / numSteps;
 
   const xs = Array.from(

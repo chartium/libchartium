@@ -93,11 +93,15 @@ const sanitizedChart$ = ({
     axes.x.resetRange();
     axes.y.resetRange();
   };
+  const { canvasLogicalSize$, offscreenCanvas$ } = chartCanvas$({
+    canvas$,
+  });
+
   const axes = {
     x: axis$({
       axis: "x",
       visibleTraces$,
-      lengthInPx$: cons(100),
+      lengthInPx$: canvasLogicalSize$.map((size) => size?.width),
       measureTextSize$: measureXAxisTextSize$,
       displayUnitPreference$: xAxisDisplayUnitPreference$,
       showZero$: showXAxisZero$,
@@ -106,17 +110,13 @@ const sanitizedChart$ = ({
     y: axis$({
       axis: "y",
       visibleTraces$,
-      lengthInPx$: cons(100),
+      lengthInPx$: canvasLogicalSize$.map((size) => size?.height),
       measureTextSize$: measureYAxisTextSize$,
       displayUnitPreference$: yAxisDisplayUnitPreference$,
       showZero$: showYAxisZero$,
       resetAllRanges,
     }),
   };
-
-  const { canvasLogicalSize$, offscreenCanvas$ } = chartCanvas$({
-    canvas$,
-  });
 
   const { point, valueOnAxis } = chartAffineSpace({
     canvasLogicalSize$,

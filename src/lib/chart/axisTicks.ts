@@ -13,9 +13,12 @@ import { qndFormat, uniqueDecimals } from "../utils/format.js";
 import {
   formatInEra,
   getFloatDayjsValue,
-  getLargerEra,
+  formattedInLargerEra,
   getRangeSpan,
+  getSmallerEra,
 } from "../utils/dateFormatter.js";
+import type dayjs from "dayjs";
+import { NumericDateFormat } from "../index.js";
 
 export type TextMeasuringFunction = (text: string) => number;
 
@@ -23,7 +26,7 @@ export interface AxisTicksProps {
   range$: Signal<Range>;
   currentDisplayUnit$: Signal<DisplayUnit>;
   measureTextSize$: Signal<TextMeasuringFunction | undefined>;
-  lengthInPx$: Signal<number>;
+  lengthInPx$: Signal<number | undefined>;
 }
 
 export interface AxisTicks {
@@ -52,10 +55,11 @@ export const axisTicks$ = ({
 
 function linearTicks(
   range: Range,
-  axisSize: number,
+  axisSize: number | undefined,
   textSize: (x: string) => number,
   displayUnit: DisplayUnit,
 ): Tick[] {
+  if (axisSize === undefined) return [];
   if (isDateRange(range)) return dateTicks(range, axisSize, textSize);
   return quantityTicks(range, axisSize, textSize, displayUnit);
 }
@@ -70,11 +74,13 @@ function quantityTicks(
   const numTicks = getNumericTicks(numRange, axisSize, textSize);
 
   return numTicks.map<Tick>(({ position, label }) => ({
-    value: label,
+    text: label,
     unit: displayUnit,
     position,
   }));
 }
+
+const niceMultiples = [1, 2, 3, 5, 10, 20, 25, 30, 50, 100];
 
 // TODO refactor
 function dateTicks(
@@ -82,36 +88,49 @@ function dateTicks(
   axisSize: number,
   textSize: (x: string) => number,
 ): Tick[] {
-  const rangeUnits = getRangeSpan(range);
-  const iLoveDayjsISwear = rangeUnits === "days" ? "date" : rangeUnits;
-  const tickMeasuringFunction = (x: string) => {
-    const templateDayjs = range.from.startOf(rangeUnits);
-    const asDayjs = templateDayjs.set(iLoveDayjsISwear, parseFloat(x));
-    const inEra = formatInEra(asDayjs, rangeUnits);
-    const inBiggerEra = getLargerEra(asDayjs, rangeUnits) ?? "";
-    return Math.max(textSize(inEra), textSize(inBiggerEra));
-  };
+  const position = (
+    val: dayjs.Dayjs, // FIXME replace with AxisValue
+  ) =>
+    1 - (range.to.unix() - val.unix()) / (range.to.unix() - range.from.unix());
+  const unit = getRangeSpan(range);
 
-  const from = getFloatDayjsValue(range.from, rangeUnits);
-  const to = from + range.to.diff(range.from, rangeUnits, true);
-  const result = getNumericTicks({ from, to }, axisSize, tickMeasuringFunction)
-    .map((numTick) => ({
-      value: range.from.set(iLoveDayjsISwear, parseFloat(numTick.label)),
-      position: numTick.position,
-    }))
-    .reduce((acc: Tick[], tick) => {
-      const largerEra = getLargerEra(tick.value, rangeUnits);
-      const thisTick = {
-        position: tick.position,
-        value: formatInEra(tick.value, rangeUnits),
-        subvalue: acc.some((tick) => tick.subvalue === largerEra)
-          ? undefined
-          : largerEra,
-        unit: undefined,
-      };
-      acc.push(thisTick);
-      return acc;
-    }, [] as Tick[]);
+  const tickFromVal = (val: dayjs.Dayjs): Tick => ({
+    text: formatInEra(val, unit),
+    position: position(val),
+    subtext: formattedInLargerEra(val, unit),
+    unit: NumericDateFormat.EpochSeconds, // FIXME is this what we want?
+  });
+
+  const firstTickVal = range.from.startOf(unit).add(1, unit);
+  let result: Tick[] = [];
+  for (const multiple of niceMultiples) {
+    const rangeLength = range.to.startOf(unit).diff(firstTickVal, unit, true);
+    const tickNum = rangeLength / multiple;
+
+    if (tickNum > MAX_TICK_COUNT) continue;
+    result = Array.from({ length: tickNum + 1 }, (_, index) =>
+      tickFromVal(firstTickVal.add(index * multiple, unit)),
+    );
+
+    const longestLabel = result.reduce((prev, curr) => {
+      const longestCurrLabel = Math.max(
+        textSize(curr.text),
+        textSize(curr.subtext ?? ""),
+      );
+      if (prev < longestCurrLabel) prev = longestCurrLabel;
+      return prev;
+    }, 0);
+
+    if (longestLabel * tickNum < axisSize) break;
+  }
+
+  let lastLargerUnit = result[0]?.subtext;
+  if (lastLargerUnit !== undefined) {
+    for (let i = 1; i < result.length; i++) {
+      if (result[i].subtext === lastLargerUnit) result[i].subtext = undefined;
+      else lastLargerUnit = result[i].subtext;
+    }
+  }
 
   return result;
 }
@@ -124,7 +143,6 @@ function getNumericTicks(
   if (range.to === range.from) return [];
 
   const oneOrderLess = Math.floor(Math.log10(range.to - range.from)) - 1;
-  const niceMultiples = [1, 2, 3, 5, 10, 20, 25, 30, 50, 100];
 
   let ticks: { label: string; position: number }[] = [];
 
@@ -145,7 +163,11 @@ function getNumericTicks(
       label: qndFormat(val, { decimalPlaces }),
       position: (val - range.from) / rangeWidth,
     }));
-    const tickSize = textSize(ticks.at(-1)?.label ?? ""); // upper estimate
+    const tickSize = ticks.reduce(
+      (prev, curr) =>
+        prev < textSize(curr.label) ? textSize(curr.label) : prev,
+      0,
+    ); // upper estimate
     if (axisSize > tickNum * tickSize) break;
   }
   ticks = ticks.filter((tick) => tick.position >= 0 && tick.position <= 1);

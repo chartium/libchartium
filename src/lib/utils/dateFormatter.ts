@@ -1,4 +1,6 @@
 import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc.js";
+dayjs.extend(utc);
 import type { DateRange } from "../types.js";
 
 export type DateRangeSpan =
@@ -9,6 +11,16 @@ export type DateRangeSpan =
   | "minutes"
   | "seconds"
   | "milliseconds";
+
+const erasFromLargest: DateRangeSpan[] = [
+  "years",
+  "months",
+  "days",
+  "hours",
+  "minutes",
+  "seconds",
+  "milliseconds",
+];
 
 /** Returns what biggest eras the range spans
  * @param [shortWindow=1.5] - if the range spans this many (for instance) days or fewer, it will return "hours" instead of "days"
@@ -21,28 +33,23 @@ export function getRangeSpan(
   const from = dayjs(range.from);
   const to = dayjs(range.to);
 
-  if (to.diff(from, "year") > shortWindow) {
-    return "years";
-  } else if (to.diff(from, "month") > shortWindow) {
-    return "months";
-  } else if (to.diff(from, "day") > shortWindow) {
-    return "days";
-  } else if (to.diff(from, "hour") > shortWindow) {
-    return "hours";
-  } else if (to.diff(from, "minute") > shortWindow) {
-    return "minutes";
-  } else if (to.diff(from, "second") > shortWindow) {
-    return "seconds";
-  } else {
-    return "milliseconds";
+  for (const era of erasFromLargest) {
+    if (to.diff(from, era) > shortWindow) return era;
   }
+  return erasFromLargest.at(-1)!;
+}
+
+export function getSmallerEra(era: DateRangeSpan): DateRangeSpan {
+  let index = erasFromLargest.findIndex((val) => val === era);
+  index = index === -1 ? 0 : index;
+  return erasFromLargest[index + 1] ?? erasFromLargest.at(-1)!;
 }
 
 /** Returns a string that represents the larger era than input units
  * @example getLargerEra(new Date(2020, 0, 1), "days") === "Jan 2020"
  * returns undefined if the input units are years
  */
-export function getLargerEra(
+export function formattedInLargerEra(
   date: dayjs.Dayjs | Date,
   largerThanUnits: DateRangeSpan,
 ): string | undefined {
@@ -52,11 +59,11 @@ export function getLargerEra(
     case "years":
       return undefined;
     case "months":
-      return date.format("YYYY");
+      return date.utc().format("YYYY");
     case "days":
-      return date.format("YYYY");
+      return date.utc().format("YYYY");
     default:
-      return date.format("MMM D YYYY");
+      return date.utc().format("MMM D YYYY");
   }
 }
 
@@ -69,19 +76,19 @@ export function formatInEra(date: dayjs.Dayjs, era: DateRangeSpan): string {
 
   switch (era) {
     case "years":
-      return date.format("YYYY");
+      return date.utc().format("YYYY");
     case "months":
-      return date.format("MMM");
+      return date.utc().format("MMM");
     case "days":
-      return date.format("MMM D");
+      return date.utc().format("MMM D");
     case "hours":
-      return date.format("HH:mm");
+      return date.utc().format("HH:mm");
     case "minutes":
-      return date.format("HH:mm");
+      return date.utc().format("HH:mm");
     case "seconds":
-      return date.format("HH:mm:ss");
+      return date.utc().format("HH:mm:ss");
     default:
-      return date.format("HH:mm:ss.SSS");
+      return date.utc().format("HH:mm:ss.SSS");
   }
 }
 

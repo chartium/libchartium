@@ -33,7 +33,7 @@ export interface AxisProps {
   displayUnitPreference$: Signal<DisplayUnitPreference>;
   showZero$: Signal<boolean>;
   measureTextSize$: Signal<TextMeasuringFunction | undefined>;
-  lengthInPx$: Signal<number>;
+  lengthInPx$: Signal<number | undefined>;
 }
 
 export interface Axis {
