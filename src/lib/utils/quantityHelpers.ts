@@ -1,7 +1,7 @@
 /** THelper functions to make the code shorter */
 
 import dayjs, { type Dayjs } from "dayjs";
-import { NumericDateFormat } from "./numericDateFormat.js";
+import { NumericDateRepresentation } from "./numericDateRepresentation.js";
 import {
   Quantity,
   type NumericRange,
@@ -15,11 +15,11 @@ import { Unit as UUnit } from "unitlib";
 /** Transforms quantity to just numeric part in selected units. */
 export function toNumeric(
   x: Quantity | number | Dayjs,
-  unit: Unit | NumericDateFormat | undefined,
+  unit: Unit | NumericDateRepresentation | undefined,
 ): number {
   if (typeof x === "number") return x;
 
-  if (unit instanceof NumericDateFormat) {
+  if (unit instanceof NumericDateRepresentation) {
     if (dayjs.isDayjs(x)) return unit.valueFrom(x);
 
     throw new TypeError(
@@ -46,7 +46,7 @@ export function toNumeric(
 /** Transforms range to numeric range in selected units. */
 export function toNumericRange(
   range: Range,
-  unit: Unit | NumericDateFormat | undefined,
+  unit: Unit | NumericDateRepresentation | undefined,
 ): NumericRange {
   return {
     from: toNumeric(range.from, unit),
@@ -60,10 +60,10 @@ export function toNumericRange(
  */
 export function toQuantOrDay(
   x: number,
-  units?: Unit | NumericDateFormat,
+  units?: Unit | NumericDateRepresentation,
   dataUnits?: Unit,
 ): Quantity | Dayjs | number {
-  if (units instanceof NumericDateFormat) return units.parseToDayjs(x);
+  if (units instanceof NumericDateRepresentation) return units.parseToDayjs(x);
   if (typeof x === "number" && units) {
     const q = new Quantity(x, units);
     if (dataUnits) return q.inUnits(dataUnits);
@@ -75,7 +75,7 @@ export function toQuantOrDay(
 /** Returns range in units if defined, otherwise returns numeric range */
 export function toRange(
   range: NumericRange,
-  units?: Unit | NumericDateFormat,
+  units?: Unit | NumericDateRepresentation,
 ): Range {
   return {
     from: toQuantOrDay(range.from, units),
@@ -177,11 +177,14 @@ export function qdnMax(x: ChartValue, y: ChartValue): ChartValue {
 }
 
 export function unitEqual(
-  a: Unit | NumericDateFormat | undefined,
-  b: Unit | NumericDateFormat | undefined,
+  a: Unit | NumericDateRepresentation | undefined,
+  b: Unit | NumericDateRepresentation | undefined,
 ): boolean {
   if (a === undefined) return b === undefined;
-  if (a instanceof NumericDateFormat !== b instanceof NumericDateFormat)
+  if (
+    a instanceof NumericDateRepresentation !==
+    b instanceof NumericDateRepresentation
+  )
     return false;
   return a.isEqual(b as any);
 }

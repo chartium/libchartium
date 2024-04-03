@@ -5,6 +5,7 @@ import {
   type TraceHandle,
   type Unit,
   type ChartValue,
+  type DataUnit,
 } from "../types.js";
 import { lib } from "./wasm.js";
 import { type TraceStyle, type TraceStyleSheet } from "./trace-styles.js";
@@ -36,7 +37,7 @@ import {
   exportTraceListData,
   type TraceListExportOptions,
 } from "./trace-export.js";
-import type { NumericDateFormat } from "../index.js";
+import type { NumericDateRepresentation } from "../index.js";
 
 export const BUNDLES = Symbol("bundles");
 export const HANDLES = Symbol("handles");
@@ -51,8 +52,8 @@ export interface TraceInfo {
   color: Color;
   showPoints: boolean;
 
-  xDataUnit: Unit | NumericDateFormat | undefined;
-  yDataUnit: Unit | NumericDateFormat | undefined;
+  xDataUnit: Unit | NumericDateRepresentation | undefined;
+  yDataUnit: Unit | NumericDateRepresentation | undefined;
 }
 
 export interface TraceMetas {
@@ -63,11 +64,17 @@ export interface TraceMetas {
   avg_nz: ChartValue;
 }
 
+interface Bundle {
+  bundle: lib.BoxedBundle;
+  xDataUnit: DataUnit;
+  yDataUnit: DataUnit;
+}
+
 export class TraceList {
   [proxyMarker] = true;
 
   #traceHandles: TraceHandle[];
-  #bundles: lib.BoxedBundle[];
+  #bundles: Bundle[];
   #statistics: TraceMetas[] | undefined;
   #labels: ReadonlyMap<string, string>;
   #range: Range;
@@ -161,8 +168,8 @@ export class TraceList {
    * Returns units that traces of input bundle use
    */
   getBundleUnits(bundle: lib.BoxedBundle): {
-    x: Unit | NumericDateFormat | undefined;
-    y: Unit | NumericDateFormat | undefined;
+    x: Unit | NumericDateRepresentation | undefined;
+    y: Unit | NumericDateRepresentation | undefined;
   } {
     const firstTrace = bundle.traces()[0] as TraceHandle | undefined;
     if (!firstTrace) return { x: undefined, y: undefined };
@@ -198,8 +205,8 @@ export class TraceList {
    * the stored data as if it always had these units.
    */
   reinterpretWithDataUnits(newUnits: {
-    x?: Unit | NumericDateFormat;
-    y?: Unit | NumericDateFormat;
+    x?: Unit | NumericDateRepresentation;
+    y?: Unit | NumericDateRepresentation;
   }) {
     const traceInfo: ResolvedTraceInfo = this.#traceInfo.map(([key, info]) => [
       key,
@@ -507,8 +514,8 @@ export class TraceList {
    * aren't intentional with it, you may get unexpected results.
    */
   getUnits(): {
-    x: Unit | NumericDateFormat | undefined;
-    y: Unit | NumericDateFormat | undefined;
+    x: Unit | NumericDateRepresentation | undefined;
+    y: Unit | NumericDateRepresentation | undefined;
   }[] {
     // FIXME this actually doesn't yet know how to spot date so it won't return it
     if (this.#units) return this.#units;
@@ -516,12 +523,12 @@ export class TraceList {
 
     const addUnique = (
       set: Set<{
-        x: Unit | NumericDateFormat | undefined;
-        y: Unit | NumericDateFormat | undefined;
+        x: Unit | NumericDateRepresentation | undefined;
+        y: Unit | NumericDateRepresentation | undefined;
       }>,
       value: {
-        x: Unit | NumericDateFormat | undefined;
-        y: Unit | NumericDateFormat | undefined;
+        x: Unit | NumericDateRepresentation | undefined;
+        y: Unit | NumericDateRepresentation | undefined;
       },
     ): void => {
       const alreadyRecorded = some(set, (u) => {
@@ -548,8 +555,8 @@ export class TraceList {
    */
   getUnitsToTraceMap(): Map<
     {
-      x: Unit | NumericDateFormat | undefined;
-      y: Unit | NumericDateFormat | undefined;
+      x: Unit | NumericDateRepresentation | undefined;
+      y: Unit | NumericDateRepresentation | undefined;
     },
     TraceList // FIXME do we want tracelist here or ids?
   > {
@@ -557,8 +564,8 @@ export class TraceList {
 
     const toReturn = new Map<
       {
-        x: Unit | NumericDateFormat | undefined;
-        y: Unit | NumericDateFormat | undefined;
+        x: Unit | NumericDateRepresentation | undefined;
+        y: Unit | NumericDateRepresentation | undefined;
       },
       TraceList
     >();

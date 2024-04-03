@@ -1,5 +1,5 @@
 import { derived, mutDerived, type Signal } from "@mod.js/signals";
-import { NumericDateFormat, type TraceList } from "../index.js";
+import { NumericDateRepresentation, type TraceList } from "../index.js";
 import type { DataUnit } from "./axis.js";
 import {
   rangesHaveMeaningfulIntersection,
@@ -174,5 +174,5 @@ export const unitOf = (v: number | Dayjs | Quantity): DataUnit =>
   v instanceof Quantity
     ? v.unit
     : dayjs.isDayjs(v)
-      ? NumericDateFormat.EpochSeconds
+      ? NumericDateRepresentation.EpochSeconds
       : undefined;

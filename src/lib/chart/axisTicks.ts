@@ -6,8 +6,8 @@ import {
   type Range,
   type Tick,
   type DateRange,
+  type DisplayUnit,
 } from "../types.js";
-import type { DisplayUnit } from "./axis.js";
 import { toNumericRange } from "../utils/quantityHelpers.js";
 import { qndFormat, uniqueDecimals } from "../utils/format.js";
 import {

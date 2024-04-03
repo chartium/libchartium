@@ -23,7 +23,7 @@ import type { RenderingController } from "./renderers/mod.js";
 import { WebGL2Controller } from "./renderers/webgl2.js";
 import { proxyMarker } from "comlink";
 import { TraceList } from "./trace-list.js";
-import type { NumericDateFormat, TraceStylesheet } from "../index.js";
+import type { NumericDateRepresentation, TraceStylesheet } from "../index.js";
 
 let wasmMemory: WebAssembly.Memory | undefined;
 
@@ -179,8 +179,8 @@ export class ChartiumController {
     data: ArrayBuffer | TypedArray;
     xType: TypeOfData;
     yType: TypeOfData;
-    xUnit?: Unit | NumericDateFormat;
-    yUnit?: Unit | NumericDateFormat;
+    xUnit?: Unit | NumericDateRepresentation;
+    yUnit?: Unit | NumericDateRepresentation;
     style?: TraceStylesheet;
     labels?: Iterable<[string, string | undefined]>;
   }): Promise<TraceList> {
@@ -236,12 +236,12 @@ export class ChartiumController {
   }: {
     x: {
       type: TypeOfData;
-      unit?: Unit | NumericDateFormat;
+      unit?: Unit | NumericDateRepresentation;
       data: ArrayBuffer | TypedArray;
     };
     y: {
       type: TypeOfData;
-      unit?: Unit | NumericDateFormat;
+      unit?: Unit | NumericDateRepresentation;
       columns: {
         id: string;
         data: ArrayBuffer | TypedArray;
@@ -307,8 +307,8 @@ export class ChartiumController {
   }: {
     ids: string[];
     ys: Float64Array;
-    yUnit?: Unit | NumericDateFormat;
-    xUnit?: Unit | NumericDateFormat;
+    yUnit?: Unit | NumericDateRepresentation;
+    xUnit?: Unit | NumericDateRepresentation;
     style?: TraceStylesheet;
     labels?: Iterable<[string, string | undefined]>;
     tracelistsRange: Range;

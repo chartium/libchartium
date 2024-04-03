@@ -2,7 +2,7 @@ import { derived, mutDerived, type Signal } from "@mod.js/signals";
 import type { FactorDefinition } from "unitlib";
 import Fraction from "fraction.js";
 
-import { NumericDateFormat, TraceList } from "../index.js";
+import { NumericDateRepresentation, TraceList } from "../index.js";
 import { Quantity, type Range, type Unit } from "../types.js";
 import { mapOpt } from "../utils/mapOpt.js";
 
@@ -173,7 +173,7 @@ const isDisplayUnitValidForDataUnit = (
   displayUnit: DisplayUnit,
   dataUnit: DataUnit,
 ): boolean => {
-  if (!dataUnit || dataUnit instanceof NumericDateFormat)
+  if (!dataUnit || dataUnit instanceof NumericDateRepresentation)
     return displayUnit === undefined;
   try {
     new Quantity(1, dataUnit).inUnits(displayUnit!);
@@ -184,7 +184,7 @@ const isDisplayUnitValidForDataUnit = (
 };
 
 const dataUnitToDisplayUnit = (u: DataUnit): DisplayUnit =>
-  u instanceof NumericDateFormat ? undefined : u;
+  u instanceof NumericDateRepresentation ? undefined : u;
 
 // TODO
 const bestDisplayUnit = (dataUnit: Signal<DataUnit>, _range: Signal<Range>) =>
@@ -200,7 +200,7 @@ const changeFactor = ({
   currentUnit: DisplayUnit;
 }): Unit | undefined => {
   // NOTE changing the factor of a date range is not supported
-  if (!currentUnit || currentUnit instanceof NumericDateFormat) return;
+  if (!currentUnit || currentUnit instanceof NumericDateRepresentation) return;
 
   const factorsEqual = (a: FactorDefinition, b: FactorDefinition) =>
     a.mul === b.mul && a.base === b.base && a.exp.equals(b.exp);

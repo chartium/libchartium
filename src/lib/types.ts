@@ -10,6 +10,11 @@ import type { NumericDateFormat } from "./index.js";
 export type Quantity = Quantity_<any, any, any>;
 export const Quantity = Quantity_;
 
+import type { NumericDateRepresentation } from "./index.js";
+export type DataUnit = NumericDateRepresentation | Unit | undefined;
+export type DisplayUnit = Unit | undefined;
+export type DisplayUnitPreference = DisplayUnit | "auto" | "data";
+
 export type TypedArray =
   | Int8Array
   | Uint8Array
