@@ -106,8 +106,8 @@ export const chartAffineSpace = ({
     const fromLogicalPixels = (v: number) => fromFraction(v / logicalSize);
     const fromQuantity = (v: Qdn) =>
       axis === "y"
-        ? fromFraction(1 - toNumeric(v, unit) / length)
-        : fromFraction(toNumeric(v, unit) / length);
+        ? fromFraction((to - toNumeric(v, unit)) / length)
+        : fromFraction(1 - (to - toNumeric(v, unit)) / length);
 
     return {
       fromFraction,
