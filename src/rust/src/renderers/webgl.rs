@@ -1,6 +1,6 @@
 use js_sys::{try_iter, Float32Array};
 use serde::{Deserialize, Serialize};
-use wasm_bindgen::{prelude::*, JsCast, JsValue};
+use wasm_bindgen::prelude::*;
 use web_sys::{
     OffscreenCanvas, WebGl2RenderingContext, WebGlBuffer, WebGlProgram, WebGlUniformLocation,
 };
