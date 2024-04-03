@@ -25,6 +25,10 @@ pub fn is_valid_palette_name(n: &str) -> bool {
     n == "bright" || n == "rainbow"
 }
 
+// "Missing Texture" magenta
+// also see lib/utils/color.ts
+pub const MISSING_COLOR: [f32; 4] = [1., 0., 0.86, 1.];
+
 // Palette color
 fn palette_color(palette_name: &str, palette_index: usize, total_count: usize) -> [f32; 4] {
     if palette_name == "bright" {
@@ -37,7 +41,7 @@ fn palette_color(palette_name: &str, palette_index: usize, total_count: usize) -
     }
 
     warn(&format!("Unknown color palette: {}", palette_name));
-    [1., 0., 0.86, 1.] // "Missing Texture" magenta
+    MISSING_COLOR
 }
 
 // HSL to RGB

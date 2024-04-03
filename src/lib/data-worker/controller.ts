@@ -24,7 +24,6 @@ import { WebGL2Controller } from "./renderers/webgl2.js";
 import { proxyMarker } from "comlink";
 import { TraceList } from "./trace-list.js";
 import type { NumericDateFormat, TraceStylesheet } from "../index.js";
-import { thresholdStylesheet } from "./trace-styles.js";
 
 let wasmMemory: WebAssembly.Memory | undefined;
 
@@ -217,11 +216,11 @@ export class ChartiumController {
       range: bundle.range().value,
       bundles: [bundle],
       labels: new Map(),
-      traceInfo: null,
     });
 
     if (style) tl = tl.withStyle(style);
-    if (xUnit || yUnit) tl = tl.withDataUnits({ x: xUnit, y: yUnit });
+    if (xUnit || yUnit)
+      tl = tl.reinterpretWithDataUnits({ x: xUnit, y: yUnit });
     if (labels) tl = tl.withLabels(labels);
     return tl;
   }
@@ -287,11 +286,11 @@ export class ChartiumController {
       range: bundle.range().value,
       bundles: [bundle],
       labels: new Map(),
-      traceInfo: null,
     });
 
     if (style) tl = tl.withStyle(style);
-    if (x.unit || y.unit) tl = tl.withDataUnits({ x: x.unit, y: y.unit });
+    if (x.unit || y.unit)
+      tl = tl.reinterpretWithDataUnits({ x: x.unit, y: y.unit });
     if (labels) tl = tl.withLabels(labels);
 
     return tl;
@@ -340,11 +339,10 @@ export class ChartiumController {
       range: tracelistsRange,
       bundles: [bundle],
       labels: new Map(),
-      traceInfo: null,
     });
     if (style) tl = tl.withStyle(style);
-    else tl = tl.withStyle(thresholdStylesheet);
-    if (yUnit || xUnit) tl = tl.withDataUnits({ y: yUnit, x: xUnit });
+    if (yUnit || xUnit)
+      tl = tl.reinterpretWithDataUnits({ y: yUnit, x: xUnit });
     if (labels) tl = tl.withLabels(labels);
 
     return tl;

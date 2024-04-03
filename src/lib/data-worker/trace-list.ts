@@ -7,16 +7,7 @@ import {
   type ChartValue,
 } from "../types.js";
 import { lib } from "./wasm.js";
-import {
-  computeTraceColor,
-  defaultStyle,
-  resolveTraceInfo,
-  type ResolvedTraceInfo,
-  type TraceStyle,
-  type TraceStylesheet,
-  type TraceDataUnits,
-  simplifyTraceInfo,
-} from "./trace-styles.js";
+import { type TraceStyle, type TraceStyleSheet } from "./trace-styles.js";
 import { yeet } from "yeet-ts";
 import { UnknownTraceHandleError } from "../errors.js";
 import { traceIds } from "./controller.js";
@@ -64,7 +55,7 @@ export interface TraceInfo {
   yDataUnit: Unit | NumericDateFormat | undefined;
 }
 
-export interface QDTraceMetas {
+export interface TraceMetas {
   traceId: string;
   min: ChartValue;
   max: ChartValue;
@@ -77,9 +68,8 @@ export class TraceList {
 
   #traceHandles: TraceHandle[];
   #bundles: lib.BoxedBundle[];
-  #statistics: QDTraceMetas[] | undefined;
+  #statistics: TraceMetas[] | undefined;
   #labels: ReadonlyMap<string, string>;
-  #traceInfo: ResolvedTraceInfo;
   #range: Range;
 
   #traceHandleSet_: Set<TraceHandle> | undefined;
@@ -94,7 +84,6 @@ export class TraceList {
     range: Range;
     bundles: lib.BoxedBundle[];
     labels: ReadonlyMap<string, string>;
-    traceInfo: ResolvedTraceInfo | null;
   }) {
     this.#traceHandles = params.handles;
     this.#range = params.range;
@@ -186,7 +175,7 @@ export class TraceList {
   /**
    * Create a new trace list with the same traces and identical range, but modified styles.
    */
-  withStyle(stylesheet: TraceStylesheet): TraceList {
+  withStyle(stylesheet: TraceStyleSheet): TraceList {
     return new TraceList({
       handles: this.#traceHandles,
       range: this.#range,
@@ -208,7 +197,7 @@ export class TraceList {
    * any unit conversions, nor does it modify the data – rather, it re-interprets
    * the stored data as if it always had these units.
    */
-  withDataUnits(newUnits: {
+  reinterpretWithDataUnits(newUnits: {
     x?: Unit | NumericDateFormat;
     y?: Unit | NumericDateFormat;
   }) {
@@ -467,7 +456,7 @@ export class TraceList {
 
     const metas: lib.TraceMetas[] = counter.to_array();
 
-    const convertedMetas: QDTraceMetas[] = [];
+    const convertedMetas: TraceMetas[] = [];
 
     for (const [meta, traceHandle] of zip(metas, handles)) {
       const id = traceIds.get(traceHandle as TraceHandle)!;

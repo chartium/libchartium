@@ -1,5 +1,9 @@
 import { startsWith } from "./string.js";
 
+// "Missing Texture" magenta
+// also see rust/src/utils/color.rs
+export const MISSING_COLOR: Color = [1, 0, 0.86, 1];
+
 export type HexColor = `#${string}`;
 export type RgbaColor = `rgba(${number}, ${number}, ${number}, ${number})`;
 export type SrgbColor =
@@ -91,42 +95,3 @@ export function colorToHex(color: Color): string {
     "#" + color.map((c) => (c * 255).toString(16).padStart(2, "0")).join("")
   );
 }
-
-// export function colorFromStringHash(str: string, seed = 0): Color {
-//   // cyrb53 hashing algo
-//   // Source: https://blog.trannhat.xyz/generate-a-hash-from-string-in-javascript/
-//   function hashCode(str: string, seed: number) {
-//     let h1 = 0xdeadbeef ^ seed,
-//       h2 = 0x41c6ce57 ^ seed;
-//     for (let i = 0, ch; i < str.length; i++) {
-//       ch = str.charCodeAt(i);
-//       h1 = Math.imul(h1 ^ ch, 2654435761);
-//       h2 = Math.imul(h2 ^ ch, 1597334677);
-//     }
-//     h1 =
-//       Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^
-//       Math.imul(h2 ^ (h2 >>> 13), 3266489909);
-//     h2 =
-//       Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^
-//       Math.imul(h1 ^ (h1 >>> 13), 3266489909);
-//     return 4294967296 * (2097151 & h2) + (h1 >>> 0);
-//   }
-
-//   const hash = hashCode(str, seed);
-
-//   const h = (hash % 360) * deg;
-//   const s = Math.sqrt(0.2 + ((hash % 1303) * 0.8) / 1303);
-//   const l = 0.3 + ((hash % 1327) * 0.5) / 1327;
-
-//   // dark violet and dark red are unreadable against dark background
-//   if (l < 0.55 && (210 * deg < h || h < 10 * deg)) {
-//     return colorFromStringHash(str, seed + 1);
-//   }
-
-//   // light yellow is unreadable against white background
-//   if (l > 0.7 && 30 * deg < h && h < 100 * deg) {
-//     return colorFromStringHash(str, seed + 1);
-//   }
-
-//   return hslToColor(h, s, l);
-// }

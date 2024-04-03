@@ -11,7 +11,7 @@ export {
   type ResolvedTraceInfo,
   type TraceDataUnits,
   type TraceStyle,
-  type TraceStylesheet,
+  type TraceStyleSheet as TraceStylesheet,
 } from "./trace-styles.js";
 export {
   exportControllerFromWorker,
