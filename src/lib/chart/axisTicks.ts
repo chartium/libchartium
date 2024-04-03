@@ -105,10 +105,10 @@ function dateTicks(
   let result: Tick[] = [];
   for (const multiple of niceMultiples) {
     const rangeLength = range.to.startOf(unit).diff(firstTickVal, unit, true);
-    const tickNum = rangeLength / multiple;
+    const tickNum = rangeLength / multiple + 1;
 
     if (tickNum > MAX_TICK_COUNT) continue;
-    result = Array.from({ length: tickNum + 1 }, (_, index) =>
+    result = Array.from({ length: tickNum }, (_, index) =>
       tickFromVal(firstTickVal.add(index * multiple, unit)),
     );
 
