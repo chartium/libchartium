@@ -1,12 +1,11 @@
 <script lang="ts">
-  import dayjs from "dayjs";
-  import type { Point, Quantity } from "../types.js";
+  import type { ChartValue, Point, Quantity } from "../types.js";
   import { qndFormat } from "../utils/format.js";
   import { portal } from "svelte-portal";
 
   /** position relative to body; i.e. absolute :d */
   export let position: Point;
-  export let value: Quantity | number | dayjs.Dayjs;
+  export let value: ChartValue;
   export let axis: "x" | "y";
   export let rotated: boolean = false;
 

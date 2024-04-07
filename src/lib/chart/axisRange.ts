@@ -1,13 +1,14 @@
 import { derived, mutDerived, type Signal } from "@mod.js/signals";
 import { NumericDateRepresentation, type TraceList } from "../index.js";
-import type { DataUnit } from "./axis.js";
 import {
   rangesHaveMeaningfulIntersection,
   type Range,
   type NumericRange,
   Quantity,
+  type DataUnit,
+  isQuantity,
 } from "../types.js";
-import dayjs, { type Dayjs } from "dayjs";
+import { isDayjs, type Dayjs } from "../utils/dayjs.js";
 import { toNumeric, toRange } from "../utils/quantityHelpers.js";
 
 export interface AxisRangeProps {
@@ -171,8 +172,8 @@ const computeShiftedRange = (
 };
 
 export const unitOf = (v: number | Dayjs | Quantity): DataUnit =>
-  v instanceof Quantity
+  isQuantity(v)
     ? v.unit
-    : dayjs.isDayjs(v)
+    : isDayjs(v)
       ? NumericDateRepresentation.EpochSeconds
       : undefined;

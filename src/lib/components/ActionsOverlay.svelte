@@ -39,7 +39,7 @@
   import GenericContextMenu from "../contextMenu/GenericContextMenu.svelte";
   import type { WritableSignal } from "@mod.js/signals";
   import RulerBubble from "./RulerBubble.svelte";
-  import { type Dayjs } from "dayjs";
+  import { type Dayjs } from "../utils/dayjs.js";
   import type { Chart } from "../chart/chart.js";
   import { P, match } from "ts-pattern";
   import { mapOpt } from "../utils/mapOpt.js";

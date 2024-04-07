@@ -8,17 +8,14 @@ import {
   type DateRange,
   type DisplayUnit,
 } from "../types.js";
+import type { Dayjs } from "../utils/dayjs.js";
 import { toNumericRange } from "../utils/quantityHelpers.js";
 import { qndFormat, uniqueDecimals } from "../utils/format.js";
 import {
   formatInEra,
-  getFloatDayjsValue,
   formattedInLargerEra,
   getRangeSpan,
-  getSmallerEra,
-} from "../utils/dateFormatter.js";
-import type dayjs from "dayjs";
-import { NumericDateFormat } from "../index.js";
+} from "../utils/dateFormat.js";
 
 export type TextMeasuringFunction = (text: string) => number;
 
@@ -89,16 +86,15 @@ function dateTicks(
   textSize: (x: string) => number,
 ): Tick[] {
   const position = (
-    val: dayjs.Dayjs, // FIXME replace with AxisValue
+    val: Dayjs, // FIXME replace with AxisValue
   ) =>
     1 - (range.to.unix() - val.unix()) / (range.to.unix() - range.from.unix());
   const unit = getRangeSpan(range);
 
-  const tickFromVal = (val: dayjs.Dayjs): Tick => ({
+  const tickFromVal = (val: Dayjs): Tick => ({
     text: formatInEra(val, unit),
     position: position(val),
     subtext: formattedInLargerEra(val, unit),
-    unit: NumericDateFormat.EpochSeconds, // FIXME is this what we want?
   });
 
   const firstTickVal = range.from.startOf(unit).add(1, unit);

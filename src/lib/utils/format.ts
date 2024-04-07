@@ -1,7 +1,4 @@
-import dayjs from "dayjs";
-import utc from "dayjs/plugin/utc.js";
-dayjs.extend(utc);
-import { Quantity, type Unit } from "../types.js";
+import { Quantity, type ChartValue, type Unit, isQuantity } from "../types.js";
 import { formatFloat, type QuantityFormatOptions } from "unitlib";
 /** Writes exponential notation that doesn't make your eyes bleed */
 export function prettyExp(input: number, decimals: number): string {
@@ -77,10 +74,7 @@ export interface QndFormatOptions extends QuantityFormatOptions {
 }
 
 /** Formats input based on options */
-export function qndFormat(
-  input: number | Quantity | dayjs.Dayjs,
-  options: QndFormatOptions = {},
-) {
+export function qndFormat(input: ChartValue, options: QndFormatOptions = {}) {
   options = { ...options };
   options.decimalPlaces ??= 2;
   options.digitGroupLength ??= 3;
@@ -89,7 +83,7 @@ export function qndFormat(
   if (typeof input === "number") {
     if (isNaN(input)) return "—";
     return formatFloat(input, options);
-  } else if (input instanceof Quantity) {
+  } else if (isQuantity(input)) {
     if (isNaN(input.value)) return "—";
     if (options.unit) {
       try {

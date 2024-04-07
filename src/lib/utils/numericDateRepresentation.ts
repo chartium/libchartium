@@ -1,6 +1,7 @@
-import { Quantity, type Unit } from "../types.js";
+import { Quantity, type Unit, isUnit } from "../types.js";
+import { dayjs, type Dayjs } from "./dayjs.js";
 import { SI } from "unitlib/systems";
-import dayjs from "dayjs";
+import { Duration } from "./duration.js";
 
 const nanoseconds = SI.parseUnit("ns");
 const milliseconds = SI.parseUnit("ms");
@@ -9,32 +10,66 @@ const minutes = seconds.multiply(60);
 const hours = minutes.multiply(60);
 
 export class NumericDateRepresentation {
-  constructor(
-    public readonly unit: Unit,
-    public readonly relativeTo = new Date(0),
+  private constructor(
+    public readonly duration: Duration,
+    public readonly relativeTo: Dayjs,
   ) {
     Object.freeze(this);
   }
 
+  static from({
+    duration,
+    relativeTo,
+  }: {
+    duration: Duration | Unit;
+    relativeTo?: Date | Dayjs;
+  }) {
+    if (isUnit(duration)) {
+      duration = Duration.from({
+        milliseconds: new Quantity(1, duration).inUnits(milliseconds).value,
+      });
+    }
+
+    if (relativeTo === undefined) {
+      relativeTo = dayjs.utc(0);
+    } else if (relativeTo instanceof Date) {
+      relativeTo = dayjs(relativeTo);
+    }
+
+    return new NumericDateRepresentation(duration, relativeTo);
+  }
+
+  convertToDayjs(value: number): Dayjs {
+    return this.duration.multiply(value).add(this.relativeTo);
+  }
+
   parseToDate(value: number): Date {
-    return new Date(new Quantity(value, this.unit).inUnits(milliseconds).value);
+    return this.convertToDayjs(value).toDate();
   }
 
-  parseToDayjs(value: number): dayjs.Dayjs {
-    return dayjs(new Quantity(value, this.unit).inUnits(milliseconds).value);
-  }
-
-  valueFrom(date: Date | dayjs.Dayjs): number {
-    return new Quantity(+date, milliseconds).inUnits(this.unit).value;
+  valueFrom(date: Date | Dayjs): number {
+    if (date instanceof Date) date = dayjs(date);
+    return this.duration.divide(this.relativeTo, date);
   }
 
   isEqual(other: NumericDateRepresentation) {
-    return this.unit === other.unit && +this.relativeTo === +other.relativeTo;
+    return (
+      this.duration.isEqual(other.duration) &&
+      +this.relativeTo === +other.relativeTo
+    );
   }
 
-  static EpochNanoseconds = new NumericDateRepresentation(nanoseconds);
-  static EpochMilliseconds = new NumericDateRepresentation(milliseconds);
-  static EpochSeconds = new NumericDateRepresentation(seconds);
-  static EpochMinutes = new NumericDateRepresentation(minutes);
-  static EpochHours = new NumericDateRepresentation(hours);
+  static EpochNanoseconds = NumericDateRepresentation.from({
+    duration: nanoseconds,
+  });
+  static EpochMilliseconds = NumericDateRepresentation.from({
+    duration: milliseconds,
+  });
+  static EpochSeconds = NumericDateRepresentation.from({
+    duration: seconds,
+  });
+  static EpochMinutes = NumericDateRepresentation.from({
+    duration: minutes,
+  });
+  static EpochHours = NumericDateRepresentation.from({ duration: hours });
 }

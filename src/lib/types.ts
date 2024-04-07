@@ -1,14 +1,16 @@
-import dayjs from "dayjs";
 import type { Color } from "./utils/color.js";
+import { isDayjs, type Dayjs } from "./utils/dayjs.js";
 
-import type { Unit as Unit_ } from "unitlib";
+import { Unit as Unit_ } from "unitlib";
 export type Unit = Unit_<any, any, any>;
+export const Unit = Unit_;
+export const isUnit = (x: unknown): x is Unit => x instanceof Unit;
 
 import { Quantity as Quantity_ } from "unitlib";
 import { toNumeric } from "./utils/quantityHelpers.js";
-import type { NumericDateFormat } from "./index.js";
 export type Quantity = Quantity_<any, any, any>;
 export const Quantity = Quantity_;
+export const isQuantity = (x: unknown): x is Quantity => x instanceof Quantity;
 
 import type { NumericDateRepresentation } from "./index.js";
 export type DataUnit = NumericDateRepresentation | Unit | undefined;
@@ -56,8 +58,8 @@ export type QuantityRange = {
 };
 
 export type DateRange = {
-  from: dayjs.Dayjs;
-  to: dayjs.Dayjs;
+  from: Dayjs;
+  to: Dayjs;
 };
 
 export type Range = NumericRange | QuantityRange | DateRange;
@@ -72,8 +74,8 @@ export const isDateRange = (x: unknown): x is DateRange =>
   isRange(x) &&
   typeof x.from === "object" &&
   typeof x.to === "object" &&
-  dayjs.isDayjs(x.from) &&
-  dayjs.isDayjs(x.to);
+  isDayjs(x.from) &&
+  isDayjs(x.to);
 
 export const rangesHaveMeaningfulIntersection = function isect(
   a: Range,
@@ -124,7 +126,7 @@ export interface Point {
   y: number;
 }
 
-export type ChartValue = number | dayjs.Dayjs | Quantity;
+export type ChartValue = number | Dayjs | Quantity;
 
 export interface ChartValuePoint {
   x: ChartValue;
@@ -158,7 +160,6 @@ export interface TraceMetas {
 export interface Tick {
   text: string;
   subtext?: string;
-  unit: Unit | NumericDateFormat | undefined;
   position: number;
 }
 

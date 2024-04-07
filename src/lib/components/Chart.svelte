@@ -1,6 +1,10 @@
 <script lang="ts">
   import type { ChartiumController } from "../data-worker/index.js";
-  import { type Quantity, type ChartValue } from "../types.js";
+  import {
+    type Quantity,
+    type ChartValue,
+    type DisplayUnitPreference,
+  } from "../types.js";
   import type { TraceList } from "../data-worker/trace-list.js";
   import type { VisibleAction } from "./ActionsOverlay.svelte";
 
@@ -13,9 +17,7 @@
   import { toolKey } from "./toolbar/toolKey.js";
   import { flockReduce } from "../utils/collection.js";
   import { mapOpt } from "../utils/mapOpt.js";
-  import type { DisplayUnitPreference } from "../chart/axis.js";
   import type { TextMeasuringFunction } from "../chart/axisTicks.js";
-  import type { Qdn } from "../chart/chartAffineSpace.js";
   import ChartGrid from "./ChartGrid.svelte";
   import AxisTicks from "./AxisTicks.svelte";
   import Guidelines from "./Guidelines.svelte";
@@ -210,8 +212,8 @@
   const visibleAction = mut<VisibleAction | undefined>(undefined);
 
   let showTooltip: boolean = false;
-  const hoverXQuantity$ = mut<Qdn>();
-  const hoverYQuantity$ = mut<Qdn>();
+  const hoverXQuantity$ = mut<ChartValue>();
+  const hoverYQuantity$ = mut<ChartValue>();
 
   const updateHoverQuantities = (e: MouseEvent) => {
     const { x, y } = chart$
@@ -354,7 +356,7 @@
     .pipe(onDestroy);
 
   /** In fractions of graph height */
-  let persistentYThresholds: Qdn[] = [];
+  let persistentYThresholds: ChartValue[] = [];
   $: presYThreshFracs = persistentYThresholds.map((q) =>
     chart$.valueOnAxis("y").fromQuantity(q).toFraction(),
   );
