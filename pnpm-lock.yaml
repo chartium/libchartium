@@ -61,7 +61,7 @@ dependencies:
     version: 5.0.6
   unitlib:
     specifier: ^0.8.0
-    version: 0.8.0(fraction.js@4.3.7)(typescript@5.3.3)
+    version: 0.8.1(fraction.js@4.3.7)(typescript@5.3.3)
   yeet-ts:
     specifier: ^1.0.3
     version: 1.0.3(typescript@5.3.3)
@@ -2354,8 +2354,8 @@ packages:
     resolution: {integrity: sha512-JlCMO+ehdEIKqlFxk6IfVoAUVmgz7cU7zD/h9XZ0qzeosSHmUJVOzSQvvYSYWXkFXC+IfLKSIffhv0sVZup6pA==}
     dev: true
 
-  /unitlib@0.8.0(fraction.js@4.3.7)(typescript@5.3.3):
-    resolution: {integrity: sha512-tBpc6hZpxxsHsOkGbL0O9GRydUNoF1UGYh236Qh/C5GZftJtir1EvdSXsBlEQU1NiXBYP1GT5Uy9guLfADlBJQ==}
+  /unitlib@0.8.1(fraction.js@4.3.7)(typescript@5.3.3):
+    resolution: {integrity: sha512-twFXaWNDEQ3QZy3JGeGblFVDCwoLF/M/e1V3kdV286PLzftzdcVUNWyGtdUEpUvsMqTjojZI44HrCNbEq+mgTg==}
     peerDependencies:
       fraction.js: ^4.2.1
     dependencies:

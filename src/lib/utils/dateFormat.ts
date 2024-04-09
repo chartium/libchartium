@@ -26,6 +26,9 @@ export type FormattingStrings = {
   [period in Period]: PeriodFormattingString;
 };
 
+export const isDateFormat = (x: unknown): x is DateFormat =>
+  x instanceof DateFormat;
+
 export class DateFormat {
   constructor(
     /** if the range spans this many (for instance) days or fewer, it will return "hours" instead of "days" */
@@ -42,6 +45,20 @@ export class DateFormat {
     public readonly timezone: "utc" | "local" = "utc",
   ) {
     Object.freeze(this);
+  }
+
+  isEqual(other: DateFormat): boolean {
+    return (
+      this.shortWindow === other.shortWindow &&
+      this.timezone === other.timezone &&
+      this.formattingStrings.years === other.formattingStrings.years &&
+      this.formattingStrings.months === other.formattingStrings.months &&
+      this.formattingStrings.days === other.formattingStrings.days &&
+      this.formattingStrings.hours === other.formattingStrings.hours &&
+      this.formattingStrings.seconds === other.formattingStrings.seconds &&
+      this.formattingStrings.milliseconds ===
+        other.formattingStrings.milliseconds
+    );
   }
 
   getPeriodOfRange(range: DateRange): Period {

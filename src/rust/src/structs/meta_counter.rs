@@ -1,8 +1,9 @@
-use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
+use wasm_bindgen::prelude::wasm_bindgen;
 
 use crate::{
     data::TraceHandle,
-    trace::{BoxedBundle, BundleRange, TraceMetas},
+    trace::BoxedBundle,
+    types::{NumericRange, TraceMetas},
 };
 
 #[wasm_bindgen]
@@ -60,23 +61,22 @@ impl MetaCounter {
         self.maxs[col] = self.maxs[col].max(other.maxs[other_col]);
     }
 
+    // ! TODO Ensure correct behavior for trace handles
+    // ! that are not present in the bundle
     pub fn add_bundle(
         &mut self,
         bundle: &BoxedBundle,
         traces: &[TraceHandle],
-        bundle_range: JsValue,
+        x_range: NumericRange,
+        y_factor: f64,
     ) {
-        let bundle_range = serde_wasm_bindgen::from_value::<BundleRange>(bundle_range).unwrap();
         for (i, trace_data) in traces
             .iter()
-            .map(|&t| match bundle_range {
-                BundleRange::Bounded { from, to } => bundle.unwrap().iter_in_range_f64(t, from, to),
-                BundleRange::Everywhere => bundle.unwrap().iter_in_range_f64(t, 0.0, 1.0),
-            })
+            .map(|&t| bundle.unwrap().iter_in_range_f64(t, x_range))
             .enumerate()
         {
             for (_, y) in trace_data {
-                self.add(i, y);
+                self.add(i, y * y_factor);
             }
         }
     }

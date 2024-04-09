@@ -30,6 +30,8 @@ const durationPeriods: Array<keyof DurationLike> = [
 const ms = (d: DurationLike) =>
   (((d.hours ?? 0)*60 + (d.minutes ?? 0))*60 + (d.seconds ?? 0))*1000 + (d.milliseconds ?? 0);
 
+export const isDuration = (x: unknown): x is Duration => x instanceof Duration;
+
 export class Duration implements DurationLike {
   public readonly isContextDependent: boolean;
   public readonly timeAsMilliseconds: number;
@@ -86,6 +88,12 @@ export class Duration implements DurationLike {
         yield [period, self[period]];
       }
     })();
+  }
+
+  toString() {
+    return [...this.entries()]
+      .map(([unit, number]) => number + " " + unit)
+      .join(", ");
   }
 
   isEqual(d: DurationLike) {

@@ -2,18 +2,11 @@ import { lib } from "../wasm.js";
 import { yeet } from "yeet-ts";
 import {
   type RenderJob,
-  type RenderJobResult,
   type Renderer,
   type RenderingController,
 } from "./mod.js";
-import { proxyMarker } from "comlink";
-import { BUNDLES, HANDLES, TRACE_INFO } from "../trace-list.js";
-import { filter, map, reduce } from "../../utils/collection.js";
-import { computeStyles } from "../trace-styles.js";
-import { traceIds } from "../controller.js";
-import type { BoxedBundle } from "../../../../dist/wasm/libchartium.js";
-import type { TraceHandle } from "../../types.js";
-import { qdnMax, qdnMin } from "../../utils/quantityHelpers.js";
+import { BUNDLES, HANDLES, STYLES } from "../trace-list.js";
+import { filter } from "../../utils/collection.js";
 
 function compileShader(
   gl: WebGL2RenderingContext,
@@ -38,14 +31,9 @@ function linkProgram(
 }
 
 export class WebGL2Controller implements RenderingController {
-  [proxyMarker] = true;
-
   readonly #canvas: OffscreenCanvas;
   readonly #context: WebGL2RenderingContext;
   readonly #programs: lib.WebGlPrograms;
-
-  #renderers: { [key: number]: WebGL2Renderer } = {};
-  #availableRendererHandle = 0;
 
   constructor(canvas: OffscreenCanvas) {
     this.#canvas = canvas;
@@ -83,9 +71,7 @@ export class WebGL2Controller implements RenderingController {
       this.#programs,
       presentCanvas,
     );
-    const handle = this.#availableRendererHandle++;
-    const wrapped = new WebGL2Renderer(this, handle, this.#context, raw);
-    this.#renderers[handle] = wrapped;
+    const wrapped = new WebGL2Renderer(this, this.#context, raw);
     return wrapped;
   }
 
@@ -163,19 +149,11 @@ export class WebGL2Controller implements RenderingController {
 }
 
 export class WebGL2Renderer implements Renderer {
-  [proxyMarker] = true;
-
   readonly #context: WebGL2RenderingContext;
   readonly #renderer: lib.WebGlRenderer;
 
-  readonly #buffers = new WeakMap<
-    BoxedBundle,
-    Map<TraceHandle, Map</* width */ number, WebGLBuffer>>
-  >();
-
   constructor(
     public readonly parent: WebGL2Controller,
-    public readonly handle: number,
     context: WebGL2RenderingContext,
     renderer: lib.WebGlRenderer,
   ) {
@@ -183,59 +161,31 @@ export class WebGL2Renderer implements Renderer {
     this.#renderer = renderer;
   }
 
-  render(job: RenderJob): RenderJobResult {
+  render(job: RenderJob): void {
     const traceList = job.traces;
+    const { clear, xRange, yRange } = job;
     const availableHandles = new Set(traceList[HANDLES]);
-    const rj = new lib.WebGlRenderJob(job.xType);
-    const xRange = job.xRange;
 
-    // prettier-ignore
-    const yRange = job.yRange ?? (() => {
-      const metas = traceList.calculateStatistics(xRange);
-      const from = reduce(map(metas, (m) => m.min) as any, qdnMin);
-      const to = reduce(map(metas, (m) => m.max) as any, qdnMax);
-      return { from, to };
-    })();
-
-    rj.x_from = +xRange.from;
-    rj.x_to = +xRange.to;
-    rj.y_from = +yRange.from;
-    rj.y_to = +yRange.to;
+    const rj = new lib.WebGlRenderJob({ clear, xRange, yRange });
 
     for (const bundle of traceList[BUNDLES]) {
-      const handles = Array.from(
-        filter(bundle.traces() as Iterable<TraceHandle>, (h) =>
-          availableHandles.has(h),
-        ),
-      );
-      const styles = computeStyles(traceList[TRACE_INFO], handles, traceIds);
-      const buffers = map(handles, (h) =>
-        lib.WebGlRenderer.create_trace_buffer(
-          this.#context,
-          bundle,
-          h,
-          +xRange.from,
-          +xRange.to,
-        ),
-      );
-      const length_alongs = map(handles, (h) =>
-        this.#renderer.create_lengths_along_buffer(
-          this.#context,
-          bundle,
-          h,
-          +xRange.from,
-          +xRange.to,
-          +yRange.from,
-          +yRange.to,
-        ),
-      );
-      rj.add_traces(bundle, handles.length, buffers, styles, length_alongs);
+      const handles = filter(bundle.traces(), (h) => availableHandles.has(h));
+
+      for (const handle of handles) {
+        const style = traceList[STYLES].get_cloned(handle);
+
+        const data = lib.TraceData.compute(bundle.boxed, handle, xRange);
+        const traceBuffer = this.#renderer.create_trace_buffer(data);
+        const arcLengthBuffer = this.#renderer.create_arc_length_buffer(
+          data,
+          yRange,
+        );
+
+        rj.add_trace(data, style, traceBuffer, arcLengthBuffer);
+      }
     }
 
-    if (job.clear !== undefined) rj.clear = job.clear;
-
     this.#renderer.render(rj);
-    return {};
   }
 
   setSize(width: number, height: number) {

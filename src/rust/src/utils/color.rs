@@ -1,6 +1,61 @@
+// https://github.com/madonoharu/tsify/issues/42
+#![allow(non_snake_case)]
+
+use serde::{Deserialize, Serialize};
+use tsify::Tsify;
 use wasm_bindgen::prelude::wasm_bindgen;
 
-use crate::structs::{TraceColor, TraceRandomColorSpace};
+use crate::trace_styles::{TraceColor, TraceRandomColorSpace};
+
+#[derive(Clone, PartialEq, Eq, Hash, Tsify, Serialize, Deserialize)]
+#[tsify(into_wasm_abi, from_wasm_abi)]
+pub struct ResolvedColor {
+    red: u8,
+    green: u8,
+    blue: u8,
+    alpha: u8,
+}
+impl ResolvedColor {
+    pub fn from_bytes([red, green, blue, alpha]: [u8; 4]) -> Self {
+        Self {
+            red,
+            green,
+            blue,
+            alpha,
+        }
+    }
+    pub fn from_floats(f: [f32; 4]) -> Self {
+        Self {
+            red: f2b(f[0]),
+            green: f2b(f[1]),
+            blue: f2b(f[2]),
+            alpha: f2b(f[3]),
+        }
+    }
+    pub fn as_bytes(&self) -> [u8; 4] {
+        [self.red, self.green, self.blue, self.alpha]
+    }
+    pub fn as_floats(&self) -> [f32; 4] {
+        self.as_bytes().b2f()
+    }
+}
+
+#[inline(always)]
+fn f2b(f: f32) -> u8 {
+    (f * 255.) as u8
+}
+trait B2F {
+    fn b2f(&self) -> [f32; 4];
+}
+impl B2F for [u8; 4] {
+    #[inline(always)]
+    fn b2f(&self) -> [f32; 4] {
+        self.map(
+            #[inline(always)]
+            |b| b as f32 * 255.,
+        )
+    }
+}
 
 #[wasm_bindgen]
 extern "C" {
@@ -27,10 +82,10 @@ pub fn is_valid_palette_name(n: &str) -> bool {
 
 // "Missing Texture" magenta
 // also see lib/utils/color.ts
-pub const MISSING_COLOR: [f32; 4] = [1., 0., 0.86, 1.];
+pub const MISSING_COLOR: [u8; 4] = [0xff, 0x00, 0xdc, 0xff];
 
 // Palette color
-fn palette_color(palette_name: &str, palette_index: usize, total_count: usize) -> [f32; 4] {
+fn palette_color(palette_name: &str, palette_index: usize, total_count: usize) -> ResolvedColor {
     if palette_name == "bright" {
         let [h, s, l] = BRIGHT[palette_index % BRIGHT.len()].1;
         return hsl_to_color(h, s, l);
@@ -41,7 +96,7 @@ fn palette_color(palette_name: &str, palette_index: usize, total_count: usize) -
     }
 
     warn(&format!("Unknown color palette: {}", palette_name));
-    MISSING_COLOR
+    ResolvedColor::from_bytes(MISSING_COLOR)
 }
 
 // HSL to RGB
@@ -55,9 +110,9 @@ fn hue_to_intensity(p: f32, q: f32, t: f32) -> f32 {
         () => p,
     }
 }
-pub fn hsl_to_color(h: f32, s: f32, l: f32) -> [f32; 4] {
+pub fn hsl_to_color(h: f32, s: f32, l: f32) -> ResolvedColor {
     if s == 0. {
-        return [l, l, l, 1.];
+        return ResolvedColor::from_floats([l, l, l, 1.]);
     }
 
     let q = if l < 0.5 { l * (1. + s) } else { l + s - l * s };
@@ -66,11 +121,11 @@ pub fn hsl_to_color(h: f32, s: f32, l: f32) -> [f32; 4] {
     let g = hue_to_intensity(p, q, h);
     let b = hue_to_intensity(p, q, h - 1. / 3.);
 
-    [r, g, b, 1.]
+    ResolvedColor::from_floats([r, g, b, 1.])
 }
 
 // Random color
-pub fn random_contrasting_color(pref: &TraceRandomColorSpace) -> [f32; 4] {
+pub fn random_contrasting_color(pref: &TraceRandomColorSpace) -> ResolvedColor {
     // for a tutorial on custom probability distributions see:
     // https://programming.guide/generate-random-value-with-distribution.html
 
@@ -98,9 +153,9 @@ pub fn random_contrasting_color(pref: &TraceRandomColorSpace) -> [f32; 4] {
 }
 
 impl TraceColor {
-    pub fn resolve(&self, palette_index: usize, total_count: usize) -> [f32; 4] {
+    pub fn resolve(&self, palette_index: usize, total_count: usize) -> ResolvedColor {
         match self {
-            TraceColor::Exact(rgba) => *rgba,
+            TraceColor::Exact(rgba) => rgba.clone(),
             TraceColor::Random(r) => random_contrasting_color(r),
             TraceColor::PaletteAuto(palette_name) => {
                 palette_color(palette_name, palette_index, total_count)

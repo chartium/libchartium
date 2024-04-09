@@ -309,7 +309,7 @@
       closestPoint: { x, y },
     } = trace;
 
-    const { min, max, avg } = $(visibleTraces$).calculateStatistics({
+    const { min, max, average } = $(visibleTraces$).calculateStatistics({
       traces: [trace.traceInfo.id],
       from,
       to,
@@ -321,7 +321,7 @@
       y: qndFormat(y, $(yFormatOptions$)),
       min: qndFormat(min, $(yFormatOptions$)),
       max: qndFormat(max, $(yFormatOptions$)),
-      avg: qndFormat(avg, $(yFormatOptions$)),
+      avg: qndFormat(average, $(yFormatOptions$)),
     };
   });
 

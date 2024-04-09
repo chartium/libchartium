@@ -31,8 +31,9 @@ export type TraceStyleSheet = Record<
   Partial<TraceStyle>
 >;
 
-const emptyTraceStyleSheet = lib.TraceStyleSheet.unset();
-export function oxidizeStyleSheet(s: TraceStyleSheet): lib.TraceStyleSheet {
+export function oxidizeStyleSheetPatch(
+  s: TraceStyleSheet,
+): lib.TraceStyleSheetPatch {
   const baseStyle = oxidizeStylePatch(s["*"]);
   const patchBuilder = lib.TraceStyleSheetPatchBuilder.base(baseStyle);
   for (const selector of Object.keys(s)) {
@@ -41,22 +42,29 @@ export function oxidizeStyleSheet(s: TraceStyleSheet): lib.TraceStyleSheet {
     if (handle === undefined) continue;
     patchBuilder.add(handle, oxidizeStylePatch(s[selector]));
   }
-  return emptyTraceStyleSheet.patch(patchBuilder);
+  return patchBuilder.collect();
 }
 
+export function oxidizeStyleSheet(s: TraceStyleSheet): lib.TraceStyleSheet {
+  return lib.TraceStyleSheet.unset().patch(oxidizeStyleSheetPatch(s));
+}
+
+// so that we don't forget to pass a new field
 type NonOptionalButPossiblyUndefined<T> = {
   [K in keyof Required<T>]: T[K];
 };
-const oxidizeStylePatch = (s: Partial<TraceStyle>): lib.TraceStylePatch => {
+const oxidizeStylePatch = (
+  s: Partial<TraceStyle> | undefined,
+): lib.TraceStylePatch => {
   return {
-    color: oxidizeColor(s.color),
-    line: oxidizeLine(s.line, s["line-dash-array"]),
+    color: oxidizeColor(s?.color),
+    line: oxidizeLine(s?.line, s?.["line-dash-array"]),
 
-    points: s.points,
-    "line-width": s["line-width"],
-    "palette-index": s["palette-index"],
-    "z-index": s["z-index"],
-    "legend-priority": s["legend-priority"],
+    points: s?.points,
+    "line-width": s?.["line-width"],
+    "palette-index": s?.["palette-index"],
+    "z-index": s?.["z-index"],
+    "legend-priority": s?.["legend-priority"],
   } satisfies NonOptionalButPossiblyUndefined<lib.TraceStylePatch>;
 };
 
@@ -68,8 +76,8 @@ const oxidizeColor = (
   if (lib.is_valid_palette_name(s)) return { "palette-auto": s };
   if (lib.is_trace_random_color_space(s)) return { random: s };
   try {
-    const [r, g, b, a] = colorStringToColor(s);
-    return { exact: [r, g, b, a] };
+    const [red, green, blue, alpha] = colorStringToColor(s);
+    return { exact: { red, green, blue, alpha } };
   } catch (e) {
     console.warn("Failed while setting color.", e);
     return { exact: MISSING_COLOR };

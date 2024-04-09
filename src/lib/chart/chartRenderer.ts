@@ -7,7 +7,7 @@ import {
 import type { ChartiumController, TraceList } from "../index.js";
 import type { Range, Size } from "../types.js";
 import type { RenderJob } from "../data-worker/renderers/mod.js";
-import { toNumericRange } from "../utils/quantityHelpers.js";
+import { toNumericRange } from "../utils/unit.js";
 import { devicePixelRatio$ } from "../utils/reactive-globals.js";
 
 export interface ChartRendererProps {

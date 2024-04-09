@@ -1,6 +1,6 @@
 import type { Signal } from "@mod.js/signals";
 import type { ChartValue, Range, Size } from "../types.js";
-import { toNumeric, toQuantOrDay } from "../utils/quantityHelpers.js";
+import { toNumeric, toChartValue } from "../utils/unit.js";
 import { unitOf } from "./axisRange.js";
 
 export interface ChartAffineSpaceProps {
@@ -90,8 +90,8 @@ export const chartAffineSpace = ({
       toLogicalPixels: () => v * logicalSize,
       toQuantity: () =>
         axis === "y"
-          ? toQuantOrDay(to - length * v, unit)
-          : toQuantOrDay(length * v + from, unit),
+          ? toChartValue(to - length * v, unit)
+          : toChartValue(length * v + from, unit),
     });
 
     const fromClipSpace = (v: number) => {

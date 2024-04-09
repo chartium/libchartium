@@ -7,7 +7,7 @@ export const Unit = Unit_;
 export const isUnit = (x: unknown): x is Unit => x instanceof Unit;
 
 import { Quantity as Quantity_ } from "unitlib";
-import { toNumeric } from "./utils/quantityHelpers.js";
+import { toNumeric } from "./utils/unit.js";
 export type Quantity = Quantity_<any, any, any>;
 export const Quantity = Quantity_;
 export const isQuantity = (x: unknown): x is Quantity => x instanceof Quantity;
@@ -41,6 +41,9 @@ export type TypeOfData =
   | "u64"
   | "f32"
   | "f64";
+
+export type TraceHandle = number;
+export type TraceHandleArray = Uint32Array;
 
 export interface Size {
   width: number;
@@ -128,29 +131,11 @@ export interface Point {
 
 export type ChartValue = number | Dayjs | Quantity;
 
-export interface ChartValuePoint {
-  x: ChartValue;
-  y: ChartValue;
-}
-
 export interface HighlightPoint {
   x: ChartValue;
   y: ChartValue;
   color: Color;
   radius: number;
-}
-
-type RawHandle<S extends string> = number & { __handleType: S };
-export type TraceHandle = RawHandle<"Trace">;
-
-export interface TraceMetas {
-  avg: number;
-  avg_nz: number;
-  min: number;
-  max: number;
-  in_area?: boolean;
-
-  [key: string]: unknown;
 }
 
 /**
@@ -181,12 +166,3 @@ export type ExportRow = {
   [X]: number;
   [traceId: string]: number;
 };
-
-export type BundleRange =
-  | {
-      type: "Everywhere";
-    }
-  | {
-      type: "Bounded";
-      value: NumericRange;
-    };

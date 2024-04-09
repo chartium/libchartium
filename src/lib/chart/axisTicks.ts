@@ -9,7 +9,7 @@ import {
   type DisplayUnit,
 } from "../types.js";
 import type { Dayjs } from "../utils/dayjs.js";
-import { toNumericRange } from "../utils/quantityHelpers.js";
+import { toNumericRange } from "../utils/unit.js";
 import { qndFormat, uniqueDecimals } from "../utils/format.js";
 import {
   formatInEra,

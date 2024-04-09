@@ -1,4 +1,3 @@
-import type { BoxedBundle } from "../../../dist/wasm/libchartium.js";
 import type { TraceList } from "../index.js";
 import {
   X,
@@ -7,11 +6,11 @@ import {
   type TypedArray,
   type TraceHandle,
 } from "../types.js";
-import { toNumeric } from "../utils/quantityHelpers.js";
+import { toNumeric } from "../utils/unit.js";
 import { Queue } from "../utils/queue.js";
 import { traceIds } from "./controller.js";
-import { BUNDLES } from "./trace-list.js";
-import type { lib } from "./wasm.js";
+import { PARAMS } from "./trace-list.js";
+import type { Bundle } from "./bundle.js";
 
 /**
  * Export data of all traces into a stream.
@@ -45,31 +44,29 @@ export async function exportTraceListData(
     });
   };
 
-  let unfinishedBundles = traces[BUNDLES].slice();
-  const buffers: Map<BoxedBundle, Float64Array> = unfinishedBundles.reduce(
+  let unfinishedBundles = traces[PARAMS].bundles.slice();
+  const buffers: Map<Bundle, Float64Array> = unfinishedBundles.reduce(
     (map, bundle) => {
       map.set(
         bundle,
-        new Float64Array((bundle.traces().length + 1) * linesPerBuffer),
+        new Float64Array((bundle.traces.length + 1) * linesPerBuffer),
       );
       return map;
     },
     new Map(),
   );
   // fill up queues for all buffrs
-  const queues: Map<BoxedBundle, Queue<ExportRow>> = new Map(
+  const queues: Map<Bundle, Queue<ExportRow>> = new Map(
     unfinishedBundles.map((bundle) => [bundle, new Queue<ExportRow>()]),
   );
-  const currentBufferLength: Map<BoxedBundle, number> = new Map();
-  const fillUpQueue = (bundle: lib.BoxedBundle, from: number) => {
+  const currentBufferLength: Map<Bundle, number> = new Map();
+  const fillUpQueue = (bundle: Bundle, from: number) => {
     const buffer = buffers.get(bundle)!;
-    const handles = bundle.traces();
-    const length = bundle.export_to_buffer(
-      buffer,
-      handles,
+    const handles = bundle.traces;
+    const length = bundle.boxed.export_to_buffer(buffer, handles, {
       from,
-      toNumeric(range!.to, traces.getBundleUnits(bundle).x),
-    );
+      to: toNumeric(range!.to, bundle.xDataUnit),
+    });
     currentBufferLength.set(bundle, length);
 
     const queue = queues.get(bundle)!;
@@ -93,23 +90,19 @@ export async function exportTraceListData(
   };
 
   unfinishedBundles.forEach((b) =>
-    fillUpQueue(b, toNumeric(range!.from, traces.getBundleUnits(b).x)),
+    fillUpQueue(b, toNumeric(range!.from, b.xDataUnit)),
   );
   unfinishedBundles = unfinishedBundles.filter(
     (b) => queues.get(b)!.length !== 0,
   );
 
-  const lastLines: Map<BoxedBundle, ExportRow> = new Map(
+  const lastLines: Map<Bundle, ExportRow> = new Map(
     unfinishedBundles
       .map((b) => [b, queues.get(b)!.peek()] as const)
-      .filter((_, q) => q !== undefined) as [BoxedBundle, ExportRow][],
+      .filter((_, q) => q !== undefined) as [Bundle, ExportRow][],
   );
 
-  const getOrInterpolate = (
-    x: number,
-    bundle: BoxedBundle,
-    lastLine: ExportRow,
-  ) => {
+  const getOrInterpolate = (x: number, bundle: Bundle, lastLine: ExportRow) => {
     const thisQueue = queues.get(bundle)!;
     const nextLine = thisQueue.peek()!;
     if (x === nextLine[X]) return thisQueue.dequeue()!;
@@ -141,9 +134,7 @@ export async function exportTraceListData(
       for (const q of queues.values()) if (q.peek()?.[X] === lastX) q.dequeue();
     }
     const rangeToInLatest = Math.max(
-      ...unfinishedBundles.map((b) =>
-        toNumeric(range!.to, traces.getBundleUnits(b).x),
-      ),
+      ...unfinishedBundles.map((b) => toNumeric(range!.to, b.xDataUnit)),
     );
     if (xs[0] >= rangeToInLatest || xs.length === 0) break;
     for (const x of xs) {

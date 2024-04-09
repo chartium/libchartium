@@ -1,8 +1,12 @@
-use crate::data::TraceHandle;
-use serde::{Deserialize, Serialize};
-use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
+// https://github.com/madonoharu/tsify/issues/42
+#![allow(non_snake_case)]
 
-#[wasm_bindgen]
+use crate::{data::TraceHandle, types::NumericRange};
+use serde::{Deserialize, Serialize};
+use tsify::Tsify;
+use wasm_bindgen::prelude::wasm_bindgen;
+
+#[derive(Tsify, Serialize, Deserialize)]
 pub enum InterpolationStrategy {
     None,
     Nearest,
@@ -10,11 +14,22 @@ pub enum InterpolationStrategy {
     Previous,
     Next,
 }
-#[derive(Debug, Clone, Serialize, Deserialize)]
+
+#[derive(Debug, Clone, Tsify, Serialize, Deserialize)]
+#[tsify(into_wasm_abi, from_wasm_abi)]
 #[serde(tag = "type", content = "value")]
 pub enum BundleRange {
     Bounded { from: f64, to: f64 },
     Everywhere,
+}
+impl BundleRange {
+    pub fn contains(&self, v: f64) -> bool {
+        use BundleRange::*;
+        match self {
+            Bounded { from, to } => *from <= v && v <= *to,
+            Everywhere => true,
+        }
+    }
 }
 
 pub trait Bundle {
@@ -22,7 +37,9 @@ pub trait Bundle {
     fn range(&self) -> BundleRange;
     fn point_count(&self) -> usize;
 
-    fn contains(&self, point: f64) -> bool {
+    fn contains_trace(&self, trace: TraceHandle) -> bool;
+
+    fn contains_point(&self, point: f64) -> bool {
         match self.range() {
             BundleRange::Bounded { from, to } => from <= point && to >= point,
             BundleRange::Everywhere => false,
@@ -39,15 +56,13 @@ pub trait Bundle {
     fn iter_in_range_f64<'a>(
         &'a self,
         handle: TraceHandle,
-        from: f64,
-        to: f64,
+        x_range: NumericRange,
     ) -> Box<dyn Iterator<Item = (f64, f64)> + 'a>;
 
     fn iter_many_in_range_f64<'a>(
         &'a self,
         handles: Vec<TraceHandle>,
-        from: f64,
-        to: f64,
+        x_range: NumericRange,
     ) -> Box<dyn Iterator<Item = Vec<f64>> + 'a>;
 
     fn value_at(
@@ -87,15 +102,29 @@ impl BoxedBundle {
     pub fn traces(&self) -> Box<[TraceHandle]> {
         self.bundle.traces().into_boxed_slice()
     }
-    pub fn range(&self) -> JsValue {
-        serde_wasm_bindgen::to_value(&self.bundle.range()).unwrap()
+    pub fn contains_trace(&self, trace: TraceHandle) -> bool {
+        self.bundle.contains_trace(trace)
+    }
+    pub fn range(&self) -> BundleRange {
+        self.bundle.range()
+    }
+    pub fn range_in_view(&self, view_x_range: NumericRange) -> NumericRange {
+        match self.bundle.range() {
+            BundleRange::Everywhere => view_x_range,
+            BundleRange::Bounded { from, to } => {
+                let from = from.max(view_x_range.from);
+                let to = to.min(view_x_range.to);
+                let to = to.max(from);
+                NumericRange { from, to }
+            }
+        }
     }
 
     pub fn point_count(&self) -> usize {
         self.bundle.point_count()
     }
-    pub fn contains(&self, point: f64) -> bool {
-        self.bundle.contains(point)
+    pub fn contains_point(&self, point: f64) -> bool {
+        self.bundle.contains_point(point)
     }
     pub fn intersects(&self, from: f64, to: f64) -> bool {
         self.bundle.intersects(from, to)
@@ -112,8 +141,7 @@ impl BoxedBundle {
         &self,
         buffer: &mut [f64],
         trace_handles: &[u32],
-        range_from: f64,
-        range_to: f64,
+        x_range: NumericRange,
         //interpolation_strategy: InterpolationStrategy,
     ) -> usize {
         let datapoint_length = trace_handles.len() + 1;
@@ -121,9 +149,9 @@ impl BoxedBundle {
         if space_in_buffer == 0 {
             return 0;
         }
-        let mut iterator =
-            self.bundle
-                .iter_many_in_range_f64(trace_handles.to_vec(), range_from, range_to);
+        let mut iterator = self
+            .bundle
+            .iter_many_in_range_f64(trace_handles.to_vec(), x_range);
         for i in 0..space_in_buffer {
             if let Some(datapoint) = iterator.next() {
                 buffer[i * datapoint_length..(i + 1) * datapoint_length]

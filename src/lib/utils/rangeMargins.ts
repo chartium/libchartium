@@ -5,8 +5,8 @@ import {
   multiply,
   subtract,
   toNumeric,
-  toQuantOrDay,
-} from "./quantityHelpers.js";
+  toChartValue,
+} from "./unit.js";
 import type { NumericDateRepresentation } from "./numericDateRepresentation.js";
 import type { RangeMarginValue } from "../chart/axis.js";
 
@@ -101,7 +101,7 @@ export const addZeroToRange = (
   const from = toNumeric(range.from, dataUnit);
   const to = toNumeric(range.to, dataUnit);
   return {
-    from: toQuantOrDay(Math.min(0, from), dataUnit),
-    to: toQuantOrDay(Math.max(0, to), dataUnit),
+    from: toChartValue(Math.min(0, from), dataUnit),
+    to: toChartValue(Math.max(0, to), dataUnit),
   } as Range;
 };

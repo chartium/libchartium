@@ -9,7 +9,7 @@ import {
   isQuantity,
 } from "../types.js";
 import { isDayjs, type Dayjs } from "../utils/dayjs.js";
-import { toNumeric, toRange } from "../utils/quantityHelpers.js";
+import { toNumeric, toRange } from "../utils/unit.js";
 
 export interface AxisRangeProps {
   axis: "x" | "y";

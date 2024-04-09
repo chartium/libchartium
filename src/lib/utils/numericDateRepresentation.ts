@@ -9,7 +9,13 @@ const seconds = SI.parseUnit("s");
 const minutes = seconds.multiply(60);
 const hours = minutes.multiply(60);
 
+export const isNumericDateRepresentation = (
+  x: unknown,
+): x is NumericDateRepresentation => x instanceof NumericDateRepresentation;
+
 export class NumericDateRepresentation {
+  [Symbol.toStringTag] = "NumericDateRepresentation";
+
   private constructor(
     public readonly duration: Duration,
     public readonly relativeTo: Dayjs,

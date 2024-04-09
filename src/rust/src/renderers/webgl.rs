@@ -1,16 +1,12 @@
-use js_sys::{try_iter, Float32Array};
+use js_sys::Float32Array;
 use wasm_bindgen::{prelude::*, JsCast, JsValue};
 use web_sys::{
     OffscreenCanvas, WebGl2RenderingContext, WebGlBuffer, WebGlProgram, WebGlUniformLocation,
 };
 
-use crate::{
-    data::TraceHandle,
-    structs::{TraceLineStyle, TracePointsStyle, TraceStyle},
-    trace::{extensions::PointIteratorExtension, BoxedBundle, BundleRange},
-};
+use crate::trace_styles::{TraceLineStyle, TracePointsStyle, TraceStyle};
 
-use super::RenderJobResult;
+use super::{NumericRange, RenderJobCommon, TraceData};
 
 #[wasm_bindgen(module = "/src/renderers/webgl.ts")]
 extern "C" {
@@ -18,90 +14,49 @@ extern "C" {
 }
 
 pub struct WebGlTrace {
-    pub from: f64,
-    pub to: f64,
+    pub x_range: NumericRange,
     pub points: usize,
-    pub buffer: WebGlBuffer,
     pub style: TraceStyle,
-    pub length_along: WebGlBuffer,
+    pub trace_buffer: WebGlBuffer,
+    pub arc_length_buffer: WebGlBuffer,
 }
 
 #[wasm_bindgen]
 pub struct WebGlRenderJob {
-    pub clear: bool,
-
-    x_type: String,
-
-    pub x_from: f64,
-    pub x_to: f64,
-    pub y_from: f64,
-    pub y_to: f64,
-
+    common: RenderJobCommon,
     traces: Vec<WebGlTrace>,
 }
 
 #[wasm_bindgen]
 impl WebGlRenderJob {
     #[wasm_bindgen(constructor)]
-    pub fn new(x_type: String) -> Self {
+    pub fn new(common: RenderJobCommon) -> Self {
         Self {
-            clear: true,
-
-            x_type,
-
-            x_from: 0.0,
-            x_to: 0.0,
-            y_from: 0.0,
-            y_to: 0.0,
-
+            common,
             traces: Vec::new(),
         }
     }
-    pub fn add_traces(
+
+    pub fn add_trace(
         &mut self,
-        bundle: &BoxedBundle,
-        trace_count: usize,
-        trace_buffers: JsValue,
-        trace_styles: JsValue,
-        length_alongs: JsValue,
+        data: TraceData,
+        style: TraceStyle,
+        trace_buffer: WebGlBuffer,
+        arc_length_buffer: WebGlBuffer,
     ) {
-        let (from, to) =
-            match serde_wasm_bindgen::from_value::<BundleRange>(bundle.range()).unwrap() {
-                BundleRange::Bounded { from, to } => (from, to),
-                BundleRange::Everywhere => (self.x_from, self.x_to),
-            };
-
-        let points = bundle.point_count();
-        self.traces.reserve(trace_count);
-        for ((buffer, style), length_along) in try_iter(&trace_buffers)
-            .unwrap()
-            .unwrap()
-            .zip(try_iter(&trace_styles).unwrap().unwrap())
-            .zip(try_iter(&length_alongs).unwrap().unwrap())
-        {
-            let buffer: WebGlBuffer = buffer.unwrap().into();
-            let length_along: WebGlBuffer = length_along.unwrap().into();
-            let style: TraceStyle = serde_wasm_bindgen::from_value(style.unwrap()).unwrap();
-
-            self.traces.push(WebGlTrace {
-                from,
-                to,
-                points,
-                buffer,
-                style,
-                length_along,
-            });
-        }
+        self.traces.push(WebGlTrace {
+            x_range: data.x_range,
+            points: data.data.len(),
+            style,
+            trace_buffer,
+            arc_length_buffer,
+        });
     }
 }
 
 impl WebGlRenderJob {
     pub fn get_traces(&self) -> &Vec<WebGlTrace> {
         &self.traces
-    }
-
-    pub fn get_x_type(&self) -> &String {
-        &self.x_type
     }
 }
 
@@ -151,7 +106,6 @@ pub struct WebGlRenderer {
     canvas: OffscreenCanvas,
     present_canvas: OffscreenCanvas,
     context: WebGl2RenderingContext,
-    // trace_buffer: WebGlBuffer,
     programs: WebGlPrograms,
 }
 
@@ -182,12 +136,12 @@ impl WebGlRenderer {
         })
     }
 
-    pub fn render(&mut self, job: WebGlRenderJob) -> Result<JsValue, JsValue> {
+    pub fn render(&mut self, job: WebGlRenderJob) {
         let gl = &self.context;
 
-        let y_from = job.y_from as f32;
+        let y_from = job.common.y_range.from as f32;
 
-        if job.clear {
+        if job.common.clear {
             self.clear();
         }
 
@@ -196,8 +150,8 @@ impl WebGlRenderer {
         gl.use_program(Some(&self.programs.trace_program));
         gl.uniform2f(
             Some(&self.programs.trace_size),
-            (job.x_to - job.x_from) as f32,
-            (job.y_to - job.y_from) as f32,
+            job.common.x_range.len() as f32,
+            job.common.y_range.len() as f32,
         );
         gl.uniform2f(Some(&self.programs.trace_transform), 1.0, 0.0);
 
@@ -206,11 +160,11 @@ impl WebGlRenderer {
             let points = trace.points as i32;
             let style = &trace.style;
             let width = style.get_line_width() as f32;
-            let color = style.get_color().resolve(i, trace_count);
+            let color = style.get_color().resolve(i, trace_count).as_floats();
             let line = style.get_line();
             gl.uniform2f(
                 Some(&self.programs.trace_origin),
-                (job.x_from - trace.from) as f32,
+                job.common.x_range.len() as f32,
                 y_from,
             );
 
@@ -222,7 +176,7 @@ impl WebGlRenderer {
                 color[3],
             );
             match line {
-                &TraceLineStyle::None => {
+                TraceLineStyle::None => {
                     gl.uniform4f(Some(&self.programs.dash_gap_length), 0.0, 1.0, 0.0, 0.0)
                 }
                 TraceLineStyle::Solid => {
@@ -250,7 +204,7 @@ impl WebGlRenderer {
                 gl.get_attrib_location(&self.programs.trace_program, "aLengthAlong") as u32;
             gl.bind_buffer(
                 WebGl2RenderingContext::ARRAY_BUFFER,
-                Some(&trace.length_along),
+                Some(&trace.arc_length_buffer),
             );
             gl.vertex_attrib_pointer_with_i32(
                 a_length_along,
@@ -263,7 +217,10 @@ impl WebGlRenderer {
             gl.enable_vertex_attrib_array(a_length_along);
             let a_position_name =
                 gl.get_attrib_location(&self.programs.trace_program, "aVertexPosition") as u32;
-            gl.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, Some(&trace.buffer));
+            gl.bind_buffer(
+                WebGl2RenderingContext::ARRAY_BUFFER,
+                Some(&trace.trace_buffer),
+            );
 
             // // REMOVE
             // gl.vertex_attrib_pointer_with_i32(0, 2, WebGl2RenderingContext::FLOAT, false, 0, 0);
@@ -307,8 +264,6 @@ impl WebGlRenderer {
 
         // copy into the resulting bitmap present canvas
         render_between(&self.canvas, &self.present_canvas);
-
-        Ok(serde_wasm_bindgen::to_value(&RenderJobResult {}).unwrap())
     }
 
     pub fn set_size(&mut self, width: u32, height: u32) -> Result<(), JsValue> {
@@ -321,28 +276,41 @@ impl WebGlRenderer {
         Ok(())
     }
 
-    #[allow(clippy::too_many_arguments)]
-    pub fn create_lengths_along_buffer(
+    pub fn create_trace_buffer(&self, trace: TraceData) -> WebGlBuffer {
+        let context = &self.context;
+        let buffer = context.create_buffer().unwrap();
+
+        context.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, Some(&buffer));
+        context.buffer_data_with_array_buffer_view(
+            WebGl2RenderingContext::ARRAY_BUFFER,
+            unsafe {
+                &js_sys::Float32Array::view(core::slice::from_raw_parts(
+                    std::mem::transmute(trace.data.as_ptr()),
+                    trace.data.len() * 2,
+                ))
+            },
+            WebGl2RenderingContext::STATIC_DRAW,
+        );
+
+        buffer
+    }
+
+    pub fn create_arc_length_buffer(
         &self,
-        context: &WebGl2RenderingContext,
-        bundle: &BoxedBundle,
-        trace: TraceHandle,
-        x_from: f64,
-        x_to: f64,
-        y_from: f64,
-        y_to: f64,
+        trace: &TraceData,
+        y_range: NumericRange,
     ) -> WebGlBuffer {
-        let (from, to) =
-            match serde_wasm_bindgen::from_value::<BundleRange>(bundle.range()).unwrap() {
-                BundleRange::Bounded { from, to } => (from, to),
-                BundleRange::Everywhere => (x_from, x_to),
-            };
-        // FIXME data already gets calculated in `create_trace_buffer`; if performance is an issue maybe try getting rid of this redundancy
-        let data: Vec<(f64, f64)> = bundle
-            .unwrap()
-            .iter_in_range_f64(trace, from, to)
-            .with_origin_at(from, 0.0)
-            .collect();
+        let context = &self.context;
+
+        let (x_pixel_ratio, y_pixel_ratio) = (
+            (self.width as f64) / trace.x_range.len(),
+            (self.height as f64) / y_range.len(),
+        );
+
+        let (first_x, first_y) = (
+            x_pixel_ratio * (trace.data[0].0 - trace.x_range.from),
+            y_pixel_ratio * (trace.data[0].1 - y_range.from),
+        );
 
         #[derive(Clone, Debug)]
         struct State {
@@ -351,25 +319,21 @@ impl WebGlRenderer {
             last_y: f64,
         }
 
-        let (x_pixel_ratio, y_pixel_ratio) = (
-            (self.width as f64) / (x_to - x_from),
-            (self.height as f64) / (y_to - y_from),
-        );
-
-        let (first_x, first_y) = (
-            x_pixel_ratio * (data[0].0 - x_from),
-            y_pixel_ratio * (data[0].1 - y_from),
-        );
-
         let initial_state = State {
             length_so_far: 0.0,
             last_x: first_x,
             last_y: first_y,
         };
 
-        let lengths: Vec<f32> = data
-            .into_iter()
-            .map(|(x, y)| (x_pixel_ratio * (x - x_from), y_pixel_ratio * (y - y_from)))
+        let lengths: Vec<f32> = trace
+            .data
+            .iter()
+            .map(|(x, y)| {
+                (
+                    x_pixel_ratio * (x - trace.x_range.from),
+                    y_pixel_ratio * (y - y_range.from),
+                )
+            })
             .scan(initial_state, |state: &mut State, (x, y): (f64, f64)| {
                 let len_sqr: f64 = (state.last_x - x).powi(2) + (state.last_y - y).powi(2);
                 if !len_sqr.is_nan() {
@@ -392,42 +356,6 @@ impl WebGlRenderer {
                 &js_sys::Float32Array::view(core::slice::from_raw_parts(
                     lengths.as_ptr(),
                     lengths.len(),
-                ))
-            },
-            WebGl2RenderingContext::STATIC_DRAW,
-        );
-
-        buffer // and then give it to webgl which it will nom up like nomnomnom
-    }
-
-    pub fn create_trace_buffer(
-        context: &WebGl2RenderingContext,
-        bundle: &BoxedBundle,
-        trace: TraceHandle,
-        x_from: f64,
-        x_to: f64,
-    ) -> WebGlBuffer {
-        let buffer = context.create_buffer().unwrap();
-        let (from, to) =
-            match serde_wasm_bindgen::from_value::<BundleRange>(bundle.range()).unwrap() {
-                BundleRange::Bounded { from, to } => (from, to),
-                BundleRange::Everywhere => (x_from, x_to),
-            };
-
-        let data: Vec<(f32, f32)> = bundle
-            .unwrap()
-            .iter_in_range_f64(trace, from, to)
-            .with_origin_at(from, 0.0)
-            .map(|(x, y)| (x as f32, y as f32))
-            .collect();
-
-        context.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, Some(&buffer));
-        context.buffer_data_with_array_buffer_view(
-            WebGl2RenderingContext::ARRAY_BUFFER,
-            unsafe {
-                &js_sys::Float32Array::view(core::slice::from_raw_parts(
-                    std::mem::transmute(data.as_ptr()),
-                    data.len() * 2,
                 ))
             },
             WebGl2RenderingContext::STATIC_DRAW,
