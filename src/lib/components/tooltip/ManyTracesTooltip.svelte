@@ -1,10 +1,13 @@
 <script lang="ts">
-  import type { TraceInfo } from "../../data-worker/trace-list.js";
   import TracePreview from "../TracePreview.svelte";
 
   export let previewStyle: "simplified" | "full";
   export let nearestTracesInfo: {
-    styledTrace: TraceInfo;
+    traceId: string;
+    label: string | undefined;
+    color: string;
+    width: number;
+    showPoints: boolean;
     x: string;
     y: string;
   }[];
@@ -19,10 +22,10 @@
     <div class="trace-info">
       <div class="trace-name">
         <TracePreview
-          previewedTrace={info.styledTrace}
+          previewedTrace={info}
           simplified={previewStyle === "simplified"}
         />
-        {info.styledTrace.label ?? info.styledTrace.id}
+        {info.label ?? info.traceId}
       </div>
       <div class="trace-value">
         {info.y}

@@ -197,18 +197,6 @@
   const xDisplayUnit$ = chart$.axes.x.currentDisplayUnit$;
   const yDisplayUnit$ = chart$.axes.y.currentDisplayUnit$;
 
-  const QND_FORMAT_OPTIONS: QndFormatOptions = {
-    dateFormat: "DD.MM. hh:mm (UTC)",
-  };
-  const xFormatOptions$ = xDisplayUnit$.map((unit) => ({
-    ...QND_FORMAT_OPTIONS,
-    unit,
-  }));
-  const yFormatOptions$ = yDisplayUnit$.map((unit) => ({
-    ...QND_FORMAT_OPTIONS,
-    unit,
-  }));
-
   const visibleAction = mut<VisibleAction | undefined>(undefined);
 
   let showTooltip: boolean = false;
@@ -237,15 +225,27 @@
         ? $(visibleTraces$).traceCount
         : tooltipTracesShown;
 
-    return $(visibleTraces$).findClosestTracesToPoint({ x, y }, showCount);
+    const traces = $(visibleTraces$);
+
+    return $(visibleTraces$)
+      .findClosestTracesToPoint({ x, y }, showCount)
+      .map(({ traceId, ...rest }) => {
+        const style = traces.getStyle(traceId);
+        return {
+          ...rest,
+          traceId,
+          label: traces.getLabel(traceId),
+          showPoints: style.points === "show",
+        };
+      });
   });
 
-  const tracesInfo$ = derived(
+  const closestTracesFormatted$ = derived(
     ($) =>
-      $(closestTraces$)?.map(({ traceInfo, closestPoint: { x, y } }) => ({
-        styledTrace: traceInfo,
-        x: qndFormat(x, $(xFormatOptions$)),
-        y: qndFormat(y, $(yFormatOptions$)),
+      $(closestTraces$)?.map(({ x, y, ...rest }) => ({
+        ...rest,
+        x: qndFormat(x, { unit: $(xDisplayUnit$) }),
+        y: qndFormat(y, { unit: $(yDisplayUnit$) }),
       })) ?? [],
   );
 
@@ -256,10 +256,10 @@
       visibleAction.set({ highlightedPoints: [] });
     } else {
       const points = closestTraces.map((trace) => ({
-        x: trace.closestPoint.x,
-        y: trace.closestPoint.y,
-        color: trace.traceInfo.color,
-        radius: trace.traceInfo.width,
+        x: trace.x,
+        y: trace.y,
+        color: trace.color,
+        radius: trace.width,
       }));
 
       visibleAction.update((action) => ({
@@ -286,9 +286,7 @@
     if (x === undefined || y === undefined) return false;
 
     const hoverPoint = chart$.point().fromQuantities(x, y);
-    const closestPoint = chart$
-      .point()
-      .fromQuantities(trace.closestPoint.x, trace.closestPoint.y);
+    const closestPoint = chart$.point().fromQuantities(trace.x, trace.y);
 
     return (
       hoverPoint.vectorTo(closestPoint).magnitudeInLogicalPixels() <
@@ -304,24 +302,21 @@
     const trace = $(closestTraces$)?.[0];
     if (!trace) return;
 
-    const {
-      traceInfo,
-      closestPoint: { x, y },
-    } = trace;
+    const { traceId, x, y } = trace;
 
     const { min, max, average } = $(visibleTraces$).calculateStatistics({
-      traces: [trace.traceInfo.id],
+      traces: [traceId],
       from,
       to,
     })[0];
 
     return {
-      styledTrace: traceInfo,
-      x: qndFormat(x, $(xFormatOptions$)),
-      y: qndFormat(y, $(yFormatOptions$)),
-      min: qndFormat(min, $(yFormatOptions$)),
-      max: qndFormat(max, $(yFormatOptions$)),
-      avg: qndFormat(average, $(yFormatOptions$)),
+      ...trace,
+      x: qndFormat(x, { unit: $(xDisplayUnit$) }),
+      y: qndFormat(y, { unit: $(yDisplayUnit$) }),
+      min: qndFormat(min, { unit: $(yDisplayUnit$) }),
+      max: qndFormat(max, { unit: $(yDisplayUnit$) }),
+      avg: qndFormat(average, { unit: $(yDisplayUnit$) }),
     };
   });
 
@@ -403,7 +398,7 @@
 {#if !hideTooltip}
   <TraceTooltip
     {forbiddenRectangle}
-    nearestTracesInfo={$tracesInfo$}
+    nearestTracesInfo={$closestTracesFormatted$}
     singleTraceInfo={$selectedTrace$}
     show={showTooltip}
     previewStyle={legendPreviewStyle}

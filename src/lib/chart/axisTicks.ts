@@ -7,15 +7,17 @@ import {
   type Tick,
   type DateRange,
   type DisplayUnit,
+  Unit,
 } from "../types.js";
 import type { Dayjs } from "../utils/dayjs.js";
 import { toNumericRange } from "../utils/unit.js";
 import { qndFormat, uniqueDecimals } from "../utils/format.js";
-import {
-  formatInEra,
-  formattedInLargerEra,
-  getRangeSpan,
-} from "../utils/dateFormat.js";
+import { isDateFormat, type DateFormat } from "../utils/dateFormat.js";
+// import {
+//   formatInEra,
+//   formattedInLargerEra,
+//   getRangeSpan,
+// } from "../utils/dateFormat.js";
 
 export type TextMeasuringFunction = (text: string) => number;
 
@@ -57,7 +59,17 @@ function linearTicks(
   displayUnit: DisplayUnit,
 ): Tick[] {
   if (axisSize === undefined) return [];
-  if (isDateRange(range)) return dateTicks(range, axisSize, textSize);
+  if (isDateRange(range)) {
+    if (!isDateFormat(displayUnit))
+      throw TypeError(
+        "Trying to format a date with incorrect display unit: " + displayUnit,
+      );
+    return dateTicks(range, displayUnit, axisSize, textSize);
+  }
+
+  if (isDateFormat(displayUnit)) {
+    throw TypeError("Trying to format a quantity with a date format");
+  }
   return quantityTicks(range, axisSize, textSize, displayUnit);
 }
 
@@ -65,7 +77,7 @@ function quantityTicks(
   range: QuantityRange | NumericRange,
   axisSize: number,
   textSize: (x: string) => number,
-  displayUnit: DisplayUnit,
+  displayUnit: Unit | undefined,
 ): Tick[] {
   const numRange = toNumericRange(range, displayUnit);
   const numTicks = getNumericTicks(numRange, axisSize, textSize);
@@ -82,6 +94,7 @@ const niceMultiples = [1, 2, 3, 5, 10, 20, 25, 30, 50, 100];
 // TODO refactor
 function dateTicks(
   range: DateRange,
+  displayUnit: DateFormat,
   axisSize: number,
   textSize: (x: string) => number,
 ): Tick[] {
@@ -89,23 +102,25 @@ function dateTicks(
     val: Dayjs, // FIXME replace with AxisValue
   ) =>
     1 - (range.to.unix() - val.unix()) / (range.to.unix() - range.from.unix());
-  const unit = getRangeSpan(range);
+  const period = displayUnit.getPeriodOfRange(range);
 
   const tickFromVal = (val: Dayjs): Tick => ({
-    text: formatInEra(val, unit),
+    text: displayUnit.formatInPeriod(val, period),
     position: position(val),
-    subtext: formattedInLargerEra(val, unit),
+    subtext: displayUnit.formatInLargerPeriod(val, period),
   });
 
-  const firstTickVal = range.from.startOf(unit).add(1, unit);
+  const firstTickVal = range.from.startOf(period).add(1, period);
   let result: Tick[] = [];
   for (const multiple of niceMultiples) {
-    const rangeLength = range.to.startOf(unit).diff(firstTickVal, unit, true);
+    const rangeLength = range.to
+      .startOf(period)
+      .diff(firstTickVal, period, true);
     const tickNum = rangeLength / multiple + 1;
 
     if (tickNum > MAX_TICK_COUNT) continue;
     result = Array.from({ length: tickNum }, (_, index) =>
-      tickFromVal(firstTickVal.add(index * multiple, unit)),
+      tickFromVal(firstTickVal.add(index * multiple, period)),
     );
 
     const longestLabel = result.reduce((prev, curr) => {

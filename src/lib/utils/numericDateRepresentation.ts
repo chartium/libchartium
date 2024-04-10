@@ -65,17 +65,27 @@ export class NumericDateRepresentation {
     );
   }
 
-  static EpochNanoseconds = NumericDateRepresentation.from({
-    duration: nanoseconds,
-  });
-  static EpochMilliseconds = NumericDateRepresentation.from({
-    duration: milliseconds,
-  });
-  static EpochSeconds = NumericDateRepresentation.from({
-    duration: seconds,
-  });
-  static EpochMinutes = NumericDateRepresentation.from({
-    duration: minutes,
-  });
-  static EpochHours = NumericDateRepresentation.from({ duration: hours });
+  static EpochNanoseconds() {
+    return NumericDateRepresentation.from({
+      duration: nanoseconds,
+    });
+  }
+  static EpochMilliseconds() {
+    return NumericDateRepresentation.from({
+      duration: milliseconds,
+    });
+  }
+  static EpochSeconds() {
+    return NumericDateRepresentation.from({
+      duration: seconds,
+    });
+  }
+  static EpochMinutes() {
+    return NumericDateRepresentation.from({
+      duration: minutes,
+    });
+  }
+  static EpochHours() {
+    return NumericDateRepresentation.from({ duration: hours });
+  }
 }

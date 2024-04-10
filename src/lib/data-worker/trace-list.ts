@@ -11,7 +11,7 @@ import {
   type TraceStyleSheet,
 } from "./trace-styles.js";
 import { yeet } from "yeet-ts";
-import { UnknownTraceHandleError } from "../errors.js";
+import { UnknownTraceHandleError, UnknownTraceIdError } from "../errors.js";
 import { traceIds } from "./controller.js";
 import {
   filter,
@@ -37,11 +37,11 @@ import {
   type TraceListExportOptions,
 } from "./trace-export.js";
 import type { Bundle } from "./bundle.js";
-import { MISSING_COLOR, resolvedColorToHex } from "../utils/color.js";
+import { resolvedColorToHex } from "../utils/color.js";
 
 export const PARAMS = Symbol("trace-list-params");
 export const CONSTRUCTOR = Symbol("trace-list-constructor");
-export const COLOR_INDICES = Symbol("trace-list-color-indices");
+export const LAZY = Symbol("trace-list-lazy");
 
 export interface TraceMetas {
   traceId: string;
@@ -138,8 +138,17 @@ export class TraceList {
         lib.ResolvedColorIndices.compute(this.#p.styles, this.#p.handles))
     );
   }
-  get [COLOR_INDICES]() {
-    return this.#colorIndices;
+
+  get [LAZY]() {
+    const self = this;
+    return {
+      get handlesSet() {
+        return self.#traceHandlesSet;
+      },
+      get colorIndices() {
+        return self.#colorIndices;
+      },
+    };
   }
 
   /**
@@ -152,6 +161,21 @@ export class TraceList {
       ...this.#p,
       styles: this.#p.styles.patch(patch),
     });
+  }
+
+  getStyle(traceId: string) {
+    return this.#p.styles.get_cloned(
+      traceIds.getKey(traceId) ?? yeet(UnknownTraceIdError, traceId),
+    );
+  }
+
+  getColor(traceId: string) {
+    return resolvedColorToHex(
+      this.#p.styles.get_color(
+        traceIds.getKey(traceId) ?? yeet(UnknownTraceIdError, traceId),
+        this.#colorIndices,
+      ),
+    );
   }
 
   /**
@@ -233,6 +257,10 @@ export class TraceList {
       ...this.#p,
       labels,
     });
+  }
+
+  getLabel(traceId: string): string | undefined {
+    return this.#p.labels.get(traceId);
   }
 
   /**

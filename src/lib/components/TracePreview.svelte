@@ -1,9 +1,12 @@
 <!-- component for showing a bit of the trace for legends and tooltips and such -->
 <script lang="ts">
-  import type { TraceInfo } from "../data-worker/trace-list.js";
   import * as canvas from "./canvas.js";
 
-  export let previewedTrace: TraceInfo;
+  export let previewedTrace: {
+    color: string;
+    width: number;
+    showPoints: boolean;
+  };
   $: color = `rgb( ${previewedTrace.color[0]}, ${previewedTrace.color[1]}, ${previewedTrace.color[2]} )`;
 
   export let previewWidth: number = 20;
@@ -29,7 +32,7 @@
     previewWidth,
   }: {
     ctx: CanvasRenderingContext2D | undefined;
-    trace: TraceInfo;
+    trace: { color: string; width: number; showPoints: boolean };
     color: string;
     previewHeight: number;
     previewWidth: number;

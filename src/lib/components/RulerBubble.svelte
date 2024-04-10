@@ -32,7 +32,7 @@
   bind:clientWidth
   use:portal
 >
-  {qndFormat(value ?? 0, { dateFormat: "YYYY-MM-DD\nHH:mm:ss" })}
+  {qndFormat(value ?? 0)}
 </div>
 
 <style lang="scss">

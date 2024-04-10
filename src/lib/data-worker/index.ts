@@ -5,11 +5,8 @@ export {
 } from "./controller.js";
 
 export * from "./spawn.js";
-export { TraceList, type TraceInfo } from "./trace-list.js";
+export { TraceList } from "./trace-list.js";
 export {
-  TraceColor,
-  type ResolvedTraceInfo,
-  type TraceDataUnits,
   type TraceStyle,
   type TraceStyleSheet as TraceStylesheet,
 } from "./trace-styles.js";

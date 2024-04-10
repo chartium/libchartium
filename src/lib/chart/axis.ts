@@ -4,7 +4,6 @@ import {
   Quantity,
   type NumericRange,
   type Range,
-  type Unit,
   type Tick,
   type DisplayUnitPreference,
   type DisplayUnit,
@@ -14,7 +13,7 @@ import { axisRange$ } from "./axisRange.js";
 import { axisTicks$, type TextMeasuringFunction } from "./axisTicks.js";
 
 export interface UnitChangeAction {
-  unit: Unit;
+  unit: DisplayUnit;
   callback(): void;
 }
 

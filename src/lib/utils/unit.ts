@@ -86,8 +86,10 @@ export function areUnitsCompatible(
     return false;
   }
   if (b === undefined) return isUnit(a) && a.isUnitless;
-  if (isNumericDateRepresentation(a)) return isNumericDateRepresentation(b);
-  if (isNumericDateRepresentation(b)) return false;
+  if (isNumericDateRepresentation(a) || isDateFormat(a)) {
+    return isNumericDateRepresentation(b) || isDateFormat(b);
+  }
+  if (isNumericDateRepresentation(b) || isDateFormat(b)) return false;
   return a.isCompatible(b);
 }
 export function assertAllUnitsCompatible(

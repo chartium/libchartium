@@ -6,6 +6,7 @@ mod style;
 mod utils;
 
 pub use field_types::*;
+pub use resolved_indices::*;
 pub use sheet::*;
 pub use sheet_builders::*;
 pub use style::*;

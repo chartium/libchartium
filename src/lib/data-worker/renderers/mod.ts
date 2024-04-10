@@ -1,5 +1,5 @@
 import type { TraceList } from "../trace-list.js";
-import type { NumericRange } from "../../types.js";
+import type { Range } from "../../types.js";
 
 export interface RenderingController {
   createRenderer(presentCanvas: OffscreenCanvas): Renderer;
@@ -14,6 +14,6 @@ export interface RenderJob {
   traces: TraceList;
 
   clear: boolean;
-  xRange: NumericRange;
-  yRange: NumericRange;
+  xRange: Range;
+  yRange: Range;
 }

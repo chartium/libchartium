@@ -4,7 +4,10 @@ use web_sys::{
     OffscreenCanvas, WebGl2RenderingContext, WebGlBuffer, WebGlProgram, WebGlUniformLocation,
 };
 
-use crate::trace_styles::{TraceLineStyle, TracePointsStyle, TraceStyle};
+use crate::{
+    trace_styles::{TraceLineStyle, TracePointsStyle, TraceStyle},
+    utils::ResolvedColor,
+};
 
 use super::{NumericRange, RenderJobCommon, TraceData};
 
@@ -17,6 +20,7 @@ pub struct WebGlTrace {
     pub x_range: NumericRange,
     pub points: usize,
     pub style: TraceStyle,
+    pub color: ResolvedColor,
     pub trace_buffer: WebGlBuffer,
     pub arc_length_buffer: WebGlBuffer,
 }
@@ -41,6 +45,7 @@ impl WebGlRenderJob {
         &mut self,
         data: TraceData,
         style: TraceStyle,
+        color: ResolvedColor,
         trace_buffer: WebGlBuffer,
         arc_length_buffer: WebGlBuffer,
     ) {
@@ -48,6 +53,7 @@ impl WebGlRenderJob {
             x_range: data.x_range,
             points: data.data.len(),
             style,
+            color,
             trace_buffer,
             arc_length_buffer,
         });
@@ -155,12 +161,11 @@ impl WebGlRenderer {
         );
         gl.uniform2f(Some(&self.programs.trace_transform), 1.0, 0.0);
 
-        let trace_count = job.get_traces().len();
-        for (i, trace) in job.get_traces().iter().enumerate() {
+        for trace in job.get_traces() {
             let points = trace.points as i32;
             let style = &trace.style;
             let width = style.get_line_width() as f32;
-            let color = style.get_color().resolve(i, trace_count).as_floats();
+            let color = trace.color.as_floats();
             let line = style.get_line();
             gl.uniform2f(
                 Some(&self.programs.trace_origin),

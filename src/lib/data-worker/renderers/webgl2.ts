@@ -5,8 +5,9 @@ import {
   type Renderer,
   type RenderingController,
 } from "./mod.js";
-import { BUNDLES, HANDLES, STYLES } from "../trace-list.js";
+import { LAZY, PARAMS } from "../trace-list.js";
 import { filter } from "../../utils/collection.js";
+import { toNumericRange } from "../../utils/unit.js";
 
 function compileShader(
   gl: WebGL2RenderingContext,
@@ -163,16 +164,23 @@ export class WebGL2Renderer implements Renderer {
 
   render(job: RenderJob): void {
     const traceList = job.traces;
-    const { clear, xRange, yRange } = job;
-    const availableHandles = new Set(traceList[HANDLES]);
+    const availableHandles = traceList[LAZY].handlesSet;
 
-    const rj = new lib.WebGlRenderJob({ clear, xRange, yRange });
+    const styleSheet = traceList[PARAMS].styles;
+    const colorIndices = traceList[LAZY].colorIndices;
 
-    for (const bundle of traceList[BUNDLES]) {
-      const handles = filter(bundle.traces(), (h) => availableHandles.has(h));
+    let clear = job.clear;
+    for (const bundle of traceList[PARAMS].bundles) {
+      const xRange = toNumericRange(job.xRange, bundle.xDataUnit);
+      const yRange = toNumericRange(job.yRange, bundle.yDataUnit);
+      const rj = new lib.WebGlRenderJob({ clear, xRange, yRange });
+      clear = false;
+
+      const handles = filter(bundle.traces, (h) => availableHandles.has(h));
 
       for (const handle of handles) {
-        const style = traceList[STYLES].get_cloned(handle);
+        const style = styleSheet.get_cloned(handle);
+        const color = styleSheet.get_color(handle, colorIndices);
 
         const data = lib.TraceData.compute(bundle.boxed, handle, xRange);
         const traceBuffer = this.#renderer.create_trace_buffer(data);
@@ -181,11 +189,11 @@ export class WebGL2Renderer implements Renderer {
           yRange,
         );
 
-        rj.add_trace(data, style, traceBuffer, arcLengthBuffer);
+        rj.add_trace(data, style, color, traceBuffer, arcLengthBuffer);
       }
-    }
 
-    this.#renderer.render(rj);
+      this.#renderer.render(rj);
+    }
   }
 
   setSize(width: number, height: number) {

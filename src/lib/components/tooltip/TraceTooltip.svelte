@@ -2,9 +2,7 @@
 <script lang="ts">
   import type { Point } from "../../types.js";
   import { globalMouseMove } from "../../utils/mouseActions.js";
-  import type { TraceInfo } from "../../data-worker/trace-list.js";
   import GenericTooltip from "../../utils/GenericTooltip.svelte";
-  import TracePreview from "../TracePreview.svelte";
   import SingleTraceTootlip from "./SingleTraceTootlip.svelte";
   import ManyTracesTooltip from "./ManyTracesTooltip.svelte";
 
@@ -14,13 +12,21 @@
     | undefined = undefined;
 
   export let nearestTracesInfo: {
-    styledTrace: TraceInfo;
+    traceId: string;
+    label: string | undefined;
+    color: string;
+    width: number;
+    showPoints: boolean;
     x: string;
     y: string;
   }[];
   export let singleTraceInfo:
     | {
-        styledTrace: TraceInfo;
+        traceId: string;
+        label: string | undefined;
+        color: string;
+        width: number;
+        showPoints: boolean;
         x: string;
         y: string;
         min: string;

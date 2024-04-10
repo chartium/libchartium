@@ -1,5 +1,6 @@
-import { Quantity, type ChartValue, type Unit, isQuantity } from "../types.js";
+import { type ChartValue, isQuantity, type DisplayUnit } from "../types.js";
 import { formatFloat, type QuantityFormatOptions } from "unitlib";
+import { isDateFormat } from "./dateFormat.js";
 /** Writes exponential notation that doesn't make your eyes bleed */
 export function prettyExp(input: number, decimals: number): string {
   const exp = Math.floor(Math.log10(input));
@@ -69,12 +70,14 @@ export function doOverlap(
 }
 
 export interface QndFormatOptions extends QuantityFormatOptions {
-  dateFormat?: string;
-  unit?: Unit;
+  unit?: DisplayUnit;
 }
 
 /** Formats input based on options */
-export function qndFormat(input: ChartValue, options: QndFormatOptions = {}) {
+export function qndFormat(
+  input: ChartValue,
+  options: QndFormatOptions = {},
+): string {
   options = { ...options };
   options.decimalPlaces ??= 2;
   options.digitGroupLength ??= 3;
@@ -87,11 +90,15 @@ export function qndFormat(input: ChartValue, options: QndFormatOptions = {}) {
     if (isNaN(input.value)) return "—";
     if (options.unit) {
       try {
+        if (isDateFormat(options.unit)) throw "";
         input = input.inUnits(options.unit);
       } catch {}
     }
     return input.toString(options);
   } else {
-    return input.utc().format(options.dateFormat ?? "YYYY-MM-DD");
+    if (isDateFormat(options.unit)) {
+      return options.unit.formatInPeriod(input, "years");
+    }
+    return input.utc().format("YYYY-MM-DD");
   }
 }

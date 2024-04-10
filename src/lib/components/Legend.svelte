@@ -6,15 +6,28 @@
   import { map } from "../utils/collection.js";
   import type { WritableSignal } from "@mod.js/signals";
   import LegendEntry from "./LegendEntry.svelte";
+  import type { OrUnset } from "../../../dist/wasm/libchartium.js";
 
   export let numberOfShownTraces: number = 5;
 
   export let previewStyle: "simplified" | "full";
 
   export let traces: TraceList;
-  $: tracesWithStyles = Array.from(
-    map(traces.traces(), (t) => traces.getTraceInfo(t)), // FIXME replace with first(traces, n)
-  );
+  $: allIds = [...traces.traces()];
+
+  $: tracesWithStyles = allIds.map((traceId) => {
+    const style = traces.getStyle(traceId);
+    return {
+      traceId,
+      label: traces.getLabel(traceId),
+      width: withDefault(style["line-width"], 2),
+      color: traces.getColor(traceId),
+      showPoints: style["points"] === "show",
+    };
+  });
+
+  const withDefault = <T,>(value: OrUnset<T>, def: T): T =>
+    value === "unset" ? def : value;
 
   export let hiddenTraceIds: WritableSignal<Set<string>>;
 
@@ -85,7 +98,7 @@
   {@const styledTrace = tracesWithStyles[i]}
 -->
     {#each tracesWithStyles.slice(0, numberOfShownTraces) as styledTrace}
-      {@const hidden = $hiddenTraceIds.has(styledTrace.id)}
+      {@const hidden = $hiddenTraceIds.has(styledTrace.traceId)}
       <LegendEntry
         {hidden}
         {previewSize}
@@ -93,7 +106,7 @@
         {styledTrace}
         {updateMaxWidth}
         updateHiddenTraceIds={hiddenTraceIds.update}
-        allIDs={tracesWithStyles.map((t) => t.id)}
+        {allIds}
       />
     {/each}
   </div>

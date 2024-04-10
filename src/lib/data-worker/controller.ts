@@ -12,18 +12,23 @@ import { BiMap } from "@risai/bim";
 import { init, lib } from "./wasm.js";
 
 import type {
+  DataUnit,
   Range,
   Size,
   TraceHandle,
+  TraceHandleArray,
   TypedArray,
   TypeOfData,
-  Unit,
 } from "../types.js";
 import type { RenderingController } from "./renderers/mod.js";
 import { WebGL2Controller } from "./renderers/webgl2.js";
 import { proxyMarker } from "comlink";
-import { TraceList } from "./trace-list.js";
-import type { NumericDateRepresentation, TraceStylesheet } from "../index.js";
+import { CONSTRUCTOR, TraceList } from "./trace-list.js";
+import type { TraceStylesheet } from "../index.js";
+import { enumerate } from "../utils/collection.js";
+import { Bundle } from "./bundle.js";
+import { toNumericRange, toRange } from "../utils/unit.js";
+import { oxidizeStyleSheet } from "./trace-styles.js";
 
 let wasmMemory: WebAssembly.Memory | undefined;
 
@@ -170,8 +175,8 @@ export class ChartiumController {
     data,
     xType,
     yType,
-    xUnit,
-    yUnit,
+    xDataUnit,
+    yDataUnit,
     style,
     labels,
   }: {
@@ -179,8 +184,8 @@ export class ChartiumController {
     data: ArrayBuffer | TypedArray;
     xType: TypeOfData;
     yType: TypeOfData;
-    xUnit?: Unit | NumericDateRepresentation;
-    yUnit?: Unit | NumericDateRepresentation;
+    xDataUnit?: DataUnit;
+    yDataUnit?: DataUnit;
     style?: TraceStylesheet;
     labels?: Iterable<[string, string | undefined]>;
   }): Promise<TraceList> {
@@ -189,9 +194,9 @@ export class ChartiumController {
 
     const dataBuffer = data instanceof ArrayBuffer ? data : data.buffer;
 
-    const handles: TraceHandle[] = [];
+    const handles: TraceHandleArray = new Uint32Array(ids.length);
 
-    for (const id of ids) {
+    for (const [i, id] of enumerate(ids)) {
       let handle = traceIds.getKey(id);
 
       if (!handle) {
@@ -199,28 +204,33 @@ export class ChartiumController {
         traceIds.set(handle, id);
       }
 
-      handles.push(handle);
+      handles[i] = handle;
     }
 
     const bulkload = await lib.Bulkloader.from_array(
-      new Uint32Array(handles),
+      handles,
       xType,
       yType,
       new Uint8Array(dataBuffer),
     );
 
     const bundle = bulkload.apply();
+    const range = bundle.range();
+    if (range.type === "Everywhere") {
+      throw Error("Unexpected error while parsing the trace list's range.");
+    }
 
-    let tl = new TraceList({
+    let tl = TraceList[CONSTRUCTOR]({
       handles,
-      range: bundle.range().value,
-      bundles: [bundle],
+      range: toRange(range.value, xDataUnit),
+      bundles: [new Bundle(bundle, xDataUnit, yDataUnit)],
       labels: new Map(),
+      styles: oxidizeStyleSheet(style),
+      precomputedColorIndices: undefined,
+      xDataUnit,
+      yDataUnit,
     });
 
-    if (style) tl = tl.withStyle(style);
-    if (xUnit || yUnit)
-      tl = tl.reinterpretWithDataUnits({ x: xUnit, y: yUnit });
     if (labels) tl = tl.withLabels(labels);
     return tl;
   }
@@ -236,12 +246,12 @@ export class ChartiumController {
   }: {
     x: {
       type: TypeOfData;
-      unit?: Unit | NumericDateRepresentation;
+      unit?: DataUnit;
       data: ArrayBuffer | TypedArray;
     };
     y: {
       type: TypeOfData;
-      unit?: Unit | NumericDateRepresentation;
+      unit?: DataUnit;
       columns: {
         id: string;
         data: ArrayBuffer | TypedArray;
@@ -261,9 +271,9 @@ export class ChartiumController {
         new Uint8Array(data instanceof ArrayBuffer ? data : data.buffer),
     );
 
-    const handles: TraceHandle[] = [];
+    const handles: TraceHandleArray = new Uint32Array(y.columns.length);
 
-    for (const { id } of y.columns) {
+    for (const [i, { id }] of enumerate(y.columns)) {
       let handle = traceIds.getKey(id);
 
       if (!handle) {
@@ -271,26 +281,33 @@ export class ChartiumController {
         traceIds.set(handle, id);
       }
 
-      handles.push(handle);
+      handles[i] = handle;
     }
 
-    const bundle = await lib.Bulkloader.from_columnar(
-      new Uint32Array(handles),
+    const bundle = lib.Bulkloader.from_columnar(
+      handles,
       x.type,
       y.type,
       xBuffer,
       yBuffers,
     );
-    let tl = new TraceList({
+
+    const range = bundle.range();
+    if (range.type === "Everywhere") {
+      throw Error("Unexpected error while parsing the trace list's range.");
+    }
+
+    let tl = TraceList[CONSTRUCTOR]({
       handles,
-      range: bundle.range().value,
-      bundles: [bundle],
+      range: toRange(range.value, x.unit),
+      bundles: [new Bundle(bundle, x.unit, y.unit)],
       labels: new Map(),
+      styles: oxidizeStyleSheet(style),
+      precomputedColorIndices: undefined,
+      xDataUnit: x.unit,
+      yDataUnit: y.unit,
     });
 
-    if (style) tl = tl.withStyle(style);
-    if (x.unit || y.unit)
-      tl = tl.reinterpretWithDataUnits({ x: x.unit, y: y.unit });
     if (labels) tl = tl.withLabels(labels);
 
     return tl;
@@ -299,16 +316,16 @@ export class ChartiumController {
   public async addThresholdTracelist({
     ids,
     ys,
-    yUnit,
-    xUnit,
+    xDataUnit,
+    yDataUnit,
     style,
     labels,
     tracelistsRange,
   }: {
     ids: string[];
     ys: Float64Array;
-    yUnit?: Unit | NumericDateRepresentation;
-    xUnit?: Unit | NumericDateRepresentation;
+    xDataUnit?: DataUnit;
+    yDataUnit?: DataUnit;
     style?: TraceStylesheet;
     labels?: Iterable<[string, string | undefined]>;
     tracelistsRange: Range;
@@ -316,9 +333,9 @@ export class ChartiumController {
     await this.initialized;
     if (ids.length === 0) return TraceList.empty();
 
-    const handles: TraceHandle[] = [];
+    const handles: TraceHandleArray = new Uint32Array(ids.length);
 
-    for (const id of ids) {
+    for (const [i, id] of enumerate(ids)) {
       let handle = traceIds.getKey(id);
 
       if (!handle) {
@@ -326,23 +343,25 @@ export class ChartiumController {
         traceIds.set(handle, id);
       }
 
-      handles.push(handle);
+      handles[i] = handle;
     }
 
-    const bundle = lib.Bulkloader.threshold_from_array(
-      new Uint32Array(handles),
-      ys,
-    );
+    const bundle = lib.Bulkloader.threshold_from_array(handles, ys);
 
-    let tl = new TraceList({
+    // assert range's units are compatible with xDataUnit
+    toNumericRange(tracelistsRange, xDataUnit);
+
+    let tl = TraceList[CONSTRUCTOR]({
       handles,
       range: tracelistsRange,
-      bundles: [bundle],
+      bundles: [new Bundle(bundle, xDataUnit, yDataUnit)],
+      styles: oxidizeStyleSheet(style),
       labels: new Map(),
+      precomputedColorIndices: undefined,
+      xDataUnit,
+      yDataUnit,
     });
-    if (style) tl = tl.withStyle(style);
-    if (yUnit || xUnit)
-      tl = tl.reinterpretWithDataUnits({ y: yUnit, x: xUnit });
+
     if (labels) tl = tl.withLabels(labels);
 
     return tl;

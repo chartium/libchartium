@@ -175,5 +175,5 @@ export const unitOf = (v: number | Dayjs | Quantity): DataUnit =>
   isQuantity(v)
     ? v.unit
     : isDayjs(v)
-      ? NumericDateRepresentation.EpochSeconds
+      ? NumericDateRepresentation.EpochMilliseconds()
       : undefined;

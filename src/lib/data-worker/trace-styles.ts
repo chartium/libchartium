@@ -45,7 +45,10 @@ export function oxidizeStyleSheetPatch(
   return patchBuilder.collect();
 }
 
-export function oxidizeStyleSheet(s: TraceStyleSheet): lib.TraceStyleSheet {
+export function oxidizeStyleSheet(
+  s: TraceStyleSheet | undefined,
+): lib.TraceStyleSheet {
+  if (s === undefined) return lib.TraceStyleSheet.unset();
   return lib.TraceStyleSheet.unset().patch(oxidizeStyleSheetPatch(s));
 }
 

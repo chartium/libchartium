@@ -13,8 +13,10 @@ export const Quantity = Quantity_;
 export const isQuantity = (x: unknown): x is Quantity => x instanceof Quantity;
 
 import type { NumericDateRepresentation } from "./index.js";
+import type { DateFormat } from "./utils/dateFormat.js";
+
 export type DataUnit = NumericDateRepresentation | Unit | undefined;
-export type DisplayUnit = Unit | undefined;
+export type DisplayUnit = Unit | DateFormat | undefined;
 export type DisplayUnitPreference = DisplayUnit | "auto" | "data";
 
 export type TypedArray =
@@ -134,7 +136,7 @@ export type ChartValue = number | Dayjs | Quantity;
 export interface HighlightPoint {
   x: ChartValue;
   y: ChartValue;
-  color: Color;
+  color: string;
   radius: number;
 }
 

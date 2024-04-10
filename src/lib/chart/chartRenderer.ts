@@ -62,22 +62,13 @@ export const chartRenderer$ = ({
 
     renderer.setSize(size.width, size.height);
 
-    let firstRun = true;
-    for (const [units, traces] of $(visibleTraces$).getUnitsToTraceMap()) {
-      const clear = firstRun;
-      firstRun = false;
+    const traceList = $(visibleTraces$);
 
-      const renderJob: RenderJob = {
-        traces,
-
-        // TODO read xType
-        xType: "f32",
-        xRange: toNumericRange($(xRange$), units.x),
-        yRange: toNumericRange($(yRange$), units.y),
-        clear,
-      };
-
-      renderer.render(renderJob);
-    }
+    renderer.render({
+      traces: $(visibleTraces$),
+      clear: true,
+      xRange: $(xRange$),
+      yRange: $(yRange$),
+    });
   }).pipe(defer);
 };
