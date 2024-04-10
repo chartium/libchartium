@@ -2,7 +2,7 @@ import { derived, mutDerived, type Signal } from "@mod.js/signals";
 import type { FactorDefinition } from "unitlib";
 import Fraction from "fraction.js";
 
-import { NumericDateRepresentation, TraceList } from "../index.js";
+import { TraceList } from "../index.js";
 import {
   Quantity,
   type DisplayUnitPreference,

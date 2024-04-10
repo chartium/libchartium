@@ -6,8 +6,6 @@ import {
 } from "@mod.js/signals";
 import type { ChartiumController, TraceList } from "../index.js";
 import type { Range, Size } from "../types.js";
-import type { RenderJob } from "../data-worker/renderers/mod.js";
-import { toNumericRange } from "../utils/unit.js";
 import { devicePixelRatio$ } from "../utils/reactive-globals.js";
 
 export interface ChartRendererProps {
@@ -61,8 +59,6 @@ export const chartRenderer$ = ({
     if (!renderer || !size) return;
 
     renderer.setSize(size.width, size.height);
-
-    const traceList = $(visibleTraces$);
 
     renderer.render({
       traces: $(visibleTraces$),
