@@ -52,7 +52,7 @@ impl B2F for [u8; 4] {
     fn b2f(&self) -> [f32; 4] {
         self.map(
             #[inline(always)]
-            |b| b as f32 * 255.,
+            |b| b as f32 / 255.,
         )
     }
 }

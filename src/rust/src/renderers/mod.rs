@@ -26,7 +26,7 @@ pub struct RenderJobCommon {
 #[wasm_bindgen]
 pub struct TraceData {
     x_range: NumericRange,
-    data: Vec<(f64, f64)>,
+    data: Vec<(f32, f32)>,
 }
 #[wasm_bindgen]
 impl TraceData {
@@ -35,6 +35,7 @@ impl TraceData {
             .unwrap()
             .iter_in_range_f64(handle, x_range)
             .with_origin_at(x_range.from, 0.0)
+            .map(|(x, y)| (x as f32, y as f32))
             .collect();
 
         TraceData { x_range, data }

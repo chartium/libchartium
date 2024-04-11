@@ -167,9 +167,10 @@ impl WebGlRenderer {
             let width = style.get_line_width() as f32;
             let color = trace.color.as_floats();
             let line = style.get_line();
+
             gl.uniform2f(
                 Some(&self.programs.trace_origin),
-                job.common.x_range.len() as f32,
+                (job.common.x_range.from - trace.x_range.from) as f32,
                 y_from,
             );
 
@@ -180,6 +181,7 @@ impl WebGlRenderer {
                 color[2],
                 color[3],
             );
+
             match line {
                 TraceLineStyle::None => {
                     gl.uniform4f(Some(&self.programs.dash_gap_length), 0.0, 1.0, 0.0, 0.0)
@@ -313,8 +315,8 @@ impl WebGlRenderer {
         );
 
         let (first_x, first_y) = (
-            x_pixel_ratio * (trace.data[0].0 - trace.x_range.from),
-            y_pixel_ratio * (trace.data[0].1 - y_range.from),
+            x_pixel_ratio * (trace.data[0].0 as f64 - trace.x_range.from),
+            y_pixel_ratio * (trace.data[0].1 as f64 - y_range.from),
         );
 
         #[derive(Clone, Debug)]
@@ -335,8 +337,8 @@ impl WebGlRenderer {
             .iter()
             .map(|(x, y)| {
                 (
-                    x_pixel_ratio * (x - trace.x_range.from),
-                    y_pixel_ratio * (y - y_range.from),
+                    x_pixel_ratio * (*x as f64 - trace.x_range.from),
+                    y_pixel_ratio * (*y as f64 - y_range.from),
                 )
             })
             .scan(initial_state, |state: &mut State, (x, y): (f64, f64)| {
