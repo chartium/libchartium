@@ -110,7 +110,7 @@ export class WebGL2Controller implements RenderingController {
         // lengths of the dashes and gaps in pixels, expected to be in order [dash, gap, dash, gap]
         uniform vec4 dashGapLengths;
         varying float vLengthAlong;
-        
+
         void main() {
             float totalLength = dashGapLengths[0] + dashGapLengths[1] + dashGapLengths[2] + dashGapLengths[3];
             float currentCycleLength = mod(vLengthAlong, totalLength);

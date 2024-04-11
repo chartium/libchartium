@@ -105,7 +105,8 @@
     drawScheduled = true;
     requestAnimationFrame(() => {
       drawScheduled = false;
-      draw();
+      if (ctx) draw();
+      else scheduleDraw();
     });
 
     function draw() {

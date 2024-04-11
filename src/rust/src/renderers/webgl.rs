@@ -281,7 +281,7 @@ impl WebGlRenderer {
         Ok(())
     }
 
-    pub fn create_trace_buffer(&self, trace: TraceData) -> WebGlBuffer {
+    pub fn create_trace_buffer(&self, trace: &TraceData) -> WebGlBuffer {
         let context = &self.context;
         let buffer = context.create_buffer().unwrap();
 
