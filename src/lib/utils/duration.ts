@@ -97,10 +97,10 @@ export class Duration implements DurationLike {
   }
 
   isEqual(d: DurationLike) {
-    if (this.years !== d.years ?? 0) return false;
-    if (this.months !== d.months ?? 0) return false;
-    if (this.days !== d.days ?? 0) return false;
-    if (this.weeks !== d.weeks ?? 0) return false;
+    if (this.years !== (d.years ?? 0)) return false;
+    if (this.months !== (d.months ?? 0)) return false;
+    if (this.days !== (d.days ?? 0)) return false;
+    if (this.weeks !== (d.weeks ?? 0)) return false;
 
     return ms(this) === ms(d);
   }
