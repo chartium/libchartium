@@ -14,6 +14,7 @@ pub struct NumericRange {
     pub from: f64,
     pub to: f64,
 }
+
 impl NumericRange {
     pub fn len(&self) -> f64 {
         self.to - self.from

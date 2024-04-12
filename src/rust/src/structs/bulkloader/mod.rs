@@ -1,13 +1,17 @@
+mod data_types;
+
 use std::collections::HashMap;
 
 use js_sys::{Float64Array, Uint8Array};
 use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
 
 use crate::{
-    data::{TraceHandle, TypeDescriptor, TYPE_SIZES},
-    structs::MetaCounter,
+    data::TraceHandle,
+    structs::{bulkloader::data_types::TYPE_SIZES, MetaCounter},
     trace::{Batch, BoxedBundle, ConstantBatch},
 };
+
+use self::data_types::TypeDescriptor;
 
 #[wasm_bindgen]
 pub struct Bulkloader {

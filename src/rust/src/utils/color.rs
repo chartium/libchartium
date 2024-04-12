@@ -57,15 +57,6 @@ impl B2F for [u8; 4] {
     }
 }
 
-#[wasm_bindgen]
-extern "C" {
-    #[wasm_bindgen(js_namespace = Math)]
-    fn random() -> f32;
-
-    #[wasm_bindgen(js_namespace = console)]
-    fn warn(msg: &str);
-}
-
 pub const BRIGHT: [(&str, [f32; 3]); 6] = [
     ("blue", [0.543, 0.674, 0.445]),
     ("purple", [0.878, 0.768, 0.594]),
@@ -78,6 +69,12 @@ pub const BRIGHT: [(&str, [f32; 3]); 6] = [
 #[wasm_bindgen]
 pub fn is_valid_palette_name(n: &str) -> bool {
     n == "bright" || n == "rainbow"
+}
+
+#[wasm_bindgen]
+extern "C" {
+    #[wasm_bindgen(js_namespace = Math)]
+    fn random() -> f32;
 }
 
 // "Missing Texture" magenta
@@ -95,7 +92,7 @@ fn palette_color(palette_name: &str, palette_index: usize, total_count: usize) -
         return hsl_to_color(0.5, palette_index as f32 / total_count as f32, 0.5);
     }
 
-    warn(&format!("Unknown color palette: {}", palette_name));
+    crate::warn(&format!("Unknown color palette: {}", palette_name));
     ResolvedColor::from_bytes(MISSING_COLOR)
 }
 
