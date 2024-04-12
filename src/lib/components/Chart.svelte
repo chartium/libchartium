@@ -1,32 +1,28 @@
 <script lang="ts">
-  import type { ChartiumController } from "../data-worker/index.js";
-  import {
-    type Quantity,
-    type ChartValue,
-    type DisplayUnitPreference,
-  } from "../types.js";
-  import type { TraceList } from "../data-worker/trace-list.js";
-  import type { VisibleAction } from "./ActionsOverlay.svelte";
-
   import { onDestroy } from "svelte";
   import { chart$ as createChart$ } from "../chart/chart.js";
 
   import { mut, FlockRegistry, derived, effect } from "@mod.js/signals";
-  import type { RangeMargins } from "../utils/rangeMargins.js";
   import { setContext } from "svelte-typed-context";
   import { toolKey } from "./toolbar/toolKey.js";
   import { flockReduce } from "../utils/collection.js";
   import { mapOpt } from "../utils/mapOpt.js";
-  import type { TextMeasuringFunction } from "../chart/axisTicks.js";
   import ChartGrid from "./ChartGrid.svelte";
   import AxisTicks from "./AxisTicks.svelte";
   import Guidelines from "./Guidelines.svelte";
   import ActionsOverlay from "./ActionsOverlay.svelte";
   import DefaultToolbar from "./toolbar/DefaultToolbar.svelte";
   import ChartLegend from "./Legend.svelte";
-  import { qndFormat, type QndFormatOptions } from "../utils/format.js";
+  import { qndFormat } from "../utils/format.js";
   import TraceTooltip from "./tooltip/TraceTooltip.svelte";
   import { portal } from "svelte-portal";
+
+  import type { ChartiumController } from "../data-worker/index.js";
+  import type { ChartValue, DisplayUnitPreference } from "../types.js";
+  import type { TraceList } from "../data-worker/trace-list.js";
+  import type { VisibleAction } from "./ActionsOverlay.svelte";
+  import type { RangeMargins } from "../utils/rangeMargins.js";
+  import type { TextMeasuringFunction } from "../chart/axisTicks.js";
 
   // SECTION Props
   let klass: string = "";
@@ -352,12 +348,13 @@
 
   /** In fractions of graph height */
   let persistentYThresholds: ChartValue[] = [];
-  $: presYThreshFracs = persistentYThresholds.map((q) =>
+  // TODO: remove this?
+  $: _presYThreshFracs = persistentYThresholds.map((q) =>
     chart$.valueOnAxis("y").fromQuantity(q).toFraction(),
   );
   // TODO make ValueOnAxis properly reactive
   chart$.axes.y.range$.subscribe(() => {
-    presYThreshFracs = persistentYThresholds.map((q) =>
+    _presYThreshFracs = persistentYThresholds.map((q) =>
       chart$.valueOnAxis("y").fromQuantity(q).toFraction(),
     );
   });
@@ -509,7 +506,7 @@
           chart$.axes.x.shiftRange(d.detail.dx ?? 0);
           chart$.axes.y.shiftRange(d.detail.dy ?? 0);
         }}
-        on:yThreshold={(t) => {
+        on:yThreshold={() => {
           /*
           if (t.detail.type === "persistent") {
             const thresholdQ = chart$

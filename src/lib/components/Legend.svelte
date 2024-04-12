@@ -1,11 +1,11 @@
 <script lang="ts">
   import { onMount, tick } from "svelte";
 
-  import type { TraceList } from "../data-worker/trace-list.js";
   import * as canvas from "./canvas.js";
-  import { map } from "../utils/collection.js";
-  import type { WritableSignal } from "@mod.js/signals";
   import LegendEntry from "./LegendEntry.svelte";
+
+  import type { TraceList } from "../data-worker/trace-list.js";
+  import type { WritableSignal } from "@mod.js/signals";
   import type { OrUnset } from "../../../dist/wasm/libchartium.js";
 
   export let numberOfShownTraces: number = 5;

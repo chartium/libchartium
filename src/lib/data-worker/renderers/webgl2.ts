@@ -150,6 +150,7 @@ export class WebGL2Controller implements RenderingController {
 }
 
 export class WebGL2Renderer implements Renderer {
+  // eslint-disable-next-line no-unused-private-class-members
   readonly #context: WebGL2RenderingContext;
   readonly #renderer: lib.WebGlRenderer;
 

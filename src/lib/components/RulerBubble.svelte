@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { ChartValue, Point, Quantity } from "../types.js";
+  import type { ChartValue, Point } from "../types.js";
   import { qndFormat } from "../utils/format.js";
   import { portal } from "svelte-portal";
 

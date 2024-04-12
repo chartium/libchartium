@@ -1,4 +1,3 @@
-import type { Color } from "./utils/color.js";
 import { isDayjs, type Dayjs } from "./utils/dayjs.js";
 
 import { Unit as Unit_ } from "unitlib";

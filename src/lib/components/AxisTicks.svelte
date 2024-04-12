@@ -7,7 +7,7 @@
     mouseClick,
     type MouseDragCallbacks,
   } from "../utils/mouseActions.js";
-  import type { DisplayUnit, Point, Shift, Tick, Unit } from "../types.js";
+  import type { DisplayUnit, Point, Shift, Tick } from "../types.js";
   import type { VisibleAction } from "./ActionsOverlay.svelte";
   import {
     type ContextItem,
