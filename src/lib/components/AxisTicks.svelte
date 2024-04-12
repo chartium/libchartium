@@ -7,7 +7,7 @@
     mouseClick,
     type MouseDragCallbacks,
   } from "../utils/mouseActions.js";
-  import type { Point, Shift, Tick, Unit } from "../types.js";
+  import type { DisplayUnit, Point, Shift, Tick, Unit } from "../types.js";
   import type { VisibleAction } from "./ActionsOverlay.svelte";
   import {
     type ContextItem,
@@ -24,6 +24,7 @@
   import RotatedBox from "../utils/RotatedBox.svelte";
   import { noop } from "lodash-es";
   import { mapOpt } from "../utils/mapOpt.js";
+  import type { UnitChangeAction } from "../chart/axis.js";
 
   export const events = createEventDispatcher<{
     shift: Shift;
@@ -39,7 +40,7 @@
 
   export let label: string | undefined;
 
-  export let unit: Unit | undefined;
+  export let unit: DisplayUnit;
 
   export let hideLabelUnits: boolean;
 
@@ -57,11 +58,9 @@
   );
   $: onDestroy(dimensionFlock?.register(minorDim) ?? noop);
 
-  type UnitAction = Signal<{ unit: Unit; callback: () => void } | undefined>;
-  export let raiseFactor: UnitAction;
-  export let lowerFactor: UnitAction;
-  /** unit to reset the axis to */
-  export let resetUnit: UnitAction;
+  export let raiseFactor: Signal<UnitChangeAction | undefined>;
+  export let lowerFactor: Signal<UnitChangeAction | undefined>;
+  export let resetUnit: Signal<UnitChangeAction | undefined>;
 
   export const textLength = (text: string) =>
     measureText(text, measuringSpan, axis === "x" ? "horizontal" : "vertical");
@@ -110,7 +109,7 @@
           const { unit, callback } = $v;
           return <const>{
             type: "leaf",
-            content: `Raise unit to ${unit.toString()}`,
+            content: `Raise unit to ${unit}`,
             callback() {
               callback();
               menu.close();
@@ -122,7 +121,7 @@
           const { unit, callback } = $v;
           return <const>{
             type: "leaf",
-            content: `Reset unit to ${unit.toString()}`,
+            content: `Reset unit to ${unit}`,
             callback() {
               callback();
               menu.close();
@@ -134,7 +133,7 @@
           const { unit, callback } = $v;
           return <const>{
             type: "leaf",
-            content: `Lower unit to ${unit.toString()}`,
+            content: `Lower unit to ${unit}`,
             callback() {
               callback();
               menu.close();

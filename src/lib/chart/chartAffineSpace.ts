@@ -1,10 +1,7 @@
 import type { Signal } from "@mod.js/signals";
-import { Quantity, type Range, type Size } from "../types.js";
-import type dayjs from "dayjs";
-import { toNumeric, toQuantOrDay } from "../utils/quantityHelpers.js";
+import type { ChartValue, Range, Size } from "../types.js";
+import { toNumeric, toChartValue } from "../utils/unit.js";
 import { unitOf } from "./axisRange.js";
-
-export type Qdn = Quantity | dayjs.Dayjs | number;
 
 export interface ChartAffineSpaceProps {
   xRange$: Signal<Range>;
@@ -17,7 +14,7 @@ export interface ValueOnAxis {
   toClipSpace(): number;
   toPhysicalPixels(): number;
   toLogicalPixels(): number;
-  toQuantity(): Qdn;
+  toQuantity(): ChartValue;
 }
 
 export interface CoordinatesInChart {
@@ -25,7 +22,7 @@ export interface CoordinatesInChart {
   toClipSpace(): { x: number; y: number };
   toPhysicalPixels(): { x: number; y: number };
   toLogicalPixels(): { x: number; y: number };
-  toQuantitites(): { x: Qdn; y: Qdn };
+  toQuantitites(): { x: ChartValue; y: ChartValue };
 }
 
 export interface PointInChart extends CoordinatesInChart {
@@ -44,7 +41,7 @@ export interface ValueOnAxisFactory {
   fromClipSpace(value: number): ValueOnAxis;
   fromPhysicalPixels(value: number): ValueOnAxis;
   fromLogicalPixels(value: number): ValueOnAxis;
-  fromQuantity(value: Qdn): ValueOnAxis;
+  fromQuantity(value: ChartValue): ValueOnAxis;
 }
 
 export interface PointInChartFactory {
@@ -52,7 +49,7 @@ export interface PointInChartFactory {
   fromClipSpace(x: number, y: number): PointInChart;
   fromPhysicalPixels(x: number, y: number): PointInChart;
   fromLogicalPixels(x: number, y: number): PointInChart;
-  fromQuantities(x: Qdn, y: Qdn): PointInChart;
+  fromQuantities(x: ChartValue, y: ChartValue): PointInChart;
 }
 
 export interface ChartAffineSpace {
@@ -93,8 +90,8 @@ export const chartAffineSpace = ({
       toLogicalPixels: () => v * logicalSize,
       toQuantity: () =>
         axis === "y"
-          ? toQuantOrDay(to - length * v, unit)
-          : toQuantOrDay(length * v + from, unit),
+          ? toChartValue(to - length * v, unit)
+          : toChartValue(length * v + from, unit),
     });
 
     const fromClipSpace = (v: number) => {
@@ -104,7 +101,7 @@ export const chartAffineSpace = ({
 
     const fromPhysicalPixels = (v: number) => fromFraction(v / physicalSize);
     const fromLogicalPixels = (v: number) => fromFraction(v / logicalSize);
-    const fromQuantity = (v: Qdn) =>
+    const fromQuantity = (v: ChartValue) =>
       axis === "y"
         ? fromFraction((to - toNumeric(v, unit)) / length)
         : fromFraction(1 - (to - toNumeric(v, unit)) / length);
@@ -134,7 +131,7 @@ export const chartAffineSpace = ({
     const fromLogicalPixels = (x: number, y: number) =>
       pointFromValues(X.fromLogicalPixels(x), Y.fromLogicalPixels(y));
 
-    const fromQuantities = (x: Qdn, y: Qdn) =>
+    const fromQuantities = (x: ChartValue, y: ChartValue) =>
       pointFromValues(X.fromQuantity(x), Y.fromQuantity(y));
 
     const coordsFromValues = (

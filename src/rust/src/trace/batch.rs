@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use num_traits::{FromPrimitive, Num, ToPrimitive};
 
-use crate::data::TraceHandle;
+use crate::{data::TraceHandle, types::NumericRange};
 
 use super::{Bundle, BundleRange, InterpolationStrategy};
 
@@ -36,6 +36,10 @@ impl<X: N, Y: N> Bundle for Batch<X, Y> {
         self.ys.keys().copied().collect()
     }
 
+    fn contains_trace(&self, trace: TraceHandle) -> bool {
+        self.ys.contains_key(&trace)
+    }
+
     fn range(&self) -> BundleRange {
         BundleRange::Bounded {
             from: self.from.as_f64(),
@@ -50,15 +54,14 @@ impl<X: N, Y: N> Bundle for Batch<X, Y> {
     fn iter_in_range_f64<'a>(
         &'a self,
         trace: TraceHandle,
-        from: f64,
-        to: f64,
+        x_range: NumericRange,
     ) -> Box<dyn Iterator<Item = (f64, f64)> + 'a> {
         Box::new(
             self.x
                 .iter()
                 .enumerate()
-                .skip_while(move |(_, x)| x.as_f64() < from)
-                .take_while(move |(_, x)| x.as_f64() <= to)
+                .skip_while(move |(_, x)| x.as_f64() < x_range.from)
+                .take_while(move |(_, x)| x.as_f64() <= x_range.to)
                 .map(move |(i, x)| (x.as_f64(), self.ys.get(&trace).map(|y| y[i].as_f64())))
                 .filter_map(|(x, maybe_y)| maybe_y.map(|y| (x, y))),
         )
@@ -67,14 +70,13 @@ impl<X: N, Y: N> Bundle for Batch<X, Y> {
     fn iter_many_in_range_f64<'a>(
         &'a self,
         traces: Vec<TraceHandle>,
-        from: f64,
-        to: f64,
+        x_range: NumericRange,
     ) -> Box<dyn Iterator<Item = Vec<f64>> + 'a> {
         let index = self
             .x
             .iter()
             .enumerate()
-            .find(move |(_, x)| x.as_f64() >= from)
+            .find(move |(_, x)| x.as_f64() >= x_range.from)
             .map(|(i, _)| i)
             .unwrap_or(usize::MAX);
 
@@ -82,7 +84,7 @@ impl<X: N, Y: N> Bundle for Batch<X, Y> {
             batch: self,
             traces,
             index,
-            to,
+            to: x_range.to,
         })
     }
 
@@ -92,7 +94,7 @@ impl<X: N, Y: N> Bundle for Batch<X, Y> {
         x: f64,
         strategy: InterpolationStrategy,
     ) -> Option<f64> {
-        if !self.contains(x) {
+        if !self.contains_point(x) {
             return None;
         }
 

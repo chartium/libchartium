@@ -9,7 +9,7 @@
     faChartLine,
   } from "@fortawesome/free-solid-svg-icons";
   import { IEC } from "unitlib/systems";
-  import { NumericDateFormat, TraceList } from "./lib/index.js";
+  import { NumericDateRepresentation, TraceList } from "./lib/index.js";
 
   import Fa from "svelte-fa";
 
@@ -38,7 +38,7 @@
   const normalTraces = controller.addFromColumnarArrayBuffers({
     x: {
       type: "f32",
-      unit: NumericDateFormat.EpochSeconds,
+      unit: NumericDateRepresentation.EpochSeconds(),
       data: Float32Array.from(xs),
     },
     y: {
@@ -47,15 +47,15 @@
       columns: ys,
     },
     style: {
-      "*": { width: 2 },
+      "*": { "line-width": 2 },
       sin: { color: "red" },
     },
   });
   const threshold = controller.addThresholdTracelist({
     ids: ["threshold"],
     ys: new Float64Array([100]),
-    xUnit: NumericDateFormat.EpochSeconds,
-    yUnit: IEC.parseUnit("KiB"),
+    xDataUnit: NumericDateRepresentation.EpochSeconds(),
+    yDataUnit: IEC.parseUnit("KiB"),
     tracelistsRange: { from: 0, to: 1 },
   });
 

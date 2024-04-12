@@ -6,8 +6,6 @@ import {
 } from "@mod.js/signals";
 import type { ChartiumController, TraceList } from "../index.js";
 import type { Range, Size } from "../types.js";
-import type { RenderJob } from "../data-worker/renderers/mod.js";
-import { toNumericRange } from "../utils/quantityHelpers.js";
 import { devicePixelRatio$ } from "../utils/reactive-globals.js";
 
 export interface ChartRendererProps {
@@ -62,22 +60,11 @@ export const chartRenderer$ = ({
 
     renderer.setSize(size.width, size.height);
 
-    let firstRun = true;
-    for (const [units, traces] of $(visibleTraces$).getUnitsToTraceMap()) {
-      const clear = firstRun;
-      firstRun = false;
-
-      const renderJob: RenderJob = {
-        traces,
-
-        // TODO read xType
-        xType: "f32",
-        xRange: toNumericRange($(xRange$), units.x),
-        yRange: toNumericRange($(yRange$), units.y),
-        clear,
-      };
-
-      renderer.render(renderJob);
-    }
+    renderer.render({
+      traces: $(visibleTraces$),
+      clear: true,
+      xRange: $(xRange$),
+      yRange: $(yRange$),
+    });
   }).pipe(defer);
 };

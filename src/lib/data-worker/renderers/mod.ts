@@ -1,24 +1,19 @@
 import type { TraceList } from "../trace-list.js";
-import type { NumericRange, TypeOfData } from "../../types.js";
+import type { Range } from "../../types.js";
 
 export interface RenderingController {
   createRenderer(presentCanvas: OffscreenCanvas): Renderer;
 }
 
 export interface Renderer {
-  render(job: RenderJob): RenderJobResult;
+  render(job: RenderJob): void;
   setSize(width: number, height: number): void;
 }
 
 export interface RenderJob {
-  xType: TypeOfData;
-
   traces: TraceList;
 
-  xRange: NumericRange;
-  yRange?: NumericRange;
-
-  clear?: boolean;
+  clear: boolean;
+  xRange: Range;
+  yRange: Range;
 }
-
-export interface RenderJobResult {}

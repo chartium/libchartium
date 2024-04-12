@@ -2,16 +2,21 @@ import { derived, mutDerived, type Signal } from "@mod.js/signals";
 import type { FactorDefinition } from "unitlib";
 import Fraction from "fraction.js";
 
-import { NumericDateFormat, TraceList } from "../index.js";
-import { Quantity, type Range, type Unit } from "../types.js";
+import { TraceList } from "../index.js";
+import {
+  Quantity,
+  type DisplayUnitPreference,
+  type Range,
+  type Unit,
+  type DisplayUnit,
+  type DataUnit,
+} from "../types.js";
 import { mapOpt } from "../utils/mapOpt.js";
 
-import type {
-  DataUnit,
-  DisplayUnit,
-  DisplayUnitPreference,
-  UnitChangeAction,
-} from "./axis.js";
+import type { UnitChangeAction } from "./axis.js";
+import { eq } from "../utils/unit.js";
+import { isNumericDateRepresentation } from "../utils/numericDateRepresentation.js";
+import { DateFormat, isDateFormat } from "../utils/dateFormat.js";
 
 export interface AxisUnitsProps {
   axis: "x" | "y";
@@ -35,8 +40,8 @@ export const axisUnits$ = ({
   range$,
   displayUnitPreference$,
 }: AxisUnitsProps): AxisUnits => {
-  const dataUnit$ = derived(
-    ($) => $(visibleTraces$).getUnits()?.[0]?.[axis],
+  const dataUnit$ = derived(($) =>
+    axis === "x" ? $(visibleTraces$).xDataUnit : $(visibleTraces$).yDataUnit,
   ).skipEqual();
 
   const defaultDisplayUnit$ = createDefaultUnit$(
@@ -157,7 +162,7 @@ const createUnitChangeActions$ = ({
         (unit): UnitChangeAction | undefined => {
           // if raising/lowering should change to the same unit
           // as reseting, only show the reset action
-          if (reset?.unit.isEqual(unit)) return;
+          if (eq(reset?.unit, unit)) return;
           return {
             unit,
             callback: () => setDisplayUnit(unit),
@@ -173,8 +178,9 @@ const isDisplayUnitValidForDataUnit = (
   displayUnit: DisplayUnit,
   dataUnit: DataUnit,
 ): boolean => {
-  if (!dataUnit || dataUnit instanceof NumericDateFormat)
-    return displayUnit === undefined;
+  if (dataUnit === undefined) return displayUnit === undefined;
+  if (isDateFormat(displayUnit)) return isNumericDateRepresentation(dataUnit);
+  if (isNumericDateRepresentation(dataUnit)) return isDateFormat(displayUnit);
   try {
     new Quantity(1, dataUnit).inUnits(displayUnit!);
     return true;
@@ -184,7 +190,7 @@ const isDisplayUnitValidForDataUnit = (
 };
 
 const dataUnitToDisplayUnit = (u: DataUnit): DisplayUnit =>
-  u instanceof NumericDateFormat ? undefined : u;
+  isNumericDateRepresentation(u) ? new DateFormat() : u;
 
 // TODO
 const bestDisplayUnit = (dataUnit: Signal<DataUnit>, _range: Signal<Range>) =>
@@ -200,7 +206,7 @@ const changeFactor = ({
   currentUnit: DisplayUnit;
 }): Unit | undefined => {
   // NOTE changing the factor of a date range is not supported
-  if (!currentUnit || currentUnit instanceof NumericDateFormat) return;
+  if (!currentUnit || isDateFormat(currentUnit)) return;
 
   const factorsEqual = (a: FactorDefinition, b: FactorDefinition) =>
     a.mul === b.mul && a.base === b.base && a.exp.equals(b.exp);

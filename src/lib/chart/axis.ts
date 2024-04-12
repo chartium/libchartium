@@ -1,22 +1,19 @@
 import { cons, type Signal } from "@mod.js/signals";
-import { NumericDateFormat, type TraceList } from "../index.js";
+import { type TraceList } from "../index.js";
 import {
   Quantity,
   type NumericRange,
   type Range,
-  type Unit,
   type Tick,
+  type DisplayUnitPreference,
+  type DisplayUnit,
 } from "../types.js";
 import { axisUnits$ } from "./axisUnits.js";
 import { axisRange$ } from "./axisRange.js";
 import { axisTicks$, type TextMeasuringFunction } from "./axisTicks.js";
 
-export type DataUnit = NumericDateFormat | Unit | undefined;
-export type DisplayUnit = Unit | undefined;
-export type DisplayUnitPreference = DisplayUnit | "auto" | "data";
-
 export interface UnitChangeAction {
-  unit: Unit;
+  unit: DisplayUnit;
   callback(): void;
 }
 

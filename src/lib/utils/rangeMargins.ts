@@ -5,9 +5,9 @@ import {
   multiply,
   subtract,
   toNumeric,
-  toQuantOrDay,
-} from "./quantityHelpers.js";
-import type { NumericDateFormat } from "./numericDateFormat.js";
+  toChartValue,
+} from "./unit.js";
+import type { NumericDateRepresentation } from "./numericDateRepresentation.js";
 import type { RangeMarginValue } from "../chart/axis.js";
 
 export type Test = HTMLButtonElement;
@@ -96,12 +96,12 @@ export const addMarginsToRange = (
 
 export const addZeroToRange = (
   range: Range,
-  dataUnit: Unit | NumericDateFormat | undefined,
+  dataUnit: Unit | NumericDateRepresentation | undefined,
 ): Range => {
   const from = toNumeric(range.from, dataUnit);
   const to = toNumeric(range.to, dataUnit);
   return {
-    from: toQuantOrDay(Math.min(0, from), dataUnit),
-    to: toQuantOrDay(Math.max(0, to), dataUnit),
+    from: toChartValue(Math.min(0, from), dataUnit),
+    to: toChartValue(Math.max(0, to), dataUnit),
   } as Range;
 };

@@ -1,6 +1,6 @@
 use std::{collections::HashMap, vec};
 
-use crate::data::TraceHandle;
+use crate::{data::TraceHandle, types::NumericRange};
 
 use super::{Bundle, BundleRange, InterpolationStrategy, N};
 
@@ -20,6 +20,10 @@ impl<Y: N> Bundle for ConstantBatch<Y> {
         self.ys.keys().copied().collect()
     }
 
+    fn contains_trace(&self, trace: TraceHandle) -> bool {
+        self.ys.contains_key(&trace)
+    }
+
     fn range(&self) -> BundleRange {
         BundleRange::Everywhere
     }
@@ -31,11 +35,10 @@ impl<Y: N> Bundle for ConstantBatch<Y> {
     fn iter_in_range_f64<'a>(
         &'a self,
         handle: crate::data::TraceHandle,
-        from: f64,
-        to: f64,
+        x_range: NumericRange,
     ) -> Box<dyn Iterator<Item = (f64, f64)> + 'a> {
         match self.ys.get(&handle).map(|y| y.as_f64()) {
-            Some(y) => Box::new([(from, y), (to, y)].into_iter()),
+            Some(y) => Box::new([(x_range.from, y), (x_range.to, y)].into_iter()),
             None => Box::new(std::iter::empty()),
         }
     }
@@ -43,8 +46,7 @@ impl<Y: N> Bundle for ConstantBatch<Y> {
     fn iter_many_in_range_f64<'a>(
         &'a self,
         handles: Vec<crate::data::TraceHandle>,
-        from: f64,
-        to: f64,
+        x_range: NumericRange,
     ) -> Box<dyn Iterator<Item = Vec<f64>> + 'a> {
         let mut ys: Vec<f64> = handles
             .into_iter()
@@ -52,9 +54,9 @@ impl<Y: N> Bundle for ConstantBatch<Y> {
             .filter(|y| y.is_some())
             .map(|y| y.unwrap().as_f64())
             .collect();
-        let mut from = vec![from];
+        let mut from = vec![x_range.from];
         from.append(&mut ys.clone());
-        let mut to = vec![to];
+        let mut to = vec![x_range.to];
         to.append(&mut ys);
         Box::new([from, to].into_iter())
     }

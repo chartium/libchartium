@@ -1,17 +1,22 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import type { TraceInfo } from "../data-worker/trace-list.js";
   import TracePreview from "./TracePreview.svelte";
   import { oneOrDoubleclick } from "../utils/mouseActions.js";
 
-  export let styledTrace: TraceInfo;
+  export let styledTrace: {
+    traceId: string;
+    label: string | undefined;
+    color: string;
+    width: number;
+    showPoints: boolean;
+  };
   export let updateHiddenTraceIds: (
     f: (curr: Set<string>) => Set<string>,
   ) => void;
   export let hidden: boolean;
   export let previewSize: number;
   export let previewStyle: "simplified" | "full";
-  export let allIDs: string[];
+  export let allIds: string[];
   export let updateMaxWidth: (width: number) => void;
 
   let myWidth: number;
@@ -28,16 +33,19 @@
   use:oneOrDoubleclick={{
     single: () => {
       updateHiddenTraceIds((curr) => {
-        if (hidden) curr.delete(styledTrace.id);
-        else curr.add(styledTrace.id);
+        if (hidden) curr.delete(styledTrace.traceId);
+        else curr.add(styledTrace.traceId);
         return curr;
       });
     },
     double: () =>
       updateHiddenTraceIds((curr) => {
-        if (curr.size === 0 || (curr.size === 1 && curr.has(styledTrace.id))) {
-          curr = new Set(allIDs);
-          curr.delete(styledTrace.id);
+        if (
+          curr.size === 0 ||
+          (curr.size === 1 && curr.has(styledTrace.traceId))
+        ) {
+          curr = new Set(allIds);
+          curr.delete(styledTrace.traceId);
         } else curr.clear();
         return curr;
       }),
@@ -52,7 +60,7 @@
       simplified={previewStyle === "simplified"}
     />
   </div>
-  {styledTrace.label ?? styledTrace.id}
+  {styledTrace.label ?? styledTrace.traceId}
 </div>
 
 <style>

@@ -6,6 +6,9 @@ pub mod data;
 pub mod renderers;
 pub mod structs;
 pub mod trace;
+pub mod trace_styles;
+pub mod types;
+pub mod utils;
 
 #[wasm_bindgen]
 extern "C" {

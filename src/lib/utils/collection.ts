@@ -6,6 +6,11 @@ export function* concat<T>(...iters: Iterable<T>[]): Iterable<T> {
   }
 }
 
+export function* enumerate<T>(iter: Iterable<T>): Iterable<[number, T]> {
+  let i = 0;
+  for (const el of iter) yield [i++, el];
+}
+
 export function* unique<T>(iter: Iterable<T>, used?: Set<T>): Iterable<T> {
   used ??= new Set<T>();
 

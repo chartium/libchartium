@@ -1,24 +1,17 @@
 import {
-  Quantity,
-  type ChartValuePoint,
   type Range,
   type TraceHandle,
-  type Unit,
   type ChartValue,
+  type DataUnit,
+  type TraceHandleArray,
 } from "../types.js";
 import { lib } from "./wasm.js";
 import {
-  computeTraceColor,
-  defaultStyle,
-  resolveTraceInfo,
-  type ResolvedTraceInfo,
-  type TraceStyle,
-  type TraceStylesheet,
-  type TraceDataUnits,
-  simplifyTraceInfo,
+  oxidizeStyleSheetPatch,
+  type TraceStyleSheet,
 } from "./trace-styles.js";
 import { yeet } from "yeet-ts";
-import { UnknownTraceHandleError } from "../errors.js";
+import { UnknownTraceHandleError, UnknownTraceIdError } from "../errors.js";
 import { traceIds } from "./controller.js";
 import {
   filter,
@@ -26,91 +19,75 @@ import {
   intersection,
   map,
   reduce,
-  some,
   unique,
   zip,
 } from "../utils/collection.js";
-import { proxyMarker } from "comlink";
-import type { Color } from "../utils/color.js";
 import {
-  qdnMax,
-  qdnMin,
+  maxValue,
+  minValue,
   toNumeric,
   toNumericRange,
-  toQuantOrDay,
+  toChartValue,
   toRange,
-  unitEqual,
-} from "../utils/quantityHelpers.js";
+  assertAllUnitsCompatible,
+  unitConversionFactor,
+} from "../utils/unit.js";
 import {
   exportTraceListData,
   type TraceListExportOptions,
 } from "./trace-export.js";
-import type { NumericDateFormat } from "../index.js";
+import type { Bundle } from "./bundle.js";
+import { resolvedColorToHex } from "../utils/color.js";
 
-export const BUNDLES = Symbol("bundles");
-export const HANDLES = Symbol("handles");
-export const TRACE_INFO = Symbol("trace info");
-export const LABELS = Symbol("labels");
+export const PARAMS = Symbol("trace-list-params");
+export const CONSTRUCTOR = Symbol("trace-list-constructor");
+export const LAZY = Symbol("trace-list-lazy");
 
-export interface TraceInfo {
-  id: string;
-  label: string | undefined;
-
-  width: number;
-  color: Color;
-  showPoints: boolean;
-
-  xDataUnit: Unit | NumericDateFormat | undefined;
-  yDataUnit: Unit | NumericDateFormat | undefined;
-}
-
-export interface QDTraceMetas {
+export interface TraceMetas {
   traceId: string;
   min: ChartValue;
   max: ChartValue;
-  avg: ChartValue;
-  avg_nz: ChartValue;
+  average: ChartValue;
+  averageNonzero: ChartValue;
+}
+
+interface TraceListParams {
+  handles: TraceHandleArray;
+  bundles: Bundle[];
+  range: Range;
+
+  labels: ReadonlyMap<string, string>;
+  styles: lib.TraceStyleSheet;
+  precomputedColorIndices: lib.ResolvedColorIndices | undefined;
+
+  xDataUnit: DataUnit;
+  yDataUnit: DataUnit;
 }
 
 export class TraceList {
-  [proxyMarker] = true;
-
-  #traceHandles: TraceHandle[];
-  #bundles: lib.BoxedBundle[];
-  #statistics: QDTraceMetas[] | undefined;
-  #labels: ReadonlyMap<string, string>;
-  #traceInfo: ResolvedTraceInfo;
-  #range: Range;
-
-  #traceHandleSet_: Set<TraceHandle> | undefined;
-  get #traceHandlesSet(): Set<TraceHandle> {
-    if (!this.#traceHandleSet_)
-      this.#traceHandleSet_ = new Set(this.#traceHandles);
-    return this.#traceHandleSet_;
+  #p: Readonly<TraceListParams>;
+  private constructor(params: TraceListParams) {
+    this.#p = params;
   }
-
-  constructor(params: {
-    handles: TraceHandle[];
-    range: Range;
-    bundles: lib.BoxedBundle[];
-    labels: ReadonlyMap<string, string>;
-    traceInfo: ResolvedTraceInfo | null;
-  }) {
-    this.#traceHandles = params.handles;
-    this.#range = params.range;
-    this.#bundles = params.bundles;
-    this.#labels = params.labels;
-    this.#traceInfo =
-      params.traceInfo ?? resolveTraceInfo({}, [], params.handles, traceIds);
+  get [PARAMS]() {
+    return this.#p;
+  }
+  static [CONSTRUCTOR](params: TraceListParams) {
+    return new TraceList(params);
   }
 
   static empty() {
     return new TraceList({
-      handles: [],
+      handles: new Uint32Array(),
       range: { from: 0, to: 1 },
       bundles: [],
-      traceInfo: [],
+
       labels: new Map(),
+      styles: lib.TraceStyleSheet.unset(),
+      precomputedColorIndices: undefined,
+
+      xDataUnit: undefined,
+      yDataUnit: undefined,
     });
   }
 
@@ -118,124 +95,87 @@ export class TraceList {
    * The x axis range this trace list is limited to.
    */
   get range(): Range {
-    return { ...this.#range };
+    return { ...this.#p.range };
   }
 
   /**
    * The number of traces in this trace list.
    */
   get traceCount(): number {
-    return this.#traceHandles.length;
+    return this.#p.handles.length;
+  }
+
+  get xDataUnit(): DataUnit {
+    return this.#p.xDataUnit;
+  }
+  get yDataUnit(): DataUnit {
+    return this.#p.yDataUnit;
   }
 
   /**
    * An iterable containing all the trace ids of this list.
    */
   *traces(): Iterable<string> {
-    for (const handle of this.#traceHandles) {
+    for (const handle of this.#p.handles) {
       const id = traceIds.get(handle as TraceHandle);
       yield id ?? yeet(UnknownTraceHandleError, handle);
     }
   }
 
-  /**
-   * Returns basic information about the trace, like its style and units.
-   */
-  getTraceInfo(id: string): TraceInfo {
-    const info: TraceStyle & TraceDataUnits =
-      this.#traceInfo.find(([ids]) => ids.has(id))?.[1] ?? defaultStyle;
+  #traceHandleSet_: Set<TraceHandle> | undefined;
+  get #traceHandlesSet(): Set<TraceHandle> {
+    if (!this.#traceHandleSet_)
+      this.#traceHandleSet_ = new Set(this.#p.handles);
+    return this.#traceHandleSet_;
+  }
 
+  #colorIndices_: lib.ResolvedColorIndices | undefined;
+  get #colorIndices(): lib.ResolvedColorIndices {
+    return (
+      this.#colorIndices_ ??
+      (this.#colorIndices_ =
+        this.#p.precomputedColorIndices ??
+        lib.ResolvedColorIndices.compute(this.#p.styles, this.#p.handles))
+    );
+  }
+
+  get [LAZY]() {
+    const self = this;
     return {
-      id,
-      ...info,
-      xDataUnit: info.xDataUnit,
-      yDataUnit: info.yDataUnit,
-      color: computeTraceColor(id, info.color),
-      label: this.#labels.get(id),
+      get handlesSet() {
+        return self.#traceHandlesSet;
+      },
+      get colorIndices() {
+        return self.#colorIndices;
+      },
     };
-  }
-
-  get [BUNDLES]() {
-    return this.#bundles;
-  }
-  get [HANDLES]() {
-    return this.#traceHandles;
-  }
-  get [TRACE_INFO]() {
-    return this.#traceInfo;
-  }
-  get [LABELS]() {
-    return this.#labels;
-  }
-
-  /**
-   * Returns units that traces of input bundle use
-   */
-  getBundleUnits(bundle: lib.BoxedBundle): {
-    x: Unit | NumericDateFormat | undefined;
-    y: Unit | NumericDateFormat | undefined;
-  } {
-    const firstTrace = bundle.traces()[0] as TraceHandle | undefined;
-    if (!firstTrace) return { x: undefined, y: undefined };
-
-    const traceId = traceIds.get(firstTrace)!;
-    const { xDataUnit, yDataUnit } = this.getTraceInfo(traceId);
-    return { x: xDataUnit, y: yDataUnit };
   }
 
   /**
    * Create a new trace list with the same traces and identical range, but modified styles.
    */
-  withStyle(stylesheet: TraceStylesheet): TraceList {
+  withStyle(styleSheet: TraceStyleSheet): TraceList {
+    const patch = oxidizeStyleSheetPatch(styleSheet);
+
     return new TraceList({
-      handles: this.#traceHandles,
-      range: this.#range,
-      bundles: this.#bundles,
-      labels: this.#labels,
-      traceInfo: [
-        ...resolveTraceInfo(
-          stylesheet,
-          this.#traceInfo,
-          this.#traceHandles,
-          traceIds,
-        ),
-      ],
+      ...this.#p,
+      styles: this.#p.styles.patch(patch),
     });
   }
 
-  /**
-   * Set the units of all data in this trace list. This function doesn't do
-   * any unit conversions, nor does it modify the data – rather, it re-interprets
-   * the stored data as if it always had these units.
-   */
-  withDataUnits(newUnits: {
-    x?: Unit | NumericDateFormat;
-    y?: Unit | NumericDateFormat;
-  }) {
-    const traceInfo: ResolvedTraceInfo = this.#traceInfo.map(([key, info]) => [
-      key,
-      {
-        ...info,
-        ...Object.fromEntries([
-          ...("x" in newUnits ? [["xDataUnit", newUnits.x]] : []),
-          ...("y" in newUnits ? [["yDataUnit", newUnits.y]] : []),
-        ]),
-      },
-    ]);
+  getStyle(traceId: string) {
+    return this.#p.styles.get_cloned(
+      traceIds.getKey(traceId) ?? yeet(UnknownTraceIdError, traceId),
+    );
+  }
 
-    const { from, to } = this.#range;
-    const oldUnits = this.getUnits()[0] ?? {};
-
-    return new TraceList({
-      handles: this.#traceHandles,
-      range: {
-        from: toQuantOrDay(toNumeric(from, oldUnits.x), newUnits.x),
-        to: toQuantOrDay(toNumeric(to, oldUnits.x), newUnits.x),
-      } as Range,
-      bundles: this.#bundles,
-      labels: this.#labels,
-      traceInfo,
-    });
+  getColor(traceId: string) {
+    return resolvedColorToHex(
+      this.#p.styles.get_color(
+        traceIds.getKey(traceId) ?? yeet(UnknownTraceIdError, traceId),
+        this.#colorIndices,
+      ),
+    );
   }
 
   /**
@@ -245,27 +185,20 @@ export class TraceList {
    * than expand it again, don't expect you'll get back all the data.
    */
   withRange(range: Range): TraceList {
-    const bundles: lib.BoxedBundle[] = [];
-    for (const [units, traces] of this.getUnitsToTraceMap()) {
-      const { from, to } = toNumericRange(range, units.x);
-      const theseBundles = traces.#bundles;
-      bundles.push(
-        ...theseBundles.filter((bundle) => bundle.intersects(from, to)),
-      );
-    }
+    const bundles = this.#p.bundles.filter((bundle) => {
+      const { from, to } = toNumericRange(range, bundle.xDataUnit);
+      return bundle.boxed.intersects(from, to);
+    });
 
-    const availableHandles = new Set(
-      flatMap(bundles, (b) => b.traces() as Iterable<TraceHandle>),
-    );
-    const handles = this.#traceHandles.filter((t) => availableHandles.has(t));
+    const availableHandles = new Set(flatMap(bundles, (b) => b.traces));
+    const handles = this.#p.handles.filter((t) => availableHandles.has(t));
     if (handles.length === 0) return TraceList.empty();
 
     return new TraceList({
+      ...this.#p,
       handles,
       range,
       bundles,
-      labels: this.#labels,
-      traceInfo: this.#traceInfo,
     });
   }
 
@@ -281,26 +214,12 @@ export class TraceList {
       ),
     );
 
-    const handles = this.#traceHandles.filter((h) => !exclude.has(h));
+    const handles = this.#p.handles.filter((h) => !exclude.has(h));
     if (handles.length === 0) return TraceList.empty();
 
     return new TraceList({
+      ...this.#p,
       handles,
-      range: this.#range,
-      bundles: this.#bundles,
-      labels: this.#labels,
-      traceInfo: this.#traceInfo.map((info) => {
-        const firstID: string = info[0].values().next().value;
-        const { xDataUnit, yDataUnit } = this.getTraceInfo(firstID);
-        return [
-          info[0],
-          {
-            ...info[1],
-            xDataUnit,
-            yDataUnit,
-          },
-        ];
-      }), // handles.map((h) => this.getTraceInfo(traceIds.get(h)!)),
     });
   }
 
@@ -316,15 +235,12 @@ export class TraceList {
       ),
     );
 
-    const handles = this.#traceHandles.filter((h) => include.has(h));
+    const handles = this.#p.handles.filter((h) => include.has(h));
     if (handles.length === 0) return TraceList.empty();
 
     return new TraceList({
+      ...this.#p,
       handles,
-      range: this.#range,
-      bundles: this.#bundles,
-      labels: this.#labels,
-      traceInfo: this.#traceInfo,
     });
   }
 
@@ -333,90 +249,96 @@ export class TraceList {
    */
   withLabels(newLabels: Iterable<[string, string | undefined]>) {
     const labels = new Map([
-      ...this.#labels,
+      ...this.#p.labels,
       ...filter(newLabels, (kv): kv is [string, string] => kv[1] !== undefined),
     ]);
 
     return new TraceList({
-      handles: this.#traceHandles,
-      range: this.#range,
-      bundles: this.#bundles,
-      labels: labels,
-      traceInfo: this.#traceInfo,
+      ...this.#p,
+      labels,
     });
   }
 
-  /** Returns new tracelist where every trace has at least one datapoint over threshold */
-  withOverThreshold(threshold: Quantity | number): TraceList {
-    const badHandles: TraceHandle[] = this.#bundles.flatMap((bundle) => {
-      const ptrs = bundle.traces();
-      const thresholdInBundleUnits = toNumeric(
-        threshold,
-        this.getBundleUnits(bundle).y,
-      );
-      const range = bundle.range();
-      const { from, to } =
-        range.type === "Bounded" ? range.value : { from: 0, to: 1 };
-      const filter = bundle.are_traces_over_threshold(
-        ptrs,
-        from,
-        to,
-        thresholdInBundleUnits,
-      );
-      return bundle
-        .get_multiple_traces_metas(
-          ptrs.filter((_, i) => !filter[i]),
-          from,
-          to,
-        )
-        .map((meta) => meta.handle);
-    });
-
-    const ids = badHandles.map((handle) => traceIds.get(handle)!);
-
-    return this.withoutTraces(ids as string[]);
+  getLabel(traceId: string): string | undefined {
+    return this.#p.labels.get(traceId);
   }
 
   /**
-   * Creates a new trace list by concatenating the provided trace lists together.
+   * Returns the ids of traces that have at least one datapoint
+   * with y value larger than the given threshold value.
+   */
+  tracesLargerThanThreshold(thresholdValue: ChartValue): Set<string> {
+    return new Set(
+      flatMap(this.#p.bundles, (bundle) => {
+        const filteredHandles = bundle.tracesOverThreshold(
+          this.#p.handles,
+          this.#p.range,
+          thresholdValue,
+        );
+        return map(filteredHandles, (h) => traceIds.get(h)!);
+      }),
+    );
+  }
+
+  /**
+   * Creates a new trace list by concatenating the provided trace lists together,
+   * provided their data units are compatible with each other.
    * The resulting range will be a bounding interval of all the individual lists'
    * ranges. Each trace's style will be preserved – if a trace is present in multiple
-   * lists, style of its first occurrence will be preserved.
+   * lists, the style of its last occurrence will be preserved.
    */
-  static union(...lists: TraceList[]): TraceList {
-    const bundles = Array.from(unique(flatMap(lists, (l) => l[BUNDLES])));
-    const handles = Array.from(unique(flatMap(lists, (l) => l[HANDLES])));
-    if (handles.length === 0) return TraceList.empty();
+  static union(...l: TraceList[]): TraceList {
+    const lists = l.filter((t) => t.traceCount > 0);
+    if (lists.length === 0) return TraceList.empty();
 
+    // Validate Units
+    assertAllUnitsCompatible(map(lists, (t) => t.xDataUnit));
+    assertAllUnitsCompatible(map(lists, (t) => t.yDataUnit));
+    const xDataUnit = lists[0].xDataUnit;
+    const yDataUnit = lists[0].yDataUnit;
+
+    // Unify Bundles, Handles & Labels
+    const bundles = Array.from(unique(flatMap(lists, (l) => l.#p.bundles)));
+    const handles = new Uint32Array(
+      unique(flatMap(lists, (l) => l.#p.handles)),
+    );
+    const labels = new Map(flatMap(lists, (l) => l.#p.labels.entries()));
+
+    // Compute Range
+    const ranges = lists.map((t) => toNumericRange(t.range, xDataUnit));
     const from = reduce(
-      map(
-        filter(bundles, (b) => b.range().type === "Bounded"),
-        (b) => b.range().value.from,
-      ),
+      map(ranges, (r) => r.from),
       Math.min,
     );
     const to = reduce(
-      map(
-        filter(bundles, (b) => b.range().type === "Bounded"),
-        (b) => b.range().value.to,
-      ),
+      map(ranges, (r) => r.to),
       Math.max,
     );
-    const labels = new Map(flatMap(lists, (l) => l[LABELS].entries()));
-    const traceInfo = simplifyTraceInfo(
-      lists.flatMap((l) => l.#traceInfo),
-      handles,
-      traceIds,
-    );
+    const range = toRange({ from, to }, xDataUnit);
+
+    // Compute Styles
+    // beware: mutating `lists`!
+    const first = lists.pop()!;
+    const styleBuilder = new lib.TraceStyleSheetUnionBuilder(first.#p.styles);
+    for (const next of lists) {
+      styleBuilder.add(next.#p.handles, next.#p.styles);
+    }
+    const styles = styleBuilder.collect();
 
     return new TraceList({
       handles,
-      range: toRange({ from, to }, traceInfo[0]?.[1]?.xDataUnit),
+      range,
       bundles,
       labels,
-      traceInfo,
+      styles,
+      xDataUnit,
+      yDataUnit,
+
+      precomputedColorIndices: undefined,
     });
   }
+
+  #statistics: TraceMetas[] | undefined;
 
   /**
    * Calculate the statistics (like the maximum, minimum and average value)
@@ -437,50 +359,38 @@ export class TraceList {
 
     if (unfiltered && this.#statistics) return this.#statistics;
 
+    from ??= this.range.from;
+    to ??= this.range.to;
+    const range = { from, to } as Range;
+
     const handles = traces
       ? Uint32Array.from(traces.map((id) => traceIds.getKey(id)!))
-      : Uint32Array.from(this.#traceHandles);
+      : this.#p.handles;
 
     const counter = new lib.MetaCounter(handles.length);
 
-    for (const bundle of this.#bundles) {
-      const bundleRange = bundle.range();
-      if (bundleRange.type === "Everywhere")
-        counter.add_bundle(bundle, handles, bundleRange);
-      else {
-        const xUnit = this.getBundleUnits(bundle).x;
-        const a = Math.max(
-          from ? toNumeric(from, xUnit) : bundleRange.value.from,
-          bundleRange.value.from,
-        );
-        const b = Math.min(
-          to ? toNumeric(to, xUnit) : bundleRange.value.to,
-          bundleRange.value.to,
-        );
-        if (a >= b) continue;
-        counter.add_bundle(bundle, handles, {
-          type: "Bounded",
-          value: { from: a, to: b },
-        });
-      }
+    for (const bundle of this.#p.bundles) {
+      const bundleRange = bundle.rangeInView(range).inBundleUnits();
+      const factor = unitConversionFactor(bundle.yDataUnit, this.yDataUnit);
+      counter.add_bundle(bundle.boxed, handles, bundleRange, factor);
     }
 
     const metas: lib.TraceMetas[] = counter.to_array();
+    const withYUnit = (v: number) => toChartValue(v, this.yDataUnit);
 
-    const convertedMetas: QDTraceMetas[] = [];
+    const convertedMetas = Array.from(
+      map(
+        zip(metas, handles),
+        ([meta, handle]): TraceMetas => ({
+          traceId: traceIds.get(handle)!,
+          min: withYUnit(meta.min),
+          max: withYUnit(meta.max),
+          average: withYUnit(meta.avg),
+          averageNonzero: withYUnit(meta.avgNz),
+        }),
+      ),
+    );
 
-    for (const [meta, traceHandle] of zip(metas, handles)) {
-      const id = traceIds.get(traceHandle as TraceHandle)!;
-      const { yDataUnit } = this.getTraceInfo(id);
-
-      convertedMetas.push({
-        traceId: id,
-        min: toQuantOrDay(meta.min, yDataUnit),
-        max: toQuantOrDay(meta.max, yDataUnit),
-        avg: toQuantOrDay(meta.avg, yDataUnit),
-        avg_nz: toQuantOrDay(meta.avg_nz, yDataUnit),
-      });
-    }
     if (unfiltered) this.#statistics = convertedMetas;
     return convertedMetas;
   }
@@ -496,107 +406,14 @@ export class TraceList {
 
     return {
       from: metas.reduce(
-        (prev, { min: curr }) => qdnMin(prev as any, curr as any),
+        (prev, { min: curr }) => minValue(prev, curr),
         metas[0].min,
       ),
       to: metas.reduce(
-        (prev, { max: curr }) => qdnMax(prev as any, curr as any),
+        (prev, { max: curr }) => maxValue(prev, curr),
         metas[0].max,
       ),
     } as Range;
-  }
-
-  #units: ReturnType<typeof this.getUnits> | undefined;
-  /**
-   * List all the data unit pairs present in this trace list.
-   *
-   * By default, uploaded data have no units (`undefined`), however you can
-   * set them using the `withDataUnits` method. If you make a union of
-   * trace lists with different units, you will get a mixed units list.
-   *
-   * Take care when rendering a trace list with mixed units – if you
-   * aren't intentional with it, you may get unexpected results.
-   */
-  getUnits(): {
-    x: Unit | NumericDateFormat | undefined;
-    y: Unit | NumericDateFormat | undefined;
-  }[] {
-    // FIXME this actually doesn't yet know how to spot date so it won't return it
-    if (this.#units) return this.#units;
-    const units = new Set<{ x: Unit | undefined; y: Unit | undefined }>();
-
-    const addUnique = (
-      set: Set<{
-        x: Unit | NumericDateFormat | undefined;
-        y: Unit | NumericDateFormat | undefined;
-      }>,
-      value: {
-        x: Unit | NumericDateFormat | undefined;
-        y: Unit | NumericDateFormat | undefined;
-      },
-    ): void => {
-      const alreadyRecorded = some(set, (u) => {
-        return unitEqual(u.x, value.x) && unitEqual(u.y, value.y);
-      });
-      if (alreadyRecorded) return;
-      set.add(value);
-    };
-
-    for (const bundle of this.#bundles) {
-      const { x, y } = this.getBundleUnits(bundle);
-      addUnique(units, { x, y });
-    }
-
-    this.#units = Array.from(units);
-    return this.#units;
-  }
-
-  #unitsToTraceMap: ReturnType<typeof this.getUnitsToTraceMap> | undefined;
-
-  /**
-   * @returns Returns a map of all the units present in this trace list to
-   * the traces that use them.
-   */
-  getUnitsToTraceMap(): Map<
-    {
-      x: Unit | NumericDateFormat | undefined;
-      y: Unit | NumericDateFormat | undefined;
-    },
-    TraceList // FIXME do we want tracelist here or ids?
-  > {
-    if (this.#unitsToTraceMap) return this.#unitsToTraceMap;
-
-    const toReturn = new Map<
-      {
-        x: Unit | NumericDateFormat | undefined;
-        y: Unit | NumericDateFormat | undefined;
-      },
-      TraceList
-    >();
-    for (const bundle of this.#bundles) {
-      const { x, y } = this.getBundleUnits(bundle);
-      const newTraceList = new TraceList({
-        handles: Array.from(
-          intersection(bundle.traces(), this.#traceHandlesSet),
-        ) as TraceHandle[],
-        range: this.#range,
-        bundles: [bundle],
-        labels: this.#labels,
-        traceInfo: this.#traceInfo,
-      });
-      if (toReturn.has({ x, y })) {
-        toReturn.set(
-          { x, y },
-          TraceList.union(toReturn.get({ x, y })!, newTraceList),
-        );
-      } else {
-        toReturn.set({ x, y }, newTraceList);
-      }
-    }
-
-    this.#unitsToTraceMap = toReturn;
-    if (!this.#units) this.#units = Array.from(toReturn.keys());
-    return toReturn;
   }
 
   /**
@@ -608,74 +425,58 @@ export class TraceList {
    * TODO add a more precise euclidean distance mode
    */
   findClosestTracesToPoint(
-    point: ChartValuePoint,
+    point: { x: ChartValue; y: ChartValue },
     howMany: number,
   ): {
-    traceInfo: TraceInfo;
-    closestPoint: ChartValuePoint;
-  }[] {
-    // FIXME make TraceList auto update its ranges based on ranges of bundles
+    x: ChartValue;
+    y: ChartValue;
 
-    interface FoundPoint {
+    traceId: string;
+    color: string;
+    width: number;
+  }[] {
+    const yToNum = (y: ChartValue) => toNumeric(y, this.yDataUnit);
+
+    let closestPoints: Array<{
       handle: TraceHandle;
-      point: ChartValuePoint;
+      x: ChartValue;
+      y: ChartValue;
       distance: number;
+    }> = [];
+
+    for (const bundle of this.#p.bundles) {
+      const bundleTraces = new Uint32Array(
+        intersection(bundle.traces, this.#traceHandlesSet),
+      );
+      const pts = bundle.findClosestTraces(bundleTraces, point, howMany);
+
+      for (const p of pts) {
+        const distance = Math.abs(yToNum(point.y) - yToNum(p.y));
+        closestPoints.push({ ...p, distance });
+      }
     }
 
-    let closestPoints: FoundPoint[] = [];
+    // leave only the requested number of closest points
+    closestPoints.sort((a, b) => a.distance - b.distance);
+    closestPoints = closestPoints.slice(0, howMany);
 
-    for (const bundle of this.#bundles) {
-      const bundleTraces = new Uint32Array(
-        intersection(bundle.traces(), this.#traceHandlesSet),
+    // sort by y from largest to lowest
+    closestPoints.sort((a, b) => yToNum(b.y) - yToNum(a.y));
+
+    return closestPoints.map(({ handle, x, y }) => {
+      const traceId = traceIds.get(handle)!;
+      const width = this.#p.styles.get_line_width(handle);
+      const color = resolvedColorToHex(
+        this.#p.styles.get_color(handle, this.#colorIndices),
       );
-      const bundleUnits = this.getBundleUnits(bundle);
-      const x = toNumeric(point.x, bundleUnits.x);
-      const y = toNumeric(point.y, bundleUnits.y);
-      const foundPoints = bundle.find_n_closest_points(
-        bundleTraces,
+      return {
+        traceId,
         x,
         y,
-        howMany,
-      );
-
-      for (const foundPoint of foundPoints) {
-        const distance = Math.sqrt(
-          (foundPoint.x - x) ** 2 + (foundPoint.y - y) ** 2,
-        );
-        closestPoints.push({
-          handle: foundPoint.handle as TraceHandle,
-          point: {
-            x: toQuantOrDay(foundPoint.x, bundleUnits.x),
-            y: toQuantOrDay(foundPoint.y, bundleUnits.y),
-          } as ChartValuePoint,
-          distance,
-        });
-      }
-
-      closestPoints.sort((a, b) => a.distance - b.distance);
-      closestPoints = closestPoints.slice(0, howMany);
-    }
-
-    if (closestPoints.length === 0) return [];
-
-    const results: {
-      traceInfo: TraceInfo;
-      closestPoint: ChartValuePoint;
-    }[] = [];
-
-    for (const { point, handle } of closestPoints) {
-      const id = traceIds.get(handle as TraceHandle);
-      if (id === undefined) {
-        yeet(UnknownTraceHandleError, handle);
-      }
-      const traceInfo = this.getTraceInfo(id);
-      results.push({
-        traceInfo,
-        closestPoint: point,
-      });
-    }
-
-    return results;
+        color,
+        width,
+      };
+    });
   }
 
   /**

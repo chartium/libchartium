@@ -1,29 +1,34 @@
 <script lang="ts">
   import TracePreview from "../TracePreview.svelte";
-  import type { TraceInfo } from "../../data-worker/trace-list.js";
 
   export let previewStyle: "simplified" | "full";
   export let singleTraceInfo: {
-    styledTrace: TraceInfo;
+    traceId: string;
+    label: string | undefined;
+    color: string;
+    width: number;
+    showPoints: boolean;
     x: string;
     y: string;
     min: string;
     max: string;
     avg: string;
   };
-  let traceMetas: Record<string, string>;
-  let y: string;
-  $: ({ x, y, styledTrace, ...traceMetas } = singleTraceInfo);
-  $: traceMetas = { value: y, ...traceMetas };
+  $: traceMetas = {
+    value: singleTraceInfo.y,
+    min: singleTraceInfo.min,
+    max: singleTraceInfo.max,
+    avg: singleTraceInfo.avg,
+  };
 </script>
 
 <div class="tooltip-container">
   <div class="header">
     <TracePreview
-      previewedTrace={singleTraceInfo.styledTrace}
+      previewedTrace={singleTraceInfo}
       simplified={previewStyle === "simplified"}
     />
-    {singleTraceInfo.styledTrace.label ?? singleTraceInfo.styledTrace.id}
+    {singleTraceInfo.label ?? singleTraceInfo.traceId}
   </div>
   <div class="trace-info">
     <div class="value-name">date:</div>
