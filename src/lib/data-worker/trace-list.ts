@@ -38,6 +38,7 @@ import {
 } from "./trace-export.js";
 import type { Bundle } from "./bundle.js";
 import { resolvedColorToHex } from "../utils/color.js";
+import { hashAny } from "../utils/hash.js";
 
 export const PARAMS = Symbol("trace-list-params");
 export const CONSTRUCTOR = Symbol("trace-list-constructor");
@@ -51,7 +52,7 @@ export interface TraceMetas {
   averageNonzero: ChartValue;
 }
 
-interface TraceListParams {
+export interface TraceListParams {
   handles: TraceHandleArray;
   bundles: Bundle[];
   range: Range;
@@ -62,6 +63,12 @@ interface TraceListParams {
 
   xDataUnit: DataUnit;
   yDataUnit: DataUnit;
+
+  randomSeed: number;
+}
+
+export function randomUint() {
+  return (Math.random() * 2 ** 32) >>> 0;
 }
 
 export class TraceList {
@@ -88,6 +95,8 @@ export class TraceList {
 
       xDataUnit: undefined,
       yDataUnit: undefined,
+
+      randomSeed: randomUint(),
     });
   }
 
@@ -110,6 +119,10 @@ export class TraceList {
   }
   get yDataUnit(): DataUnit {
     return this.#p.yDataUnit;
+  }
+
+  get randomSeed(): number {
+    return this.#p.randomSeed;
   }
 
   /**
@@ -151,6 +164,13 @@ export class TraceList {
     };
   }
 
+  withRandomSeed(seed: number | string): TraceList {
+    return new TraceList({
+      ...this.#p,
+      randomSeed: hashAny(seed),
+    });
+  }
+
   /**
    * Create a new trace list with the same traces and identical range, but modified styles.
    */
@@ -174,6 +194,7 @@ export class TraceList {
       this.#p.styles.get_color(
         traceIds.getKey(traceId) ?? yeet(UnknownTraceIdError, traceId),
         this.#colorIndices,
+        this.#p.randomSeed,
       ),
     );
   }
@@ -335,6 +356,7 @@ export class TraceList {
       yDataUnit,
 
       precomputedColorIndices: undefined,
+      randomSeed: randomUint(),
     });
   }
 
@@ -467,7 +489,11 @@ export class TraceList {
       const traceId = traceIds.get(handle)!;
       const width = this.#p.styles.get_line_width(handle);
       const color = resolvedColorToHex(
-        this.#p.styles.get_color(handle, this.#colorIndices),
+        this.#p.styles.get_color(
+          handle,
+          this.#colorIndices,
+          this.#p.randomSeed,
+        ),
       );
       return {
         traceId,

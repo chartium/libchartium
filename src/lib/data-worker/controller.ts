@@ -23,7 +23,7 @@ import type {
 import type { RenderingController } from "./renderers/mod.js";
 import { WebGL2Controller } from "./renderers/webgl2.js";
 import { proxyMarker } from "comlink";
-import { CONSTRUCTOR, TraceList } from "./trace-list.js";
+import { CONSTRUCTOR, randomUint, TraceList } from "./trace-list.js";
 import type { TraceStylesheet } from "../index.js";
 import { enumerate } from "../utils/collection.js";
 import { Bundle } from "./bundle.js";
@@ -229,6 +229,7 @@ export class ChartiumController {
       precomputedColorIndices: undefined,
       xDataUnit,
       yDataUnit,
+      randomSeed: randomUint(),
     });
 
     if (labels) tl = tl.withLabels(labels);
@@ -306,6 +307,7 @@ export class ChartiumController {
       precomputedColorIndices: undefined,
       xDataUnit: x.unit,
       yDataUnit: y.unit,
+      randomSeed: randomUint(),
     });
 
     if (labels) tl = tl.withLabels(labels);
@@ -360,6 +362,7 @@ export class ChartiumController {
       precomputedColorIndices: undefined,
       xDataUnit,
       yDataUnit,
+      randomSeed: randomUint(),
     });
 
     if (labels) tl = tl.withLabels(labels);

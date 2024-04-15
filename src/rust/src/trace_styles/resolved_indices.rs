@@ -86,11 +86,16 @@ impl ResolvedColorIndices {
 
 #[wasm_bindgen]
 impl TraceStyleSheet {
-    pub fn get_color(&self, trace: TraceHandle, indices: &ResolvedColorIndices) -> ResolvedColor {
+    pub fn get_color(
+        &self,
+        trace: TraceHandle,
+        indices: &ResolvedColorIndices,
+        random_seed: usize,
+    ) -> ResolvedColor {
         let color = self.get(trace).get_color();
         let trace_index = indices.get_trace_index(trace);
         let max_index = indices.get_color_max_index(color);
 
-        color.resolve(trace_index, max_index)
+        color.resolve(trace_index, max_index, random_seed)
     }
 }

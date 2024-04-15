@@ -1,6 +1,8 @@
 // https://github.com/madonoharu/tsify/issues/42
 #![allow(non_snake_case)]
 
+use rand::rngs::SmallRng;
+use rand::{Rng, SeedableRng};
 use serde::{Deserialize, Serialize};
 use tsify::Tsify;
 use wasm_bindgen::prelude::wasm_bindgen;
@@ -10,10 +12,10 @@ use crate::trace_styles::{TraceColor, TraceRandomColorSpace};
 #[derive(Clone, PartialEq, Eq, Hash, Tsify, Serialize, Deserialize)]
 #[tsify(into_wasm_abi, from_wasm_abi)]
 pub struct ResolvedColor {
-    red: u8,
-    green: u8,
-    blue: u8,
-    alpha: u8,
+    pub red: u8,
+    pub green: u8,
+    pub blue: u8,
+    pub alpha: u8,
 }
 impl ResolvedColor {
     pub fn from_bytes([red, green, blue, alpha]: [u8; 4]) -> Self {
@@ -71,12 +73,6 @@ pub fn is_valid_palette_name(n: &str) -> bool {
     n == "bright" || n == "rainbow"
 }
 
-#[wasm_bindgen]
-extern "C" {
-    #[wasm_bindgen(js_namespace = Math)]
-    fn random() -> f32;
-}
-
 // "Missing Texture" magenta
 // also see lib/utils/color.ts
 pub const MISSING_COLOR: [u8; 4] = [0xff, 0x00, 0xdc, 0xff];
@@ -121,8 +117,19 @@ pub fn hsl_to_color(h: f32, s: f32, l: f32) -> ResolvedColor {
     ResolvedColor::from_floats([r, g, b, 1.])
 }
 
+pub fn hash_pair(x: usize, y: usize) -> usize {
+    (1073741827 * x) + y
+}
+
 // Random color
-pub fn random_contrasting_color(pref: &TraceRandomColorSpace) -> ResolvedColor {
+pub fn random_contrasting_color(
+    pref: &TraceRandomColorSpace,
+    seed: usize,
+    index: usize,
+) -> ResolvedColor {
+    let mut rng = SmallRng::seed_from_u64(hash_pair(seed, index) as u64);
+    let mut random = || rng.gen::<f32>();
+
     // for a tutorial on custom probability distributions see:
     // https://programming.guide/generate-random-value-with-distribution.html
 
@@ -137,12 +144,12 @@ pub fn random_contrasting_color(pref: &TraceRandomColorSpace) -> ResolvedColor {
 
     // dark violet and dark red are unreadable against dark background
     if contrast_with_dark && l < 0.55 && !(210.0..10.).contains(&(h / DEG)) {
-        return random_contrasting_color(pref);
+        return random_contrasting_color(pref, seed + 1, index);
     }
 
     // light yellow is unreadable against white background
     if contrast_with_light && l > 0.7 && (30.0..100.).contains(&(h / DEG)) {
-        return random_contrasting_color(pref);
+        return random_contrasting_color(pref, seed + 1, index);
     }
 
     // the color is all right!
@@ -150,10 +157,15 @@ pub fn random_contrasting_color(pref: &TraceRandomColorSpace) -> ResolvedColor {
 }
 
 impl TraceColor {
-    pub fn resolve(&self, palette_index: usize, total_count: usize) -> ResolvedColor {
+    pub fn resolve(
+        &self,
+        palette_index: usize,
+        total_count: usize,
+        random_seed: usize,
+    ) -> ResolvedColor {
         match self {
             TraceColor::Exact(rgba) => rgba.clone(),
-            TraceColor::Random(r) => random_contrasting_color(r),
+            TraceColor::Random(r) => random_contrasting_color(r, random_seed, palette_index),
             TraceColor::PaletteAuto(palette_name) => {
                 palette_color(palette_name, palette_index, total_count)
             }

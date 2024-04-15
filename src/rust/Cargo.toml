@@ -25,6 +25,8 @@ serde-wasm-bindgen = "0.6.5"
 num-traits = "0.2.18"
 tsify = "0.4.5"
 optfield = "0.3.0"
+rand = { version = "0.8.5", features = ["small_rng"] }
+getrandom = { features = ["js"] }
 
 [dependencies.web-sys]
 version = "0.3.69"

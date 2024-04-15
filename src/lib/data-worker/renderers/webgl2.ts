@@ -165,6 +165,7 @@ export class WebGL2Renderer implements Renderer {
 
   render(job: RenderJob): void {
     const traceList = job.traces;
+    const randomSeed = traceList.randomSeed;
     const availableHandles = traceList[LAZY].handlesSet;
 
     const styleSheet = traceList[PARAMS].styles;
@@ -181,7 +182,7 @@ export class WebGL2Renderer implements Renderer {
 
       for (const handle of handles) {
         const style = styleSheet.get_cloned(handle);
-        const color = styleSheet.get_color(handle, colorIndices);
+        const color = styleSheet.get_color(handle, colorIndices, randomSeed);
 
         const data = lib.TraceData.compute(bundle.boxed, handle, xRange);
         const traceBuffer = this.#renderer.create_trace_buffer(data);
