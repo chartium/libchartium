@@ -1,7 +1,10 @@
 <script lang="ts">
   import LegendEntry from "./LegendEntry.svelte";
 
-  import type { TraceList } from "../data-worker/trace-list.js";
+  import type {
+    ComputedTraceStyle,
+    TraceList,
+  } from "../data-worker/trace-list.js";
   import type { WritableSignal } from "@mod.js/signals";
 
   export let numberOfShownTraces: number = 5;
@@ -15,6 +18,8 @@
     traceId,
     style: traces.getStyle(traceId),
   }));
+
+  $: shownTraces = styledTraces.slice(0, numberOfShownTraces);
 
   export let hiddenTraceIds: WritableSignal<Set<string>>;
 
@@ -49,11 +54,35 @@
   let containerRect: DOMRectReadOnly | undefined;
   $: wide = (containerRect?.width ?? 0) > 300;
 
-  let widestLegend: number = 0;
-  const updateMaxWidth = (width: number) => {
-    if (width > widestLegend) {
-      widestLegend = width;
+  $: widestLegend = gridElem ? calculateWidestLegend(shownTraces) : 23;
+
+  let calcCanvas: HTMLCanvasElement;
+  let gridElem: HTMLDivElement;
+  const calculateWidestLegend = (
+    traces: { traceId: string; style: ComputedTraceStyle }[],
+  ) => {
+    if (!calcCanvas) {
+      calcCanvas = document.createElement("canvas");
     }
+
+    console.time("width");
+
+    const ctx = calcCanvas.getContext("2d")!;
+    const style = gridElem.computedStyleMap();
+
+    // TODO: make sure the style is complete
+    ctx.font = `${style.get("font-size")} ${style.get("font-family")}`;
+
+    const max = traces.reduce<number>((prev, trace) => {
+      return Math.max(
+        prev,
+        ctx.measureText(trace.style.label ?? trace.traceId).width,
+      );
+    }, 0);
+
+    console.timeEnd("width");
+
+    return max + 20 + 3;
   };
 </script>
 
@@ -61,11 +90,12 @@
   <div
     class="legend-grid"
     bind:contentRect={containerRect}
+    bind:this={gridElem}
     style:width={`min(${(widestLegend + 3) * numberOfShownTraces}px, 100%)`}
     style:flex-direction={wide ? "row" : "column"}
     style:grid-template-columns={`repeat(auto-fill, minmax(${widestLegend}px, 1fr))`}
   >
-    {#each styledTraces.slice(0, numberOfShownTraces) as { traceId, style }}
+    {#each shownTraces as { traceId, style }}
       {@const hidden = $hiddenTraceIds.has(traceId)}
       <LegendEntry
         {hidden}
@@ -73,7 +103,6 @@
         {previewStyle}
         {traceId}
         traceStyle={style}
-        {updateMaxWidth}
         {toggleTraceVisibility}
         {toggleVisibilityOfAllTraces}
       />

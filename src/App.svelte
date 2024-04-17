@@ -21,21 +21,25 @@
   // const numSteps = to;
   const stepSize = (to - from) / numSteps;
 
-  const xs = Array.from(
-    { length: numSteps },
-    (_, index) => from + index * stepSize,
-  );
-
-  const ys = Array.from({ length: 500 }, (_, idx) => ({
-    id: `trace_${idx}`,
-    data: Float32Array.from(
-      xs.map((x) => 100 + 100 * Math.sin((x / to) * 2 * Math.PI + idx)),
-    ),
-  }));
-
   const controller = ChartiumController.instantiateInThisThread({ wasmUrl });
 
   const normalTraces = (async () => {
+    console.time("generate");
+
+    const xs = Array.from(
+      { length: numSteps },
+      (_, index) => from + index * stepSize,
+    );
+
+    const ys = Array.from({ length: 500 }, (_, idx) => ({
+      id: `trace_${idx}`,
+      data: Float32Array.from(
+        xs.map((x) => 100 + 100 * Math.sin((x / to) * 2 * Math.PI + idx)),
+      ),
+    }));
+
+    console.timeEnd("generate");
+
     console.time("load");
 
     const result = await controller.addFromColumnarArrayBuffers({
