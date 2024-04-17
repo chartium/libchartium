@@ -1,34 +1,32 @@
 <script lang="ts">
+  import type { CloseTrace } from "../../chart/interactive/hover.js";
+  import type { DisplayUnit } from "../../types.js";
+  import { qndFormat } from "../../utils/format.js";
   import TracePreview from "../TracePreview.svelte";
 
   export let previewStyle: "simplified" | "full";
-  export let nearestTracesInfo: {
-    traceId: string;
-    label: string | undefined;
-    color: string;
-    width: number;
-    showPoints: boolean;
-    x: string;
-    y: string;
-  }[];
-  $: first = nearestTracesInfo[0];
+  export let nearestTraces: CloseTrace[];
+  export let xDisplayUnit: DisplayUnit;
+  export let yDisplayUnit: DisplayUnit;
+
+  $: first = nearestTraces[0];
 </script>
 
 <div class="tooltip-container">
   <div class="header">
-    {first?.x}
+    {qndFormat(first?.x, { unit: xDisplayUnit })}
   </div>
-  {#each nearestTracesInfo as info}
+  {#each nearestTraces as trace}
     <div class="trace-info">
       <div class="trace-name">
         <TracePreview
-          previewedTrace={info}
+          traceStyle={trace.style}
           simplified={previewStyle === "simplified"}
         />
-        {info.label ?? info.traceId}
+        {trace.style.label ?? trace.traceId}
       </div>
       <div class="trace-value">
-        {info.y}
+        {qndFormat(trace.y, { unit: yDisplayUnit })}
       </div>
     </div>
   {/each}

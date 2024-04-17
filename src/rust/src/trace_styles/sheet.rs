@@ -3,7 +3,10 @@ use wasm_bindgen::prelude::wasm_bindgen;
 
 use crate::data::TraceHandle;
 
-use super::style::{SharedTraceStyle, TraceStyle, TraceStylePatch};
+use super::{
+    style::{SharedTraceStyle, TraceStyle, TraceStylePatch},
+    ComputedTraceStyle,
+};
 
 #[wasm_bindgen]
 #[derive(Clone)]
@@ -33,12 +36,12 @@ impl TraceStyleSheet {
         }
     }
 
-    pub fn get_line_width(&self, t: TraceHandle) -> u32 {
-        self.get(t).get_line_width()
-    }
-
     pub fn get_cloned(&self, t: TraceHandle) -> TraceStyle {
         self.get(t).clone()
+    }
+
+    pub fn get_computed(&self, t: TraceHandle) -> ComputedTraceStyle {
+        self.get(t).to_computed()
     }
 
     pub fn patch(&self, style_sheet_patch: TraceStyleSheetPatch) -> TraceStyleSheet {

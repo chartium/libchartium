@@ -2,7 +2,7 @@
   import { onDestroy } from "svelte";
   import { chart$ as createChart$ } from "../chart/chart.js";
 
-  import { mut, FlockRegistry, derived, effect } from "@mod.js/signals";
+  import { mut, FlockRegistry, derived, effect, cons } from "@mod.js/signals";
   import { setContext } from "svelte-typed-context";
   import { toolKey } from "./toolbar/toolKey.js";
   import { flockReduce } from "../utils/collection.js";
@@ -13,7 +13,6 @@
   import ActionsOverlay from "./ActionsOverlay.svelte";
   import DefaultToolbar from "./toolbar/DefaultToolbar.svelte";
   import ChartLegend from "./Legend.svelte";
-  import { qndFormat } from "../utils/format.js";
   import TraceTooltip from "./tooltip/TraceTooltip.svelte";
   import { portal } from "svelte-portal";
 
@@ -23,6 +22,7 @@
   import type { VisibleAction } from "./ActionsOverlay.svelte";
   import type { RangeMargins } from "../utils/rangeMargins.js";
   import type { TextMeasuringFunction } from "../chart/axisTicks.js";
+  import { type ChartMouseEvent, hover$ } from "../chart/interactive/hover.js";
 
   // SECTION Props
   let klass: string = "";
@@ -46,6 +46,7 @@
   // TODO change to Flock
   const hiddenTraceIds$ = mut(new Set<string>());
   const visibleTraces$ = traces$
+    .map((traces) => traces.withResolvedColors())
     .zip(hiddenTraceIds$)
     .map(([traces, hiddenIds]) => traces.withoutTraces(hiddenIds));
 
@@ -106,7 +107,10 @@
   /** Hides the tooltips shown next to cursor */
   export let hideTooltip: boolean = false;
   /** Sets the number of traces that are shown in the tooltip by users keyboard */
-  export let tooltipTracesShown: number | "all" = 3;
+  export let tooltipTraceCount: number | "all" = 3;
+  const tooltipTraceCount$ = mut(tooltipTraceCount);
+  $: tooltipTraceCount$.set(tooltipTraceCount);
+
   /** Hides the highlighted points on traces that the tooltip is showing info about */
   export let hideHoverPoints: boolean = false;
 
@@ -173,6 +177,8 @@
   const measureYAxisTextSize$ = mut(measureYAxisTextSize);
   $: measureYAxisTextSize$.set(measureYAxisTextSize);
 
+  const hoverEvent$ = mut<ChartMouseEvent>();
+
   const chart$ = createChart$({
     controller$,
     canvas$,
@@ -186,6 +192,18 @@
     defer: onDestroy,
   });
 
+  const { nearestTraces$, hoveredTrace$ } = hover$({
+    visibleTraces$,
+    commonXRuler$,
+    commonYRuler$,
+    yDataUnit$: chart$.axes.y.dataUnit$,
+    tooltipTraceCount$,
+    traceHoverPointRadius$: cons(4),
+    point: chart$.point,
+    defer: onDestroy,
+    hoverEvent$,
+  });
+
   //!SECTION
 
   const xTicks$ = chart$.axes.x.ticks$;
@@ -195,67 +213,20 @@
 
   const visibleAction = mut<VisibleAction | undefined>(undefined);
 
-  let showTooltip: boolean = false;
-  const hoverXQuantity$ = mut<ChartValue>();
-  const hoverYQuantity$ = mut<ChartValue>();
-
-  const updateHoverQuantities = (e: MouseEvent) => {
-    const { x, y } = chart$
-      .point()
-      .fromLogicalPixels(e.offsetX, e.offsetY)
-      .toQuantitites();
-
-    hoverXQuantity$.set(x);
-    hoverYQuantity$.set(y);
-    commonXRuler$.set(x);
-    commonYRuler$.set(y);
-  };
-
-  const closestTraces$ = derived(($) => {
-    const x = $(hoverXQuantity$);
-    const y = $(hoverYQuantity$);
-    if (x === undefined || y === undefined) return;
-
-    const showCount =
-      tooltipTracesShown === "all"
-        ? $(visibleTraces$).traceCount
-        : tooltipTracesShown;
-
-    const traces = $(visibleTraces$);
-
-    return $(visibleTraces$)
-      .findClosestTracesToPoint({ x, y }, showCount)
-      .map(({ traceId, ...rest }) => {
-        const style = traces.getStyle(traceId);
-        return {
-          ...rest,
-          traceId,
-          label: traces.getLabel(traceId),
-          showPoints: style.points === "show",
-        };
-      });
-  });
-
-  const closestTracesFormatted$ = derived(
-    ($) =>
-      $(closestTraces$)?.map(({ x, y, ...rest }) => ({
-        ...rest,
-        x: qndFormat(x, { unit: $(xDisplayUnit$) }),
-        y: qndFormat(y, { unit: $(yDisplayUnit$) }),
-      })) ?? [],
-  );
+  /** How close to a trace is considered close enough to get only one trace info */
+  const closenessDistance = 4;
 
   /** updates highilghted points in visibleAction */
   effect(($) => {
-    const closestTraces = $(closestTraces$);
+    const closestTraces = $(nearestTraces$);
     if (!closestTraces) {
       visibleAction.set({ highlightedPoints: [] });
     } else {
       const points = closestTraces.map((trace) => ({
         x: trace.x,
         y: trace.y,
-        color: trace.color,
-        radius: trace.width,
+        color: trace.style.color,
+        radius: trace.style["line-width"],
       }));
 
       visibleAction.update((action) => ({
@@ -264,57 +235,6 @@
       }));
     }
   }).pipe(onDestroy);
-
-  // $: if (chart$) {
-  //   // ideally this would just update but without mousemove we don't know where the mouse is
-  //   chart$.range.x.subscribe(() => updateHighlightPoints(chart$, []));
-  //   chart$.range.y.subscribe(() => updateHighlightPoints(chart$, []));
-  // }
-
-  /** How close to a trace is considered close enough to get only one trace info */
-  const closenessDistance = 5;
-
-  const traceCloseEnough$ = derived(($) => {
-    const trace = $(closestTraces$)?.[0];
-    if (!trace) return false;
-
-    const [x, y] = [$(hoverXQuantity$), $(hoverYQuantity$)];
-    if (x === undefined || y === undefined) return false;
-
-    const hoverPoint = chart$.point().fromQuantities(x, y);
-    const closestPoint = chart$.point().fromQuantities(trace.x, trace.y);
-
-    return (
-      hoverPoint.vectorTo(closestPoint).magnitudeInLogicalPixels() <
-      closenessDistance
-    );
-  });
-
-  // look for the closest trace to the mouse and if it's close enough, show more info
-  const selectedTrace$ = derived(($) => {
-    if (!$(traceCloseEnough$)) return;
-
-    const { from, to } = $(chart$.axes.x.range$);
-    const trace = $(closestTraces$)?.[0];
-    if (!trace) return;
-
-    const { traceId, x, y } = trace;
-
-    const { min, max, average } = $(visibleTraces$).calculateStatistics({
-      traces: [traceId],
-      from,
-      to,
-    })[0];
-
-    return {
-      ...trace,
-      x: qndFormat(x, { unit: $(xDisplayUnit$) }),
-      y: qndFormat(y, { unit: $(yDisplayUnit$) }),
-      min: qndFormat(min, { unit: $(yDisplayUnit$) }),
-      max: qndFormat(max, { unit: $(yDisplayUnit$) }),
-      avg: qndFormat(average, { unit: $(yDisplayUnit$) }),
-    };
-  });
 
   // forbidden rectangle for tooltip to avoid
   let forbiddenRectangle:
@@ -347,17 +267,17 @@
     .pipe(onDestroy);
 
   /** In fractions of graph height */
-  let persistentYThresholds: ChartValue[] = [];
-  // TODO: remove this?
-  $: _presYThreshFracs = persistentYThresholds.map((q) =>
-    chart$.valueOnAxis("y").fromQuantity(q).toFraction(),
-  );
-  // TODO make ValueOnAxis properly reactive
-  chart$.axes.y.range$.subscribe(() => {
-    _presYThreshFracs = persistentYThresholds.map((q) =>
-      chart$.valueOnAxis("y").fromQuantity(q).toFraction(),
-    );
-  });
+  // let persistentYThresholds: ChartValue[] = [];
+  // // TODO: remove this?
+  // $: _presYThreshFracs = persistentYThresholds.map((q) =>
+  //   chart$.valueOnAxis("y").fromQuantity(q).toFraction(),
+  // );
+  // // TODO make ValueOnAxis properly reactive
+  // chart$.axes.y.range$.subscribe(() => {
+  //   _presYThreshFracs = persistentYThresholds.map((q) =>
+  //     chart$.valueOnAxis("y").fromQuantity(q).toFraction(),
+  //   );
+  // });
 
   let parentDiv: HTMLDivElement;
   let wrapDiv: HTMLDivElement;
@@ -395,10 +315,11 @@
 {#if !hideTooltip}
   <TraceTooltip
     {forbiddenRectangle}
-    nearestTracesInfo={$closestTracesFormatted$}
-    singleTraceInfo={$selectedTrace$}
-    show={showTooltip}
+    nearestTraces={$nearestTraces$}
+    hoveredTrace={$hoveredTrace$}
     previewStyle={legendPreviewStyle}
+    xDisplayUnit={$xDisplayUnit$}
+    yDisplayUnit={$yDisplayUnit$}
   />
 {/if}
 <div bind:this={parentDiv} style="height: 100%; width: 100%">
@@ -488,15 +409,15 @@
         {hideYRuler}
         {hideXBubble}
         {hideYBubble}
-        hoverXQuantity={$hoverXQuantity$ ?? 0}
-        hoverYQuantity={$hoverYQuantity$ ?? 0}
         {disableInteractivity}
+        traceHovered={$hoveredTrace$ !== undefined}
         presYThreshFracs={[]}
         commonXRuler={commonXRuler$}
         commonYRuler={commonYRuler$}
+        xDisplayUnit={$xDisplayUnit$}
+        yDisplayUnit={$yDisplayUnit$}
         bind:filterByThreshold
         bind:addPersistentThreshold
-        traceHovered={$selectedTrace$ !== undefined}
         on:reset={() => chart$.resetAllRanges()}
         on:zoom={(d) => {
           chart$.axes.x.zoomRange(d.detail.x);
@@ -523,23 +444,9 @@
             });
           */
         }}
-        on:mousemove={(e) => {
-          showTooltip = true;
-          updateHoverQuantities(e);
-        }}
-        on:mouseout={() => {
-          showTooltip = false;
-          // closestTraces$.set([]);
-          visibleAction.update((action) => ({
-            ...action,
-            highlightedPoints: [],
-          }));
-          commonXRuler$.set(undefined);
-          commonYRuler$.set(undefined);
-        }}
-        on:blur={() => {
-          showTooltip = false;
-        }}
+        on:mousemove={(e) => hoverEvent$.set({ name: "move", event: e })}
+        on:mouseout={(e) => hoverEvent$.set({ name: "out" })}
+        on:blur={() => hoverEvent$.set({ name: "out" })}
       />
 
       <div class="toolbar" slot="overlay">

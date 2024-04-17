@@ -26,6 +26,7 @@ export interface AxisUnitsProps {
 }
 
 export interface AxisUnits {
+  dataUnit$: Signal<DataUnit>;
   currentDisplayUnit$: Signal<DisplayUnit>;
   unitChangeActions$: Signal<{
     raise?: UnitChangeAction;
@@ -64,6 +65,7 @@ export const axisUnits$ = ({
   });
 
   return {
+    dataUnit$,
     currentDisplayUnit$,
     unitChangeActions$,
   };

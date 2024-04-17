@@ -74,11 +74,13 @@ impl ResolvedColorIndices {
         }
     }
 }
+#[wasm_bindgen]
 impl ResolvedColorIndices {
     pub fn get_trace_index(&self, trace: TraceHandle) -> usize {
         *self.indices.get(&trace).unwrap_or(&0)
     }
-
+}
+impl ResolvedColorIndices {
     pub fn get_color_max_index(&self, color: &TraceColor) -> usize {
         *self.largest_index.get(color).unwrap_or(&0)
     }

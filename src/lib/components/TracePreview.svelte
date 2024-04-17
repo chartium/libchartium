@@ -1,13 +1,9 @@
 <!-- component for showing a bit of the trace for legends and tooltips and such -->
 <script lang="ts">
+  import type { ComputedTraceStyle } from "../data-worker/trace-list.js";
   import * as canvas from "./canvas.js";
 
-  export let previewedTrace: {
-    color: string;
-    width: number;
-    showPoints: boolean;
-  };
-  $: color = `rgb( ${previewedTrace.color[0]}, ${previewedTrace.color[1]}, ${previewedTrace.color[2]} )`;
+  export let traceStyle: ComputedTraceStyle;
 
   export let previewWidth: number = 20;
   export let previewHeight: number = 20;
@@ -19,20 +15,24 @@
   $: ctx = canvasRef?.getContext("2d") ?? undefined;
   $: drawPreview({
     ctx,
-    color,
-    trace: previewedTrace,
+    color: traceStyle.color,
+    width: traceStyle["line-width"],
+    showPoints: traceStyle.points === "show",
     previewHeight,
     previewWidth,
   });
 
   function drawPreview({
     ctx,
-    trace,
+    color,
+    width,
+    showPoints,
     previewHeight,
     previewWidth,
   }: {
     ctx: CanvasRenderingContext2D | undefined;
-    trace: { color: string; width: number; showPoints: boolean };
+    width: number;
+    showPoints: boolean;
     color: string;
     previewHeight: number;
     previewWidth: number;
@@ -40,12 +40,10 @@
     if (!ctx) return;
 
     ctx.clearRect(0, 0, previewWidth, previewHeight);
-    const width = trace.width;
-    const points = trace.showPoints;
     const style: canvas.DrawStyle = { fillStyle: color, strokeStyle: color };
     style.lineWidth = width;
 
-    if (points) {
+    if (showPoints) {
       canvas.drawCircle(ctx, [previewWidth - width, width], width, style);
       canvas.drawCircle(
         ctx,
@@ -62,7 +60,7 @@
 
 <div class="trace-preview" class:simplified>
   {#if simplified}
-    <div class="color-indicator" style="background: {color}" />
+    <div class="color-indicator" style="background: {traceStyle.color}" />
   {:else}
     <canvas bind:this={canvasRef} height={previewWidth} width={previewHeight} />
   {/if}

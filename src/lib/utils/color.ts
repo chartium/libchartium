@@ -99,8 +99,8 @@ export type Color = [R: number, G: number, B: number, A: number];
 export const isColor = (x: unknown): x is Color =>
   Array.isArray(x) && x.length === 4 && x.every((n) => typeof n === "number");
 
-export function colorToHex(color: Color): string {
-  return "#" + color.map((c) => c.toString(16).padStart(2, "0")).join("");
+export function colorToHex(color: Color): `#${string}` {
+  return `#${color.map((c) => c.toString(16).padStart(2, "0")).join("")}`;
 }
 
 export function resolvedColorToHex(color: lib.ResolvedColor) {

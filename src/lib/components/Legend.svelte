@@ -1,12 +1,8 @@
 <script lang="ts">
-  import { onMount, tick } from "svelte";
-
-  import * as canvas from "./canvas.js";
   import LegendEntry from "./LegendEntry.svelte";
 
   import type { TraceList } from "../data-worker/trace-list.js";
   import type { WritableSignal } from "@mod.js/signals";
-  import type { OrUnset } from "../../../dist/wasm/libchartium.js";
 
   export let numberOfShownTraces: number = 5;
 
@@ -15,67 +11,43 @@
   export let traces: TraceList;
   $: allIds = [...traces.traces()];
 
-  $: tracesWithStyles = allIds.map((traceId) => {
-    const style = traces.getStyle(traceId);
-    return {
-      traceId,
-      label: traces.getLabel(traceId),
-      width: withDefault(style["line-width"], 2),
-      color: traces.getColor(traceId),
-      showPoints: style["points"] === "show",
-    };
-  });
-
-  const withDefault = <T,>(value: OrUnset<T>, def: T): T =>
-    value === "unset" ? def : value;
+  $: styledTraces = allIds.map((traceId) => ({
+    traceId,
+    style: traces.getStyle(traceId),
+  }));
 
   export let hiddenTraceIds: WritableSignal<Set<string>>;
 
-  let canvasRefs: HTMLCanvasElement[] = [];
-
-  let container: HTMLElement; // FIXME this is a lame workaround for the @container css query which for some reason (??) doesn't work in svelte altho the github issue says it is closed
-  let wide = false;
-  onMount(() => {
-    tick().then(() => {
-      if (container.clientWidth > 300) {
-        // FIXME delet when @container
-        wide = true;
-      }
-    });
-
-    for (const [index, canvasRef] of canvasRefs.entries()) {
-      const color = tracesWithStyles[index].color;
-      const width = tracesWithStyles[index].width;
-      const points = tracesWithStyles[index].showPoints;
-
-      const ctx = canvasRef.getContext("2d");
-      if (!ctx) {
-        continue;
-      }
-
-      const style: canvas.DrawStyle = {
-        fillStyle: `rgb( ${color[0]}, ${color[1]}, ${color[2]} ) `,
-        strokeStyle: `rgb( ${color[0]}, ${color[1]}, ${color[2]} ) `,
-        lineWidth: width,
-      };
-
-      if (points) {
-        canvas.drawCircle(ctx, [previewSize - width, width], width, style);
-        canvas.drawCircle(
-          ctx,
-          [previewSize / 2, previewSize / 2],
-          width,
-          style,
-        );
-        canvas.drawCircle(ctx, [width, previewSize - width], width, style);
+  const toggleTraceVisibility = (id: string) => {
+    hiddenTraceIds.update((hidden) => {
+      if (hidden.has(id)) {
+        hidden.delete(id);
       } else {
-        canvas.drawSegment(ctx, [0, previewSize], [previewSize, 0], style);
+        hidden.add(id);
       }
-    }
-  });
+      return hidden;
+    });
+  };
 
-  /** Width and height of the lil preview window */
-  const previewSize = 20;
+  /**
+   * If all traces are visible, hide all except for
+   * the selected one; else show all traces.
+   */
+  const toggleVisibilityOfAllTraces = (id: string) => {
+    hiddenTraceIds.update((hidden) => {
+      if (hidden.size === 0 || (hidden.size === 1 && hidden.has(id))) {
+        hidden = new Set(traces.traces());
+        hidden.delete(id);
+      } else {
+        hidden.clear();
+      }
+      return hidden;
+    });
+  };
+
+  // FIXME workaround for @container css query
+  let containerRect: DOMRectReadOnly | undefined;
+  $: wide = (containerRect?.width ?? 0) > 300;
 
   let widestLegend: number = 0;
   const updateMaxWidth = (width: number) => {
@@ -88,25 +60,22 @@
 <div class="legend-container">
   <div
     class="legend-grid"
-    bind:this={container}
+    bind:contentRect={containerRect}
     style:width={`min(${(widestLegend + 3) * numberOfShownTraces}px, 100%)`}
     style:flex-direction={wide ? "row" : "column"}
     style:grid-template-columns={`repeat(auto-fill, minmax(${widestLegend}px, 1fr))`}
   >
-    <!--
-  {#each {length: numberOfShownTraces} as _, i} <!-- a lil trick ti break after numberOfShownTraces - ->
-  {@const styledTrace = tracesWithStyles[i]}
--->
-    {#each tracesWithStyles.slice(0, numberOfShownTraces) as styledTrace}
-      {@const hidden = $hiddenTraceIds.has(styledTrace.traceId)}
+    {#each styledTraces.slice(0, numberOfShownTraces) as { traceId, style }}
+      {@const hidden = $hiddenTraceIds.has(traceId)}
       <LegendEntry
         {hidden}
-        {previewSize}
+        previewSize={20}
         {previewStyle}
-        {styledTrace}
+        {traceId}
+        traceStyle={style}
         {updateMaxWidth}
-        updateHiddenTraceIds={hiddenTraceIds.update}
-        {allIds}
+        {toggleTraceVisibility}
+        {toggleVisibilityOfAllTraces}
       />
     {/each}
   </div>

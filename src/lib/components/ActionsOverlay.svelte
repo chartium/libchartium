@@ -25,6 +25,7 @@
   import type { MouseDragCallbacks } from "../utils/mouseActions.js";
   import type {
     ChartValue,
+    DisplayUnit,
     HighlightPoint,
     Point,
     Quantity,
@@ -59,8 +60,6 @@
   export let hideYRuler: boolean;
   export let hideXBubble: boolean;
   export let hideYBubble: boolean;
-  export let hoverXQuantity: Quantity | number | Dayjs;
-  export let hoverYQuantity: Quantity | number | Dayjs;
   export let disableInteractivity: boolean;
   export let traceHovered: boolean;
   export let commonXRuler: WritableSignal<ChartValue | undefined>;
@@ -78,6 +77,10 @@
   export const addPersistentThreshold = () => {
     thresholdAddMode = true;
   };
+
+  // FIXME only for RulerBubble's which should be moved elsewhere
+  export let xDisplayUnit: DisplayUnit;
+  export let yDisplayUnit: DisplayUnit;
 
   let canvasRef: HTMLCanvasElement;
   let ctx: CanvasRenderingContext2D;
@@ -432,13 +435,23 @@
 {#if !hideXBubble && mousePosition}
   {@const x = mousePosition[0] + canvasRef.getBoundingClientRect().left}
   {@const y = canvasRef.getBoundingClientRect().bottom}
-  <RulerBubble position={{ x, y }} value={hoverXQuantity} axis="x" />
+  <RulerBubble
+    axis="x"
+    position={{ x, y }}
+    value={$commonXRuler}
+    displayUnit={xDisplayUnit}
+  />
 {/if}
 
 {#if !hideYBubble && mousePosition}
   {@const x = canvasRef.getBoundingClientRect().left}
   {@const y = mousePosition[1] + canvasRef.getBoundingClientRect().top}
-  <RulerBubble position={{ x, y }} value={hoverYQuantity} axis="y" />
+  <RulerBubble
+    axis="y"
+    position={{ x, y }}
+    value={$commonYRuler}
+    displayUnit={yDisplayUnit}
+  />
 {/if}
 
 <style>

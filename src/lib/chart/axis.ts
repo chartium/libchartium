@@ -7,6 +7,7 @@ import {
   type Tick,
   type DisplayUnitPreference,
   type DisplayUnit,
+  type DataUnit,
 } from "../types.js";
 import { axisUnits$ } from "./axisUnits.js";
 import { axisRange$ } from "./axisRange.js";
@@ -39,6 +40,7 @@ export interface Axis {
   shiftRange: (fractionalShift: number) => void;
   zoomRange: (fractionalRange: NumericRange) => void;
 
+  dataUnit$: Signal<DataUnit>;
   currentDisplayUnit$: Signal<DisplayUnit>;
   unitChangeActions$: Signal<{
     raise?: UnitChangeAction;
@@ -66,7 +68,7 @@ export const axis$ = ({
     fractionalMargins$: axis === "y" ? cons([0.1, 0.1]) : cons([0, 0]),
   });
 
-  const { currentDisplayUnit$, unitChangeActions$ } = axisUnits$({
+  const { dataUnit$, currentDisplayUnit$, unitChangeActions$ } = axisUnits$({
     axis,
     range$,
     visibleTraces$,
@@ -85,6 +87,7 @@ export const axis$ = ({
     resetRange,
     shiftRange,
     zoomRange,
+    dataUnit$,
     currentDisplayUnit$,
     unitChangeActions$,
     ticks$,

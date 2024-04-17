@@ -1,43 +1,28 @@
 <!-- Component for displaying a lil tooltip by the cursor that shows info about nearby traces -->
 <script lang="ts">
-  import type { Point } from "../../types.js";
+  import type { DisplayUnit, Point } from "../../types.js";
   import { globalMouseMove } from "../../utils/mouseActions.js";
   import GenericTooltip from "../../utils/GenericTooltip.svelte";
   import SingleTraceTootlip from "./SingleTraceTootlip.svelte";
   import ManyTracesTooltip from "./ManyTracesTooltip.svelte";
+  import type {
+    CloseTrace,
+    HoveredTrace,
+  } from "../../chart/interactive/hover.js";
 
   /** The tooltip will try its best to not be in this rectangle */
   export let forbiddenRectangle:
     | { x: number; y: number; width: number; height: number }
     | undefined = undefined;
 
-  export let nearestTracesInfo: {
-    traceId: string;
-    label: string | undefined;
-    color: string;
-    width: number;
-    showPoints: boolean;
-    x: string;
-    y: string;
-  }[];
-  export let singleTraceInfo:
-    | {
-        traceId: string;
-        label: string | undefined;
-        color: string;
-        width: number;
-        showPoints: boolean;
-        x: string;
-        y: string;
-        min: string;
-        max: string;
-        avg: string;
-      }
-    | undefined;
+  export let nearestTraces: CloseTrace[];
+  export let hoveredTrace: HoveredTrace | undefined;
+  export let xDisplayUnit: DisplayUnit;
+  export let yDisplayUnit: DisplayUnit;
 
   export let previewStyle: "simplified" | "full";
 
-  export let show: boolean;
+  $: show = nearestTraces.length > 0 || hoveredTrace;
 
   let position: Point;
 
@@ -83,10 +68,20 @@
 
 <div use:globalMouseMove={updateMousePosition}>
   <GenericTooltip position={show ? position : undefined}>
-    {#if singleTraceInfo !== undefined}
-      <SingleTraceTootlip {previewStyle} {singleTraceInfo} />
+    {#if hoveredTrace !== undefined}
+      <SingleTraceTootlip
+        {previewStyle}
+        {hoveredTrace}
+        {xDisplayUnit}
+        {yDisplayUnit}
+      />
     {:else}
-      <ManyTracesTooltip {previewStyle} {nearestTracesInfo} />
+      <ManyTracesTooltip
+        {previewStyle}
+        {nearestTraces}
+        {xDisplayUnit}
+        {yDisplayUnit}
+      />
     {/if}
   </GenericTooltip>
 </div>

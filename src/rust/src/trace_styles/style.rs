@@ -35,6 +35,19 @@ pub struct TraceStyle {
     pub legend_priority: OrUnset<f64>,
 }
 
+#[derive(Clone, Tsify, Serialize, Deserialize)]
+#[tsify(into_wasm_abi, from_wasm_abi)]
+#[serde(rename_all = "kebab-case")]
+pub struct ComputedTraceStyle {
+    pub color: TraceColor,
+    pub points: TracePointsStyle,
+    pub line: TraceLineStyle,
+    pub line_width: u32,
+    pub palette_index: TracePaletteIndex,
+    pub z_index: f64,
+    pub legend_priority: f64,
+}
+
 impl TraceStylePatch {
     pub fn is_empty(&self) -> bool {
         self.color.is_none()
@@ -51,9 +64,7 @@ impl TraceStyle {
     pub fn unset() -> Self {
         Default::default()
     }
-}
 
-impl TraceStyle {
     #[inline(always)]
     pub fn get_color(&self) -> &TraceColor {
         self.color.or_default()
@@ -81,6 +92,18 @@ impl TraceStyle {
     #[inline(always)]
     pub fn get_legend_priority(&self) -> f64 {
         self.legend_priority.set_or(0.)
+    }
+
+    pub fn to_computed(&self) -> ComputedTraceStyle {
+        ComputedTraceStyle {
+            color: self.get_color().clone(),
+            points: *self.get_points(),
+            line: *self.get_line(),
+            palette_index: *self.get_palette_index(),
+            line_width: self.get_line_width(),
+            z_index: self.get_z_index(),
+            legend_priority: self.get_legend_priority(),
+        }
     }
 
     pub fn patch(&self, patch: TraceStylePatch) -> TraceStyle {

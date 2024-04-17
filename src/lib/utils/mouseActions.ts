@@ -217,7 +217,7 @@ export function globalMouseMove(
  * @param callbacks the callbacks to call on single and double click
  * @param delayMS the delay in milliseconds to wait for the second click
  */
-export function oneOrDoubleclick(
+export function singleOrDoubleclick(
   node: HTMLElement,
   callbacks: {
     single: (event: MouseEvent) => void;

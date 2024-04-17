@@ -44,12 +44,23 @@ export const PARAMS = Symbol("trace-list-params");
 export const CONSTRUCTOR = Symbol("trace-list-constructor");
 export const LAZY = Symbol("trace-list-lazy");
 
-export interface TraceMetas {
+export interface TraceStatistics {
   traceId: string;
   min: ChartValue;
   max: ChartValue;
   average: ChartValue;
   averageNonzero: ChartValue;
+}
+
+export interface ComputedTraceStyle {
+  label: string | undefined;
+  color: `#${string}`;
+  points: lib.TracePointsStyle;
+  line: lib.TraceLineStyle;
+  "line-width": number;
+  "palette-index": number;
+  "z-index": number;
+  "legend-priority": number;
 }
 
 export interface TraceListParams {
@@ -183,13 +194,21 @@ export class TraceList {
     });
   }
 
-  getStyle(traceId: string) {
-    return this.#p.styles.get_cloned(
+  getStyle(traceId: string): ComputedTraceStyle {
+    const style = this.#p.styles.get_computed(
       traceIds.getKey(traceId) ?? yeet(UnknownTraceIdError, traceId),
     );
+    return {
+      ...style,
+      label: this.getLabel(traceId),
+      color: this.getColor(traceId),
+      "palette-index": this.#colorIndices.get_trace_index(
+        traceIds.getKey(traceId)!,
+      ),
+    };
   }
 
-  getColor(traceId: string) {
+  getColor(traceId: string): `#${string}` {
     return resolvedColorToHex(
       this.#p.styles.get_color(
         traceIds.getKey(traceId) ?? yeet(UnknownTraceIdError, traceId),
@@ -262,6 +281,18 @@ export class TraceList {
     return new TraceList({
       ...this.#p,
       handles,
+    });
+  }
+
+  /**
+   * Creates a new trace list with trace colors resolved to specific
+   * colors, so that if you further modify the trace list, colors of
+   * traces will not change
+   */
+  withResolvedColors() {
+    return new TraceList({
+      ...this.#p,
+      precomputedColorIndices: this.#colorIndices,
     });
   }
 
@@ -360,7 +391,7 @@ export class TraceList {
     });
   }
 
-  #statistics: TraceMetas[] | undefined;
+  #statistics: TraceStatistics[] | undefined;
 
   /**
    * Calculate the statistics (like the maximum, minimum and average value)
@@ -403,7 +434,7 @@ export class TraceList {
     const convertedMetas = Array.from(
       map(
         zip(metas, handles),
-        ([meta, handle]): TraceMetas => ({
+        ([meta, handle]): TraceStatistics => ({
           traceId: traceIds.get(handle)!,
           min: withYUnit(meta.min),
           max: withYUnit(meta.max),
@@ -443,19 +474,14 @@ export class TraceList {
    * The point has to be im data's natural units
    * By default, the distance is measured only in the vertical direction (ie. you'll
    * only get trace points which are exactly below or above the reference point).
-   *
-   * TODO add a more precise euclidean distance mode
    */
-  findClosestTracesToPoint(
+  findNearestTraces(
     point: { x: ChartValue; y: ChartValue },
     howMany: number,
   ): {
+    traceId: string;
     x: ChartValue;
     y: ChartValue;
-
-    traceId: string;
-    color: string;
-    width: number;
   }[] {
     const yToNum = (y: ChartValue) => toNumeric(y, this.yDataUnit);
 
@@ -482,27 +508,11 @@ export class TraceList {
     closestPoints.sort((a, b) => a.distance - b.distance);
     closestPoints = closestPoints.slice(0, howMany);
 
-    // sort by y from largest to lowest
-    closestPoints.sort((a, b) => yToNum(b.y) - yToNum(a.y));
-
-    return closestPoints.map(({ handle, x, y }) => {
-      const traceId = traceIds.get(handle)!;
-      const width = this.#p.styles.get_line_width(handle);
-      const color = resolvedColorToHex(
-        this.#p.styles.get_color(
-          handle,
-          this.#colorIndices,
-          this.#p.randomSeed,
-        ),
-      );
-      return {
-        traceId,
-        x,
-        y,
-        color,
-        width,
-      };
-    });
+    return closestPoints.map(({ handle, x, y }) => ({
+      traceId: traceIds.get(handle)!,
+      x,
+      y,
+    }));
   }
 
   /**

@@ -1,14 +1,15 @@
 <script lang="ts">
-  import type { ChartValue, Point } from "../types.js";
+  import type { ChartValue, DisplayUnit, Point } from "../types.js";
   import { observeClientSize } from "../utils/actions.js";
   import { qndFormat } from "../utils/format.js";
   import { portal } from "svelte-portal";
 
   /** position relative to body; i.e. absolute :d */
   export let position: Point;
-  export let value: ChartValue;
+  export let value: ChartValue | undefined;
   export let axis: "x" | "y";
   export let rotated: boolean = false;
+  export let displayUnit: DisplayUnit;
 
   let clientHeight: number;
   let clientWidth: number;
@@ -24,19 +25,21 @@
   }`;
 </script>
 
-<div
-  class="axis-bubble"
-  class:x-axis-bubble={axis === "x"}
-  class:y-axis-bubble={axis === "y"}
-  {style}
-  use:observeClientSize={([w, h]) => {
-    clientWidth = w;
-    clientHeight = h;
-  }}
-  use:portal
->
-  {qndFormat(value ?? 0)}
-</div>
+{#if value !== undefined}
+  <div
+    class="axis-bubble"
+    class:x-axis-bubble={axis === "x"}
+    class:y-axis-bubble={axis === "y"}
+    {style}
+    use:observeClientSize={([w, h]) => {
+      clientWidth = w;
+      clientHeight = h;
+    }}
+    use:portal
+  >
+    {qndFormat(value ?? 0, { unit: displayUnit })}
+  </div>
+{/if}
 
 <style lang="scss">
   .axis-bubble {

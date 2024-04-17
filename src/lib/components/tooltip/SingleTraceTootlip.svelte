@@ -1,38 +1,36 @@
 <script lang="ts">
+  import type { HoveredTrace } from "../../chart/interactive/hover.js";
+  import type { DisplayUnit } from "../../types.js";
+  import { qndFormat } from "../../utils/format.js";
   import TracePreview from "../TracePreview.svelte";
 
   export let previewStyle: "simplified" | "full";
-  export let singleTraceInfo: {
-    traceId: string;
-    label: string | undefined;
-    color: string;
-    width: number;
-    showPoints: boolean;
-    x: string;
-    y: string;
-    min: string;
-    max: string;
-    avg: string;
-  };
+
+  export let hoveredTrace: HoveredTrace;
+  export let xDisplayUnit: DisplayUnit;
+  export let yDisplayUnit: DisplayUnit;
+
   $: traceMetas = {
-    value: singleTraceInfo.y,
-    min: singleTraceInfo.min,
-    max: singleTraceInfo.max,
-    avg: singleTraceInfo.avg,
+    value: hoveredTrace.y,
+    min: hoveredTrace.statistics.min,
+    max: hoveredTrace.statistics.max,
+    avg: hoveredTrace.statistics.average,
   };
 </script>
 
 <div class="tooltip-container">
   <div class="header">
     <TracePreview
-      previewedTrace={singleTraceInfo}
+      traceStyle={hoveredTrace.style}
       simplified={previewStyle === "simplified"}
     />
-    {singleTraceInfo.label ?? singleTraceInfo.traceId}
+    {hoveredTrace.style.label ?? hoveredTrace.traceId}
   </div>
   <div class="trace-info">
     <div class="value-name">date:</div>
-    <div class="value-value">{singleTraceInfo.x}</div>
+    <div class="value-value">
+      {qndFormat(hoveredTrace.x, { unit: xDisplayUnit })}
+    </div>
   </div>
 
   <div style:margin-bottom={"9px"} />
@@ -40,7 +38,7 @@
     <div class="trace-info">
       <div class="value-name">{key}:</div>
       <div class="value-value">
-        {value}
+        {qndFormat(value, { unit: yDisplayUnit })}
       </div>
     </div>
   {/each}
