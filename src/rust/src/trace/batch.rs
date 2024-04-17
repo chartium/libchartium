@@ -86,8 +86,7 @@ impl<X: N + Ord, Y: N> Bundle for Batch<X, Y> {
         };
 
         let from = match self.x.binary_search(&X::from_f64(x_range.from).unwrap()) {
-            Ok(i) => i,
-            Err(i) => i,
+            Ok(i) | Err(i) => i,
         };
 
         Box::new(
@@ -96,7 +95,7 @@ impl<X: N + Ord, Y: N> Bundle for Batch<X, Y> {
                 .zip(data.iter())
                 .skip(from)
                 .take_while(move |(x, _)| x.as_f64() <= x_range.to)
-                .map(move |(x, y)| (x.as_f64(), y.as_f64())),
+                .map(|(x, y)| (x.as_f64(), y.as_f64())),
         )
     }
 
@@ -128,7 +127,7 @@ impl<X: N + Ord, Y: N> Bundle for Batch<X, Y> {
                 .zip(data.iter())
                 .skip(from)
                 .take(take)
-                .map(move |(x, y)| (x.as_f64(), y.as_f64())),
+                .map(|(x, y)| (x.as_f64(), y.as_f64())),
         )
     }
 
