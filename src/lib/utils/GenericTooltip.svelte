@@ -35,22 +35,21 @@
    * to avoid overflowing the page */
   export let avoidEdges: boolean = true;
 
-  let containerHeight: number;
-  let containerWidth: number;
+  let container: DOMRect | undefined;
   let innerWidth: number;
   let innerHeight: number;
 
-  $: if (position !== undefined) {
+  $: if (position !== undefined && container) {
     if (avoidEdges) {
       renderPosition = repairedPosition(
         position,
-        containerHeight,
-        containerWidth,
+        container.height,
+        container.width,
       );
     } else {
       renderPosition = {
-        x: position.x + (left ? 0 : -containerWidth),
-        y: position.y + (top ? 0 : -containerHeight),
+        x: position.x + (left ? 0 : -container.width),
+        y: position.y + (top ? 0 : -container.height),
       };
     }
   }
@@ -68,27 +67,27 @@
     if (right) {
       const positionOfRightMenuBoundary = x + tooltipWidth + 3;
       const rightOverflow = positionOfRightMenuBoundary - innerWidth;
-      toReturnX = rightOverflow > 0 ? x - containerWidth : x;
+      toReturnX = rightOverflow > 0 ? x - tooltipWidth : x;
     }
     if (left) {
       const positionOfLeftMenuBoundary = x - tooltipWidth - 3;
       const leftOverflow = positionOfLeftMenuBoundary;
-      toReturnX = leftOverflow < 0 ? x : x - containerWidth;
+      toReturnX = leftOverflow < 0 ? x : x - tooltipWidth;
     }
     if (bottom) {
       const positionOfBottomMenuBoundary = y + tooltipHeight + 3;
       const bottomOverflow = positionOfBottomMenuBoundary - innerHeight;
-      toReturnY = bottomOverflow > 0 ? y - containerHeight : y;
+      toReturnY = bottomOverflow > 0 ? y - tooltipHeight : y;
     }
     if (top) {
       const positionOfTopMenuBoundary = y - tooltipHeight - 3;
       const topOverflow = positionOfTopMenuBoundary;
-      toReturnY = topOverflow < 0 ? y : y - containerHeight;
+      toReturnY = topOverflow < 0 ? y : y - tooltipHeight;
     }
 
     return {
-      x: toReturnX ?? x - containerWidth / 2,
-      y: toReturnY ?? y - containerHeight / 2,
+      x: toReturnX ?? x - tooltipWidth / 2,
+      y: toReturnY ?? y - tooltipHeight / 2,
     };
   }
 </script>
@@ -96,8 +95,7 @@
 <svelte:window bind:innerHeight bind:innerWidth />
 {#if position !== undefined}
   <div
-    bind:clientHeight={containerHeight}
-    bind:clientWidth={containerWidth}
+    bind:contentRect={container}
     use:portal
     class="tooltip"
     style:top={renderPosition?.y + "px"}

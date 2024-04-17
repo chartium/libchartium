@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { ChartValue, Point } from "../types.js";
+  import { observeClientSize } from "../utils/actions.js";
   import { qndFormat } from "../utils/format.js";
   import { portal } from "svelte-portal";
 
@@ -28,8 +29,10 @@
   class:x-axis-bubble={axis === "x"}
   class:y-axis-bubble={axis === "y"}
   {style}
-  bind:clientHeight
-  bind:clientWidth
+  use:observeClientSize={([w, h]) => {
+    clientWidth = w;
+    clientHeight = h;
+  }}
   use:portal
 >
   {qndFormat(value ?? 0)}

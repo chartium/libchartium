@@ -2,6 +2,7 @@
   import { onMount } from "svelte";
   import TracePreview from "./TracePreview.svelte";
   import { oneOrDoubleclick } from "../utils/mouseActions.js";
+  import { observeClientSize } from "../utils/actions.js";
 
   export let styledTrace: {
     traceId: string;
@@ -29,7 +30,7 @@
 <div
   class="trace-legend"
   style:opacity={hidden ? "0.5" : 1}
-  bind:clientWidth={myWidth}
+  use:observeClientSize={([w]) => (myWidth = w)}
   use:oneOrDoubleclick={{
     single: () => {
       updateHiddenTraceIds((curr) => {

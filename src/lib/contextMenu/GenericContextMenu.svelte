@@ -5,6 +5,8 @@
  -->
 
 <script lang="ts" generics="T">
+  import { observeClientSize } from "../utils/actions.js";
+
   import { portal } from "svelte-portal";
   import ContextItemComponent from "./ContextItemComponent.svelte";
   import type { ContextItem, Point } from "./contextMenu.js";
@@ -170,8 +172,10 @@
     top:{renderPosition?.y ?? 0}px;"
     use:mouseDownOutside={close}
     use:genericKeydown={handleKeyboardNavigation}
-    bind:clientWidth={menuWidth}
-    bind:clientHeight={menuHeight}
+    use:observeClientSize={([w, h]) => {
+      menuWidth = w;
+      menuHeight = h;
+    }}
     use:portal
   >
     {#each items as item, index}

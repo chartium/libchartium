@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { observeOffsetSize } from "./actions.js";
+
   export let direction: "cw" | "ccw" = "ccw";
   let offsetHeight: number;
   let offsetWidth: number;
@@ -8,7 +10,13 @@
   class="rotate-outer"
   style="width: {offsetHeight}px; height: {offsetWidth}px"
 >
-  <div class="rotate-inner {direction}" bind:offsetHeight bind:offsetWidth>
+  <div
+    class="rotate-inner {direction}"
+    use:observeOffsetSize={([w, h]) => {
+      offsetWidth = w;
+      offsetHeight = h;
+    }}
+  >
     <slot />
   </div>
 </div>

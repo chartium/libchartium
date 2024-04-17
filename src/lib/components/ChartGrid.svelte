@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { observeResize } from "../utils/actions.js";
+  import { observeClientSize } from "../utils/actions.js";
 
   export let contentSize: [number, number] = [1, 1];
   export let xAxisHeight: number | undefined = undefined;
@@ -25,7 +25,7 @@
   >
     <slot name="xticks" />
   </div>
-  <div class="content" use:observeResize={(s) => (contentSize = s)}>
+  <div class="content" use:observeClientSize={(s) => (contentSize = s)}>
     <slot />
   </div>
   <div class="right-legend">

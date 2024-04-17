@@ -2,8 +2,9 @@
 name = "libchartium"
 version = "0.3.0"
 authors = [
-    "Richard Ivanek <richard.ivanek@gmail.com>",
+    "Richard Ivanek <richard@ivanek.dev>",
     "Michal Grno <csha@tutanota.com>",
+    "Ondra Janoska <o.janoska98@gmail.com>",
 ]
 edition = "2021"
 
@@ -26,7 +27,7 @@ num-traits = "0.2.18"
 tsify = "0.4.5"
 optfield = "0.3.0"
 rand = { version = "0.8.5", features = ["small_rng"] }
-getrandom = { features = ["js"] }
+getrandom = { version = "0.2.14", features = ["js"] }
 
 [dependencies.web-sys]
 version = "0.3.69"
