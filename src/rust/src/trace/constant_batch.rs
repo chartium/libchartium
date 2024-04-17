@@ -37,10 +37,23 @@ impl<Y: N> Bundle for ConstantBatch<Y> {
         handle: crate::data::TraceHandle,
         x_range: NumericRange,
     ) -> Box<dyn Iterator<Item = (f64, f64)> + 'a> {
-        match self.ys.get(&handle).map(|y| y.as_f64()) {
-            Some(y) => Box::new([(x_range.from, y), (x_range.to, y)].into_iter()),
-            None => Box::new(std::iter::empty()),
-        }
+        Box::new(
+            self.iter_in_range_with_neighbors_f64(handle, x_range)
+                .skip_while(move |(x, _)| *x < x_range.from)
+                .take_while(move |(x, _)| *x <= x_range.to),
+        )
+    }
+
+    fn iter_in_range_with_neighbors_f64<'a>(
+        &'a self,
+        handle: crate::data::TraceHandle,
+        x_range: NumericRange,
+    ) -> Box<dyn Iterator<Item = (f64, f64)> + 'a> {
+        let Some(y) = self.ys.get(&handle).map(|y| y.as_f64()) else {
+            return Box::new(std::iter::empty());
+        };
+
+        Box::new([(x_range.from, y), (x_range.to, y)].into_iter())
     }
 
     fn iter_many_in_range_f64<'a>(

@@ -7,7 +7,7 @@ use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
 
 use crate::{
     data::TraceHandle,
-    structs::{bulkloader::data_types::TYPE_SIZES, MetaCounter},
+    structs::bulkloader::data_types::TYPE_SIZES,
     trace::{Batch, BoxedBundle, ConstantBatch},
 };
 
@@ -102,41 +102,18 @@ impl Bulkloader {
 
         let point_count = data.len() / row_bytes_len;
         let mut x = Vec::<u64>::with_capacity(point_count);
+        let mut y = vec![0.; point_count * handles.len()];
 
-        let mut ys = {
-            let ptr = unsafe {
-                use std::alloc::{alloc, Layout};
-
-                alloc(Layout::array::<f64>(point_count * handles.len()).unwrap()) as *mut f64
-            };
-            handles
-                .iter()
-                .enumerate()
-                .map(|(i, _)| unsafe {
-                    Vec::from_raw_parts(ptr.add(i * point_count), 0, point_count)
-                })
-                .collect::<Vec<_>>()
-        };
-
-        let mut counter = MetaCounter::new(handles.len());
-
-        for row in data.chunks_exact(row_bytes_len) {
+        for (row_idx, row) in data.chunks_exact(row_bytes_len).enumerate() {
             let cur = (x_desc.parser)(&row[0..x_desc.size]);
             x.push(cur as u64);
 
-            ys.iter_mut()
-                .zip(row[x_desc.size..].chunks(y_desc.size))
-                .enumerate()
-                .for_each(|(i, (y, bytes))| {
-                    let val = (y_desc.parser)(bytes);
-                    counter.add(i, val);
-                    y.push(val);
-                });
+            for (col_idx, col) in row[x_desc.size..].chunks_exact(y_desc.size).enumerate() {
+                y[col_idx * point_count + row_idx] = (y_desc.parser)(col);
+            }
         }
 
-        let ys = HashMap::from_iter(handles.iter().zip(ys).map(|(h, y)| (*h, y)));
-
-        BoxedBundle::new(Batch::new(x, ys))
+        BoxedBundle::new(Batch::new(x, y, &handles))
     }
 
     pub fn from_columnar(
@@ -146,26 +123,12 @@ impl Bulkloader {
         input_x: Uint8Array,
         input_ys: Vec<Uint8Array>,
     ) -> BoxedBundle {
-        let x_desc = TYPE_SIZES.get(x_type.as_str()).unwrap();
-        let y_desc = TYPE_SIZES.get(y_type.as_str()).unwrap();
+        let [x_desc, y_desc] = [x_type, y_type].map(|t| TYPE_SIZES.get(t.as_str()).unwrap());
 
         let point_count = input_x.length() as usize / x_desc.size;
 
         let mut x = Vec::<u64>::with_capacity(point_count);
-        let mut ys = {
-            let ptr = unsafe {
-                use std::alloc::{alloc, Layout};
-
-                alloc(Layout::array::<f64>(point_count * input_ys.len()).unwrap()) as *mut f64
-            };
-            handles
-                .iter()
-                .enumerate()
-                .map(|(i, _)| unsafe {
-                    Vec::from_raw_parts(ptr.add(i * point_count), 0, point_count)
-                })
-                .collect::<Vec<_>>()
-        };
+        let mut y = Vec::<f64>::with_capacity(point_count * input_ys.len());
 
         let input_x = input_x.to_vec();
 
@@ -174,19 +137,17 @@ impl Bulkloader {
             x.push(cur as u64);
         }
 
-        for (input, output) in input_ys.into_iter().zip(ys.iter_mut()) {
-            let y = input.to_vec();
+        let mut buffer = vec![0u8; y_desc.size * point_count];
 
-            for current_y in y.chunks_exact(y_desc.size) {
-                let val = (y_desc.parser)(current_y);
+        for input_y in input_ys.into_iter() {
+            input_y.copy_to(&mut buffer);
 
-                output.push(val);
+            for window in buffer.chunks_exact(y_desc.size) {
+                y.push((y_desc.parser)(window));
             }
         }
 
-        let ys = HashMap::from_iter(handles.iter().zip(ys).map(|(h, y)| (*h, y)));
-
-        BoxedBundle::new(Batch::new(x, ys))
+        BoxedBundle::new(Batch::new(x, y, &handles))
     }
 
     // FIXME move this to a different file once it works :d

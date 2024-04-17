@@ -33,7 +33,7 @@ impl TraceData {
     pub fn compute(bundle: &BoxedBundle, handle: TraceHandle, x_range: NumericRange) -> TraceData {
         let data = bundle
             .unwrap()
-            .iter_in_range_f64(handle, x_range)
+            .iter_in_range_with_neighbors_f64(handle, x_range)
             .with_origin_at(x_range.from, 0.0)
             .map(|(x, y)| (x as f32, y as f32))
             .collect();

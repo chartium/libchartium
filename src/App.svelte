@@ -26,7 +26,7 @@
     (_, index) => from + index * stepSize,
   );
 
-  const ys = Array.from({ length: 8 }, (_, idx) => ({
+  const ys = Array.from({ length: 3_000 }, (_, idx) => ({
     id: `trace_${idx}`,
     data: Float32Array.from(
       xs.map((x) => 100 + 100 * Math.sin((x / to) * 2 * Math.PI + idx)),
@@ -35,22 +35,30 @@
 
   const controller = ChartiumController.instantiateInThisThread({ wasmUrl });
 
-  const normalTraces = controller.addFromColumnarArrayBuffers({
-    x: {
-      type: "f32",
-      unit: NumericDateRepresentation.EpochSeconds(),
-      data: Float32Array.from(xs),
-    },
-    y: {
-      type: "f32",
-      unit: IEC.parseUnit("KiB"),
-      columns: ys,
-    },
-    style: {
-      "*": { "line-width": 2 },
-      sin: { color: "red" },
-    },
-  });
+  const normalTraces = (async () => {
+    console.time("load");
+
+    const result = await controller.addFromColumnarArrayBuffers({
+      x: {
+        type: "f32",
+        unit: NumericDateRepresentation.EpochSeconds(),
+        data: Float32Array.from(xs),
+      },
+      y: {
+        type: "f32",
+        unit: IEC.parseUnit("KiB"),
+        columns: ys,
+      },
+      style: {
+        "*": { "line-width": 2 },
+        sin: { color: "red" },
+      },
+    });
+
+    console.timeEnd("load");
+
+    return result;
+  })();
   const threshold = controller.addThresholdTracelist({
     ids: ["threshold"],
     ys: new Float64Array([100]),

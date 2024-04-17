@@ -309,51 +309,55 @@ impl WebGlRenderer {
     ) -> WebGlBuffer {
         let context = &self.context;
 
-        let (x_pixel_ratio, y_pixel_ratio) = (
-            (self.width as f64) / trace.x_range.len(),
-            (self.height as f64) / y_range.len(),
-        );
+        let lengths: Vec<f32> = if trace.data.is_empty() {
+            Vec::with_capacity(0)
+        } else {
+            let (x_pixel_ratio, y_pixel_ratio) = (
+                (self.width as f64) / trace.x_range.len(),
+                (self.height as f64) / y_range.len(),
+            );
 
-        let (first_x, first_y) = (
-            x_pixel_ratio * (trace.data[0].0 as f64 - trace.x_range.from),
-            y_pixel_ratio * (trace.data[0].1 as f64 - y_range.from),
-        );
+            let (first_x, first_y) = (
+                x_pixel_ratio * (trace.data[0].0 as f64 - trace.x_range.from),
+                y_pixel_ratio * (trace.data[0].1 as f64 - y_range.from),
+            );
 
-        #[derive(Clone, Debug)]
-        struct State {
-            length_so_far: f64,
-            last_x: f64,
-            last_y: f64,
-        }
+            #[derive(Clone, Debug)]
+            struct State {
+                length_so_far: f64,
+                last_x: f64,
+                last_y: f64,
+            }
 
-        let initial_state = State {
-            length_so_far: 0.0,
-            last_x: first_x,
-            last_y: first_y,
-        };
+            let initial_state = State {
+                length_so_far: 0.0,
+                last_x: first_x,
+                last_y: first_y,
+            };
 
-        let lengths: Vec<f32> = trace
-            .data
-            .iter()
-            .map(|(x, y)| {
-                (
-                    x_pixel_ratio * (*x as f64 - trace.x_range.from),
-                    y_pixel_ratio * (*y as f64 - y_range.from),
-                )
-            })
-            .scan(initial_state, |state: &mut State, (x, y): (f64, f64)| {
-                let len_sqr: f64 = (state.last_x - x).powi(2) + (state.last_y - y).powi(2);
-                if !len_sqr.is_nan() {
-                    *state = State {
-                        last_x: x,
-                        last_y: y,
-                        length_so_far: state.length_so_far + len_sqr.sqrt(),
+            trace
+                .data
+                .iter()
+                .map(|(x, y)| {
+                    (
+                        x_pixel_ratio * (*x as f64 - trace.x_range.from),
+                        y_pixel_ratio * (*y as f64 - y_range.from),
+                    )
+                })
+                .scan(initial_state, |state: &mut State, (x, y): (f64, f64)| {
+                    let len_sqr: f64 = (state.last_x - x).powi(2) + (state.last_y - y).powi(2);
+                    if !len_sqr.is_nan() {
+                        *state = State {
+                            last_x: x,
+                            last_y: y,
+                            length_so_far: state.length_so_far + len_sqr.sqrt(),
+                        };
                     };
-                };
 
-                Some(state.length_so_far as f32)
-            })
-            .collect();
+                    Some(state.length_so_far as f32)
+                })
+                .collect()
+        };
 
         let buffer = context.create_buffer().unwrap();
         context.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, Some(&buffer));

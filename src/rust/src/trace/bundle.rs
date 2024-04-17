@@ -59,6 +59,12 @@ pub trait Bundle {
         x_range: NumericRange,
     ) -> Box<dyn Iterator<Item = (f64, f64)> + 'a>;
 
+    fn iter_in_range_with_neighbors_f64<'a>(
+        &'a self,
+        handle: TraceHandle,
+        x_range: NumericRange,
+    ) -> Box<dyn Iterator<Item = (f64, f64)> + 'a>;
+
     fn iter_many_in_range_f64<'a>(
         &'a self,
         handles: Vec<TraceHandle>,
