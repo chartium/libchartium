@@ -7,7 +7,13 @@
     mouseClick,
     type MouseDragCallbacks,
   } from "../utils/mouseActions.js";
-  import type { DisplayUnit, Point, Shift, Tick } from "../types.js";
+  import {
+    isUnit,
+    type DisplayUnit,
+    type Point,
+    type Shift,
+    type Tick,
+  } from "../types.js";
   import type { VisibleAction } from "./ActionsOverlay.svelte";
   import {
     type ContextItem,
@@ -196,7 +202,7 @@
 >
   {#if label !== undefined}
     {@const labelText =
-      label + (!hideLabelUnits && unit ? ` [${unit.toString()}]` : "")}
+      label + (!hideLabelUnits && isUnit(unit) ? ` [${unit.toString()}]` : "")}
 
     {#if axis === "y"}
       <RotatedBox>
