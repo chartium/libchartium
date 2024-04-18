@@ -7,7 +7,6 @@ use serde::{Deserialize, Serialize};
 use tsify::Tsify;
 use wasm_bindgen::prelude::wasm_bindgen;
 
-use crate::console_log;
 use crate::trace_styles::{TraceColor, TraceRandomColorSpace};
 
 #[derive(Clone, PartialEq, Eq, Hash, Tsify, Serialize, Deserialize)]
