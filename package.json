@@ -1,6 +1,6 @@
 {
   "name": "libchartium",
-  "version": "0.0.63",
+  "version": "0.0.64",
   "type": "module",
   "contributors": [
     {
@@ -68,7 +68,7 @@
     "@fortawesome/free-solid-svg-icons": "^6.5.2",
     "@mod.js/signals": "^0.0.30",
     "@risai/bim": "^1.4.2",
-    "@tanstack/svelte-virtual": "^3.3.0",
+    "@tanstack/svelte-virtual": "^3.4.0",
     "@types/lodash-es": "^4.17.12",
     "@types/seedrandom": "^3.0.8",
     "comlink": "^4.4.1",
@@ -78,7 +78,7 @@
     "random": "^4.1.0",
     "sass": "^1.75.0",
     "seedrandom": "^3.0.5",
-    "svelte": "^4.2.14",
+    "svelte": "^4.2.15",
     "svelte-fa": "^4.0.2",
     "svelte-portal": "^2.2.1",
     "svelte-typed-context": "^1.0.1",
@@ -87,6 +87,6 @@
   },
   "peerDependencies": {
     "fraction.js": "^4.3.7",
-    "unitlib": "^0.8.0"
+    "unitlib": "^0.8.1"
   }
 }
