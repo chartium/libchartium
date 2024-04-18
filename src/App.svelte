@@ -69,6 +69,11 @@
     xDataUnit: NumericDateRepresentation.EpochSeconds(),
     yDataUnit: IEC.parseUnit("KiB"),
     tracelistsRange: { from: 0, to: 1 },
+    style: {
+      "*": {
+        line: "dashed",
+      },
+    },
   });
 
   const traces = Promise.all([threshold, normalTraces]).then((ts) =>
