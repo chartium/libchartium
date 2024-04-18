@@ -4,12 +4,12 @@ import { lib } from "./wasm.js";
 
 export type TraceRandomColorSpace = lib.TraceRandomColorSpace;
 export type TracePointsStyle = lib.TracePointsStyle;
+export type PaletteName = lib.PaletteName;
 
 export interface TraceStyle {
   color:
     | TraceRandomColorSpace
-    | "bright"
-    | "rainbow"
+    | PaletteName
     | (string & NonNullable<unknown>)
     | "unset";
   points: TracePointsStyle | "unset";

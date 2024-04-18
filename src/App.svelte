@@ -31,7 +31,7 @@
       (_, index) => from + index * stepSize,
     );
 
-    const ys = Array.from({ length: 1_000 }, (_, idx) => ({
+    const ys = Array.from({ length: 100 }, (_, idx) => ({
       id: `trace_${idx}`,
       data: Float32Array.from(
         xs.map((x) => 100 + 100 * Math.sin((x / to) * 2 * Math.PI + idx)),
@@ -54,7 +54,7 @@
         columns: ys,
       },
       style: {
-        "*": { "line-width": 2, color: "rainbow" },
+        "*": { "line-width": 2, color: "bright" },
         sin: { color: "red" },
       },
     });

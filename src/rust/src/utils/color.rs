@@ -4,6 +4,7 @@
 use rand::rngs::SmallRng;
 use rand::{Rng, SeedableRng};
 use serde::{Deserialize, Serialize};
+use std::f32::consts;
 use tsify::Tsify;
 use wasm_bindgen::prelude::wasm_bindgen;
 
@@ -59,18 +60,36 @@ impl B2F for [u8; 4] {
     }
 }
 
-pub const BRIGHT: [(&str, [f32; 3]); 6] = [
+pub const BRIGHT: [(&str, [f32; 3]); 4] = [
     ("blue", [0.543, 0.674, 0.445]),
     ("purple", [0.878, 0.768, 0.594]),
     ("olive", [0.192, 0.680, 0.478]),
-    ("orange", [0.078, 1., 0.527]),
-    ("green", [0.278, 0.680, 0.478]),
-    ("yellow", [0.1135, 0.783, 0.529]),
+    ("orange", [0.055, 1., 0.527]),
 ];
+pub const BRIGHT_HUE_OFFSET: f32 = 0.15 * consts::FRAC_1_SQRT_2;
+pub const BRIGHT_LIGHTNESS_AMPLITUDE: f32 = -0.2;
+pub const BRIGHT_LIGHTNESS_ANGULAR_VELOCITY: f32 = 2.5;
+
+pub const PLOTLY: [[u8; 3]; 10] = [
+    [31, 119, 180],
+    [255, 127, 14],
+    [44, 160, 44],
+    [214, 39, 40],
+    [148, 103, 189],
+    [140, 86, 75],
+    [227, 119, 194],
+    [127, 127, 127],
+    [188, 189, 34],
+    [23, 190, 207],
+];
+
+#[wasm_bindgen(typescript_custom_section)]
+const TS_ORUNSET: &'static str = r#"
+export type PaletteName = "bright" | "plotly" | "rainbow";"#;
 
 #[wasm_bindgen]
 pub fn is_valid_palette_name(n: &str) -> bool {
-    n == "bright" || n == "rainbow"
+    matches!(n, "bright" | "plotly" | "rainbow")
 }
 
 // "Missing Texture" magenta
@@ -79,14 +98,32 @@ pub const MISSING_COLOR: [u8; 4] = [0xff, 0x00, 0xdc, 0xff];
 
 // Palette color
 fn palette_color(palette_name: &str, palette_index: usize, total_count: usize) -> ResolvedColor {
-    if palette_name == "bright" {
-        let [h, s, l] = BRIGHT[palette_index % BRIGHT.len()].1;
-        return hsl_to_color(h, s, l);
+    if palette_name == "rainbow" {
+        let ratio = palette_index as f32 / (total_count + 1) as f32;
+        return hsl_to_color(ratio, 0.5, 0.5);
     }
 
-    if palette_name == "rainbow" {
-        let ratio = palette_index as f32 / total_count as f32;
-        return hsl_to_color(ratio, 0.5, 0.5);
+    if palette_name == "plotly" {
+        let [r, g, b] = PLOTLY[palette_index % PLOTLY.len()];
+        return ResolvedColor::from_bytes([r, g, b, 1]);
+    }
+
+    if palette_name == "bright" {
+        return match palette_index {
+            6 => hsl_to_color(0.1135, 0.783, 0.529),
+            11 => hsl_to_color(0.278, 0.680, 0.2),
+            _ => {
+                let index = palette_index % BRIGHT.len();
+                let generation = (palette_index / BRIGHT.len()) as f32;
+                let hue_offset = generation * BRIGHT_HUE_OFFSET;
+                let lightness_offset = BRIGHT_LIGHTNESS_AMPLITUDE
+                    * f32::sin(generation * BRIGHT_LIGHTNESS_ANGULAR_VELOCITY);
+
+                let [h, s, l] = BRIGHT[index].1;
+
+                hsl_to_color(h + hue_offset, s, l + lightness_offset)
+            }
+        };
     }
 
     crate::warn(&format!("Unknown color palette: {}", palette_name));
