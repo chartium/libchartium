@@ -26,10 +26,10 @@ export interface TraceStyle {
   "legend-priority": number | "unset";
 }
 
-export type TraceStyleSheet = Record<
-  "*" | (string & NonNullable<unknown>),
-  Partial<TraceStyle>
->;
+export interface TraceStyleSheet {
+  "*"?: Partial<TraceStyle>;
+  [k: string & NonNullable<unknown>]: Partial<TraceStyle> | undefined;
+}
 
 export function oxidizeStyleSheetPatch(
   s: TraceStyleSheet,
@@ -40,7 +40,9 @@ export function oxidizeStyleSheetPatch(
     if (selector === "*") continue;
     const handle = traceIds.getKey(selector);
     if (handle === undefined) continue;
-    patchBuilder.add(handle, oxidizeStylePatch(s[selector]));
+    const style = s[selector];
+    if (style === undefined) continue;
+    patchBuilder.add(handle, oxidizeStylePatch(style));
   }
   return patchBuilder.collect();
 }
