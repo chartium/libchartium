@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 use tsify::Tsify;
 use wasm_bindgen::prelude::wasm_bindgen;
 
+use crate::console_log;
 use crate::trace_styles::{TraceColor, TraceRandomColorSpace};
 
 #[derive(Clone, PartialEq, Eq, Hash, Tsify, Serialize, Deserialize)]
@@ -85,7 +86,8 @@ fn palette_color(palette_name: &str, palette_index: usize, total_count: usize) -
     }
 
     if palette_name == "rainbow" {
-        return hsl_to_color(0.5, palette_index as f32 / total_count as f32, 0.5);
+        let ratio = palette_index as f32 / total_count as f32;
+        return hsl_to_color(ratio, 0.5, 0.5);
     }
 
     crate::warn(&format!("Unknown color palette: {}", palette_name));
@@ -95,9 +97,9 @@ fn palette_color(palette_name: &str, palette_index: usize, total_count: usize) -
 // HSL to RGB
 // https://stackoverflow.com/a/9493060/1137334
 fn hue_to_intensity(p: f32, q: f32, t: f32) -> f32 {
+    let t = t % 1.;
+
     match () {
-        () if t < 0. => hue_to_intensity(p, q, t + 1.),
-        () if t > 1. => hue_to_intensity(p, q, t - 1.),
         () if t < 1. / 6. => p + (q - p) * 6. * t,
         () if t < 2. / 3. => p + (q - p) * (2. / 3. - t) * 6.,
         () => p,

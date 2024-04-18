@@ -60,7 +60,7 @@ impl ResolvedColorIndices {
 
                         indices.insert(trace, i);
 
-                        if largest_index.get(color).map_or(false, |&j| i > j) {
+                        if largest_index.get(color).map_or(true, |&j| i > j) {
                             largest_index.insert(color.clone(), i);
                         }
                     }

@@ -22,10 +22,12 @@ derive_static_default!(
 );
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Tsify, Serialize, Deserialize)]
-#[serde(rename_all = "kebab-case")]
 pub enum TraceRandomColorSpace {
+    #[serde(rename = "random")]
     ContrastWithBoth,
+    #[serde(rename = "random-on-light-background")]
     ContrastWithLight,
+    #[serde(rename = "random-on-dark-background")]
     ContrastWithDark,
 }
 #[wasm_bindgen(typescript_custom_section)]
