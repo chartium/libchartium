@@ -1,3 +1,9 @@
+<script lang="ts" context="module">
+  const PREVIEW_WIDTH = 15;
+  const GAP = 3;
+  const ROW_HEIGHT = 24;
+</script>
+
 <script lang="ts">
   import LegendEntry from "./LegendEntry.svelte";
 
@@ -6,6 +12,7 @@
     TraceList,
   } from "../data-worker/trace-list.js";
   import type { WritableSignal } from "@mod.js/signals";
+  import { createVirtualizer } from "@tanstack/svelte-virtual";
 
   export let numberOfShownTraces: number = 5;
 
@@ -50,14 +57,14 @@
     });
   };
 
-  // FIXME workaround for @container css query
   let containerRect: DOMRectReadOnly | undefined;
-  $: wide = (containerRect?.width ?? 0) > 300;
 
-  $: widestLegend = gridElem ? calculateWidestLegend(shownTraces) : 23;
+  $: widestLegend = containerElem
+    ? calculateWidestLegend(shownTraces)
+    : PREVIEW_WIDTH + GAP;
 
   let calcCanvas: HTMLCanvasElement;
-  let gridElem: HTMLDivElement;
+  let containerElem: HTMLDivElement;
   const calculateWidestLegend = (
     traces: { traceId: string; style: ComputedTraceStyle }[],
   ) => {
@@ -65,13 +72,12 @@
       calcCanvas = document.createElement("canvas");
     }
 
-    console.time("width");
-
     const ctx = calcCanvas.getContext("2d")!;
-    const style = gridElem.computedStyleMap();
+    const style = containerElem.computedStyleMap();
 
-    // TODO: make sure the style is complete
-    ctx.font = `${style.get("font-size")} ${style.get("font-family")}`;
+    ctx.font = ["font-style", "font-weight", "font-size", "font-family"]
+      .map((k) => style.get(k)?.toString() ?? "")
+      .join(" ");
 
     const max = traces.reduce<number>((prev, trace) => {
       return Math.max(
@@ -80,46 +86,72 @@
       );
     }, 0);
 
-    console.timeEnd("width");
-
-    return max + 20 + 3;
+    return max + PREVIEW_WIDTH + GAP;
   };
+
+  $: cols = containerRect
+    ? Math.max(
+        1,
+        Math.floor((containerRect.width + GAP) / (widestLegend + GAP)),
+      )
+    : 1;
+
+  $: virtualizer = createVirtualizer<HTMLDivElement, HTMLDivElement>({
+    count: Math.ceil(shownTraces.length / cols),
+    estimateSize: () => ROW_HEIGHT,
+    getScrollElement: () => {
+      return (containerElem?.parentElement ?? null) as HTMLDivElement | null;
+    },
+    overscan: 5,
+    gap: GAP,
+  });
 </script>
 
-<div class="legend-container">
-  <div
-    class="legend-grid"
-    bind:contentRect={containerRect}
-    bind:this={gridElem}
-    style:width={`min(${(widestLegend + 3) * numberOfShownTraces}px, 100%)`}
-    style:flex-direction={wide ? "row" : "column"}
-    style:grid-template-columns={`repeat(auto-fill, minmax(${widestLegend}px, 1fr))`}
-  >
-    {#each shownTraces as { traceId, style }}
-      {@const hidden = $hiddenTraceIds.has(traceId)}
-      <LegendEntry
-        {hidden}
-        previewSize={20}
-        {previewStyle}
-        {traceId}
-        traceStyle={style}
-        {toggleTraceVisibility}
-        {toggleVisibilityOfAllTraces}
-      />
-    {/each}
-  </div>
+<div
+  class="legend-container"
+  bind:this={containerElem}
+  bind:contentRect={containerRect}
+  style:height="{$virtualizer.getTotalSize()}px"
+  style:min-width="max({widestLegend}px, 100px)"
+  style:--row-height="{ROW_HEIGHT}px"
+  style:--legend-gap="{GAP}px"
+  style:--legend-cols={`repeat(${cols}, 1fr)`}
+>
+  {#each $virtualizer.getVirtualItems() as row (row.index)}
+    {@const windowStart = row.index * cols}
+    <div class="legend-grid" style:transform="translateY({row.start}px)">
+      {#each shownTraces.slice(windowStart, windowStart + cols) as { traceId, style }}
+        {@const hidden = $hiddenTraceIds.has(traceId)}
+        <LegendEntry
+          {hidden}
+          previewSize={20}
+          {previewStyle}
+          {traceId}
+          traceStyle={style}
+          {toggleTraceVisibility}
+          {toggleVisibilityOfAllTraces}
+        />
+      {/each}
+    </div>
+  {/each}
 </div>
 
 <style lang="scss">
   .legend-grid {
     display: grid;
-    gap: 3px;
-    margin: 0.5rem;
-    overflow-y: auto;
+    overflow: hidden;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+
+    grid-template-columns: var(--legend-cols);
+    gap: var(--legend-gap);
+    height: var(--row-height);
   }
+
   .legend-container {
-    display: flex;
-    justify-content: center;
+    position: relative;
     width: 100%;
   }
 </style>

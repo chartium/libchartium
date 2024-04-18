@@ -2,7 +2,7 @@
   import { onDestroy } from "svelte";
   import { chart$ as createChart$ } from "../chart/chart.js";
 
-  import { mut, FlockRegistry, derived, effect, cons } from "@mod.js/signals";
+  import { mut, FlockRegistry, effect, cons } from "@mod.js/signals";
   import { setContext } from "svelte-typed-context";
   import { toolKey } from "./toolbar/toolKey.js";
   import { flockReduce } from "../utils/collection.js";
@@ -445,7 +445,7 @@
           */
         }}
         on:mousemove={(e) => hoverEvent$.set({ name: "move", event: e })}
-        on:mouseout={(e) => hoverEvent$.set({ name: "out" })}
+        on:mouseout={() => hoverEvent$.set({ name: "out" })}
         on:blur={() => hoverEvent$.set({ name: "out" })}
       />
 

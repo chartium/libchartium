@@ -15,21 +15,19 @@
 
 <div
   class="trace-legend"
-  style:opacity={hidden ? "0.5" : 1}
+  class:hidden
   use:singleOrDoubleclick={{
     single: () => toggleTraceVisibility(traceId),
     double: () => toggleVisibilityOfAllTraces(traceId),
   }}
   role="presentation"
 >
-  <div class="trace-preview" class:simplified={previewStyle === "simplified"}>
-    <TracePreview
-      {traceStyle}
-      previewHeight={previewSize}
-      previewWidth={previewSize}
-      simplified={previewStyle === "simplified"}
-    />
-  </div>
+  <TracePreview
+    {traceStyle}
+    previewHeight={previewSize}
+    previewWidth={previewSize}
+    simplified={previewStyle === "simplified"}
+  />
   {traceStyle.label ?? traceId}
 </div>
 
@@ -42,5 +40,9 @@
     align-items: flex-start;
     text-wrap: nowrap;
     width: fit-content;
+  }
+
+  .hidden {
+    opacity: 0.5;
   }
 </style>
