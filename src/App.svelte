@@ -45,22 +45,6 @@
         ),
       }));
 
-      const result = await controller.addFromColumnarArrayBuffers({
-        x: {
-          type: "f32",
-          unit: NumericDateRepresentation.EpochSeconds(),
-          data: Float32Array.from(xs),
-        },
-        y: {
-          type: "f32",
-          unit: IEC.parseUnit("KiB"),
-          columns: ys,
-        },
-        style: {
-          "*": { "line-width": 2, color: "bright" },
-          sin: { color: "red" },
-        },
-      });
       console.timeEnd("generate");
 
       console.time("load");
@@ -77,7 +61,7 @@
           columns: ys,
         },
         style: {
-          "*": { "line-width": 2, color: "rainbow" },
+          "*": { "line-width": 2, color: "bright" },
           sin: { color: "red" },
         },
       });
