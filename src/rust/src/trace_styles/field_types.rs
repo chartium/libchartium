@@ -48,6 +48,12 @@ pub enum TraceLineStyle {
 }
 derive_static_default!(TraceLineStyle, TraceLineStyle::Solid);
 
+impl TraceLineStyle {
+    pub fn is_solid(&self) -> bool {
+        matches!(self, TraceLineStyle::None | TraceLineStyle::Solid)
+    }
+}
+
 #[derive(Clone, Copy, PartialEq, Tsify, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum TracePointsStyle {

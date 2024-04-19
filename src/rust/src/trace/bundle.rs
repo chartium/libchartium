@@ -1,7 +1,12 @@
 // https://github.com/madonoharu/tsify/issues/42
 #![allow(non_snake_case)]
 
-use crate::{data::TraceHandle, types::NumericRange};
+use std::sync::atomic::{AtomicU32, Ordering};
+
+use crate::{
+    data::{BundleHandle, TraceHandle},
+    types::NumericRange,
+};
 use serde::{Deserialize, Serialize};
 use tsify::Tsify;
 use wasm_bindgen::prelude::wasm_bindgen;
@@ -79,20 +84,18 @@ pub trait Bundle {
     ) -> Option<f64>;
 }
 
+static BUNDLE_COUNTER: AtomicU32 = AtomicU32::new(0);
+
 #[wasm_bindgen]
 pub struct BoxedBundle {
+    handle: BundleHandle,
     bundle: Box<dyn Bundle>,
-}
-
-impl From<Box<dyn Bundle>> for BoxedBundle {
-    fn from(bundle: Box<dyn Bundle>) -> Self {
-        BoxedBundle { bundle }
-    }
 }
 
 impl BoxedBundle {
     pub fn new(bundle: impl Bundle + 'static) -> BoxedBundle {
         BoxedBundle {
+            handle: BUNDLE_COUNTER.fetch_add(1, Ordering::AcqRel),
             bundle: Box::new(bundle),
         }
     }
@@ -103,8 +106,20 @@ impl BoxedBundle {
     }
 }
 
+impl std::ops::Deref for BoxedBundle {
+    type Target = dyn Bundle;
+
+    fn deref(&self) -> &Self::Target {
+        &*self.bundle
+    }
+}
+
 #[wasm_bindgen]
 impl BoxedBundle {
+    pub fn handle(&self) -> BundleHandle {
+        self.handle
+    }
+
     pub fn traces(&self) -> Box<[TraceHandle]> {
         self.bundle.traces().into_boxed_slice()
     }

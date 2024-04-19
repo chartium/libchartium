@@ -28,6 +28,7 @@ pub struct TraceData {
     x_range: NumericRange,
     data: Vec<(f32, f32)>,
 }
+
 #[wasm_bindgen]
 impl TraceData {
     pub fn compute(bundle: &BoxedBundle, handle: TraceHandle, x_range: NumericRange) -> TraceData {

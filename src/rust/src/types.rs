@@ -7,7 +7,7 @@ use wasm_bindgen::prelude::wasm_bindgen;
 
 use crate::data::TraceHandle;
 
-#[derive(Tsify, Serialize, Deserialize, Clone, Copy)]
+#[derive(Tsify, Serialize, Deserialize, Clone, Copy, PartialEq)]
 #[tsify(into_wasm_abi, from_wasm_abi)]
 #[serde(rename_all = "camelCase")]
 pub struct NumericRange {

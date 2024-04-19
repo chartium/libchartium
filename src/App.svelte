@@ -24,44 +24,69 @@
   const controller = ChartiumController.instantiateInThisThread({ wasmUrl });
 
   const normalTraces = (async () => {
-    console.time("generate");
+    const results = [];
 
-    const xs = Array.from(
-      { length: numSteps },
-      (_, index) => from + index * stepSize,
-    );
+    for (let i = 0; i < 1; ++i) {
+      const offset = 4_000 * i;
 
-    const ys = Array.from({ length: 100 }, (_, idx) => ({
-      id: `trace_${idx}`,
-      data: Float32Array.from(
-        xs.map((x) => 100 + 100 * Math.sin((x / to) * 2 * Math.PI + idx)),
-      ),
-    }));
+      console.time("generate");
 
-    console.timeEnd("generate");
+      const xs = Array.from(
+        { length: numSteps },
+        (_, index) => from + index * stepSize,
+      );
 
-    console.time("load");
+      const ys = Array.from({ length: 4_000 }, (_, idx) => ({
+        id: `trace_${offset + idx}`,
+        data: Float32Array.from(
+          xs.map(
+            (x) => 100 + 100 * Math.sin((x / to) * 2 * Math.PI + idx + offset),
+          ),
+        ),
+      }));
 
-    const result = await controller.addFromColumnarArrayBuffers({
-      x: {
-        type: "f32",
-        unit: NumericDateRepresentation.EpochSeconds(),
-        data: Float32Array.from(xs),
-      },
-      y: {
-        type: "f32",
-        unit: IEC.parseUnit("KiB"),
-        columns: ys,
-      },
-      style: {
-        "*": { "line-width": 2, color: "bright" },
-        sin: { color: "red" },
-      },
-    });
+      const result = await controller.addFromColumnarArrayBuffers({
+        x: {
+          type: "f32",
+          unit: NumericDateRepresentation.EpochSeconds(),
+          data: Float32Array.from(xs),
+        },
+        y: {
+          type: "f32",
+          unit: IEC.parseUnit("KiB"),
+          columns: ys,
+        },
+        style: {
+          "*": { "line-width": 2, color: "bright" },
+          sin: { color: "red" },
+        },
+      });
+      console.timeEnd("generate");
 
-    console.timeEnd("load");
+      console.time("load");
 
-    return result;
+      const result = await controller.addFromColumnarArrayBuffers({
+        x: {
+          type: "f32",
+          unit: NumericDateRepresentation.EpochSeconds(),
+          data: Float32Array.from(xs),
+        },
+        y: {
+          type: "f32",
+          unit: IEC.parseUnit("KiB"),
+          columns: ys,
+        },
+        style: {
+          "*": { "line-width": 2, color: "rainbow" },
+          sin: { color: "red" },
+        },
+      });
+      console.timeEnd("load");
+
+      results.push(result);
+    }
+
+    return results;
   })();
   const threshold = controller.addThresholdTracelist({
     ids: ["threshold"],
@@ -73,7 +98,9 @@
   });
 
   const traces = Promise.all([threshold, normalTraces]).then((ts) =>
-    TraceList.union(...ts),
+    TraceList.union(
+      ...ts.flatMap((list) => (Array.isArray(list) ? list : [list])),
+    ),
   );
 
   let wrapDiv: HTMLDivElement;

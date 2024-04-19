@@ -1,3 +1,8 @@
+mod render_job;
+mod trace_geometry;
+
+use std::collections::HashMap;
+
 use js_sys::Float32Array;
 use wasm_bindgen::{prelude::*, JsCast, JsValue};
 use web_sys::{
@@ -5,65 +10,19 @@ use web_sys::{
 };
 
 use crate::{
+    data::{BundleHandle, TraceHandle},
+    renderers::webgl::trace_geometry::TraceGeometryHandle,
+    trace::BoxedBundle,
     trace_styles::{TraceLineStyle, TracePointsStyle, TraceStyle},
-    utils::ResolvedColor,
 };
 
-use super::{NumericRange, RenderJobCommon, TraceData};
+use super::{NumericRange, TraceData};
+use render_job::*;
+use trace_geometry::*;
 
-#[wasm_bindgen(module = "/src/renderers/webgl.ts")]
+#[wasm_bindgen(module = "/src/renderers/webgl/webgl.ts")]
 extern "C" {
     fn render_between(source: &OffscreenCanvas, target: &OffscreenCanvas);
-}
-
-pub struct WebGlTrace {
-    pub x_range: NumericRange,
-    pub points: usize,
-    pub style: TraceStyle,
-    pub color: ResolvedColor,
-    pub trace_buffer: WebGlBuffer,
-    pub arc_length_buffer: WebGlBuffer,
-}
-
-#[wasm_bindgen]
-pub struct WebGlRenderJob {
-    common: RenderJobCommon,
-    traces: Vec<WebGlTrace>,
-}
-
-#[wasm_bindgen]
-impl WebGlRenderJob {
-    #[wasm_bindgen(constructor)]
-    pub fn new(common: RenderJobCommon) -> Self {
-        Self {
-            common,
-            traces: Vec::new(),
-        }
-    }
-
-    pub fn add_trace(
-        &mut self,
-        data: TraceData,
-        style: TraceStyle,
-        color: ResolvedColor,
-        trace_buffer: WebGlBuffer,
-        arc_length_buffer: WebGlBuffer,
-    ) {
-        self.traces.push(WebGlTrace {
-            x_range: data.x_range,
-            points: data.data.len(),
-            style,
-            color,
-            trace_buffer,
-            arc_length_buffer,
-        });
-    }
-}
-
-impl WebGlRenderJob {
-    pub fn get_traces(&self) -> &Vec<WebGlTrace> {
-        &self.traces
-    }
 }
 
 #[derive(Clone)]
@@ -113,6 +72,8 @@ pub struct WebGlRenderer {
     present_canvas: OffscreenCanvas,
     context: WebGl2RenderingContext,
     programs: WebGlPrograms,
+
+    geometry_cache: HashMap<(BundleHandle, TraceHandle), TraceGeometry>,
 }
 
 #[wasm_bindgen]
@@ -134,6 +95,8 @@ impl WebGlRenderer {
             canvas: shared_canvas,
             present_canvas,
             line_width_limit: width_range.get_index(1),
+
+            geometry_cache: HashMap::new(),
 
             programs: programs.clone(),
 
@@ -162,15 +125,27 @@ impl WebGlRenderer {
         gl.uniform2f(Some(&self.programs.trace_transform), 1.0, 0.0);
 
         for trace in job.get_traces() {
-            let points = trace.points as i32;
             let style = &trace.style;
             let width = style.get_line_width() as f32;
             let color = trace.color.as_floats();
             let line = style.get_line();
 
+            let TraceGeometry::Line {
+                points,
+                x_range,
+                line_buffer,
+                arc_length_buffer,
+                ..
+            } = &trace.geometry.0
+            else {
+                continue;
+            };
+
+            let points = *points as i32;
+
             gl.uniform2f(
                 Some(&self.programs.trace_origin),
-                (job.common.x_range.from - trace.x_range.from) as f32,
+                (job.common.x_range.from - x_range.from) as f32,
                 y_from,
             );
 
@@ -211,7 +186,7 @@ impl WebGlRenderer {
                 gl.get_attrib_location(&self.programs.trace_program, "aLengthAlong") as u32;
             gl.bind_buffer(
                 WebGl2RenderingContext::ARRAY_BUFFER,
-                Some(&trace.arc_length_buffer),
+                Some(arc_length_buffer),
             );
             gl.vertex_attrib_pointer_with_i32(
                 a_length_along,
@@ -224,10 +199,7 @@ impl WebGlRenderer {
             gl.enable_vertex_attrib_array(a_length_along);
             let a_position_name =
                 gl.get_attrib_location(&self.programs.trace_program, "aVertexPosition") as u32;
-            gl.bind_buffer(
-                WebGl2RenderingContext::ARRAY_BUFFER,
-                Some(&trace.trace_buffer),
-            );
+            gl.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, Some(line_buffer));
 
             // // REMOVE
             // gl.vertex_attrib_pointer_with_i32(0, 2, WebGl2RenderingContext::FLOAT, false, 0, 0);
@@ -283,7 +255,46 @@ impl WebGlRenderer {
         Ok(())
     }
 
-    pub fn create_trace_buffer(&self, trace: &TraceData) -> WebGlBuffer {
+    pub fn get_trace_geometry(
+        &mut self,
+        bundle: &BoxedBundle,
+        trace_handle: TraceHandle,
+        style: TraceStyle,
+        x_range: NumericRange,
+        y_range: NumericRange,
+    ) -> TraceGeometryHandle {
+        let bundle_handle = bundle.handle();
+
+        match self.geometry_cache.get_mut(&(bundle_handle, trace_handle)) {
+            Some(geometry) if !geometry.is_stale(&style, x_range, y_range) => {
+                return TraceGeometryHandle(geometry.clone());
+            }
+            _ => {
+                // continue
+            }
+        }
+
+        let data = TraceData::compute(bundle, trace_handle, x_range);
+
+        let geometry = TraceGeometry::Line {
+            points: data.data.len(),
+            x_range,
+            y_range,
+            line_buffer: self.create_trace_buffer(&data),
+            arc_length_buffer: self.create_arc_length_buffer(&data, x_range, y_range),
+        };
+
+        if let Some(prev) = self
+            .geometry_cache
+            .insert((bundle_handle, trace_handle), geometry.clone())
+        {
+            prev.destroy(&self.context);
+        }
+
+        TraceGeometryHandle(geometry)
+    }
+
+    fn create_trace_buffer(&self, trace: &TraceData) -> WebGlBuffer {
         let context = &self.context;
         let buffer = context.create_buffer().unwrap();
 
@@ -302,10 +313,11 @@ impl WebGlRenderer {
         buffer
     }
 
-    pub fn create_arc_length_buffer(
+    fn create_arc_length_buffer(
         &self,
         trace: &TraceData,
-        y_range: NumericRange,
+        display_x_range: NumericRange,
+        display_y_range: NumericRange,
     ) -> WebGlBuffer {
         let context = &self.context;
 
@@ -313,13 +325,13 @@ impl WebGlRenderer {
             Vec::with_capacity(0)
         } else {
             let (x_pixel_ratio, y_pixel_ratio) = (
-                (self.width as f64) / trace.x_range.len(),
-                (self.height as f64) / y_range.len(),
+                (self.width as f64) / display_x_range.len(),
+                (self.height as f64) / display_y_range.len(),
             );
 
             let (first_x, first_y) = (
                 x_pixel_ratio * (trace.data[0].0 as f64 - trace.x_range.from),
-                y_pixel_ratio * (trace.data[0].1 as f64 - y_range.from),
+                y_pixel_ratio * (trace.data[0].1 as f64 - display_y_range.from),
             );
 
             #[derive(Clone, Debug)]
@@ -341,7 +353,7 @@ impl WebGlRenderer {
                 .map(|(x, y)| {
                     (
                         x_pixel_ratio * (*x as f64 - trace.x_range.from),
-                        y_pixel_ratio * (*y as f64 - y_range.from),
+                        y_pixel_ratio * (*y as f64 - display_y_range.from),
                     )
                 })
                 .scan(initial_state, |state: &mut State, (x, y): (f64, f64)| {

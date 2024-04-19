@@ -83,9 +83,9 @@ export class WebGL2Controller implements RenderingController {
       gl,
       gl.VERTEX_SHADER,
       `
-      attribute vec2 aVertexPosition;
-      attribute float aLengthAlong;
-      varying float vLengthAlong;
+        attribute vec2 aVertexPosition;
+        attribute float aLengthAlong;
+        varying float vLengthAlong;
 
         uniform vec2 transform;
         uniform vec2 origin;
@@ -184,14 +184,15 @@ export class WebGL2Renderer implements Renderer {
         const style = styleSheet.get_cloned(handle);
         const color = styleSheet.get_color(handle, colorIndices, randomSeed);
 
-        const data = lib.TraceData.compute(bundle.boxed, handle, xRange);
-        const traceBuffer = this.#renderer.create_trace_buffer(data);
-        const arcLengthBuffer = this.#renderer.create_arc_length_buffer(
-          data,
+        const geometry = this.#renderer.get_trace_geometry(
+          bundle.boxed,
+          handle,
+          style,
+          xRange,
           yRange,
         );
 
-        rj.add_trace(data, style, color, traceBuffer, arcLengthBuffer);
+        rj.add_trace(style, color, geometry);
       }
 
       this.#renderer.render(rj);
