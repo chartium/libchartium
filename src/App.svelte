@@ -1,6 +1,5 @@
 <script lang="ts">
   import Chart from "./lib/components/Chart.svelte";
-  import wasmUrl from "../dist/wasm/libchartium.wasm?url";
 
   import { ChartiumController } from "./lib/data-worker/index.js";
   import {
@@ -17,11 +16,9 @@
   const from = 0;
   const to = new Date(1973, 1, 1).getTime() / 1000;
   const numSteps = 5000;
-  // const to = 5000;
-  // const numSteps = to;
   const stepSize = (to - from) / numSteps;
 
-  const controller = ChartiumController.instantiateInThisThread({ wasmUrl });
+  const controller = new ChartiumController();
 
   const normalTraces = (async () => {
     const results = [];

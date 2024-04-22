@@ -1,8 +1,4 @@
-export {
-  ChartiumController,
-  type ChartiumControllerOptions,
-  type RenderingMode,
-} from "./controller.js";
+export { ChartiumController, type RenderingMode } from "./controller.js";
 
 export * from "./spawn.js";
 export { TraceList } from "./trace-list.js";

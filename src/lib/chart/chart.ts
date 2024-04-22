@@ -53,17 +53,7 @@ export const chart$ = ({
   defer,
 }: ChartProps): Chart => {
   return sanitizedChart$({
-    // await uninitialized controllers
-    // TODO remove once we change uninitialized Controller to Promise<Controller>
-    controller$: controller$
-      .skipEqual()
-      .map(async (controller) => {
-        await controller?.initialized;
-        return controller;
-      })
-      .awaited()
-      .currentlyFulfilled(),
-
+    controller$: controller$.skipEqual(),
     canvas$: canvas$.skipEqual(),
     visibleTraces$: visibleTraces$.skipEqual(),
 

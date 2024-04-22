@@ -12,9 +12,7 @@ npm add libchartium unitlib fraction.js
 ```svelte
 <script lang="ts">
   import { ChartiumController, ChartComponent as Chart } from 'libchartium';
-  import wasmUrl from 'libchartium/wasm?url';
-
-  const controller = ChartiumController.instantiateInThisThread({ wasmUrl });
+  const controller = new ChartiumController();
 
   const xs = Array.from(
     { length: numSteps },
@@ -44,5 +42,17 @@ npm add libchartium unitlib fraction.js
   });
 </script>
 <Chart {controller} {traces} />
+```
+
+## Troubleshooting
+If loading the library fails with `Uncaught CompileError: WebAssembly.instantiate()`, it is probably because your bundler cannot find the WebAssembly binary. The wasm file is exported as `libchartium/wasm`, and in our code we initialize it as follows:
+```ts
+import wasmUrl from "libchartium/wasm?url";
+await init(wasmUrl);
+```
+If your bundler supports it, try to [alias](https://vitejs.dev/config/shared-options#resolve-alias) the import `libchartium/wasm?url` to a TS/JS file containing the following:
+```ts
+const wasmUrl = "/actual/path/to/libchartium.wasm";
+export default wasmUrl;
 ```
 

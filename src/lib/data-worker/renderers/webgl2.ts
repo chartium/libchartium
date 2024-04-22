@@ -1,165 +1,21 @@
 import { lib } from "../wasm.js";
 import { yeet } from "yeet-ts";
-import {
-  type RenderJob,
-  type Renderer,
-  type RenderingController,
-} from "./mod.js";
+import { type RenderJob, type Renderer } from "./mod.js";
 import { LAZY, PARAMS } from "../trace-list.js";
 import { filter } from "../../utils/collection.js";
 import { toNumericRange } from "../../utils/unit.js";
 
-function compileShader(
-  gl: WebGL2RenderingContext,
-  type: number,
-  source: string,
-): WebGLShader {
-  const shader = gl.createShader(type)!;
-  gl.shaderSource(shader, source);
-  gl.compileShader(shader);
-  return shader;
-}
-function linkProgram(
-  gl: WebGL2RenderingContext,
-  vertShader: WebGLShader,
-  fragShader: WebGLShader,
-): WebGLProgram {
-  const program = gl.createProgram()!;
-  gl.attachShader(program, vertShader);
-  gl.attachShader(program, fragShader);
-  gl.linkProgram(program);
-  return program;
-}
-
-export class WebGL2Controller implements RenderingController {
-  readonly #canvas: OffscreenCanvas;
-  readonly #context: WebGL2RenderingContext;
-  readonly #programs: lib.WebGlPrograms;
-
-  constructor(canvas: OffscreenCanvas) {
-    this.#canvas = canvas;
-
-    this.#context =
-      this.#canvas.getContext("webgl2", {
-        antialias: true,
-        premultipliedAlpha: true,
-      }) ?? yeet("Could not get a WebGL2 context for an OffscreenCanvas.");
-
-    const {
-      traceProgram,
-      traceColor,
-      traceCsoffset,
-      traceOrigin,
-      traceSize,
-      traceTransform,
-      traceDashGapLengths,
-    } = this.#initTraceProgram();
-    this.#programs = new lib.WebGlPrograms(
-      traceProgram,
-      traceTransform,
-      traceOrigin,
-      traceSize,
-      traceCsoffset,
-      traceColor,
-      traceDashGapLengths,
-    );
-  }
-
-  createRenderer(presentCanvas: OffscreenCanvas): WebGL2Renderer {
-    const raw = new lib.WebGlRenderer(
-      this.#canvas,
-      this.#context,
-      this.#programs,
-      presentCanvas,
-    );
-    const wrapped = new WebGL2Renderer(this, this.#context, raw);
-    return wrapped;
-  }
-
-  #initTraceProgram() {
-    const gl = this.#context;
-
-    const vertShader = compileShader(
-      gl,
-      gl.VERTEX_SHADER,
-      `
-        attribute vec2 aVertexPosition;
-        attribute float aLengthAlong;
-        varying float vLengthAlong;
-
-        uniform vec2 transform;
-        uniform vec2 origin;
-        uniform vec2 size;
-
-        uniform vec2 csoffset;
-
-        void main() {
-            gl_Position = vec4(csoffset + vec2(-1,-1) + vec2(2,2) * (aVertexPosition * vec2(1,transform.x) + vec2(0, transform.y) - origin) / size, 0, 1);
-            gl_PointSize = 8.0;
-            vLengthAlong = aLengthAlong;
-        }
-      `,
-    );
-
-    const fragShader = compileShader(
-      gl,
-      gl.FRAGMENT_SHADER,
-      `
-        precision mediump float;
-        uniform vec4 color;
-        // lengths of the dashes and gaps in pixels, expected to be in order [dash, gap, dash, gap]
-        uniform vec4 dashGapLengths;
-        varying float vLengthAlong;
-
-        void main() {
-            float totalLength = dashGapLengths[0] + dashGapLengths[1] + dashGapLengths[2] + dashGapLengths[3];
-            float currentCycleLength = mod(vLengthAlong, totalLength);
-            float firstDashGap = dashGapLengths[0] + dashGapLengths[1];
-            bool shouldBeDrawn = currentCycleLength < dashGapLengths[0] || (currentCycleLength > firstDashGap && currentCycleLength < firstDashGap + dashGapLengths[2]);
-            if (shouldBeDrawn) {
-              gl_FragColor = color;
-            }
-            else {
-              discard;
-            }
-        }
-      `,
-    );
-
-    const traceProgram = linkProgram(gl, vertShader, fragShader);
-    const traceTransform = gl.getUniformLocation(traceProgram, "transform")!;
-    const traceOrigin = gl.getUniformLocation(traceProgram, "origin")!;
-    const traceSize = gl.getUniformLocation(traceProgram, "size")!;
-    const traceCsoffset = gl.getUniformLocation(traceProgram, "csoffset")!;
-    const traceColor = gl.getUniformLocation(traceProgram, "color")!;
-    const traceDashGapLengths = gl.getUniformLocation(
-      traceProgram,
-      "dashGapLengths",
-    )!;
-
-    return {
-      traceProgram,
-      traceTransform,
-      traceOrigin,
-      traceSize,
-      traceCsoffset,
-      traceColor,
-      traceDashGapLengths,
-    };
-  }
+export function createRenderer(presentCanvas: OffscreenCanvas): WebGL2Renderer {
+  const { canvas, context, programs } = init();
+  return new WebGL2Renderer(
+    new lib.WebGlRenderer(canvas, context, programs, presentCanvas),
+  );
 }
 
 export class WebGL2Renderer implements Renderer {
-  // eslint-disable-next-line no-unused-private-class-members
-  readonly #context: WebGL2RenderingContext;
   readonly #renderer: lib.WebGlRenderer;
 
-  constructor(
-    public readonly parent: WebGL2Controller,
-    context: WebGL2RenderingContext,
-    renderer: lib.WebGlRenderer,
-  ) {
-    this.#context = context;
+  constructor(renderer: lib.WebGlRenderer) {
     this.#renderer = renderer;
   }
 
@@ -200,6 +56,120 @@ export class WebGL2Renderer implements Renderer {
   }
 
   setSize(width: number, height: number) {
+    ensureCanvasDimensions(width, height);
     this.#renderer.set_size(width, height);
   }
+}
+
+function compileShader(
+  gl: WebGL2RenderingContext,
+  type: number,
+  source: string,
+): WebGLShader {
+  const shader = gl.createShader(type)!;
+  gl.shaderSource(shader, source);
+  gl.compileShader(shader);
+  return shader;
+}
+function linkProgram(
+  gl: WebGL2RenderingContext,
+  vertShader: WebGLShader,
+  fragShader: WebGLShader,
+): WebGLProgram {
+  const program = gl.createProgram()!;
+  gl.attachShader(program, vertShader);
+  gl.attachShader(program, fragShader);
+  gl.linkProgram(program);
+  return program;
+}
+
+let _init: {
+  canvas: OffscreenCanvas;
+  context: WebGL2RenderingContext;
+  programs: lib.WebGlPrograms;
+};
+function init() {
+  if (_init) return _init;
+
+  const canvas = new OffscreenCanvas(640, 480);
+  const context =
+    canvas.getContext("webgl2", {
+      antialias: true,
+      premultipliedAlpha: true,
+    }) ?? yeet("Could not get a WebGL2 context for an OffscreenCanvas.");
+
+  const vertShader = compileShader(
+    context,
+    context.VERTEX_SHADER,
+    `
+      attribute vec2 aVertexPosition;
+      attribute float aLengthAlong;
+      varying float vLengthAlong;
+
+        uniform vec2 transform;
+        uniform vec2 origin;
+        uniform vec2 size;
+
+        uniform vec2 csoffset;
+
+        void main() {
+            gl_Position = vec4(csoffset + vec2(-1,-1) + vec2(2,2) * (aVertexPosition * vec2(1,transform.x) + vec2(0, transform.y) - origin) / size, 0, 1);
+            gl_PointSize = 8.0;
+            vLengthAlong = aLengthAlong;
+        }
+      `,
+  );
+
+  const fragShader = compileShader(
+    context,
+    context.FRAGMENT_SHADER,
+    `
+        precision mediump float;
+        uniform vec4 color;
+        // lengths of the dashes and gaps in pixels, expected to be in order [dash, gap, dash, gap]
+        uniform vec4 dashGapLengths;
+        varying float vLengthAlong;
+
+        void main() {
+            float totalLength = dashGapLengths[0] + dashGapLengths[1] + dashGapLengths[2] + dashGapLengths[3];
+            float currentCycleLength = mod(vLengthAlong, totalLength);
+            float firstDashGap = dashGapLengths[0] + dashGapLengths[1];
+            bool shouldBeDrawn = currentCycleLength < dashGapLengths[0] || (currentCycleLength > firstDashGap && currentCycleLength < firstDashGap + dashGapLengths[2]);
+            if (shouldBeDrawn) {
+              gl_FragColor = color;
+            }
+            else {
+              discard;
+            }
+        }
+      `,
+  );
+
+  const traceProgram = linkProgram(context, vertShader, fragShader);
+  const traceTransform = context.getUniformLocation(traceProgram, "transform")!;
+  const traceOrigin = context.getUniformLocation(traceProgram, "origin")!;
+  const traceSize = context.getUniformLocation(traceProgram, "size")!;
+  const traceCsoffset = context.getUniformLocation(traceProgram, "csoffset")!;
+  const traceColor = context.getUniformLocation(traceProgram, "color")!;
+  const traceDashGapLengths = context.getUniformLocation(
+    traceProgram,
+    "dashGapLengths",
+  )!;
+
+  const programs = new lib.WebGlPrograms(
+    traceProgram,
+    traceTransform,
+    traceOrigin,
+    traceSize,
+    traceCsoffset,
+    traceColor,
+    traceDashGapLengths,
+  );
+
+  _init = { canvas, context, programs };
+  return _init;
+}
+function ensureCanvasDimensions(width: number, height: number) {
+  if (_init.canvas.width < width) _init.canvas.width = width;
+  if (_init.canvas.height < height) _init.canvas.height = height;
 }

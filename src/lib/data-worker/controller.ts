@@ -9,7 +9,7 @@
  */
 
 import { BiMap } from "@risai/bim";
-import { init, lib } from "./wasm.js";
+import { lib } from "./wasm.js";
 
 import type {
   DataUnit,
@@ -20,149 +20,40 @@ import type {
   TypedArray,
   TypeOfData,
 } from "../types.js";
-import type { RenderingController } from "./renderers/mod.js";
-import { WebGL2Controller } from "./renderers/webgl2.js";
-import { proxyMarker } from "comlink";
 import { CONSTRUCTOR, randomUint, TraceList } from "./trace-list.js";
 import type { TraceStylesheet } from "../index.js";
 import { enumerate } from "../utils/collection.js";
 import { Bundle } from "./bundle.js";
 import { toNumericRange, toRange } from "../utils/unit.js";
 import { oxidizeStyleSheet } from "./trace-styles.js";
-
-let wasmMemory: WebAssembly.Memory | undefined;
-
-declare class WorkerGlobalScope {}
-const isRunningInWorker = () =>
-  typeof WorkerGlobalScope !== "undefined" && self instanceof WorkerGlobalScope;
-
-let instance: ChartiumController | undefined;
+import { createRenderer as createWebgl2Renderer } from "./renderers/webgl2.js";
+import type { Renderer } from "./renderers/mod.js";
 
 export type RenderingMode = "webgl2";
 
 export const traceIds = new BiMap<TraceHandle, string>();
 
-export interface ChartiumControllerOptions {
-  /**
-   * Path to libchartium/wasm.
-   */
-  wasmUrl: URL | string;
-
-  /**
-   * So far, only WebGL 2 is supported. We will add a WebGPU mode in the future.
-   * It is also not impossible that we will introduce a 2D mode for legacy platforms.
-   */
-  renderingMode?: RenderingMode;
+let nextTraceHandle: TraceHandle = 1;
+export function registerNewTraceHandle(id: string): TraceHandle {
+  const handle = nextTraceHandle++;
+  traceIds.set(handle, id);
+  return handle;
 }
 
+// TODO remove this class, it only acts as a namespace
 export class ChartiumController {
-  [proxyMarker] = true;
-
-  #nextTraceHandle = 1 as TraceHandle;
-  #getNewTraceHandle() {
-    return this.#nextTraceHandle++ as TraceHandle;
-  }
-
-  #canvas: OffscreenCanvas = new OffscreenCanvas(640, 480);
-  #renderingController!: RenderingController;
-
-  static instantiateInThisThread(
-    options: ChartiumControllerOptions,
-  ): ChartiumController {
-    const ctl = new ChartiumController(options);
-
-    if (window) {
-      ctl.screenSize = {
-        width: innerWidth * devicePixelRatio,
-        height: innerHeight * devicePixelRatio,
-      };
-
-      /**
-       * FIXME currently, the canvas reflects the screen size. this means
-       * that the worker is coupled with the browser window, and that it's
-       * impossible to draw a chart that is larger than the window (this
-       * causes problems when the user zooms in, for example).
-       *
-       * instead, we should scale the canvas to fit the largest renderer
-       */
-      window.addEventListener(
-        "resize",
-        () =>
-          (ctl.screenSize = {
-            width: innerWidth * devicePixelRatio,
-            height: innerHeight * devicePixelRatio,
-          }),
-      );
-    }
-
-    return ctl;
-  }
-
-  public initialized: Promise<true> | true;
-
-  private constructor(options: ChartiumControllerOptions) {
-    if (instance) {
-      window.location.reload(); // FIXME only for hot reload while debugging
-      throw new Error(
-        "There already is a ChartiumController instance running in this thread.",
-      );
-    }
-    instance = this;
-
-    this.initialized = (async () => {
-      wasmMemory = (await init(options.wasmUrl)).memory;
-      lib.set_panic_hook();
-
-      console.log(
-        `Loaded Chartium WASM ${
-          isRunningInWorker() ? "in a worker!" : "on the main thread!"
-        }`,
-      );
-
-      switch (options.renderingMode ?? "webgl2") {
-        case "webgl2":
-          this.#renderingController = new WebGL2Controller(this.#canvas);
-          break;
-      }
-
-      return (this.initialized = <const>true);
-    })();
-  }
-
-  get memoryUsage() {
-    return wasmMemory?.buffer.byteLength ?? 0;
-  }
-
-  /** FIXME remove */
-  get screenSize(): Size {
-    const t = this;
-    return {
-      get width() {
-        return t.#canvas.width;
-      },
-      set width(w) {
-        t.#canvas.width = w;
-      },
-      get height() {
-        return t.#canvas.height;
-      },
-      set height(h) {
-        t.#canvas.height = h;
-      },
-    };
-  }
-  set screenSize({ width, height }: Size) {
-    this.#canvas.width = width;
-    this.#canvas.height = height;
-  }
-
   /**
    * Creates a low level chart renderer. For a more high level approach
    * to rendering, use the Chart component.
    */
-  public async createRenderer(presentCanvas: OffscreenCanvas) {
-    await this.initialized;
-    return this.#renderingController.createRenderer(presentCanvas);
+  public createRenderer(
+    presentCanvas: OffscreenCanvas,
+    renderingMode: RenderingMode = "webgl2",
+  ): Renderer {
+    switch (renderingMode) {
+      case "webgl2":
+        return createWebgl2Renderer(presentCanvas);
+    }
   }
 
   // TODO add better documentation
@@ -189,7 +80,6 @@ export class ChartiumController {
     style?: TraceStylesheet;
     labels?: Iterable<[string, string | undefined]>;
   }): Promise<TraceList> {
-    await this.initialized;
     if (ids.length === 0) return TraceList.empty();
 
     const dataBuffer = data instanceof ArrayBuffer ? data : data.buffer;
@@ -197,14 +87,7 @@ export class ChartiumController {
     const handles: TraceHandleArray = new Uint32Array(ids.length);
 
     for (const [i, id] of enumerate(ids)) {
-      let handle = traceIds.getKey(id);
-
-      if (!handle) {
-        handle = this.#getNewTraceHandle();
-        traceIds.set(handle, id);
-      }
-
-      handles[i] = handle;
+      handles[i] = traceIds.getKey(id) ?? registerNewTraceHandle(id);
     }
 
     const bulkload = await lib.Bulkloader.from_array(
@@ -261,7 +144,6 @@ export class ChartiumController {
     style?: TraceStylesheet;
     labels?: Iterable<[string, string | undefined]>;
   }): Promise<TraceList> {
-    await this.initialized;
     if (y.columns.length === 0) return TraceList.empty();
 
     const xBuffer = new Uint8Array(
@@ -275,14 +157,7 @@ export class ChartiumController {
     const handles: TraceHandleArray = new Uint32Array(y.columns.length);
 
     for (const [i, { id }] of enumerate(y.columns)) {
-      let handle = traceIds.getKey(id);
-
-      if (!handle) {
-        handle = this.#getNewTraceHandle();
-        traceIds.set(handle, id);
-      }
-
-      handles[i] = handle;
+      handles[i] = traceIds.getKey(id) ?? registerNewTraceHandle(id);
     }
 
     const bundle = lib.Bulkloader.from_columnar(
@@ -332,20 +207,12 @@ export class ChartiumController {
     labels?: Iterable<[string, string | undefined]>;
     tracelistsRange: Range;
   }): Promise<TraceList> {
-    await this.initialized;
     if (ids.length === 0) return TraceList.empty();
 
     const handles: TraceHandleArray = new Uint32Array(ids.length);
 
     for (const [i, id] of enumerate(ids)) {
-      let handle = traceIds.getKey(id);
-
-      if (!handle) {
-        handle = this.#getNewTraceHandle();
-        traceIds.set(handle, id);
-      }
-
-      handles[i] = handle;
+      handles[i] = traceIds.getKey(id) ?? registerNewTraceHandle(id);
     }
 
     const bundle = lib.Bulkloader.threshold_from_array(handles, ys);
