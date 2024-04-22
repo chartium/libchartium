@@ -78,14 +78,16 @@ export function colorStringToColor(color: string): Color {
     const [_, r, g, b, a] = hexOrRgba.match(
       /^rgba\(\s*(\d+)[,\s]\s*(\d+)[,\s]\s*(\d+)(?:[,\s]\s*(\d+(?:\.\d+)?))?\s*\)$/,
     )!;
-    return [+r, +g, +b, +(a ?? 1) * 255];
+    return [+r, +g, +b, +(a ?? 1) * 255].map((n) => Math.round(n)) as Color;
   }
 
   if (startsWith(hexOrRgba, "color(srgb")) {
     const [_, r, g, b, a] = hexOrRgba.match(
       /^color\(srgb\s+(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)(?:\s*\/\s*(\d+(?:\.\d+)?))?\s*\)$/,
     )!;
-    return [+r * 255, +g * 255, +b * 255, +(a ?? 1) * 255];
+    return [+r * 255, +g * 255, +b * 255, +(a ?? 1) * 255].map((n) =>
+      Math.round(n),
+    ) as Color;
   }
 
   throw new TypeError(`Unsupported color: ${hexOrRgba}`);
