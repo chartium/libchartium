@@ -31,23 +31,28 @@ pub enum OrUnset<T> {
     #[serde(untagged)]
     Set(T),
 }
-impl<T> OrUnset<T>
-where
-    T: Clone,
-{
-    pub fn set_or(&self, value: T) -> T {
+
+impl<T> OrUnset<T> {
+    pub fn unwrap_or(self, value: T) -> T {
         match self {
-            OrUnset::Set(v) => v.clone(),
+            OrUnset::Set(v) => v,
             OrUnset::Unset => value,
         }
     }
-}
-impl<T> OrUnset<T>
-where
-    T: StaticDefault + Clone + 'static,
-{
-    #[inline(always)]
-    pub fn or_default(&self) -> &T {
+    pub fn unwrap_or_default(self) -> T
+    where
+        T: Default,
+    {
+        match self {
+            OrUnset::Set(v) => v,
+            OrUnset::Unset => Default::default(),
+        }
+    }
+
+    pub fn ref_or_default(&self) -> &T
+    where
+        T: StaticDefault + 'static,
+    {
         match self {
             OrUnset::Set(v) => v,
             OrUnset::Unset => StaticDefault::default(),

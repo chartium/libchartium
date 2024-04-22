@@ -54,9 +54,10 @@ impl TraceLineStyle {
     }
 }
 
-#[derive(Clone, Copy, PartialEq, Tsify, Serialize, Deserialize)]
+#[derive(Clone, Copy, Default, PartialEq, Tsify, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum TracePointsStyle {
+    #[default]
     None,
     Show,
 }
@@ -72,3 +73,12 @@ pub enum TracePaletteIndex {
     Some(usize),
 }
 derive_static_default!(TracePaletteIndex, TracePaletteIndex::Auto);
+
+#[derive(Clone, Copy, Default, PartialEq, Tsify, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum TraceFillStyle {
+    #[default]
+    None,
+    ToZeroY,
+}
+derive_static_default!(TraceFillStyle, TraceFillStyle::None);

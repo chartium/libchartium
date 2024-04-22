@@ -62,6 +62,7 @@
         },
         style: {
           "*": { "line-width": 2, color: "bright" },
+          trace_2: { fill: "to-zero-y" },
           sin: { color: "red" },
         },
       });

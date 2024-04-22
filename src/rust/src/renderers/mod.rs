@@ -23,13 +23,10 @@ pub struct RenderJobCommon {
     pub y_range: NumericRange,
 }
 
-#[wasm_bindgen]
 pub struct TraceData {
-    x_range: NumericRange,
     data: Vec<(f32, f32)>,
 }
 
-#[wasm_bindgen]
 impl TraceData {
     pub fn compute(bundle: &BoxedBundle, handle: TraceHandle, x_range: NumericRange) -> TraceData {
         let data = bundle
@@ -39,6 +36,6 @@ impl TraceData {
             .map(|(x, y)| (x as f32, y as f32))
             .collect();
 
-        TraceData { x_range, data }
+        TraceData { data }
     }
 }

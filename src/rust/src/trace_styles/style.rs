@@ -14,6 +14,7 @@ use wasm_bindgen::prelude::wasm_bindgen;
 use super::{
     field_types::{TraceColor, TraceLineStyle, TracePaletteIndex, TracePointsStyle},
     utils::OrUnset,
+    TraceFillStyle,
 };
 
 #[optfield(
@@ -33,6 +34,7 @@ pub struct TraceStyle {
     pub palette_index: OrUnset<TracePaletteIndex>,
     pub z_index: OrUnset<f64>,
     pub legend_priority: OrUnset<f64>,
+    pub fill: OrUnset<TraceFillStyle>,
 }
 
 #[derive(Clone, Tsify, Serialize, Deserialize)]
@@ -46,6 +48,7 @@ pub struct ComputedTraceStyle {
     pub palette_index: TracePaletteIndex,
     pub z_index: f64,
     pub legend_priority: f64,
+    pub fill: TraceFillStyle,
 }
 
 impl TraceStylePatch {
@@ -57,6 +60,7 @@ impl TraceStylePatch {
             && self.palette_index.is_none()
             && self.z_index.is_none()
             && self.legend_priority.is_none()
+            && self.fill.is_none()
     }
 }
 
@@ -67,42 +71,47 @@ impl TraceStyle {
 
     #[inline(always)]
     pub fn get_color(&self) -> &TraceColor {
-        self.color.or_default()
+        self.color.ref_or_default()
     }
     #[inline(always)]
-    pub fn get_points(&self) -> &TracePointsStyle {
-        self.points.or_default()
+    pub fn get_points(&self) -> TracePointsStyle {
+        self.points.unwrap_or_default()
     }
     #[inline(always)]
     pub fn get_line(&self) -> &TraceLineStyle {
-        self.line.or_default()
+        self.line.ref_or_default()
     }
     #[inline(always)]
     pub fn get_palette_index(&self) -> &TracePaletteIndex {
-        self.palette_index.or_default()
+        self.palette_index.ref_or_default()
     }
     #[inline(always)]
     pub fn get_line_width(&self) -> u32 {
-        self.line_width.set_or(2)
+        self.line_width.unwrap_or(2)
     }
     #[inline(always)]
     pub fn get_z_index(&self) -> f64 {
-        self.z_index.set_or(0.)
+        self.z_index.unwrap_or(0.)
     }
     #[inline(always)]
     pub fn get_legend_priority(&self) -> f64 {
-        self.legend_priority.set_or(0.)
+        self.legend_priority.unwrap_or(0.)
+    }
+    #[inline(always)]
+    pub fn get_fill(&self) -> TraceFillStyle {
+        self.fill.unwrap_or_default()
     }
 
     pub fn to_computed(&self) -> ComputedTraceStyle {
         ComputedTraceStyle {
             color: self.get_color().clone(),
-            points: *self.get_points(),
+            points: self.get_points(),
             line: *self.get_line(),
             palette_index: *self.get_palette_index(),
             line_width: self.get_line_width(),
             z_index: self.get_z_index(),
             legend_priority: self.get_legend_priority(),
+            fill: self.get_fill(),
         }
     }
 

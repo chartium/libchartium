@@ -10,3 +10,4 @@ pub use resolved_indices::*;
 pub use sheet::*;
 pub use sheet_builders::*;
 pub use style::*;
+pub use utils::*;

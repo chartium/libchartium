@@ -5,15 +5,13 @@ use std::collections::HashMap;
 
 use js_sys::Float32Array;
 use wasm_bindgen::{prelude::*, JsCast, JsValue};
-use web_sys::{
-    OffscreenCanvas, WebGl2RenderingContext, WebGlBuffer, WebGlProgram, WebGlUniformLocation,
-};
+use web_sys::{OffscreenCanvas, WebGl2RenderingContext, WebGlProgram, WebGlUniformLocation};
 
 use crate::{
     data::{BundleHandle, TraceHandle},
     renderers::webgl::trace_geometry::TraceGeometryHandle,
     trace::BoxedBundle,
-    trace_styles::{TraceLineStyle, TracePointsStyle, TraceStyle},
+    trace_styles::{TraceFillStyle, TraceLineStyle, TracePointsStyle, TraceStyle},
 };
 
 use super::{NumericRange, TraceData};
@@ -89,6 +87,12 @@ impl WebGlRenderer {
             .get_parameter(WebGl2RenderingContext::ALIASED_LINE_WIDTH_RANGE)?
             .dyn_into::<Float32Array>()?;
 
+        context.enable(WebGl2RenderingContext::BLEND);
+        context.blend_func(
+            WebGl2RenderingContext::SRC_ALPHA,
+            WebGl2RenderingContext::ONE_MINUS_SRC_ALPHA,
+        );
+
         Ok(WebGlRenderer {
             width: present_canvas.width(),
             height: present_canvas.height(),
@@ -124,6 +128,11 @@ impl WebGlRenderer {
         );
         gl.uniform2f(Some(&self.programs.trace_transform), 1.0, 0.0);
 
+        let a_position_name =
+            gl.get_attrib_location(&self.programs.trace_program, "aVertexPosition") as u32;
+        let a_length_along =
+            gl.get_attrib_location(&self.programs.trace_program, "aLengthAlong") as u32;
+
         for trace in job.get_traces() {
             let style = &trace.style;
             let width = style.get_line_width() as f32;
@@ -135,6 +144,7 @@ impl WebGlRenderer {
                 x_range,
                 line_buffer,
                 arc_length_buffer,
+                fill_buffer,
                 ..
             } = &trace.geometry.0
             else {
@@ -148,6 +158,49 @@ impl WebGlRenderer {
                 (job.common.x_range.from - x_range.from) as f32,
                 y_from,
             );
+
+            // Set the arc length buffer
+            gl.bind_buffer(
+                WebGl2RenderingContext::ARRAY_BUFFER,
+                Some(arc_length_buffer),
+            );
+            gl.vertex_attrib_pointer_with_i32(
+                a_length_along,
+                1,
+                WebGl2RenderingContext::FLOAT,
+                false,
+                0,
+                0,
+            );
+            gl.enable_vertex_attrib_array(a_length_along);
+
+            match (fill_buffer, style.get_fill()) {
+                (Some(buffer), TraceFillStyle::ToZeroY) => {
+                    gl.uniform4f(
+                        Some(&self.programs.trace_color),
+                        color[0],
+                        color[1],
+                        color[2],
+                        0.05,
+                    );
+
+                    // Set the fill buffer
+                    gl.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, Some(buffer));
+                    gl.vertex_attrib_pointer_with_i32(
+                        a_position_name,
+                        2,
+                        WebGl2RenderingContext::FLOAT,
+                        false,
+                        0,
+                        0,
+                    );
+                    gl.enable_vertex_attrib_array(a_position_name);
+                    gl.draw_arrays(WebGl2RenderingContext::TRIANGLE_STRIP, 0, (points - 1) * 4);
+                }
+                _ => {
+                    // noop
+                }
+            }
 
             gl.uniform4f(
                 Some(&self.programs.trace_color),
@@ -181,31 +234,8 @@ impl WebGlRenderer {
                     )
                 }
             }
-
-            let a_length_along =
-                gl.get_attrib_location(&self.programs.trace_program, "aLengthAlong") as u32;
-            gl.bind_buffer(
-                WebGl2RenderingContext::ARRAY_BUFFER,
-                Some(arc_length_buffer),
-            );
-            gl.vertex_attrib_pointer_with_i32(
-                a_length_along,
-                1,
-                WebGl2RenderingContext::FLOAT,
-                false,
-                0,
-                0,
-            );
-            gl.enable_vertex_attrib_array(a_length_along);
-            let a_position_name =
-                gl.get_attrib_location(&self.programs.trace_program, "aVertexPosition") as u32;
+            // Set the line buffer
             gl.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, Some(line_buffer));
-
-            // // REMOVE
-            // gl.vertex_attrib_pointer_with_i32(0, 2, WebGl2RenderingContext::FLOAT, false, 0, 0);
-            // gl.enable_vertex_attrib_array(0);
-            // // END REMOVE
-
             gl.vertex_attrib_pointer_with_i32(
                 a_position_name,
                 2,
@@ -215,6 +245,11 @@ impl WebGlRenderer {
                 0,
             );
             gl.enable_vertex_attrib_array(a_position_name);
+
+            // // REMOVE
+            // gl.vertex_attrib_pointer_with_i32(0, 2, WebGl2RenderingContext::FLOAT, false, 0, 0);
+            // gl.enable_vertex_attrib_array(0);
+            // // END REMOVE
 
             if width < self.line_width_limit + 0.1 {
                 gl.line_width(width);
@@ -276,13 +311,7 @@ impl WebGlRenderer {
 
         let data = TraceData::compute(bundle, trace_handle, x_range);
 
-        let geometry = TraceGeometry::Line {
-            points: data.data.len(),
-            x_range,
-            y_range,
-            line_buffer: self.create_trace_buffer(&data),
-            arc_length_buffer: self.create_arc_length_buffer(&data, x_range, y_range),
-        };
+        let geometry = TraceGeometry::new_line(self, data, &style, x_range, y_range);
 
         if let Some(prev) = self
             .geometry_cache
@@ -292,99 +321,6 @@ impl WebGlRenderer {
         }
 
         TraceGeometryHandle(geometry)
-    }
-
-    fn create_trace_buffer(&self, trace: &TraceData) -> WebGlBuffer {
-        let context = &self.context;
-        let buffer = context.create_buffer().unwrap();
-
-        context.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, Some(&buffer));
-        context.buffer_data_with_array_buffer_view(
-            WebGl2RenderingContext::ARRAY_BUFFER,
-            unsafe {
-                &js_sys::Float32Array::view(core::slice::from_raw_parts(
-                    std::mem::transmute(trace.data.as_ptr()),
-                    trace.data.len() * 2,
-                ))
-            },
-            WebGl2RenderingContext::STATIC_DRAW,
-        );
-
-        buffer
-    }
-
-    fn create_arc_length_buffer(
-        &self,
-        trace: &TraceData,
-        display_x_range: NumericRange,
-        display_y_range: NumericRange,
-    ) -> WebGlBuffer {
-        let context = &self.context;
-
-        let lengths: Vec<f32> = if trace.data.is_empty() {
-            Vec::with_capacity(0)
-        } else {
-            let (x_pixel_ratio, y_pixel_ratio) = (
-                (self.width as f64) / display_x_range.len(),
-                (self.height as f64) / display_y_range.len(),
-            );
-
-            let (first_x, first_y) = (
-                x_pixel_ratio * (trace.data[0].0 as f64 - trace.x_range.from),
-                y_pixel_ratio * (trace.data[0].1 as f64 - display_y_range.from),
-            );
-
-            #[derive(Clone, Debug)]
-            struct State {
-                length_so_far: f64,
-                last_x: f64,
-                last_y: f64,
-            }
-
-            let initial_state = State {
-                length_so_far: 0.0,
-                last_x: first_x,
-                last_y: first_y,
-            };
-
-            trace
-                .data
-                .iter()
-                .map(|(x, y)| {
-                    (
-                        x_pixel_ratio * (*x as f64 - trace.x_range.from),
-                        y_pixel_ratio * (*y as f64 - display_y_range.from),
-                    )
-                })
-                .scan(initial_state, |state: &mut State, (x, y): (f64, f64)| {
-                    let len_sqr: f64 = (state.last_x - x).powi(2) + (state.last_y - y).powi(2);
-                    if !len_sqr.is_nan() {
-                        *state = State {
-                            last_x: x,
-                            last_y: y,
-                            length_so_far: state.length_so_far + len_sqr.sqrt(),
-                        };
-                    };
-
-                    Some(state.length_so_far as f32)
-                })
-                .collect()
-        };
-
-        let buffer = context.create_buffer().unwrap();
-        context.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, Some(&buffer));
-        context.buffer_data_with_array_buffer_view(
-            WebGl2RenderingContext::ARRAY_BUFFER,
-            unsafe {
-                &js_sys::Float32Array::view(core::slice::from_raw_parts(
-                    lengths.as_ptr(),
-                    lengths.len(),
-                ))
-            },
-            WebGl2RenderingContext::STATIC_DRAW,
-        );
-
-        buffer
     }
 }
 
