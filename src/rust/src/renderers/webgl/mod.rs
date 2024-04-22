@@ -176,6 +176,7 @@ impl WebGlRenderer {
 
             match (fill_buffer, style.get_fill()) {
                 (Some(buffer), TraceFillStyle::ToZeroY) => {
+                    gl.uniform4f(Some(&self.programs.dash_gap_length), 1.0, 0.0, 0.0, 0.0);
                     gl.uniform4f(
                         Some(&self.programs.trace_color),
                         color[0],
@@ -195,7 +196,11 @@ impl WebGlRenderer {
                         0,
                     );
                     gl.enable_vertex_attrib_array(a_position_name);
-                    gl.draw_arrays(WebGl2RenderingContext::TRIANGLE_STRIP, 0, (points - 1) * 4);
+                    gl.draw_arrays(
+                        WebGl2RenderingContext::TRIANGLES,
+                        0,
+                        (points - 1).max(0) * 6,
+                    );
                 }
                 _ => {
                     // noop

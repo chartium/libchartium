@@ -59,7 +59,7 @@
         },
         style: {
           "*": { "line-width": 2, color: "bright" },
-          trace_2: { fill: "to-zero-y" },
+          trace_2: { fill: "to-zero-y", line: "dashed" },
           sin: { color: "red" },
         },
       });
