@@ -23,6 +23,7 @@
   import type { RangeMargins } from "../utils/rangeMargins.js";
   import type { TextMeasuringFunction } from "../chart/axisTicks.js";
   import { type ChartMouseEvent, hover$ } from "../chart/interactive/hover.js";
+  import type { InterpolationStrategy } from "../../../dist/wasm/libchartium.js";
 
   // SECTION Props
   let klass: string = "";
@@ -114,6 +115,9 @@
   /** Hides the highlighted points on traces that the tooltip is showing info about */
   export let hideHoverPoints: boolean = false;
 
+  /** Interpolates the hover points using the provided strategy */
+  export let hoverPointsInterpolation: InterpolationStrategy = "linear";
+
   export let legendPosition: "right" | "bottom" = "right";
   export let hideLegend: boolean = false;
   /** Refers to the little trace sample, simplified just shows color, full shows real width and stroke style */
@@ -202,6 +206,7 @@
     point: chart$.point,
     defer: onDestroy,
     hoverEvent$,
+    interpolation: hoverPointsInterpolation,
   });
 
   //!SECTION

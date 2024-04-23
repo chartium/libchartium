@@ -11,7 +11,9 @@ use serde::{Deserialize, Serialize};
 use tsify::Tsify;
 use wasm_bindgen::prelude::wasm_bindgen;
 
-#[derive(Tsify, Serialize, Deserialize)]
+#[derive(Tsify, Clone, Copy, Serialize, Deserialize)]
+#[tsify(into_wasm_abi, from_wasm_abi)]
+#[serde(rename_all = "kebab-case")]
 pub enum InterpolationStrategy {
     None,
     Nearest,
@@ -81,7 +83,7 @@ pub trait Bundle {
         trace: TraceHandle,
         x: f64,
         interpolation_strategy: InterpolationStrategy,
-    ) -> Option<f64>;
+    ) -> Option<(f64, f64)>;
 }
 
 static BUNDLE_COUNTER: AtomicU32 = AtomicU32::new(0);

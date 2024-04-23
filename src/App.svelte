@@ -101,6 +101,7 @@
         yLabel="Amount"
         defaultYUnit={IEC.parseUnit("MiB")}
         legendPosition="bottom"
+        hoverPointsInterpolation="nearest"
       >
         <!-- <svelte:fragment slot="toolbar">
             <ToolFullscreen on:click={() => (fullscreen = !fullscreen)} />

@@ -39,6 +39,7 @@ import {
 import type { Bundle } from "./bundle.js";
 import { resolvedColorToHex } from "../utils/color.js";
 import { hashAny } from "../utils/hash.js";
+import type { InterpolationStrategy } from "../../../dist/wasm/libchartium.js";
 
 export const PARAMS = Symbol("trace-list-params");
 export const CONSTRUCTOR = Symbol("trace-list-constructor");
@@ -478,6 +479,7 @@ export class TraceList {
   findNearestTraces(
     point: { x: ChartValue; y: ChartValue },
     howMany: number,
+    interpolation: InterpolationStrategy,
   ): {
     traceId: string;
     x: ChartValue;
@@ -496,7 +498,12 @@ export class TraceList {
       const bundleTraces = new Uint32Array(
         intersection(bundle.traces, this.#traceHandlesSet),
       );
-      const pts = bundle.findClosestTraces(bundleTraces, point, howMany);
+      const pts = bundle.findClosestTraces(
+        bundleTraces,
+        point,
+        howMany,
+        interpolation,
+      );
 
       for (const p of pts) {
         const distance = Math.abs(yToNum(point.y) - yToNum(p.y));

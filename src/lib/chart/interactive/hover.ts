@@ -13,6 +13,7 @@ import type {
   TraceStatistics,
 } from "../../data-worker/trace-list.js";
 import { toNumeric } from "../../utils/unit.js";
+import type { InterpolationStrategy } from "../../../../dist/wasm/libchartium.js";
 
 export type ChartMouseEvent =
   | {
@@ -48,6 +49,8 @@ export interface MouseHoverProps {
   commonYRuler$: WritableSignal<ChartValue | undefined>;
 
   defer: DeferLike;
+
+  interpolation: InterpolationStrategy;
 }
 
 export interface MouseHover {
@@ -65,6 +68,7 @@ export const hover$ = ({
   commonXRuler$,
   commonYRuler$,
   defer: deferLike,
+  interpolation,
 }: MouseHoverProps): MouseHover => {
   const defer = Defer.from(deferLike);
 
@@ -98,7 +102,7 @@ export const hover$ = ({
     const _count = $(tooltipTraceCount$);
     const count = _count === "all" ? traces.traceCount : _count;
 
-    return traces.findNearestTraces({ x, y }, count);
+    return traces.findNearestTraces({ x, y }, count, interpolation);
   });
 
   const nearestTracesSortedByCloseness$ = derived(($): CloseTrace[] => {

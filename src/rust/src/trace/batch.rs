@@ -154,7 +154,7 @@ impl<X: N + Ord, Y: N> Bundle for Batch<X, Y> {
         handle: TraceHandle,
         x: f64,
         strategy: InterpolationStrategy,
-    ) -> Option<f64> {
+    ) -> Option<(f64, f64)> {
         if !self.contains_point(x) {
             return None;
         }
@@ -164,7 +164,7 @@ impl<X: N + Ord, Y: N> Bundle for Batch<X, Y> {
         match self.x.binary_search(&X::from_f64(x).unwrap()) {
             Err(0) => None,
             Err(i) if i == self.x.len() => None,
-            Ok(i) => Some(data[i].as_f64()),
+            Ok(i) => Some((x, data[i].as_f64())),
             Err(i) => {
                 let left_x = self.x[i - 1].as_f64();
                 let right_x = self.x[i].as_f64();
@@ -174,19 +174,19 @@ impl<X: N + Ord, Y: N> Bundle for Batch<X, Y> {
 
                 match strategy {
                     InterpolationStrategy::None => None,
-                    InterpolationStrategy::Previous => left_y.into(),
-                    InterpolationStrategy::Next => right_y.into(),
+                    InterpolationStrategy::Previous => (left_x, left_y).into(),
+                    InterpolationStrategy::Next => (right_x, right_y).into(),
                     InterpolationStrategy::Nearest => {
                         if (x - left_x) < (right_x - x) {
-                            left_y.into()
+                            (left_x, left_y).into()
                         } else {
-                            right_y.into()
+                            (right_x, right_y).into()
                         }
                     }
                     InterpolationStrategy::Linear => {
                         let frac = (x - left_x) / (right_x - left_x);
 
-                        Some(right_y * frac + left_y * (1.0 - frac))
+                        Some((x, right_y * frac + left_y * (1.0 - frac)))
                     }
                 }
             }

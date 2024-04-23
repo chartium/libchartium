@@ -8,7 +8,7 @@ use crate::{
     types::{NumericRange, TraceMetas, TracePoint},
 };
 
-use super::InterpolationStrategy::Linear;
+use super::InterpolationStrategy;
 
 #[wasm_bindgen]
 impl BoxedBundle {
@@ -19,6 +19,7 @@ impl BoxedBundle {
         y: f64,
         n: usize,
         max_dy: Option<f64>,
+        interpolation: InterpolationStrategy,
     ) -> Box<[JsValue]> {
         if !self.range().contains(x) {
             return vec![].into();
@@ -27,9 +28,9 @@ impl BoxedBundle {
         let mut dists: Vec<_> = traces
             .unwrap_or_else(|| self.traces())
             .iter()
-            .map(|&h| (h, self.unwrap().value_at(h, x, Linear)))
+            .map(|&h| (h, self.unwrap().value_at(h, x, interpolation)))
             .filter_map(|(h, ty_opt)| ty_opt.map(|ty| (h, ty)))
-            .map(|(h, ty)| (h, ty, (ty - y).abs()))
+            .map(|(h, point)| (h, point, (point.1 - y).abs()))
             .filter(|(_, _, delta)| match max_dy {
                 Some(m) => *delta < m,
                 None => true,
@@ -43,7 +44,7 @@ impl BoxedBundle {
         dists
             .into_iter()
             .take(n)
-            .map(|(handle, y, _)| TracePoint { handle, x, y })
+            .map(|(handle, (x, y), _)| TracePoint { handle, x, y })
             .map(|tp| serde_wasm_bindgen::to_value(&tp).unwrap())
             .collect()
     }

@@ -77,9 +77,9 @@ impl<Y: N> Bundle for ConstantBatch<Y> {
     fn value_at(
         &self,
         trace: crate::data::TraceHandle,
-        _x: f64,
+        x: f64,
         _interpolation_strategy: InterpolationStrategy,
-    ) -> Option<f64> {
-        self.ys.get(&trace).map(|y| y.as_f64())
+    ) -> Option<(f64, f64)> {
+        self.ys.get(&trace).map(|y| (x, y.as_f64()))
     }
 }

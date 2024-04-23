@@ -1,3 +1,4 @@
+import type { InterpolationStrategy } from "../../../dist/wasm/libchartium.js";
 import type {
   ChartValue,
   DataUnit,
@@ -71,6 +72,7 @@ export class Bundle {
     handles: TraceHandleArray,
     point: { x: ChartValue; y: ChartValue },
     howMany: number,
+    interpolation: InterpolationStrategy,
   ): Array<{
     handle: TraceHandle;
     x: ChartValue;
@@ -82,6 +84,8 @@ export class Bundle {
         toNumeric(point.x, this.xDataUnit),
         toNumeric(point.y, this.yDataUnit),
         howMany,
+        undefined,
+        interpolation,
       )
       .map(({ handle, x, y }: lib.TracePoint) => ({
         handle,
