@@ -67,7 +67,10 @@ importers:
         version: 5.1.1
       unitlib:
         specifier: ^0.8.1
-        version: 0.8.1(fraction.js@4.3.7)(typescript@5.4.5)
+        version: 0.8.5(fraction.js@4.3.7)(typescript@5.4.5)
+      vite-plugin-wasm:
+        specifier: ^3.3.0
+        version: 3.3.0(vite@5.2.9(@types/node@20.12.7)(sass@1.75.0))
       yeet-ts:
         specifier: ^1.0.3
         version: 1.0.3(typescript@5.4.5)
@@ -1452,8 +1455,8 @@ packages:
   undici-types@5.26.5:
     resolution: {integrity: sha512-JlCMO+ehdEIKqlFxk6IfVoAUVmgz7cU7zD/h9XZ0qzeosSHmUJVOzSQvvYSYWXkFXC+IfLKSIffhv0sVZup6pA==}
 
-  unitlib@0.8.1:
-    resolution: {integrity: sha512-twFXaWNDEQ3QZy3JGeGblFVDCwoLF/M/e1V3kdV286PLzftzdcVUNWyGtdUEpUvsMqTjojZI44HrCNbEq+mgTg==}
+  unitlib@0.8.5:
+    resolution: {integrity: sha512-ryj8FzZA28Jh8BHTw3UQANsecPsOhDyAUP1n9lW1vwRg5snrddCY1JlJz9kyRvOMFn4eAEraEdbjZvKamp6+YA==}
     peerDependencies:
       fraction.js: ^4.2.1
 
@@ -1467,6 +1470,11 @@ packages:
     resolution: {integrity: sha512-tV8h6gMj6vPzVCa7l+VGq9lwoJjW8Y79vst8QZZGiuRAfijU+EEWuc0kFpmndQrWhMMhet1jdSF+40KSZUqIIw==}
     engines: {node: ^18.0.0 || >=20.0.0}
     hasBin: true
+
+  vite-plugin-wasm@3.3.0:
+    resolution: {integrity: sha512-tVhz6w+W9MVsOCHzxo6SSMSswCeIw4HTrXEi6qL3IRzATl83jl09JVO1djBqPSwfjgnpVHNLYcaMbaDX5WB/pg==}
+    peerDependencies:
+      vite: ^2 || ^3 || ^4 || ^5
 
   vite@5.2.9:
     resolution: {integrity: sha512-uOQWfuZBlc6Y3W/DTuQ1Sr+oIXWvqljLvS881SVmAj00d5RdgShLcuXWxseWPd4HXwiYBFW/vXHfKFeqj9uQnw==}
@@ -2844,7 +2852,7 @@ snapshots:
 
   undici-types@5.26.5: {}
 
-  unitlib@0.8.1(fraction.js@4.3.7)(typescript@5.4.5):
+  unitlib@0.8.5(fraction.js@4.3.7)(typescript@5.4.5):
     dependencies:
       fraction.js: 4.3.7
       yeet-ts: 1.0.3(typescript@5.4.5)
@@ -2873,6 +2881,10 @@ snapshots:
       - sugarss
       - supports-color
       - terser
+
+  vite-plugin-wasm@3.3.0(vite@5.2.9(@types/node@20.12.7)(sass@1.75.0)):
+    dependencies:
+      vite: 5.2.9(@types/node@20.12.7)(sass@1.75.0)
 
   vite@5.2.9(@types/node@20.12.7)(sass@1.75.0):
     dependencies:

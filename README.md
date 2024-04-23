@@ -6,6 +6,7 @@ The documentation is getting ready, please check back soon!
 ```sh
 npm add libchartium unitlib fraction.js
 ```
+You will also need to make sure that your bundler can import WebAssembly as ES modules according to [the ESM integration proposal](https://github.com/WebAssembly/esm-integration). For Vite that means you need to add [`vite-plugin-wasm`](https://github.com/Menci/vite-plugin-wasm#readme), for Rollup it's [`@rollup/plugin-wasm`](https://github.com/rollup/plugins/tree/master/packages/wasm). In Webpack you'll have to allow [`asyncWebAssembly`](https://webpack.js.org/configuration/experiments/) in the config.
 
 ## Example
 
@@ -43,16 +44,3 @@ npm add libchartium unitlib fraction.js
 </script>
 <Chart {controller} {traces} />
 ```
-
-## Troubleshooting
-If loading the library fails with `Uncaught CompileError: WebAssembly.instantiate()`, it is probably because your bundler cannot find the WebAssembly binary. The wasm file is exported as `libchartium/wasm`, and in our code we initialize it as follows:
-```ts
-import wasmUrl from "libchartium/wasm?url";
-await init(wasmUrl);
-```
-If your bundler supports it, try to [alias](https://vitejs.dev/config/shared-options#resolve-alias) the import `libchartium/wasm?url` to a TS/JS file containing the following:
-```ts
-const wasmUrl = "/actual/path/to/libchartium.wasm";
-export default wasmUrl;
-```
-

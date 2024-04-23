@@ -1,15 +1,19 @@
 import { isDayjs, type Dayjs } from "./utils/dayjs.js";
 
-import { Unit as Unit_ } from "unitlib";
+import {
+  Unit as Unit_,
+  isUnit as _isUnit,
+  isQuantity as _isQuantity,
+} from "unitlib";
 export type Unit = Unit_<any, any, any>;
 export const Unit = Unit_;
-export const isUnit = (x: unknown): x is Unit => x instanceof Unit;
+export const isUnit = (x: unknown): x is Unit => _isUnit(x);
 
 import { Quantity as Quantity_ } from "unitlib";
 import { toNumeric } from "./utils/unit.js";
 export type Quantity = Quantity_<any, any, any>;
 export const Quantity = Quantity_;
-export const isQuantity = (x: unknown): x is Quantity => x instanceof Quantity;
+export const isQuantity = (x: unknown): x is Quantity => _isQuantity(x);
 
 import type { NumericDateRepresentation } from "./index.js";
 import type { DateFormat } from "./utils/dateFormat.js";

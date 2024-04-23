@@ -1,6 +1,6 @@
 {
   "name": "libchartium",
-  "version": "0.0.65",
+  "version": "0.0.66",
   "type": "module",
   "contributors": [
     {
@@ -83,10 +83,11 @@
     "svelte-portal": "^2.2.1",
     "svelte-typed-context": "^1.0.1",
     "ts-pattern": "^5.1.1",
+    "vite-plugin-wasm": "^3.3.0",
     "yeet-ts": "^1.0.3"
   },
   "peerDependencies": {
     "fraction.js": "^4.3.7",
-    "unitlib": "^0.8.1"
+    "unitlib": "^0.8.5"
   }
 }
