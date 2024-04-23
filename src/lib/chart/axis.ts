@@ -64,7 +64,7 @@ export const axis$ = ({
     axis,
     resetAllRanges,
     visibleTraces$,
-    showZero$,
+    showZero$: showZero$.skipEqual(),
     fractionalMargins$: axis === "y" ? cons([0.1, 0.1]) : cons([0, 0]),
   });
 
@@ -72,7 +72,7 @@ export const axis$ = ({
     axis,
     range$,
     visibleTraces$,
-    displayUnitPreference$,
+    displayUnitPreference$: displayUnitPreference$.skipEqual(),
   });
 
   const { ticks$ } = axisTicks$({

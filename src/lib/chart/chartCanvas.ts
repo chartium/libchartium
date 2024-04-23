@@ -16,10 +16,8 @@ export const chartCanvas$ = ({ canvas$ }: ChartCanvasProps): ChartCanvas => {
 
     const currSize = (): Size | undefined => {
       const { width, height } = canvas.getBoundingClientRect();
-      return {
-        width: width,
-        height: height,
-      };
+
+      return { width, height };
     };
 
     const size = mut<Size | undefined>(currSize());
