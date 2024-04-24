@@ -58,7 +58,7 @@
           columns: ys,
         },
         style: {
-          "*": { "line-width": 2, color: "bright" },
+          "*": { "line-width": 2 },
           trace_2: { fill: "to-zero-y", line: "dashed" },
           sin: { color: "red" },
         },

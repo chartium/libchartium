@@ -16,10 +16,6 @@ pub enum TraceColor {
     Random(TraceRandomColorSpace),
     PaletteAuto(String),
 }
-derive_static_default!(
-    TraceColor,
-    TraceColor::Random(TraceRandomColorSpace::ContrastWithBoth)
-);
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Tsify, Serialize, Deserialize)]
 pub enum TraceRandomColorSpace {

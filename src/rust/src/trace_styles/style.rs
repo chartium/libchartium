@@ -70,8 +70,11 @@ impl TraceStyle {
     }
 
     #[inline(always)]
-    pub fn get_color(&self) -> &TraceColor {
-        self.color.ref_or_default()
+    pub fn get_color(&self) -> TraceColor {
+        match &self.color {
+            OrUnset::Set(c) => c.clone(),
+            OrUnset::Unset => TraceColor::PaletteAuto("bright".to_string()),
+        }
     }
     #[inline(always)]
     pub fn get_points(&self) -> TracePointsStyle {

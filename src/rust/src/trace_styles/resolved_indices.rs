@@ -18,8 +18,8 @@ pub struct ResolvedColorIndices {
 impl ResolvedColorIndices {
     pub fn compute(sheet: &TraceStyleSheet, traces: &[TraceHandle]) -> Self {
         let mut indices = HashMap::<TraceHandle, usize>::new();
-        let mut used_indices = HashMap::<&TraceColor, HashSet<usize>>::new();
-        let mut last_consecutive_index = HashMap::<&TraceColor, usize>::new();
+        let mut used_indices = HashMap::<TraceColor, HashSet<usize>>::new();
+        let mut last_consecutive_index = HashMap::<TraceColor, usize>::new();
         let mut largest_index = HashMap::<TraceColor, usize>::new();
 
         for first in [true, false] {
@@ -35,9 +35,9 @@ impl ResolvedColorIndices {
 
                         indices.insert(trace, i);
 
-                        if should_assign_index_to_color(color) {
-                            used_indices.entry(color).or_default().insert(i);
-                            if largest_index.get(color).map_or(false, |&j| i > j) {
+                        if should_assign_index_to_color(&color) {
+                            used_indices.entry(color.clone()).or_default().insert(i);
+                            if largest_index.get(&color).map_or(false, |&j| i > j) {
                                 largest_index.insert(color.clone(), i);
                             }
                         }
@@ -47,10 +47,10 @@ impl ResolvedColorIndices {
                 } else if let TracePaletteIndex::Auto = index {
                     let used_indices = &used_indices;
 
-                    if should_assign_index_to_color(color) {
-                        let last_index = last_consecutive_index.entry(color).or_insert(0);
+                    if should_assign_index_to_color(&color) {
+                        let last_index = last_consecutive_index.entry(color.clone()).or_insert(0);
                         while used_indices
-                            .get(color)
+                            .get(&color)
                             .map_or(false, |s| s.contains(last_index))
                         {
                             *last_index += 1;
@@ -60,7 +60,7 @@ impl ResolvedColorIndices {
 
                         indices.insert(trace, i);
 
-                        if largest_index.get(color).map_or(true, |&j| i > j) {
+                        if largest_index.get(&color).map_or(true, |&j| i > j) {
                             largest_index.insert(color.clone(), i);
                         }
                     }
@@ -96,7 +96,7 @@ impl TraceStyleSheet {
     ) -> ResolvedColor {
         let color = self.get(trace).get_color();
         let trace_index = indices.get_trace_index(trace);
-        let max_index = indices.get_color_max_index(color);
+        let max_index = indices.get_color_max_index(&color);
 
         color.resolve(trace_index, max_index, random_seed)
     }

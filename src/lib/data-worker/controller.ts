@@ -106,6 +106,7 @@ export class ChartiumController {
     let tl = TraceList[CONSTRUCTOR]({
       handles,
       range: toRange(range.value, xDataUnit),
+      rangeArbitrary: false,
       bundles: [new Bundle(bundle, xDataUnit, yDataUnit)],
       labels: new Map(),
       styles: oxidizeStyleSheet(style),
@@ -176,6 +177,7 @@ export class ChartiumController {
     let tl = TraceList[CONSTRUCTOR]({
       handles,
       range: toRange(range.value, x.unit),
+      rangeArbitrary: false,
       bundles: [new Bundle(bundle, x.unit, y.unit)],
       labels: new Map(),
       styles: oxidizeStyleSheet(style),
@@ -223,6 +225,7 @@ export class ChartiumController {
     let tl = TraceList[CONSTRUCTOR]({
       handles,
       range: tracelistsRange,
+      rangeArbitrary: true,
       bundles: [new Bundle(bundle, xDataUnit, yDataUnit)],
       styles: oxidizeStyleSheet(style),
       labels: new Map(),

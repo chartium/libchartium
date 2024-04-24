@@ -68,6 +68,7 @@ export interface TraceListParams {
   handles: TraceHandleArray;
   bundles: Bundle[];
   range: Range;
+  rangeArbitrary: boolean;
 
   labels: ReadonlyMap<string, string>;
   styles: lib.TraceStyleSheet;
@@ -99,6 +100,7 @@ export class TraceList {
     return new TraceList({
       handles: new Uint32Array(),
       range: { from: 0, to: 1 },
+      rangeArbitrary: true,
       bundles: [],
 
       labels: new Map(),
@@ -358,7 +360,15 @@ export class TraceList {
     const labels = new Map(flatMap(lists, (l) => l.#p.labels.entries()));
 
     // Compute Range
-    const ranges = lists.map((t) => toNumericRange(t.range, xDataUnit));
+    const allRangesArbitrary = lists.every((t) => t.#p.rangeArbitrary);
+    const anyRangeArbitrary = lists.some((t) => t.#p.rangeArbitrary);
+    const ignoreArbitraryRanges = !allRangesArbitrary;
+
+    const ranges = lists.flatMap((t) => {
+      if (ignoreArbitraryRanges && t.#p.rangeArbitrary) return [];
+      else return [toNumericRange(t.range, xDataUnit)];
+    });
+
     const from = reduce(
       map(ranges, (r) => r.from),
       Math.min,
@@ -368,6 +378,7 @@ export class TraceList {
       Math.max,
     );
     const range = toRange({ from, to }, xDataUnit);
+    const rangeArbitrary = allRangesArbitrary;
 
     // Compute Styles
     // beware: mutating `lists`!
@@ -381,6 +392,7 @@ export class TraceList {
     return new TraceList({
       handles,
       range,
+      rangeArbitrary,
       bundles,
       labels,
       styles,
