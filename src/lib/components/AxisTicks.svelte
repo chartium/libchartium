@@ -30,7 +30,7 @@
   import RotatedBox from "../utils/RotatedBox.svelte";
   import { noop } from "lodash-es";
   import { mapOpt } from "../utils/mapOpt.js";
-  import type { UnitChangeAction } from "../chart/axis.js";
+  import type { UnitChangeActions } from "../chart/axis.js";
 
   export const events = createEventDispatcher<{
     shift: Shift;
@@ -64,20 +64,14 @@
   );
   $: onDestroy(dimensionFlock?.register(minorDim) ?? noop);
 
-  export let raiseFactor: Signal<UnitChangeAction | undefined>;
-  export let lowerFactor: Signal<UnitChangeAction | undefined>;
-  export let resetUnit: Signal<UnitChangeAction | undefined>;
-
   export const textLength = (text: string) =>
     measureText(text, measuringSpan, axis === "x" ? "horizontal" : "vertical");
 
+  export let unitChangeActions: Signal<UnitChangeActions>;
+
   // flatten the mutable prop containing a store into a store
-  const raiseFactor$ = mut($raiseFactor);
-  $: raiseFactor$.set($raiseFactor);
-  const lowerFactor$ = mut($lowerFactor);
-  $: lowerFactor$.set($lowerFactor);
-  const resetUnit$ = mut($resetUnit);
-  $: resetUnit$.set($resetUnit);
+  const unitChangeActions$ = mut($unitChangeActions);
+  $: unitChangeActions$.set($unitChangeActions);
 
   const dragCallbacks: MouseDragCallbacks = {
     start: () => {},
@@ -110,43 +104,75 @@
   const contextItems = disableUnitChange
     ? mut([])
     : ZippedSignal(
-        raiseFactor$.map(($v) => {
-          if (!$v) return;
-          const { unit, callback } = $v;
-          return <const>{
-            type: "leaf",
-            content: `Raise unit to ${unit}`,
-            callback() {
-              callback();
-              menu.close();
-            },
-          };
-        }),
-        resetUnit$.map(($v) => {
-          if (!$v) return;
-          const { unit, callback } = $v;
-          return <const>{
-            type: "leaf",
-            content: `Reset unit to ${unit}`,
-            callback() {
-              callback();
-              menu.close();
-            },
-          };
-        }),
-        lowerFactor$.map(($v) => {
-          if (!$v) return;
-          const { unit, callback } = $v;
-          return <const>{
-            type: "leaf",
-            content: `Lower unit to ${unit}`,
-            callback() {
-              callback();
-              menu.close();
-            },
-          };
-        }),
-      ).map((arr) => arr.filter((x) => x) as ContextItem<string>[]);
+        unitChangeActions$
+          .map((v) => v.bestFit)
+          .skipEqual()
+          .map(($v) => {
+            if (!$v) return;
+            const { unit, callback } = $v;
+            return <const>{
+              type: "leaf",
+              content: `Fit to best unit ${unit}`,
+              callback() {
+                callback();
+                menu.close();
+              },
+            };
+          }),
+        unitChangeActions$
+          .map((v) => v.raise)
+          .skipEqual()
+          .map(($v) => {
+            if (!$v) return;
+            const { unit, callback } = $v;
+            return <const>{
+              type: "leaf",
+              content: `Raise unit to ${unit}`,
+              callback() {
+                callback();
+                menu.close();
+              },
+            };
+          }),
+        unitChangeActions$
+          .map((v) => v.reset)
+          .skipEqual()
+          .map(($v) => {
+            if (!$v) return;
+            const { unit, callback } = $v;
+            return <const>{
+              type: "leaf",
+              content: `Reset unit to ${unit}`,
+              callback() {
+                callback();
+                menu.close();
+              },
+            };
+          }),
+        unitChangeActions$
+          .map((v) => v.lower)
+          .skipEqual()
+          .map(($v) => {
+            if (!$v) return;
+            const { unit, callback } = $v;
+            return <const>{
+              type: "leaf",
+              content: `Lower unit to ${unit}`,
+              callback() {
+                callback();
+                menu.close();
+              },
+            };
+          }),
+      ).map(([bestUnit, ...arr_]): ContextItem<string>[] => {
+        let items = arr_.filter((x) => x) as ContextItem<string>[];
+
+        if (bestUnit) {
+          return [...items, { type: "separator" }, bestUnit];
+        }
+
+        return items;
+      });
 
   let menu: { open(p: Point): void; close(): void };
 

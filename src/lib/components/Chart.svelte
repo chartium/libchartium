@@ -360,9 +360,7 @@
         hideTicks={hideYTicks}
         on:shift={(d) => chart$.axes.y.shiftRange(d.detail.dy ?? 0)}
         on:reset={() => chart$.axes.y.resetRange()}
-        raiseFactor={chart$.axes.y.unitChangeActions$.map(({ raise }) => raise)}
-        lowerFactor={chart$.axes.y.unitChangeActions$.map(({ lower }) => lower)}
-        resetUnit={chart$.axes.y.unitChangeActions$.map(({ reset }) => reset)}
+        unitChangeActions={chart$.axes.y.unitChangeActions$}
         bind:textLength={measureYAxisTextSize}
         dimensionFlock={commonYAxisWidth}
       />
@@ -380,9 +378,7 @@
         hideTicks={hideXTicks}
         on:shift={(d) => chart$.axes.x.shiftRange(d.detail.dx ?? 0)}
         on:reset={() => chart$.axes.x.resetRange()}
-        raiseFactor={chart$.axes.x.unitChangeActions$.map(({ raise }) => raise)}
-        lowerFactor={chart$.axes.x.unitChangeActions$.map(({ lower }) => lower)}
-        resetUnit={chart$.axes.x.unitChangeActions$.map(({ reset }) => reset)}
+        unitChangeActions={chart$.axes.x.unitChangeActions$}
         bind:textLength={measureXAxisTextSize}
         dimensionFlock={commonXAxisHeight}
       />

@@ -1,5 +1,5 @@
 import { derived, mutDerived, type Signal } from "@mod.js/signals";
-import type { FactorDefinition } from "unitlib";
+import { isUnit, type FactorDefinition } from "unitlib";
 import Fraction from "fraction.js";
 
 import { TraceList } from "../index.js";
@@ -13,7 +13,7 @@ import {
 } from "../types.js";
 import { mapOpt } from "../utils/mapOpt.js";
 
-import type { UnitChangeAction } from "./axis.js";
+import type { UnitChangeAction, UnitChangeActions } from "./axis.js";
 import { eq } from "../utils/unit.js";
 import { isNumericDateRepresentation } from "../utils/numericDateRepresentation.js";
 import { DateFormat, isDateFormat } from "../utils/dateFormat.js";
@@ -28,11 +28,7 @@ export interface AxisUnitsProps {
 export interface AxisUnits {
   dataUnit$: Signal<DataUnit>;
   currentDisplayUnit$: Signal<DisplayUnit>;
-  unitChangeActions$: Signal<{
-    raise?: UnitChangeAction;
-    reset?: UnitChangeAction;
-    lower?: UnitChangeAction;
-  }>;
+  unitChangeActions$: Signal<UnitChangeActions>;
 }
 
 export const axisUnits$ = ({
@@ -45,10 +41,11 @@ export const axisUnits$ = ({
     axis === "x" ? $(visibleTraces$).xDataUnit : $(visibleTraces$).yDataUnit,
   ).skipEqual();
 
+  const bestUnit$ = bestDisplayUnit(dataUnit$, range$);
   const defaultDisplayUnit$ = createDefaultUnit$(
     dataUnit$,
+    bestUnit$,
     displayUnitPreference$,
-    range$,
   );
 
   const { currentDisplayUnit$, resetDisplayUnit, setDisplayUnit } =
@@ -57,27 +54,40 @@ export const axisUnits$ = ({
       defaultDisplayUnit$,
     });
 
-  const unitChangeActions$ = createUnitChangeActions$({
+  const dataUnawareUnitActions$ = createUnitChangeActions$({
     defaultDisplayUnit$,
     currentDisplayUnit$,
     resetDisplayUnit,
     setDisplayUnit,
   });
 
+  const unitBestFitAction$ = createUnitBestFitAction$({
+    bestUnit$,
+    currentDisplayUnit$,
+    defaultDisplayUnit$,
+    setDisplayUnit,
+  });
+
   return {
     dataUnit$,
     currentDisplayUnit$,
-    unitChangeActions$,
+    unitChangeActions$: derived(($) => {
+      const unaware = $(dataUnawareUnitActions$);
+      const bestFit = $(unitBestFitAction$);
+
+      return {
+        ...unaware,
+        bestFit,
+      };
+    }),
   };
 };
 
 const createDefaultUnit$ = (
   dataUnit$: Signal<DataUnit>,
+  bestUnit$: Signal<DisplayUnit>,
   displayUnitPreference$: Signal<DisplayUnitPreference>,
-  range$: Signal<Range>,
 ) => {
-  const best$ = bestDisplayUnit(dataUnit$, range$);
-
   return derived(($): DisplayUnit => {
     const pref = $(displayUnitPreference$);
     const dat = $(dataUnit$);
@@ -86,7 +96,7 @@ const createDefaultUnit$ = (
         return dataUnitToDisplayUnit(dat);
 
       case "auto":
-        return $(best$);
+        return $(bestUnit$);
 
       default:
         if (isDisplayUnitValidForDataUnit(pref, dat)) {
@@ -135,6 +145,30 @@ const createCurrentUnit$ = ({
   };
 };
 
+const createUnitBestFitAction$ = ({
+  bestUnit$,
+  currentDisplayUnit$,
+  defaultDisplayUnit$,
+  setDisplayUnit,
+}: {
+  bestUnit$: Signal<DisplayUnit>;
+  currentDisplayUnit$: Signal<DisplayUnit>;
+  defaultDisplayUnit$: Signal<DisplayUnit>;
+  setDisplayUnit: (u: DisplayUnit) => void;
+}) =>
+  derived(($): UnitChangeAction | undefined => {
+    const unit = $(bestUnit$);
+    const currUnit = $(currentDisplayUnit$);
+    const defaultUnit = $(defaultDisplayUnit$);
+
+    if (eq(unit, currUnit) || eq(unit, defaultUnit)) return undefined;
+
+    return {
+      unit,
+      callback: () => setDisplayUnit(unit),
+    };
+  });
+
 const createUnitChangeActions$ = ({
   defaultDisplayUnit$,
   currentDisplayUnit$,
@@ -150,13 +184,15 @@ const createUnitChangeActions$ = ({
     const curr = $(currentDisplayUnit$);
     const def = $(defaultDisplayUnit$);
 
-    const reset = mapOpt(
-      def,
-      (def): UnitChangeAction => ({
-        unit: def,
-        callback: resetDisplayUnit,
-      }),
-    );
+    const reset = eq(curr, def)
+      ? undefined
+      : mapOpt(
+          def,
+          (def): UnitChangeAction => ({
+            unit: def,
+            callback: resetDisplayUnit,
+          }),
+        );
 
     const [raise, lower] = (["raise", "lower"] as const).map((direction) =>
       mapOpt(
@@ -194,10 +230,15 @@ const isDisplayUnitValidForDataUnit = (
 const dataUnitToDisplayUnit = (u: DataUnit): DisplayUnit =>
   isNumericDateRepresentation(u) ? new DateFormat() : u;
 
-// TODO
-const bestDisplayUnit = (dataUnit: Signal<DataUnit>, _range: Signal<Range>) =>
+const bestDisplayUnit = (dataUnit$: Signal<DataUnit>, range$: Signal<Range>) =>
   derived(($): DisplayUnit => {
-    return dataUnitToDisplayUnit($(dataUnit));
+    let dataUnit = $(dataUnit$);
+    const range = $(range$);
+
+    if (isUnit(dataUnit) && typeof range.to === "number")
+      dataUnit = (dataUnit as Unit).withBestFactorFor(range.to);
+
+    return dataUnitToDisplayUnit(dataUnit);
   }).skipEqual();
 
 const changeFactor = ({

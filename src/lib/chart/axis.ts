@@ -18,6 +18,13 @@ export interface UnitChangeAction {
   callback(): void;
 }
 
+export type UnitChangeActions = {
+  raise?: UnitChangeAction;
+  reset?: UnitChangeAction;
+  lower?: UnitChangeAction;
+  bestFit?: UnitChangeAction;
+};
+
 export type RangeMarginValue =
   | { percent: number }
   | { value: number | Quantity }
@@ -42,11 +49,7 @@ export interface Axis {
 
   dataUnit$: Signal<DataUnit>;
   currentDisplayUnit$: Signal<DisplayUnit>;
-  unitChangeActions$: Signal<{
-    raise?: UnitChangeAction;
-    reset?: UnitChangeAction;
-    lower?: UnitChangeAction;
-  }>;
+  unitChangeActions$: Signal<UnitChangeActions>;
 
   ticks$: Signal<Tick[]>;
 }

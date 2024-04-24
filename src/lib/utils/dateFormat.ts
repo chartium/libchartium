@@ -26,6 +26,13 @@ export type FormattingStrings = {
   [period in Period]: PeriodFormattingString;
 };
 
+const isPeriodFormatingEqual = (
+  a: PeriodFormattingString,
+  b: PeriodFormattingString,
+) => {
+  return a.length === b.length && a.every((val, index) => val === b[index]);
+};
+
 export const isDateFormat = (x: unknown): x is DateFormat =>
   x instanceof DateFormat;
 
@@ -51,13 +58,9 @@ export class DateFormat {
     return (
       this.shortWindow === other.shortWindow &&
       this.timezone === other.timezone &&
-      this.formattingStrings.years === other.formattingStrings.years &&
-      this.formattingStrings.months === other.formattingStrings.months &&
-      this.formattingStrings.days === other.formattingStrings.days &&
-      this.formattingStrings.hours === other.formattingStrings.hours &&
-      this.formattingStrings.seconds === other.formattingStrings.seconds &&
-      this.formattingStrings.milliseconds ===
-        other.formattingStrings.milliseconds
+      Object.entries(this.formattingStrings).every(([key, value]) =>
+        isPeriodFormatingEqual(other.formattingStrings[key as Period], value),
+      )
     );
   }
 
