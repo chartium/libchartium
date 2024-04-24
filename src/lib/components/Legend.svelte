@@ -73,10 +73,21 @@
     }
 
     const ctx = calcCanvas.getContext("2d")!;
-    const style = containerElem.computedStyleMap();
+
+    // This API is brand new, released only 8 years ago
+    // No need to rush this, Firefox
+    const getStyle = (() => {
+      if ("computedStyleMap" in containerElem) {
+        const style = containerElem.computedStyleMap();
+        return (key: string) => style.get(key)?.toString() ?? "";
+      } else {
+        const style = getComputedStyle(containerElem);
+        return (key: string) => style.getPropertyValue(key);
+      }
+    })();
 
     ctx.font = ["font-style", "font-weight", "font-size", "font-family"]
-      .map((k) => style.get(k)?.toString() ?? "")
+      .map(getStyle)
       .join(" ");
 
     const max = traces.reduce<number>((prev, trace) => {
