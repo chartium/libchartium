@@ -237,11 +237,16 @@ const bestDisplayUnit = (dataUnit$: Signal<DataUnit>, range$: Signal<Range>) =>
 
     if (isUnit(dataUnit)) {
       const { to } = range;
+      const dataUnit_ = dataUnit as Unit;
 
-      if (typeof to === "number")
-        dataUnit = (dataUnit as Unit).withBestFactorFor(to);
-      else if (isQuantity(to))
-        dataUnit = (dataUnit as Unit).withBestFactorFor((to as Quantity).value);
+      if (typeof to === "number") dataUnit = dataUnit_.withBestFactorFor(to);
+      else if (isQuantity(to)) {
+        const to_ = to as Quantity;
+
+        dataUnit = dataUnit_.withBestFactorFor(
+          to_.unit.conversionFactorTo(dataUnit_) * to_.value,
+        );
+      }
     }
 
     return dataUnitToDisplayUnit(dataUnit);
