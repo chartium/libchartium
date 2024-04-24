@@ -1,5 +1,5 @@
 import { derived, mutDerived, type Signal } from "@mod.js/signals";
-import { isUnit, type FactorDefinition } from "unitlib";
+import { isQuantity, isUnit, type FactorDefinition } from "unitlib";
 import Fraction from "fraction.js";
 
 import { TraceList } from "../index.js";
@@ -235,8 +235,14 @@ const bestDisplayUnit = (dataUnit$: Signal<DataUnit>, range$: Signal<Range>) =>
     let dataUnit = $(dataUnit$);
     const range = $(range$);
 
-    if (isUnit(dataUnit) && typeof range.to === "number")
-      dataUnit = (dataUnit as Unit).withBestFactorFor(range.to);
+    if (isUnit(dataUnit)) {
+      const { to } = range;
+
+      if (typeof to === "number")
+        dataUnit = (dataUnit as Unit).withBestFactorFor(to);
+      else if (isQuantity(to))
+        dataUnit = (dataUnit as Unit).withBestFactorFor((to as Quantity).value);
+    }
 
     return dataUnitToDisplayUnit(dataUnit);
   }).skipEqual();
