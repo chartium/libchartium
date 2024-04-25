@@ -12,8 +12,8 @@ importers:
         specifier: ^6.5.2
         version: 6.5.2
       '@mod.js/signals':
-        specifier: ^0.0.30
-        version: 0.0.30
+        specifier: ^0.0.32
+        version: 0.0.32
       '@risai/bim':
         specifier: ^1.4.2
         version: 1.4.2
@@ -335,8 +335,8 @@ packages:
   '@jridgewell/trace-mapping@0.3.25':
     resolution: {integrity: sha512-vNk6aEwybGtawWmy/PzwnGDOjCkLWSD2wqvjGGAgOAwCGWySYXfYoxt00IJkTF+8Lb57DwOb3Aa0o9CApepiYQ==}
 
-  '@mod.js/signals@0.0.30':
-    resolution: {integrity: sha512-B6D6kXX2A7wedTbW/sS7wDdaIBE3xph0hq36ayoGFCXkTlWge3JUcvoE+pAelvPs6Ur0YDjHGcOzJt2/PnGonQ==}
+  '@mod.js/signals@0.0.32':
+    resolution: {integrity: sha512-xGNnmB7RQIRmdynt/bBK4Ze9LRG1kdyqj6MaFQUmRp1dwSZ5YOIAzk+rKKrMKga7d9VM3ygsWJ+ir8/tZ/duXQ==}
 
   '@nodelib/fs.scandir@2.1.5':
     resolution: {integrity: sha512-vq24Bq3ym5HEQm2NKCr3yXDwjc7vTsEThRDnkp2DK9p1uqLR+DHurm/NOTo0KG7HYHU7eppKZj3MyqYuMBf62g==}
@@ -1716,7 +1716,7 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.4.15
 
-  '@mod.js/signals@0.0.30': {}
+  '@mod.js/signals@0.0.32': {}
 
   '@nodelib/fs.scandir@2.1.5':
     dependencies:
