@@ -35,6 +35,7 @@ pub struct TraceStyle {
     pub z_index: OrUnset<f64>,
     pub legend_priority: OrUnset<f64>,
     pub fill: OrUnset<TraceFillStyle>,
+    pub stack_group: OrUnset<u32>,
 }
 
 #[derive(Clone, Tsify, Serialize, Deserialize)]
@@ -49,6 +50,7 @@ pub struct ComputedTraceStyle {
     pub z_index: f64,
     pub legend_priority: f64,
     pub fill: TraceFillStyle,
+    pub stack_group: Option<u32>,
 }
 
 impl TraceStylePatch {
@@ -61,6 +63,7 @@ impl TraceStylePatch {
             && self.z_index.is_none()
             && self.legend_priority.is_none()
             && self.fill.is_none()
+            && self.stack_group.is_none()
     }
 }
 
@@ -115,6 +118,7 @@ impl TraceStyle {
             z_index: self.get_z_index(),
             legend_priority: self.get_legend_priority(),
             fill: self.get_fill(),
+            stack_group: self.stack_group.into(),
         }
     }
 

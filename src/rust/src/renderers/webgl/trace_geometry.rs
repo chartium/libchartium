@@ -1,4 +1,3 @@
-use js_sys::wasm_bindgen::prelude::*;
 use web_sys::{WebGl2RenderingContext, WebGlBuffer};
 
 use crate::{
@@ -9,43 +8,23 @@ use crate::{
 
 use super::WebGlRenderer;
 
-/// A function-less handle to allow passing geometry around in JS-land.
-#[wasm_bindgen]
-pub struct TraceGeometryHandle(pub(crate) TraceGeometry);
-
 #[derive(Clone)]
-pub enum TraceGeometry {
-    Line {
-        x_range: NumericRange,
-        y_range: NumericRange,
-        points: usize,
-        line_buffer: WebGlBuffer,
-        arc_length_buffer: WebGlBuffer,
-        fill_buffer: Option<WebGlBuffer>,
-    },
-    #[allow(dead_code)]
-    Area { area_buffer: WebGlBuffer },
+pub struct TraceGeometry {
+    pub x_range: NumericRange,
+    pub y_range: NumericRange,
+    pub points: usize,
+    pub line_buffer: WebGlBuffer,
+    pub arc_length_buffer: WebGlBuffer,
+    pub fill_buffer: Option<WebGlBuffer>,
 }
 
 impl TraceGeometry {
     pub fn destroy(self, ctx: &WebGl2RenderingContext) {
-        match self {
-            TraceGeometry::Line {
-                line_buffer,
-                arc_length_buffer,
-                fill_buffer,
-                ..
-            } => {
-                ctx.delete_buffer(Some(&line_buffer));
-                ctx.delete_buffer(Some(&arc_length_buffer));
+        ctx.delete_buffer(Some(&self.line_buffer));
+        ctx.delete_buffer(Some(&self.arc_length_buffer));
 
-                if let Some(buffer) = fill_buffer {
-                    ctx.delete_buffer(Some(&buffer));
-                }
-            }
-            TraceGeometry::Area { area_buffer } => {
-                ctx.delete_buffer(Some(&area_buffer));
-            }
+        if let Some(buffer) = self.fill_buffer {
+            ctx.delete_buffer(Some(&buffer));
         }
     }
 
@@ -55,20 +34,12 @@ impl TraceGeometry {
         x_range: NumericRange,
         y_range: NumericRange,
     ) -> bool {
-        match self {
-            TraceGeometry::Line {
-                x_range: prev_x_range,
-                y_range: prev_y_range,
-                fill_buffer,
-                ..
-            } => {
-                (!style.get_line().is_solid()
-                    && (x_range != *prev_x_range || y_range != *prev_y_range))
-                    || (matches!(style.fill, OrUnset::Set(TraceFillStyle::ToZeroY))
-                        && fill_buffer.is_none())
-            }
-            _ => false,
-        }
+        let prev_x_range = self.x_range;
+        let prev_y_range = self.y_range;
+
+        (!style.get_line().is_solid() && (x_range != prev_x_range || y_range != prev_y_range))
+            || (!matches!(style.fill, OrUnset::Set(TraceFillStyle::None))
+                && self.fill_buffer.is_none())
     }
 
     pub fn new_line(
@@ -78,7 +49,7 @@ impl TraceGeometry {
         x_range: NumericRange,
         y_range: NumericRange,
     ) -> Self {
-        TraceGeometry::Line {
+        Self {
             points: data.data.len(),
             x_range,
             y_range,
@@ -92,57 +63,65 @@ impl TraceGeometry {
             },
         }
     }
+
+    pub fn new_area(
+        renderer: &WebGlRenderer,
+        data: impl Iterator<Item = (f64, f64, f64)>,
+        _style: &TraceStyle,
+        x_range: NumericRange,
+        y_range: NumericRange,
+    ) -> Self {
+        let mut trace = Vec::<(f32, f32)>::new();
+        let mut area = Vec::<f32>::new();
+
+        for (x, y1, y2) in data {
+            area.extend([x, y1, x, y2].map(|v| v as f32));
+            trace.push((x as f32, y2 as f32));
+        }
+
+        let data = TraceData { data: trace };
+
+        Self {
+            points: data.data.len(),
+            x_range,
+            y_range,
+            line_buffer: create_trace_buffer(renderer, &data),
+            arc_length_buffer: create_arc_length_buffer(renderer, &data, x_range, y_range),
+            fill_buffer: Some(renderer.create_buffer(&area)),
+        }
+    }
 }
 
 fn create_trace_buffer(renderer: &WebGlRenderer, trace: &TraceData) -> WebGlBuffer {
-    let context = &renderer.context;
-    let buffer = context.create_buffer().unwrap();
-
-    context.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, Some(&buffer));
-    context.buffer_data_with_array_buffer_view(
-        WebGl2RenderingContext::ARRAY_BUFFER,
-        unsafe {
-            &js_sys::Float32Array::view(core::slice::from_raw_parts(
-                std::mem::transmute(trace.data.as_ptr()),
-                trace.data.len() * 2,
-            ))
-        },
-        WebGl2RenderingContext::STATIC_DRAW,
-    );
-
-    buffer
+    renderer.create_buffer(unsafe {
+        core::slice::from_raw_parts(
+            std::mem::transmute(trace.data.as_ptr()),
+            trace.data.len() * 2,
+        )
+    })
 }
 
 fn create_trace_fill_buffer(renderer: &WebGlRenderer, trace: &TraceData) -> WebGlBuffer {
-    let context = &renderer.context;
-    let buffer = context.create_buffer().unwrap();
-
     let mut data = Vec::<f32>::with_capacity(trace.data.len() * 4);
 
     for &(x, y) in trace.data.iter() {
         data.extend([x, 0., x, y]);
     }
 
-    context.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, Some(&buffer));
-    context.buffer_data_with_array_buffer_view(
-        WebGl2RenderingContext::ARRAY_BUFFER,
-        unsafe { &js_sys::Float32Array::view(&data) },
-        WebGl2RenderingContext::STATIC_DRAW,
-    );
-
-    buffer
+    renderer.create_buffer(&data)
 }
+
 fn create_arc_length_buffer(
     renderer: &WebGlRenderer,
     trace: &TraceData,
     display_x_range: NumericRange,
     display_y_range: NumericRange,
 ) -> WebGlBuffer {
-    let context = &renderer.context;
+    if trace.data.is_empty() {
+        return renderer.create_buffer(&Vec::with_capacity(0));
+    }
 
-    let lengths: Vec<f32> = if trace.data.is_empty() {
-        Vec::with_capacity(0)
-    } else {
+    let lengths: Vec<f32> = {
         let (x_pixel_ratio, y_pixel_ratio) = (
             (renderer.width as f64) / display_x_range.len(),
             (renderer.height as f64) / display_y_range.len(),
@@ -190,18 +169,5 @@ fn create_arc_length_buffer(
             .collect()
     };
 
-    let buffer = context.create_buffer().unwrap();
-    context.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, Some(&buffer));
-    context.buffer_data_with_array_buffer_view(
-        WebGl2RenderingContext::ARRAY_BUFFER,
-        unsafe {
-            &js_sys::Float32Array::view(core::slice::from_raw_parts(
-                lengths.as_ptr(),
-                lengths.len(),
-            ))
-        },
-        WebGl2RenderingContext::STATIC_DRAW,
-    );
-
-    buffer
+    renderer.create_buffer(&lengths)
 }

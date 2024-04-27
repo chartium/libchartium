@@ -4,15 +4,15 @@ import {
 } from "./numericDateRepresentation.js";
 import {
   Quantity,
-  type NumericRange,
+  isQuantity,
+  isRange,
+  isUnit,
   type Unit,
   type Range,
-  type ChartValue,
-  isQuantity,
-  isUnit,
   type DataUnit,
+  type ChartValue,
   type DisplayUnit,
-  isRange,
+  type NumericRange,
 } from "../types.js";
 import { SI } from "unitlib/systems";
 import { isDayjs, type Dayjs, dayjs } from "./dayjs.js";
@@ -86,12 +86,12 @@ export function areUnitsCompatible(
     return false;
   }
   if (b === undefined) return isUnit(a) && a.isUnitless;
-  if (isNumericDateRepresentation(a) || isDateFormat(a)) {
+  if (isNumericDateRepresentation(a) || isDateFormat(a))
     return isNumericDateRepresentation(b) || isDateFormat(b);
-  }
   if (isNumericDateRepresentation(b) || isDateFormat(b)) return false;
   return a.isCompatible(b);
 }
+
 export function assertAllUnitsCompatible(
   units: Iterable<DataUnit | DisplayUnit>,
 ) {

@@ -4,6 +4,7 @@ import {
   type ChartValue,
   type DataUnit,
   type TraceHandleArray,
+  Unit,
 } from "../types.js";
 import { lib } from "./wasm.js";
 import {
@@ -40,6 +41,7 @@ import type { Bundle } from "./bundle.js";
 import { resolvedColorToHex } from "../utils/color.js";
 import { hashAny } from "../utils/hash.js";
 import type { InterpolationStrategy } from "../../../dist/wasm/libchartium.js";
+import { isUnit } from "unitlib";
 
 export const PARAMS = Symbol("trace-list-params");
 export const CONSTRUCTOR = Symbol("trace-list-constructor");
@@ -156,6 +158,46 @@ export class TraceList {
     return this.#traceHandleSet_;
   }
 
+  #traceHandleStacks_: [null | number, Uint32Array][] | undefined;
+  get #traceHandleStacks(): [null | number, Uint32Array][] {
+    if (!this.#traceHandleStacks_) {
+      const groupMap = new Map<null | number, [TraceHandle, number][]>();
+      const getStack = (v: lib.TraceStyle["stack-group"]) => {
+        if (v === "unset") return null;
+
+        return v;
+      };
+
+      for (const handle of this.#p.handles) {
+        const style = this.#p.styles.get_cloned(handle);
+        const stack = getStack(style["stack-group"]);
+        const zIndex = style["z-index"] === "unset" ? 0 : style["z-index"];
+
+        if (groupMap.has(stack)) {
+          groupMap.get(stack)!.push([handle, zIndex]);
+        } else {
+          groupMap.set(stack, [[handle, zIndex]]);
+        }
+      }
+
+      this.#traceHandleStacks_ = [...groupMap.entries()].map(
+        ([stack, handles]) => {
+          // z-index sorting
+          handles.sort(([, a], [, b]) => a - b);
+
+          return <const>[stack, Uint32Array.from(handles.map((h) => h[0]))];
+        },
+      );
+
+      // group sorting
+      this.#traceHandleStacks_.sort(
+        ([a], [b]) => (a ?? 10_000) - (b ?? 10_000),
+      );
+    }
+
+    return this.#traceHandleStacks_;
+  }
+
   #colorIndices_: lib.ResolvedColorIndices | undefined;
   get #colorIndices(): lib.ResolvedColorIndices {
     return (
@@ -169,6 +211,9 @@ export class TraceList {
   get [LAZY]() {
     const self = this;
     return {
+      get traceHandleStacks() {
+        return self.#traceHandleStacks;
+      },
       get handlesSet() {
         return self.#traceHandlesSet;
       },
@@ -361,7 +406,7 @@ export class TraceList {
 
     // Compute Range
     const allRangesArbitrary = lists.every((t) => t.#p.rangeArbitrary);
-    const anyRangeArbitrary = lists.some((t) => t.#p.rangeArbitrary);
+    // const anyRangeArbitrary = lists.some((t) => t.#p.rangeArbitrary);
     const ignoreArbitraryRanges = !allRangesArbitrary;
 
     const ranges = lists.flatMap((t) => {
@@ -467,19 +512,36 @@ export class TraceList {
    */
   getYRange(): Range {
     if (this.#yRange) return this.#yRange;
-    const metas = this.calculateStatistics();
-    if (metas.length === 0) return { from: 0, to: 1 };
 
-    return {
-      from: metas.reduce(
-        (prev, { min: curr }) => minValue(prev, curr),
-        metas[0].min,
-      ),
-      to: metas.reduce(
-        (prev, { max: curr }) => maxValue(prev, curr),
-        metas[0].max,
-      ),
-    } as Range;
+    const { getStackData, freeStackData } = this.stackHelper(this.#p.bundles);
+
+    const range = this[LAZY].traceHandleStacks.reduce<Range | undefined>(
+      (prev, [stack, handles]) => {
+        const { bundles, factors, xUnit, yUnit } = getStackData();
+        const range = toNumericRange(this.range, xUnit);
+
+        const yRange =
+          stack === null
+            ? lib.find_list_extents(bundles, factors, handles, range)
+            : lib.find_stack_extents(bundles, factors, handles, range);
+
+        const [from, to] = [yRange.from, yRange.to].map((v) =>
+          toChartValue(v, yUnit),
+        );
+
+        if (prev === undefined) return { from, to } as Range;
+
+        prev.from = minValue(prev.from, from);
+        prev.to = maxValue(prev.to, to);
+
+        return prev;
+      },
+      undefined,
+    );
+
+    freeStackData();
+
+    return range ?? { from: 0, to: 1 };
   }
 
   /**
@@ -506,22 +568,65 @@ export class TraceList {
       distance: number;
     }> = [];
 
-    for (const bundle of this.#p.bundles) {
-      const bundleTraces = new Uint32Array(
-        intersection(bundle.traces, this.#traceHandlesSet),
-      );
-      const pts = bundle.findClosestTraces(
-        bundleTraces,
-        point,
-        howMany,
-        interpolation,
-      );
+    const intersecting = this.#p.bundles.filter((b) => {
+      const x = toNumeric(point.x, b.xDataUnit);
 
-      for (const p of pts) {
-        const distance = Math.abs(yToNum(point.y) - yToNum(p.y));
-        closestPoints.push({ ...p, distance });
+      return b.boxed.contains_point(x);
+    });
+
+    if (intersecting.length === 0) return [];
+
+    const { getStackData, freeStackData } = this.stackHelper(intersecting);
+
+    for (const [stack, handles] of this[LAZY].traceHandleStacks) {
+      if (stack === null) {
+        for (const bundle of intersecting) {
+          const bundleTraces = new Uint32Array(
+            intersection(bundle.traces, new Set(handles)),
+          );
+          const pts = bundle.findClosestTraces(
+            bundleTraces,
+            point,
+            howMany,
+            interpolation,
+          );
+
+          for (const p of pts) {
+            const distance = Math.abs(yToNum(point.y) - yToNum(p.y));
+            closestPoints.push({ ...p, distance });
+          }
+        }
+      } else {
+        const { bundles, factors, xUnit, yUnit } = getStackData();
+
+        const x = toNumeric(point.x, xUnit);
+        const y = toNumeric(point.y, yUnit);
+
+        // stacked traces
+        const p = lib.find_closest_in_stack(
+          bundles,
+          factors,
+          handles,
+          x,
+          y,
+          interpolation,
+        ) as lib.TracePoint | undefined;
+
+        if (p) {
+          closestPoints = [
+            {
+              x: toChartValue(p.x, xUnit),
+              y: toChartValue(p.y, yUnit),
+              handle: p.handle,
+              distance: 0,
+            },
+          ];
+          break;
+        }
       }
     }
+
+    freeStackData();
 
     // leave only the requested number of closest points
     closestPoints.sort((a, b) => a.distance - b.distance);
@@ -533,6 +638,54 @@ export class TraceList {
       y,
     }));
   }
+
+  stackHelper = (bundles: Bundle[]) => {
+    let _stackData:
+      | {
+          xUnit: DataUnit;
+          yUnit: DataUnit;
+          bundles: lib.BundleVec;
+          factors: Float64Array;
+        }
+      | undefined;
+
+    const getStackData = () => {
+      if (!_stackData) {
+        const first = bundles.at(0)!;
+
+        const bundleVec = new lib.BundleVec();
+        const factors: number[] = [];
+
+        bundles.forEach((b) => {
+          bundleVec.push(b.boxed);
+
+          if (isUnit(first.yDataUnit) && isUnit(b.yDataUnit)) {
+            factors.push(
+              (b.yDataUnit as Unit).conversionFactorTo(first.yDataUnit as Unit),
+            );
+          } else {
+            factors.push(1);
+          }
+        });
+
+        _stackData = {
+          bundles: bundleVec,
+          factors: Float64Array.from(factors),
+          xUnit: first.xDataUnit,
+          yUnit: first.yDataUnit,
+        };
+      }
+
+      return _stackData;
+    };
+
+    return {
+      getStackData,
+      freeStackData: () => {
+        if (_stackData) _stackData.bundles.free();
+      },
+    };
+  };
 
   /**
    * Export data of all traces into a stream.

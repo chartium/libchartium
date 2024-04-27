@@ -4,11 +4,12 @@ use wasm_bindgen::prelude::*;
 
 use crate::{
     data::TraceHandle,
+    structs::AdaptiveGrid,
     trace::BoxedBundle,
     types::{NumericRange, TraceMetas, TracePoint},
 };
 
-use super::InterpolationStrategy;
+use super::{BundleVec, InterpolationStrategy};
 
 #[wasm_bindgen]
 impl BoxedBundle {
@@ -142,5 +143,135 @@ impl BoxedBundle {
             .map(|&t| self.contains_trace(t) && self.is_trace_over_treshold(t, x_range, tres))
             .map(|b| b.into())
             .collect()
+    }
+}
+
+#[wasm_bindgen]
+pub fn find_closest_in_stack(
+    bundles: &BundleVec,
+    factors: &[f64],
+    stack: &[TraceHandle],
+    x: f64,
+    y: f64,
+    interpolation: InterpolationStrategy,
+) -> JsValue {
+    assert_eq!(
+        bundles.len(),
+        factors.len(),
+        "there must be a factor for each bundle"
+    );
+
+    let mut sum = 0.;
+
+    for handle in stack {
+        let Some((bundle, factor)) = bundles
+            .iter()
+            .zip(factors)
+            .find(|(b, _)| b.contains_trace(*handle) && b.contains_point(x))
+        else {
+            continue;
+        };
+
+        let Some(value) = bundle.value_at(*handle, x, interpolation) else {
+            continue;
+        };
+
+        let trace_y = value.1 * factor;
+
+        if is_between(y, sum, sum + trace_y) {
+            return serde_wasm_bindgen::to_value(&TracePoint {
+                x: value.0,
+                y: sum + trace_y,
+                handle: *handle,
+            })
+            .unwrap();
+        }
+
+        sum += trace_y;
+    }
+
+    JsValue::null()
+}
+
+#[wasm_bindgen]
+pub fn find_list_extents(
+    bundles: &BundleVec,
+    factors: &[f64],
+    trace_list: &[TraceHandle],
+    x_range: NumericRange,
+) -> NumericRange {
+    assert!(
+        !trace_list.is_empty(),
+        "empty lists should be handled on the JS side"
+    );
+
+    let mut y_range = NumericRange {
+        from: f64::MAX,
+        to: f64::MIN,
+    };
+
+    for (bundle, factor) in bundles.iter().zip(factors) {
+        if !bundle.intersects(x_range.from, x_range.to) {
+            continue;
+        }
+
+        for trace in trace_list {
+            if bundle.contains_trace(*trace) {
+                for (_, y) in bundle.iter_in_range_with_neighbors_f64(*trace, x_range) {
+                    let y = y * factor;
+
+                    y_range.from = y_range.from.min(y);
+                    y_range.to = y_range.to.max(y);
+                }
+            }
+        }
+    }
+
+    y_range
+}
+
+#[wasm_bindgen]
+pub fn find_stack_extents(
+    bundles: &BundleVec,
+    factors: &[f64],
+    stack: &[TraceHandle],
+    x_range: NumericRange,
+) -> NumericRange {
+    assert!(
+        !stack.is_empty(),
+        "empty stacks should be handled on the JS side"
+    );
+
+    let mut grid = AdaptiveGrid::new();
+    let mut y_range = NumericRange {
+        from: f64::MAX,
+        to: f64::MIN,
+    };
+
+    for handle in stack {
+        for (bundle, factor) in bundles.iter().zip(factors) {
+            if !bundle.contains_trace(*handle) {
+                continue;
+            }
+
+            for (_, _, y) in grid.sum_add_points(
+                bundle
+                    .iter_in_range_with_neighbors_f64(*handle, x_range)
+                    .map(|(x, y)| (x, y * factor)),
+            ) {
+                y_range.from = y_range.from.min(y);
+                y_range.to = y_range.to.max(y);
+            }
+        }
+    }
+
+    y_range
+}
+
+fn is_between(val: f64, from: f64, to: f64) -> bool {
+    if from <= to {
+        from <= val && val <= to
+    } else {
+        from >= val && val >= to
     }
 }

@@ -24,7 +24,8 @@ export interface TraceStyle {
   "palette-index": number | "unset";
   "z-index": number | "unset";
   "legend-priority": number | "unset";
-  fill: "to-zero-y" | "none" | "unset";
+  fill: "to-zero-y" | "to-next-in-stack" | "none" | "unset";
+  "stack-group": number | "unset";
 }
 
 export interface TraceStyleSheet {
@@ -72,6 +73,7 @@ const oxidizeStylePatch = (
     "z-index": s?.["z-index"],
     "legend-priority": s?.["legend-priority"],
     fill: s?.["fill"],
+    "stack-group": s?.["stack-group"],
   } satisfies NonOptionalButPossiblyUndefined<lib.TraceStylePatch>;
 };
 

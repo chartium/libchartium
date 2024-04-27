@@ -1,7 +1,10 @@
 // https://github.com/madonoharu/tsify/issues/42
 #![allow(non_snake_case)]
 
-use std::sync::atomic::{AtomicU32, Ordering};
+use std::{
+    rc::Rc,
+    sync::atomic::{AtomicU32, Ordering},
+};
 
 use crate::{
     data::{BundleHandle, TraceHandle},
@@ -91,20 +94,19 @@ static BUNDLE_COUNTER: AtomicU32 = AtomicU32::new(0);
 #[wasm_bindgen]
 pub struct BoxedBundle {
     handle: BundleHandle,
-    bundle: Box<dyn Bundle>,
+    bundle: Rc<dyn Bundle>,
 }
 
 impl BoxedBundle {
     pub fn new(bundle: impl Bundle + 'static) -> BoxedBundle {
         BoxedBundle {
             handle: BUNDLE_COUNTER.fetch_add(1, Ordering::AcqRel),
-            bundle: Box::new(bundle),
+            bundle: Rc::new(bundle),
         }
     }
 
-    #[allow(clippy::borrowed_box)]
-    pub fn unwrap(&self) -> &Box<dyn Bundle> {
-        &self.bundle
+    pub fn unwrap(&self) -> &dyn Bundle {
+        &*self.bundle
     }
 }
 
@@ -115,6 +117,23 @@ impl std::ops::Deref for BoxedBundle {
         &*self.bundle
     }
 }
+
+impl Clone for BoxedBundle {
+    fn clone(&self) -> Self {
+        BoxedBundle {
+            handle: self.handle,
+            bundle: self.bundle.clone(),
+        }
+    }
+}
+
+impl PartialEq for BoxedBundle {
+    fn eq(&self, other: &Self) -> bool {
+        Rc::ptr_eq(&self.bundle, &other.bundle)
+    }
+}
+
+impl Eq for BoxedBundle {}
 
 #[wasm_bindgen]
 impl BoxedBundle {
@@ -185,5 +204,34 @@ impl BoxedBundle {
         }
 
         space_in_buffer * datapoint_length
+    }
+}
+
+#[wasm_bindgen]
+pub struct BundleVec(Vec<*const BoxedBundle>);
+
+#[wasm_bindgen]
+impl BundleVec {
+    #[wasm_bindgen(constructor)]
+    pub fn new_empty() -> BundleVec {
+        BundleVec(Vec::new())
+    }
+
+    pub fn push(&mut self, bundle: &BoxedBundle) {
+        self.0.push(bundle as *const BoxedBundle);
+    }
+
+    pub fn len(&self) -> usize {
+        self.0.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+}
+
+impl BundleVec {
+    pub fn iter(&self) -> impl Iterator<Item = &BoxedBundle> {
+        self.0.iter().map(|ptr| unsafe { &**ptr })
     }
 }

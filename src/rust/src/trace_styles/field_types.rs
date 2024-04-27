@@ -76,5 +76,6 @@ pub enum TraceFillStyle {
     #[default]
     None,
     ToZeroY,
+    ToNextInStack,
 }
 derive_static_default!(TraceFillStyle, TraceFillStyle::None);

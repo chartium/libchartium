@@ -2,8 +2,8 @@ import { lib } from "../wasm.js";
 import { yeet } from "yeet-ts";
 import { type RenderJob, type Renderer } from "./mod.js";
 import { LAZY, PARAMS } from "../trace-list.js";
-import { filter } from "../../utils/collection.js";
 import { toNumericRange } from "../../utils/unit.js";
+import type { DataUnit } from "../../types.js";
 
 export function createRenderer(presentCanvas: OffscreenCanvas): WebGL2Renderer {
   const { canvas, context, programs } = init();
@@ -22,36 +22,88 @@ export class WebGL2Renderer implements Renderer {
   render(job: RenderJob): void {
     const traceList = job.traces;
     const randomSeed = traceList.randomSeed;
-    const availableHandles = traceList[LAZY].handlesSet;
+    const stacks = traceList[LAZY].traceHandleStacks;
 
     const styleSheet = traceList[PARAMS].styles;
     const colorIndices = traceList[LAZY].colorIndices;
 
-    let clear = job.clear;
-    for (const bundle of traceList[PARAMS].bundles) {
-      const xRange = toNumericRange(job.xRange, bundle.xDataUnit);
-      const yRange = toNumericRange(job.yRange, bundle.yDataUnit);
-      const rj = new lib.WebGlRenderJob({ clear, xRange, yRange });
-      clear = false;
+    if (job.clear) this.#renderer.clear();
 
-      const handles = filter(bundle.traces, (h) => availableHandles.has(h));
+    for (const [stack, handles] of stacks) {
+      if (stack === null) {
+        const jobMap = new Map<number, lib.WebGlRenderJob>();
 
-      for (const handle of handles) {
-        const style = styleSheet.get_cloned(handle);
-        const color = styleSheet.get_color(handle, colorIndices, randomSeed);
+        for (const handle of handles) {
+          for (const bundle of traceList[PARAMS].bundles) {
+            if (!bundle.boxed.contains_trace(handle)) continue;
 
-        const geometry = this.#renderer.get_trace_geometry(
-          bundle.boxed,
-          handle,
-          style,
-          xRange,
-          yRange,
-        );
+            let rj = jobMap.get(bundle.boxed.handle());
 
-        rj.add_trace(style, color, geometry);
+            if (!rj) {
+              const xRange = toNumericRange(job.xRange, bundle.xDataUnit);
+              const yRange = toNumericRange(job.yRange, bundle.yDataUnit);
+
+              jobMap.set(
+                bundle.boxed.handle(),
+                (rj = new lib.WebGlRenderJob({ xRange, yRange })),
+              );
+            }
+
+            const style = styleSheet.get_cloned(handle);
+            const color = styleSheet.get_color(
+              handle,
+              colorIndices,
+              randomSeed,
+            );
+
+            rj.add_trace(this.#renderer, bundle.boxed, handle, style, color);
+          }
+        }
+
+        for (const rj of jobMap.values()) this.#renderer.render(rj);
+      } else {
+        let result:
+          | {
+              rj: lib.WebGlRenderJob;
+              xDataUnit: DataUnit;
+              yDataUnit: DataUnit;
+            }
+          | undefined;
+
+        for (const handle of handles) {
+          for (const bundle of traceList[PARAMS].bundles) {
+            if (!bundle.boxed.contains_trace(handle)) continue;
+
+            const xRange = toNumericRange(job.xRange, bundle.xDataUnit);
+            const yRange = toNumericRange(job.yRange, bundle.yDataUnit);
+
+            if (!result) {
+              result = {
+                rj: new lib.WebGlRenderJob({ xRange, yRange }, stack),
+                xDataUnit: bundle.xDataUnit,
+                yDataUnit: bundle.yDataUnit,
+              };
+            }
+
+            const style = styleSheet.get_cloned(handle);
+            const color = styleSheet.get_color(
+              handle,
+              colorIndices,
+              randomSeed,
+            );
+
+            result.rj.add_trace(
+              this.#renderer,
+              bundle.boxed,
+              handle,
+              style,
+              color,
+            );
+          }
+        }
+
+        if (result) this.#renderer.render(result.rj);
       }
-
-      this.#renderer.render(rj);
     }
   }
 

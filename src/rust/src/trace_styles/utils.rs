@@ -59,3 +59,12 @@ impl<T> OrUnset<T> {
         }
     }
 }
+
+impl<T> From<OrUnset<T>> for Option<T> {
+    fn from(v: OrUnset<T>) -> Self {
+        match v {
+            OrUnset::Set(v) => Some(v),
+            OrUnset::Unset => None,
+        }
+    }
+}

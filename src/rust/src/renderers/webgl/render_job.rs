@@ -1,47 +1,74 @@
 use js_sys::wasm_bindgen::prelude::*;
 
-use crate::{renderers::RenderJobCommon, trace_styles::TraceStyle, utils::ResolvedColor};
+use crate::{
+    data::TraceHandle, renderers::RenderJobCommon, structs::AdaptiveGrid, trace::BoxedBundle,
+    trace_styles::TraceStyle, utils::ResolvedColor,
+};
 
-use super::TraceGeometryHandle;
-
-pub struct WebGlTrace {
-    pub style: TraceStyle,
-    pub color: ResolvedColor,
-    pub geometry: TraceGeometryHandle,
-}
+use super::{trace::WebGlTrace, WebGlRenderer};
 
 #[wasm_bindgen]
 pub struct WebGlRenderJob {
     pub(super) common: RenderJobCommon,
     pub(super) traces: Vec<WebGlTrace>,
+    pub(super) stack: Option<(isize, usize, AdaptiveGrid)>,
 }
 
 #[wasm_bindgen]
 impl WebGlRenderJob {
     #[wasm_bindgen(constructor)]
-    pub fn new(common: RenderJobCommon) -> Self {
+    pub fn new(common: RenderJobCommon, stack: Option<isize>) -> Self {
         Self {
             common,
+            stack: stack.map(|i| (i, 0, AdaptiveGrid::new())),
             traces: Vec::new(),
         }
     }
 
     pub fn add_trace(
         &mut self,
+        renderer: &mut WebGlRenderer,
+        bundle: &BoxedBundle,
+        handle: TraceHandle,
         style: TraceStyle,
         color: ResolvedColor,
-        geometry: TraceGeometryHandle,
     ) {
-        self.traces.push(WebGlTrace {
-            style,
-            color,
-            geometry,
-        });
+        if let Some((stack_id, in_stack_idx, grid)) = &mut self.stack {
+            let geometry = renderer.get_stacked_trace_geometry(
+                bundle,
+                handle,
+                &style,
+                (self.common.x_range, self.common.y_range),
+                (*stack_id, *in_stack_idx, grid),
+            );
+
+            *in_stack_idx += 1;
+
+            self.traces.push(WebGlTrace {
+                style,
+                color,
+                geometry,
+            })
+        } else {
+            let geometry = renderer.get_trace_geometry(
+                bundle,
+                handle,
+                &style,
+                self.common.x_range,
+                self.common.y_range,
+            );
+
+            self.traces.push(WebGlTrace {
+                style,
+                color,
+                geometry,
+            });
+        }
     }
 }
 
 impl WebGlRenderJob {
-    pub fn get_traces(&self) -> &Vec<WebGlTrace> {
+    pub fn get_traces(&self) -> &[WebGlTrace] {
         &self.traces
     }
 }
