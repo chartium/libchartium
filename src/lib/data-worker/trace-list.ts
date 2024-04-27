@@ -156,6 +156,46 @@ export class TraceList {
     return this.#traceHandleSet_;
   }
 
+  #traceHandleStacks_: [null | number, TraceHandle[]][] | undefined;
+  get #traceHandleStacks(): [null | number, TraceHandle[]][] {
+    if (!this.#traceHandleStacks_) {
+      const groupMap = new Map<null | number, [TraceHandle, number][]>();
+      const getStack = (v: lib.TraceStyle["stack-group"]) => {
+        if (v === "unset") return null;
+
+        return v;
+      };
+
+      for (const handle of this.#p.handles) {
+        const style = this.#p.styles.get_cloned(handle);
+        const stack = getStack(style["stack-group"]);
+        const zIndex = style["z-index"] === "unset" ? 0 : style["z-index"];
+
+        if (groupMap.has(stack)) {
+          groupMap.get(stack)!.push([handle, zIndex]);
+        } else {
+          groupMap.set(stack, [[handle, zIndex]]);
+        }
+      }
+
+      this.#traceHandleStacks_ = [...groupMap.entries()].map(
+        ([stack, handles]) => {
+          // z-index sorting
+          handles.sort(([, a], [, b]) => a - b);
+
+          return <const>[stack, handles.map((h) => h[0])];
+        },
+      );
+
+      // group sorting
+      this.#traceHandleStacks_.sort(
+        ([a], [b]) => (a ?? 10_000) - (b ?? 10_000),
+      );
+    }
+
+    return this.#traceHandleStacks_;
+  }
+
   #colorIndices_: lib.ResolvedColorIndices | undefined;
   get #colorIndices(): lib.ResolvedColorIndices {
     return (

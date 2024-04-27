@@ -69,6 +69,9 @@
             line: "dashed",
             "line-dash-array": [5, 5],
           },
+          trace_3: { fill: "to-next-in-stack", "stack-group": 0 },
+          trace_4: { fill: "to-next-in-stack", "stack-group": 0 },
+          trace_5: { fill: "to-next-in-stack", "stack-group": 0 },
           sin: { color: "red" },
         },
       });
