@@ -196,11 +196,7 @@ impl WebGlRenderer {
                         0,
                     );
                     gl.enable_vertex_attrib_array(a_position_name);
-                    gl.draw_arrays(
-                        WebGl2RenderingContext::TRIANGLES,
-                        0,
-                        (points - 1).max(0) * 6,
-                    );
+                    gl.draw_arrays(WebGl2RenderingContext::TRIANGLE_STRIP, 0, 2 * points);
                 }
                 _ => {
                     // noop

@@ -117,19 +117,10 @@ fn create_trace_fill_buffer(renderer: &WebGlRenderer, trace: &TraceData) -> WebG
     let context = &renderer.context;
     let buffer = context.create_buffer().unwrap();
 
-    let mut data = Vec::<f32>::with_capacity((trace.data.len() - 1).max(0) * 6 * 2);
+    let mut data = Vec::<f32>::with_capacity(trace.data.len() * 4);
 
-    for window in trace.data.windows(2) {
-        let (left, right) = (window[0], window[1]);
-
-        data.extend([
-            left.0, left.1, // Top left
-            right.0, right.1, // Top right
-            left.0, 0., // Bottom left
-            left.0, 0., // Bottom left
-            right.0, 0., // Bottom right
-            right.0, right.1, // Top right
-        ]);
+    for &(x, y) in trace.data.iter() {
+        data.extend([x, 0., x, y]);
     }
 
     context.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, Some(&buffer));
