@@ -6,7 +6,3 @@ export {
   type TraceStyle,
   type TraceStyleSheet as TraceStylesheet,
 } from "./trace-styles.js";
-export {
-  exportControllerFromWorker,
-  importControllerFromWorker,
-} from "./comlink.js";
