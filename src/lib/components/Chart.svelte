@@ -173,6 +173,9 @@
   const margins$ = mut(margins);
   $: margins$.set(margins);
 
+  /** Bindable property saying whether the chart is currently in fullscreen mode */
+  export let fullscreen = false;
+
   let measureXAxisTextSize: TextMeasuringFunction | undefined;
   const measureXAxisTextSize$ = mut(measureXAxisTextSize);
   $: measureXAxisTextSize$.set(measureXAxisTextSize);
@@ -314,7 +317,6 @@
   let filterByThreshold: () => void;
   // $: (window as any).addPersistentThreshold = addPersistentThreshold;
   // $: (window as any).filterByThreshold = filterByThreshold;
-  let fullscreen = false;
 </script>
 
 {#if !hideTooltip}

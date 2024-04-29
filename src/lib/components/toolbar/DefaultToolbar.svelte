@@ -1,5 +1,4 @@
 <script lang="ts">
-  // weird hack to import svelte-fa bc of NodeNext module resolution
   import ToolHideLegend from "./ToolHideLegend.svelte";
   import ToolExportToPNG from "./ToolExportToPNG.svelte";
   import ToolExportToCsv from "./ToolExportToCSV.svelte";
