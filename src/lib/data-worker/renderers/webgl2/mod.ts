@@ -1,9 +1,12 @@
-import { lib } from "../wasm.js";
+import { lib } from "../../wasm.js";
 import { yeet } from "yeet-ts";
-import { type RenderJob, type Renderer } from "./mod.js";
-import { LAZY, PARAMS } from "../trace-list.js";
-import { filter } from "../../utils/collection.js";
-import { toNumericRange } from "../../utils/unit.js";
+import { type RenderJob, type Renderer } from "../mod.js";
+import { LAZY, PARAMS } from "../../trace-list.js";
+import { filter } from "../../../utils/collection.js";
+import { toNumericRange } from "../../../utils/unit.js";
+
+import frag from "./main.frag";
+import vert from "./main.vert";
 
 export function createRenderer(presentCanvas: OffscreenCanvas): WebGL2Renderer {
   const { canvas, context, programs } = init();
@@ -98,52 +101,8 @@ function init() {
       premultipliedAlpha: true,
     }) ?? yeet("Could not get a WebGL2 context for an OffscreenCanvas.");
 
-  const vertShader = compileShader(
-    context,
-    context.VERTEX_SHADER,
-    `
-      attribute vec2 aVertexPosition;
-      attribute float aLengthAlong;
-      varying float vLengthAlong;
-
-        uniform vec2 transform;
-        uniform vec2 origin;
-        uniform vec2 size;
-
-        uniform vec2 csoffset;
-
-        void main() {
-            gl_Position = vec4(csoffset + vec2(-1,-1) + vec2(2,2) * (aVertexPosition * vec2(1,transform.x) + vec2(0, transform.y) - origin) / size, 0, 1);
-            gl_PointSize = 8.0;
-            vLengthAlong = aLengthAlong;
-        }
-      `,
-  );
-
-  const fragShader = compileShader(
-    context,
-    context.FRAGMENT_SHADER,
-    `
-        precision mediump float;
-        uniform vec4 color;
-        // lengths of the dashes and gaps in pixels, expected to be in order [dash, gap, dash, gap]
-        uniform vec4 dashGapLengths;
-        varying float vLengthAlong;
-
-        void main() {
-            float totalLength = dashGapLengths[0] + dashGapLengths[1] + dashGapLengths[2] + dashGapLengths[3];
-            float currentCycleLength = mod(vLengthAlong, totalLength);
-            float firstDashGap = dashGapLengths[0] + dashGapLengths[1];
-            bool shouldBeDrawn = currentCycleLength < dashGapLengths[0] || (currentCycleLength > firstDashGap && currentCycleLength < firstDashGap + dashGapLengths[2]);
-            if (shouldBeDrawn) {
-              gl_FragColor = color;
-            }
-            else {
-              discard;
-            }
-        }
-      `,
-  );
+  const vertShader = compileShader(context, context.VERTEX_SHADER, vert);
+  const fragShader = compileShader(context, context.FRAGMENT_SHADER, frag);
 
   const traceProgram = linkProgram(context, vertShader, fragShader);
   const traceTransform = context.getUniformLocation(traceProgram, "transform")!;

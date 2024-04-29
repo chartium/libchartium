@@ -26,7 +26,7 @@ import { enumerate } from "../utils/collection.js";
 import { Bundle } from "./bundle.js";
 import { toNumericRange, toRange } from "../utils/unit.js";
 import { oxidizeStyleSheet } from "./trace-styles.js";
-import { createRenderer as createWebgl2Renderer } from "./renderers/webgl2.js";
+import { createRenderer as createWebgl2Renderer } from "./renderers/webgl2/mod.js";
 import type { Renderer } from "./renderers/mod.js";
 
 export type RenderingMode = "webgl2";
