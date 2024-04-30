@@ -8,7 +8,7 @@ use crate::{
     types::{NumericRange, TraceMetas, TracePoint},
 };
 
-use super::InterpolationStrategy;
+use super::{BundleVec, InterpolationStrategy};
 
 #[wasm_bindgen]
 impl BoxedBundle {
@@ -143,4 +143,45 @@ impl BoxedBundle {
             .map(|b| b.into())
             .collect()
     }
+}
+
+#[wasm_bindgen]
+pub fn get_intersecting_in_stack(
+    stack: &[TraceHandle],
+    bundles: BundleVec,
+    x: f64,
+    y: f64,
+    interpolation: InterpolationStrategy,
+) -> JsValue {
+    let mut sum = 0.;
+
+    for handle in stack {
+        let Some(bundle) = bundles
+            .iter()
+            .find(|b| b.contains_trace(*handle) && b.contains_point(x))
+        else {
+            continue;
+        };
+
+        let Some(value) = bundle.value_at(*handle, x, interpolation) else {
+            continue;
+        };
+
+        if sum <= y && y <= sum + value.1 {
+            return serde_wasm_bindgen::to_value(&TracePoint {
+                x: value.0,
+                y: sum + value.1,
+                handle: *handle,
+            })
+            .unwrap();
+        }
+
+        sum += value.1;
+
+        if sum > y {
+            break;
+        }
+    }
+
+    JsValue::null()
 }

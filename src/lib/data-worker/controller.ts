@@ -14,7 +14,6 @@ import { lib } from "./wasm.js";
 import type {
   DataUnit,
   Range,
-  Size,
   TraceHandle,
   TraceHandleArray,
   TypedArray,

@@ -156,8 +156,8 @@ export class TraceList {
     return this.#traceHandleSet_;
   }
 
-  #traceHandleStacks_: [null | number, TraceHandle[]][] | undefined;
-  get #traceHandleStacks(): [null | number, TraceHandle[]][] {
+  #traceHandleStacks_: [null | number, Uint32Array][] | undefined;
+  get #traceHandleStacks(): [null | number, Uint32Array][] {
     if (!this.#traceHandleStacks_) {
       const groupMap = new Map<null | number, [TraceHandle, number][]>();
       const getStack = (v: lib.TraceStyle["stack-group"]) => {
@@ -183,7 +183,7 @@ export class TraceList {
           // z-index sorting
           handles.sort(([, a], [, b]) => a - b);
 
-          return <const>[stack, handles.map((h) => h[0])];
+          return <const>[stack, Uint32Array.from(handles.map((h) => h[0]))];
         },
       );
 
@@ -209,6 +209,9 @@ export class TraceList {
   get [LAZY]() {
     const self = this;
     return {
+      get traceHandleStacks() {
+        return self.#traceHandleStacks;
+      },
       get handlesSet() {
         return self.#traceHandlesSet;
       },
@@ -401,7 +404,7 @@ export class TraceList {
 
     // Compute Range
     const allRangesArbitrary = lists.every((t) => t.#p.rangeArbitrary);
-    const anyRangeArbitrary = lists.some((t) => t.#p.rangeArbitrary);
+    // const anyRangeArbitrary = lists.some((t) => t.#p.rangeArbitrary);
     const ignoreArbitraryRanges = !allRangesArbitrary;
 
     const ranges = lists.flatMap((t) => {
@@ -546,20 +549,60 @@ export class TraceList {
       distance: number;
     }> = [];
 
-    for (const bundle of this.#p.bundles) {
-      const bundleTraces = new Uint32Array(
-        intersection(bundle.traces, this.#traceHandlesSet),
-      );
-      const pts = bundle.findClosestTraces(
-        bundleTraces,
-        point,
-        howMany,
-        interpolation,
-      );
+    const intersecting = this.#p.bundles.filter((b) => {
+      const x = toNumeric(point.x, b.xDataUnit);
 
-      for (const p of pts) {
-        const distance = Math.abs(yToNum(point.y) - yToNum(p.y));
-        closestPoints.push({ ...p, distance });
+      return b.boxed.contains_point(x);
+    });
+
+    if (intersecting.length === 0) return [];
+
+    for (const [stack, handles] of this[LAZY].traceHandleStacks) {
+      if (stack === null) {
+        for (const bundle of intersecting) {
+          const bundleTraces = new Uint32Array(
+            intersection(bundle.traces, new Set(handles)),
+          );
+          const pts = bundle.findClosestTraces(
+            bundleTraces,
+            point,
+            howMany,
+            interpolation,
+          );
+
+          for (const p of pts) {
+            const distance = Math.abs(yToNum(point.y) - yToNum(p.y));
+            closestPoints.push({ ...p, distance });
+          }
+        }
+      } else {
+        const first = intersecting.at(0)!;
+
+        const x = toNumeric(point.x, first.xDataUnit);
+        const y = toNumeric(point.y, first.yDataUnit);
+        const bundles = new lib.BundleVec();
+        intersecting.forEach((b) => bundles.push(b.boxed));
+
+        // stacked traces
+        const p = lib.get_intersecting_in_stack(
+          handles,
+          bundles,
+          x,
+          y,
+          interpolation,
+        ) as lib.TracePoint | undefined;
+
+        if (p) {
+          closestPoints = [
+            {
+              x: toChartValue(p.x, first.xDataUnit),
+              y: toChartValue(p.y, first.yDataUnit),
+              handle: p.handle,
+              distance: 0,
+            },
+          ];
+          break;
+        }
       }
     }
 

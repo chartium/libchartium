@@ -18,7 +18,6 @@ use crate::{
 #[tsify(into_wasm_abi, from_wasm_abi)]
 #[serde(rename_all = "camelCase")]
 pub struct RenderJobCommon {
-    pub clear: bool,
     pub x_range: NumericRange,
     pub y_range: NumericRange,
 }

@@ -187,3 +187,24 @@ impl BoxedBundle {
         space_in_buffer * datapoint_length
     }
 }
+
+#[wasm_bindgen]
+pub struct BundleVec(Vec<*const BoxedBundle>);
+
+#[wasm_bindgen]
+impl BundleVec {
+    #[wasm_bindgen(constructor)]
+    pub fn new_empty() -> BundleVec {
+        BundleVec(Vec::new())
+    }
+
+    pub fn push(&mut self, bundle: &BoxedBundle) {
+        self.0.push(bundle as *const BoxedBundle);
+    }
+}
+
+impl BundleVec {
+    pub fn iter(&self) -> impl Iterator<Item = &BoxedBundle> {
+        self.0.iter().map(|ptr| unsafe { &**ptr })
+    }
+}

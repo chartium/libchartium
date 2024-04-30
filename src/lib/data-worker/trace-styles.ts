@@ -25,7 +25,7 @@ export interface TraceStyle {
   "z-index": number | "unset";
   "legend-priority": number | "unset";
   fill: "to-zero-y" | "to-next-in-stack" | "none" | "unset";
-  "stack-group": number | null | "unset";
+  "stack-group": number | "unset";
 }
 
 export interface TraceStyleSheet {

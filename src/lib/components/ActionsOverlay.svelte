@@ -29,7 +29,6 @@
     DisplayUnit,
     HighlightPoint,
     Point,
-    Quantity,
     Shift,
     Threshold,
     Zoom,

@@ -219,7 +219,7 @@
   const visibleAction = mut<VisibleAction | undefined>(undefined);
 
   /** How close to a trace is considered close enough to get only one trace info */
-  const closenessDistance = 4;
+  const _closenessDistance = 4;
 
   /** updates highilghted points in visibleAction */
   effect(($) => {
