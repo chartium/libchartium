@@ -107,6 +107,8 @@
       )
     : 1;
 
+  $: needsVirtualizer = shownTraces.length >= cols;
+
   $: virtualizer = createVirtualizer<HTMLDivElement, HTMLDivElement>({
     count: Math.ceil(shownTraces.length / cols),
     estimateSize: () => ROW_HEIGHT,
@@ -118,20 +120,47 @@
   });
 </script>
 
-<div
-  class="legend-container"
-  bind:this={containerElem}
-  bind:contentRect={containerRect}
-  style:height="{$virtualizer.getTotalSize()}px"
-  style:min-width="max({widestLegend}px, 100px)"
-  style:--row-height="{ROW_HEIGHT}px"
-  style:--legend-gap="{GAP}px"
-  style:--legend-cols={`repeat(${cols}, 1fr)`}
->
-  {#each $virtualizer.getVirtualItems() as row (row.index)}
-    {@const windowStart = row.index * cols}
-    <div class="legend-grid" style:transform="translateY({row.start}px)">
-      {#each shownTraces.slice(windowStart, windowStart + cols) as { traceId, style }}
+{#if needsVirtualizer}
+  <div
+    class="legend-container"
+    bind:this={containerElem}
+    bind:contentRect={containerRect}
+    style:height="{$virtualizer.getTotalSize()}px"
+    style:min-width="max({widestLegend}px, 100px)"
+    style:--row-height="{ROW_HEIGHT}px"
+    style:--legend-gap="{GAP}px"
+    style:--legend-cols={`repeat(${cols}, 1fr)`}
+  >
+    {#each $virtualizer.getVirtualItems() as row (row.index)}
+      {@const windowStart = row.index * cols}
+      <div class="legend-grid" style:transform="translateY({row.start}px)">
+        {#each shownTraces.slice(windowStart, windowStart + cols) as { traceId, style }}
+          {@const hidden = $hiddenTraceIds.has(traceId)}
+          <LegendEntry
+            {hidden}
+            previewSize={20}
+            {previewStyle}
+            {traceId}
+            traceStyle={style}
+            {toggleTraceVisibility}
+            {toggleVisibilityOfAllTraces}
+          />
+        {/each}
+      </div>
+    {/each}
+  </div>
+{:else}
+  <div
+    class="legend-container"
+    bind:this={containerElem}
+    bind:contentRect={containerRect}
+    style:min-width="max({widestLegend}px, 100px)"
+    style:--col-width="{widestLegend}px"
+    style:--legend-gap="{GAP}px"
+    style:--legend-cols={`repeat(${cols}, 1fr)`}
+  >
+    <div class="legend-flex">
+      {#each shownTraces as { traceId, style }}
         {@const hidden = $hiddenTraceIds.has(traceId)}
         <LegendEntry
           {hidden}
@@ -144,8 +173,8 @@
         />
       {/each}
     </div>
-  {/each}
-</div>
+  </div>
+{/if}
 
 <style lang="scss">
   .legend-grid {
@@ -159,6 +188,16 @@
     grid-template-columns: var(--legend-cols);
     gap: var(--legend-gap);
     height: var(--row-height);
+  }
+
+  .legend-flex {
+    display: flex;
+    justify-content: center;
+    gap: var(--legend-gap);
+
+    :global(> div) {
+      width: var(--col-width);
+    }
   }
 
   .legend-container {
