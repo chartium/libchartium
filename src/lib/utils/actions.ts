@@ -1,4 +1,7 @@
+import { Signal, derived, mut } from "@mod.js/signals";
 import type { ActionReturn } from "svelte/action";
+import type { Size } from "../types.js";
+import { devicePixelRatio$ } from "./reactive-globals.js";
 
 /** Run a callback on mount and on resize detected by a ResizeObserver */
 export const observeSize = <T extends HTMLElement>(
@@ -54,5 +57,37 @@ export const scaleCanvas = (
     element.height = size[1] * window.devicePixelRatio;
 
     if (callback) callback(size);
+  });
+};
+
+export const resizeObserver$ = (element: HTMLElement): Signal<void> => {
+  const s$ = mut<void>(undefined, {
+    onStart({ defer }) {
+      const resizeObserver = new ResizeObserver(() => s$.set());
+      resizeObserver.observe(element);
+      defer(() => resizeObserver.disconnect());
+    },
+  });
+
+  return s$.toReadonly();
+};
+
+export const clientSize$ = (element: HTMLElement): Signal<Size> => {
+  return resizeObserver$(element).map(() => ({
+    width: element.clientWidth,
+    height: element.clientHeight,
+  }));
+};
+
+export const physicalSize$ = (element: HTMLElement): Signal<Size> => {
+  const logicalSize$ = clientSize$(element);
+  return derived(($) => {
+    const zoom = $(devicePixelRatio$);
+    const { width, height } = $(logicalSize$);
+
+    return {
+      width: width * zoom,
+      height: height * zoom,
+    };
   });
 };

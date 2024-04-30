@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onDestroy } from "svelte";
-  import { chart$ as createChart$ } from "../chart/chart.js";
+  import { chart$ as createChart$ } from "../state/core/chart.js";
 
   import { mut, FlockRegistry, effect, cons } from "@mod.js/signals";
   import { setContext } from "svelte-typed-context";
@@ -21,9 +21,10 @@
   import type { TraceList } from "../data-worker/trace-list.js";
   import type { VisibleAction } from "./ActionsOverlay.svelte";
   import type { RangeMargins } from "../utils/rangeMargins.js";
-  import type { TextMeasuringFunction } from "../chart/axisTicks.js";
-  import { type ChartMouseEvent, hover$ } from "../chart/interactive/hover.js";
+  import type { TextMeasuringFunction } from "../state/core/axisTicks.js";
+  import { type ChartMouseEvent, hover$ } from "../state/interactive/hover.js";
   import type { InterpolationStrategy } from "../../../dist/wasm/libchartium.js";
+  import type { ChartStyleSheet } from "../state/guidelines/style.js";
 
   // SECTION Props
   let klass: string = "";
@@ -58,6 +59,8 @@
   /** Label to be displayed next to y axis. If empty, label will be ommited */
   export let yLabel: string = "";
 
+  export let chartStylesheet: Partial<ChartStyleSheet> = {};
+
   /**
    * Units that should be displayed on the x axis.
    * The "data" option will display the units of the provided data.
@@ -76,11 +79,6 @@
   const defaultYUnit$ = mut(defaultYUnit);
   $: defaultYUnit$.set(defaultYUnit);
 
-  /** Hides the thick line at the edge of the graph */
-  export let hideXAxisLine: boolean = false;
-  /** Hides the thick line at the edge of the graph */
-  export let hideYAxisLine: boolean = false;
-
   /** Hides only the units on the label, not the name */
   export let hideXLabelUnits: boolean = false;
   /** Hides only the units on the label, not the name */
@@ -90,11 +88,6 @@
   export let hideXTicks: boolean = false;
   /** Hides only the numbers */
   export let hideYTicks: boolean = false;
-
-  /** Hides the background graph lines */
-  export let hideXGuidelines: boolean = false;
-  /** Hides the background graph lines */
-  export let hideYGruidelines: boolean = false;
 
   /** Hides the lines shown upon mouse hover */
   export let hideXRuler: boolean = false;
@@ -386,10 +379,9 @@
       />
 
       <Guidelines
-        xTicks={hideXGuidelines ? [] : $xTicks$ ?? []}
-        yTicks={hideYGruidelines ? [] : $yTicks$ ?? []}
-        renderXAxis={!hideXAxisLine}
-        renderYAxis={!hideYAxisLine}
+        xTicks={$xTicks$}
+        yTicks={$yTicks$}
+        chartStylesheet={chartStylesheet ?? {}}
       />
 
       <canvas bind:this={canvas} on:contextmenu|preventDefault />

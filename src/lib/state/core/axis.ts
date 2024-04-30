@@ -1,5 +1,5 @@
 import { cons, type Signal } from "@mod.js/signals";
-import { type TraceList } from "../index.js";
+import { type TraceList } from "../../index.js";
 import {
   Quantity,
   type NumericRange,
@@ -8,7 +8,7 @@ import {
   type DisplayUnitPreference,
   type DisplayUnit,
   type DataUnit,
-} from "../types.js";
+} from "../../types.js";
 import { axisUnits$ } from "./axisUnits.js";
 import { axisRange$ } from "./axisRange.js";
 import { axisTicks$, type TextMeasuringFunction } from "./axisTicks.js";

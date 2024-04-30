@@ -4,9 +4,9 @@ import {
   type Signal,
   type Unsubscriber,
 } from "@mod.js/signals";
-import type { ChartiumController, TraceList } from "../index.js";
-import type { Range, Size } from "../types.js";
-import { devicePixelRatio$ } from "../utils/reactive-globals.js";
+import type { ChartiumController, TraceList } from "../../index.js";
+import type { Range, Size } from "../../types.js";
+import { devicePixelRatio$ } from "../../utils/reactive-globals.js";
 
 export interface ChartRendererProps {
   controller$: Signal<ChartiumController | undefined>;
@@ -31,12 +31,9 @@ export const chartRenderer$ = ({
 }: ChartRendererProps) => {
   // create a renderer
   const renderer$ = controller$.flatMap((controller) =>
-    offscreenCanvas$
-      .map((canvas) =>
-        !canvas ? undefined : controller?.createRenderer(canvas),
-      )
-      .awaited()
-      .currentlyFulfilled(),
+    offscreenCanvas$.map((canvas) =>
+      !canvas ? undefined : controller?.createRenderer(canvas),
+    ),
   );
 
   // TODO destroy the renderer

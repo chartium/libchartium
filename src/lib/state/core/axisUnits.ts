@@ -2,7 +2,7 @@ import { derived, mutDerived, type Signal } from "@mod.js/signals";
 import { isQuantity, isUnit, type FactorDefinition } from "unitlib";
 import Fraction from "fraction.js";
 
-import { TraceList } from "../index.js";
+import { TraceList } from "../../index.js";
 import {
   Quantity,
   type DisplayUnitPreference,
@@ -10,13 +10,13 @@ import {
   type Unit,
   type DisplayUnit,
   type DataUnit,
-} from "../types.js";
-import { mapOpt } from "../utils/mapOpt.js";
+} from "../../types.js";
+import { mapOpt } from "../../utils/mapOpt.js";
 
 import type { UnitChangeAction, UnitChangeActions } from "./axis.js";
-import { eq } from "../utils/unit.js";
-import { isNumericDateRepresentation } from "../utils/numericDateRepresentation.js";
-import { DateFormat, isDateFormat } from "../utils/dateFormat.js";
+import { eq } from "../../utils/unit.js";
+import { isNumericDateRepresentation } from "../../utils/numericDateRepresentation.js";
+import { DateFormat, isDateFormat } from "../../utils/dateFormat.js";
 
 export interface AxisUnitsProps {
   axis: "x" | "y";

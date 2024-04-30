@@ -8,7 +8,7 @@
   import type {
     CloseTrace,
     HoveredTrace,
-  } from "../../chart/interactive/hover.js";
+  } from "../../state/interactive/hover.js";
 
   /** The tooltip will try its best to not be in this rectangle */
   export let forbiddenRectangle:

@@ -30,7 +30,7 @@
   import RotatedBox from "../utils/RotatedBox.svelte";
   import { noop } from "lodash-es";
   import { mapOpt } from "../utils/mapOpt.js";
-  import type { UnitChangeActions } from "../chart/axis.js";
+  import type { UnitChangeActions } from "../state/core/axis.js";
 
   export const events = createEventDispatcher<{
     shift: Shift;

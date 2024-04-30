@@ -20,11 +20,12 @@
 
   const controller = new ChartiumController();
 
+  const traceCount = 5;
   const normalTraces = (async () => {
     const results = [];
 
     for (let i = 0; i < 1; ++i) {
-      const offset = 4_000 * i;
+      const offset = traceCount * i;
 
       console.time("generate");
 
@@ -33,7 +34,7 @@
         (_, index) => from + index * stepSize,
       );
 
-      const ys = Array.from({ length: 4_000 }, (_, idx) => ({
+      const ys = Array.from({ length: traceCount }, (_, idx) => ({
         id: `trace_${offset + idx}`,
         data: Float32Array.from(
           xs.map(

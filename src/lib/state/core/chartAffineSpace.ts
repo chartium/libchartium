@@ -1,6 +1,6 @@
 import type { Signal } from "@mod.js/signals";
-import type { ChartValue, Range, Size } from "../types.js";
-import { toNumeric, toChartValue } from "../utils/unit.js";
+import type { ChartValue, Range, Size } from "../../types.js";
+import { toNumeric, toChartValue } from "../../utils/unit.js";
 import { unitOf } from "./axisRange.js";
 
 export interface ChartAffineSpaceProps {

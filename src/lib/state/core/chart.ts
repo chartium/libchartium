@@ -1,5 +1,5 @@
 import { Defer, type DeferLike, type Signal } from "@mod.js/signals";
-import type { ChartiumController, TraceList } from "../index.js";
+import type { ChartiumController, TraceList } from "../../index.js";
 import { axis$, type Axis } from "./axis.js";
 import { chartCanvas$ } from "./chartCanvas.js";
 import { chartRenderer$ } from "./chartRenderer.js";
@@ -9,7 +9,7 @@ import {
   type PointInChartFactory,
   type ValueOnAxisFactory,
 } from "./chartAffineSpace.js";
-import type { DisplayUnitPreference } from "../types.js";
+import type { DisplayUnitPreference } from "../../types.js";
 
 export interface ChartProps {
   controller$: Signal<ChartiumController | undefined>;

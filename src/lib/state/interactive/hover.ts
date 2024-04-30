@@ -5,7 +5,7 @@ import {
   type Signal,
   type WritableSignal,
 } from "@mod.js/signals";
-import type { PointInChartFactory } from "../chartAffineSpace.js";
+import type { PointInChartFactory } from "../core/chartAffineSpace.js";
 import type { ChartValue, DataUnit } from "../../types.js";
 import type {
   ComputedTraceStyle,

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { CloseTrace } from "../../chart/interactive/hover.js";
+  import type { CloseTrace } from "../../state/interactive/hover.js";
   import type { DisplayUnit } from "../../types.js";
   import { qndFormat } from "../../utils/format.js";
   import TracePreview from "../TracePreview.svelte";

@@ -8,7 +8,7 @@ import {
   toChartValue,
 } from "./unit.js";
 import type { NumericDateRepresentation } from "./numericDateRepresentation.js";
-import type { RangeMarginValue } from "../chart/axis.js";
+import type { RangeMarginValue } from "../state/core/axis.js";
 
 export type Test = HTMLButtonElement;
 

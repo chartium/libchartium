@@ -1,5 +1,5 @@
 import { derived, mutDerived, type Signal } from "@mod.js/signals";
-import { NumericDateRepresentation, type TraceList } from "../index.js";
+import { NumericDateRepresentation, type TraceList } from "../../index.js";
 import {
   rangesHaveMeaningfulIntersection,
   type Range,
@@ -7,9 +7,9 @@ import {
   Quantity,
   type DataUnit,
   isQuantity,
-} from "../types.js";
-import { isDayjs, type Dayjs } from "../utils/dayjs.js";
-import { toNumeric, toRange } from "../utils/unit.js";
+} from "../../types.js";
+import { isDayjs, type Dayjs } from "../../utils/dayjs.js";
+import { toNumeric, toRange } from "../../utils/unit.js";
 
 export interface AxisRangeProps {
   axis: "x" | "y";
