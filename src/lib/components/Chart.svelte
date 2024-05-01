@@ -17,7 +17,11 @@
   import { portal } from "svelte-portal";
 
   import type { ChartiumController } from "../data-worker/index.js";
-  import type { ChartValue, DisplayUnitPreference } from "../types.js";
+  import {
+    asAny,
+    type ChartValue,
+    type DisplayUnitPreference,
+  } from "../types.js";
   import type { TraceList } from "../data-worker/trace-list.js";
   import type { VisibleAction } from "./ActionsOverlay.svelte";
   import type { RangeMargins } from "../utils/rangeMargins.js";
@@ -440,7 +444,7 @@
           */
         }}
         on:relativeMousemove={(e) =>
-          hoverEvent$.set({ name: "move", event: e })}
+          hoverEvent$.set({ name: "move", event: asAny(e) })}
         on:relativeMouseout={() => hoverEvent$.set({ name: "out" })}
         on:blur={() => hoverEvent$.set({ name: "out" })}
       />

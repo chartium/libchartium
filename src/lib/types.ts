@@ -5,6 +5,9 @@ import {
   isUnit as _isUnit,
   isQuantity as _isQuantity,
 } from "unitlib";
+
+export const asAny = (x: any) => x;
+
 export type Unit = Unit_<any, any, any>;
 export const Unit = Unit_;
 export const isUnit = (x: unknown): x is Unit => _isUnit(x);
