@@ -15,6 +15,7 @@
     MouseButtons,
     mouseDrag,
     mouseClick,
+    relativeMousemove,
   } from "../utils/mouseActions.js";
   import {
     drawArrow,
@@ -92,12 +93,12 @@
   const oneDZoomWindow = 20;
 
   $: $visibleAction, scheduleDraw();
-  $: mousePosition, scheduleDraw();
+  $: offsetMousePosition, scheduleDraw();
   $: $commonXRuler, scheduleDraw();
   $: $commonYRuler, scheduleDraw();
-  $: if ((thresholdFilterMode || thresholdAddMode) && mousePosition)
+  $: if ((thresholdFilterMode || thresholdAddMode) && offsetMousePosition)
     visibleAction.update((a) => {
-      return { ...a, yThreshold: 1 - mousePosition![1] / overlayHeight };
+      return { ...a, yThreshold: 1 - offsetMousePosition![1] / overlayHeight };
     });
 
   let drawScheduled = false;
@@ -130,10 +131,10 @@
         drawShift(action.shift);
       } else if (action && action.yThreshold && !disableInteractivity) {
         drawThreshold(action.yThreshold);
-      } else if (mousePosition) {
+      } else if (offsetMousePosition) {
         drawRuler({
-          x: mousePosition[0] / overlayWidth,
-          y: 1 - mousePosition[1] / overlayHeight,
+          x: offsetMousePosition[0] / overlayWidth,
+          y: 1 - offsetMousePosition[1] / overlayHeight,
         });
       } else if (chart) {
         // Global Ruler
@@ -393,7 +394,7 @@
   let overlayWidth: number = 1;
   let overlayHeight: number = 1;
 
-  let mousePosition: [number, number] | undefined = undefined;
+  let offsetMousePosition: [number, number] | undefined = undefined;
 
   let options: ContextItem<string>[] = []; // TODO add some options
   let menu: any;
@@ -413,11 +414,13 @@
     button: MouseButtons.Right,
   }}
   use:mouseClick={{ callback: leftClickCallback, button: MouseButtons.Left }}
-  on:mousemove={(e) => (mousePosition = [e.offsetX, e.offsetY])}
-  on:mousemove
-  on:mouseout={() => (mousePosition = undefined)}
-  on:mouseout
-  on:blur={() => (mousePosition = undefined)}
+  use:relativeMousemove
+  on:relativeMousemove={(e) =>
+    (offsetMousePosition = [e.detail.offsetX, e.detail.offsetY])}
+  on:relativeMousemove
+  on:relativeMouseout={() => (offsetMousePosition = undefined)}
+  on:relativeMouseout
+  on:blur={() => (offsetMousePosition = undefined)}
   on:blur
   use:scaleCanvas={([width, height]) => {
     overlayWidth = width;
@@ -431,8 +434,8 @@
   use:mouseDrag={{ ...rightDragCallbacks, button: MouseButtons.Right }}
 />
 
-{#if !hideXBubble && mousePosition}
-  {@const x = mousePosition[0] + canvasRef.getBoundingClientRect().left}
+{#if !hideXBubble && offsetMousePosition}
+  {@const x = offsetMousePosition[0] + canvasRef.getBoundingClientRect().x}
   {@const y = canvasRef.getBoundingClientRect().bottom}
   <RulerBubble
     axis="x"
@@ -442,9 +445,9 @@
   />
 {/if}
 
-{#if !hideYBubble && mousePosition}
+{#if !hideYBubble && offsetMousePosition}
   {@const x = canvasRef.getBoundingClientRect().left}
-  {@const y = mousePosition[1] + canvasRef.getBoundingClientRect().top}
+  {@const y = offsetMousePosition[1] + canvasRef.getBoundingClientRect().y}
   <RulerBubble
     axis="y"
     position={{ x, y }}

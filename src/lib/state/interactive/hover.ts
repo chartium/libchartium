@@ -14,11 +14,12 @@ import type {
 } from "../../data-worker/trace-list.js";
 import { toNumeric } from "../../utils/unit.js";
 import type { InterpolationStrategy } from "../../../../dist/wasm/libchartium.js";
+import type { RelativeMousemoveEvent } from "../../utils/mouseActions.js";
 
 export type ChartMouseEvent =
   | {
       name: "move";
-      event: MouseEvent;
+      event: { detail: RelativeMousemoveEvent };
     }
   | {
       name: "out";
@@ -79,7 +80,7 @@ export const hover$ = ({
     switch (e.name) {
       case "move":
         return point()
-          .fromLogicalPixels(e.event.offsetX, e.event.offsetY)
+          .fromLogicalPixels(e.event.detail.offsetX, e.event.detail.offsetY)
           .toQuantitites();
 
       case "out":

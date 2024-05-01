@@ -439,8 +439,9 @@
             });
           */
         }}
-        on:mousemove={(e) => hoverEvent$.set({ name: "move", event: e })}
-        on:mouseout={() => hoverEvent$.set({ name: "out" })}
+        on:relativeMousemove={(e) =>
+          hoverEvent$.set({ name: "move", event: e })}
+        on:relativeMouseout={() => hoverEvent$.set({ name: "out" })}
         on:blur={() => hoverEvent$.set({ name: "out" })}
       />
 

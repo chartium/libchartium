@@ -16,7 +16,7 @@
   $: expectedLeft = position.x - (axis === "y" ? clientWidth + 4 : 0);
   $: overlapsRight = expectedLeft + clientWidth > window.innerWidth;
   $: overlapsLeft = expectedLeft < 0;
-  $: style = `top: ${position.y + +(axis === "y") * 4}px; left: ${expectedLeft + (+overlapsLeft - +overlapsRight) * clientWidth}px; ${
+  $: style = `top: ${position.y - (+(axis === "y") * clientHeight) / 2}px; left: ${expectedLeft - (+(axis === "x") * clientWidth) / 2 + (+overlapsLeft - +overlapsRight) * clientWidth}px; ${
     rotated
       ? axis === "y"
         ? `transform-origin: bottom right; transform: rotate(-90deg) translateX(${clientHeight}px)`
@@ -43,7 +43,7 @@
 
 <style lang="scss">
   .axis-bubble {
-    position: absolute;
+    position: fixed;
     pointer-events: none;
     user-select: none;
 

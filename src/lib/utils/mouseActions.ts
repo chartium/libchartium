@@ -211,6 +211,77 @@ export function globalMouseMove(
   };
 }
 
+export type RelativeMousemoveEvent = {
+  clientX: number;
+  clientY: number;
+  offsetX: number;
+  offsetY: number;
+};
+
+/**
+ * Action that adds three events to the node:
+ *  * relativeMousemove
+ *  * relativeMousein
+ *  * relativeMouseout
+ *
+ * all with detail of type RelativeMousemoveEvent. Similar usage to mousemove, mouseout
+ * and mousein, however they also get triggered by pure scrolling
+ */
+export function relativeMousemove(node: HTMLElement) {
+  const getOffsets = (
+    clients: { clientX: number; clientY: number },
+    node: HTMLElement,
+  ) => {
+    const rect = node.getBoundingClientRect();
+    return {
+      offsetX: clients.clientX - rect.left,
+      offsetY: clients.clientY - rect.top,
+    };
+  };
+
+  let lastClients: { clientX: number; clientY: number } | undefined;
+  let lastTimeWeWereIn = false;
+  const handleEvent = (e: Event) => {
+    if (e instanceof MouseEvent)
+      lastClients = { clientX: e.clientX, clientY: e.clientY };
+    if (lastClients === undefined) return;
+    const { clientX, clientY } = lastClients;
+    const elements = document.elementsFromPoint(clientX, clientY);
+    const { offsetX, offsetY } = getOffsets({ clientX, clientY }, node);
+    const detail: RelativeMousemoveEvent = {
+      clientX,
+      clientY,
+      offsetX,
+      offsetY,
+    };
+
+    const currentlyWeAreIn = elements.includes(node);
+    if (!currentlyWeAreIn) {
+      if (lastTimeWeWereIn) {
+        node.dispatchEvent(new CustomEvent("relativeMouseout", { detail }));
+      }
+      lastTimeWeWereIn = false;
+      return;
+    }
+
+    if (!lastTimeWeWereIn) {
+      node.dispatchEvent(new CustomEvent("relativeMousein", { detail }));
+    }
+    lastTimeWeWereIn = true;
+    node.dispatchEvent(new CustomEvent("relativeMousemove", { detail }));
+  };
+
+  document.addEventListener("mousemove", handleEvent);
+  document.addEventListener("scroll", handleEvent);
+
+  return {
+    destroy() {
+      document.removeEventListener("mousemove", handleEvent);
+      document.removeEventListener("scroll", handleEvent);
+    },
+  };
+}
+
 /**
  * Action that registers events similar to on:click and on:dblclick but if doubleclick happens the single clicks don't get triggered
  * @param node the node to attach the action to
