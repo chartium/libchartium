@@ -1,5 +1,6 @@
 /** this file handles bunch of mouse gesture events you can use as svelte actions */
 
+import type { ActionReturn } from "svelte/action";
 import type { Point, Shift, Size, Zoom } from "../types.js";
 
 export interface MouseDragCallbacks {
@@ -227,7 +228,16 @@ export type RelativeMousemoveEvent = {
  * all with detail of type RelativeMousemoveEvent. Similar usage to mousemove, mouseout
  * and mousein, however they also get triggered by pure scrolling
  */
-export function relativeMousemove(node: HTMLElement) {
+export function relativeMousemove(node: HTMLElement): ActionReturn<
+  void,
+  {
+    "on:relativeMousemove"?: (e: CustomEvent<RelativeMousemoveEvent>) => void;
+    "on:relativeMousein"?: (e: CustomEvent<RelativeMousemoveEvent>) => void;
+    "on:relativeMouseout"?: (e: CustomEvent<RelativeMousemoveEvent>) => void;
+  }
+> {
+  const abort = new AbortController();
+
   const getOffsets = (
     clients: { clientX: number; clientY: number },
     node: HTMLElement,
@@ -271,15 +281,18 @@ export function relativeMousemove(node: HTMLElement) {
     node.dispatchEvent(new CustomEvent("relativeMousemove", { detail }));
   };
 
-  document.addEventListener("mousemove", handleEvent);
-  document.addEventListener("scroll", handleEvent);
+  document.addEventListener("mousemove", handleEvent, {
+    passive: true,
+    signal: abort.signal,
+  });
 
-  return {
-    destroy() {
-      document.removeEventListener("mousemove", handleEvent);
-      document.removeEventListener("scroll", handleEvent);
-    },
-  };
+  document.addEventListener("scroll", handleEvent, {
+    capture: true,
+    passive: true,
+    signal: abort.signal,
+  });
+
+  return { destroy: () => abort.abort() };
 }
 
 /**
