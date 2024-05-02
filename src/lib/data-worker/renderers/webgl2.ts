@@ -136,7 +136,8 @@ function init() {
             float firstDashGap = dashGapLengths[0] + dashGapLengths[1];
             bool shouldBeDrawn = currentCycleLength < dashGapLengths[0] || (currentCycleLength > firstDashGap && currentCycleLength < firstDashGap + dashGapLengths[2]);
             if (shouldBeDrawn) {
-              gl_FragColor = color;
+              gl_FragColor.rgb = color.rgb * color.a;
+              gl_FragColor.a = color.a;
             }
             else {
               discard;

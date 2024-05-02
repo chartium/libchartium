@@ -182,7 +182,7 @@ impl WebGlRenderer {
                         color[0],
                         color[1],
                         color[2],
-                        0.1 * color[3],
+                        0.25 * color[3],
                     );
 
                     // Set the fill buffer
