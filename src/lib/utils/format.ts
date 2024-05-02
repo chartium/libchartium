@@ -1,6 +1,6 @@
 import { type ChartValue, isQuantity, type DisplayUnit } from "../types.js";
 import { formatFloat, type QuantityFormatOptions } from "unitlib";
-import { isDateFormat } from "./dateFormat.js";
+import { isDateFormat, type Period } from "./dateFormat.js";
 /** Writes exponential notation that doesn't make your eyes bleed */
 export function prettyExp(input: number, decimals: number): string {
   const exp = Math.floor(Math.log10(input));
@@ -71,6 +71,7 @@ export function doOverlap(
 
 export interface QndFormatOptions extends QuantityFormatOptions {
   unit?: DisplayUnit;
+  dateAccuracy?: Period;
 }
 
 /** Formats input based on options */
@@ -82,6 +83,7 @@ export function qndFormat(
   options.decimalPlaces ??= 2;
   options.digitGroupLength ??= 3;
   options.fancyUnicode ??= true;
+  options.dateAccuracy ??= "minutes";
 
   if (typeof input === "number") {
     if (isNaN(input)) return "—";
@@ -97,7 +99,7 @@ export function qndFormat(
     return input.toString(options);
   } else {
     if (isDateFormat(options.unit)) {
-      return options.unit.formatInPeriod(input, "years");
+      return options.unit.formatWithAccuracy(input, options.dateAccuracy);
     }
     return input.utc().format("YYYY-MM-DD");
   }

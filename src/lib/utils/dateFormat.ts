@@ -75,7 +75,20 @@ export class DateFormat {
   }
 
   /**
-   * Formats a date with regards to an era
+   * Formats a date with all periods larger or equal to the input period.
+   * @example formatWithAccuracy(new Date(2020, 0, 1), "days") === "Jan 1 2020"
+   * @example formatWithAccuracy(new Date(2020, 0, 1), "hours") === "00:00 Jan 1 2020"
+   */
+  formatWithAccuracy(date: dayjs.Dayjs | Date, accuracy: Period): string {
+    date = dayjs(date);
+
+    return this.formattingStrings[accuracy]
+      .map((s) => date.format(s))
+      .join(" ");
+  }
+
+  /**
+   * Formats a date with regards to the period.
    * @example formatInEra(new Date(2020, 0, 1), "days") === "Jan 1"
    * @example formatInEra(new Date(2020, 0, 1), "hours") === "00:00"
    */
