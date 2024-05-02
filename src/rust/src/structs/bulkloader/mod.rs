@@ -101,12 +101,12 @@ impl Bulkloader {
         let row_bytes_len = x_desc.size + y_desc.size * handles.len();
 
         let point_count = data.len() / row_bytes_len;
-        let mut x = Vec::<u64>::with_capacity(point_count);
+        let mut x = Vec::<i64>::with_capacity(point_count);
         let mut y = vec![0.; point_count * handles.len()];
 
         for (row_idx, row) in data.chunks_exact(row_bytes_len).enumerate() {
             let cur = (x_desc.parser)(&row[0..x_desc.size]);
-            x.push(cur as u64);
+            x.push(cur as i64);
 
             for (col_idx, col) in row[x_desc.size..].chunks_exact(y_desc.size).enumerate() {
                 y[col_idx * point_count + row_idx] = (y_desc.parser)(col);
@@ -127,14 +127,14 @@ impl Bulkloader {
 
         let point_count = input_x.length() as usize / x_desc.size;
 
-        let mut x = Vec::<u64>::with_capacity(point_count);
+        let mut x = Vec::<i64>::with_capacity(point_count);
         let mut y = Vec::<f64>::with_capacity(point_count * input_ys.len());
 
         let input_x = input_x.to_vec();
 
         for current_x in input_x.chunks_exact(x_desc.size) {
             let cur = (x_desc.parser)(current_x);
-            x.push(cur as u64);
+            x.push(cur as i64);
         }
 
         let mut buffer = vec![0u8; y_desc.size * point_count];
