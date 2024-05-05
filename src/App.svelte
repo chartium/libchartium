@@ -20,7 +20,7 @@
 
   const controller = new ChartiumController();
 
-  const traceCount = 5;
+  const traceCount = 6;
   const normalTraces = (async () => {
     const results = [];
 

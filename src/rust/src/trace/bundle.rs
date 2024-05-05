@@ -201,6 +201,14 @@ impl BundleVec {
     pub fn push(&mut self, bundle: &BoxedBundle) {
         self.0.push(bundle as *const BoxedBundle);
     }
+
+    pub fn len(&self) -> usize {
+        self.0.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
 }
 
 impl BundleVec {
