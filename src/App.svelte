@@ -60,7 +60,15 @@
         },
         style: {
           "*": { "line-width": 2 },
-          trace_2: { fill: "to-zero-y", line: "dashed" },
+          trace_2: {
+            fill: "to-zero-y",
+            line: "dashed",
+            "line-dash-array": [10, 5],
+          },
+          trace_1: {
+            line: "dashed",
+            "line-dash-array": [5, 5],
+          },
           sin: { color: "red" },
         },
       });
@@ -77,7 +85,9 @@
     xDataUnit: NumericDateRepresentation.EpochSeconds(),
     yDataUnit: IEC.parseUnit("KiB"),
     tracelistsRange: { from: 0, to: 1 },
-    style: { "*": { line: "dashed" } },
+    style: {
+      "*": { line: "dashed", "line-dash-array": [2, 5] },
+    },
   });
 
   const traces = Promise.all([threshold, normalTraces]).then((ts) =>
