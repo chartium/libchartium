@@ -164,7 +164,7 @@ function getNumericTicks(
     const tickNum = rangeWidth / ticksDist;
     if (tickNum > MAX_TICK_COUNT) continue;
 
-    const firstTickValue = range.from - (range.from % ticksDist) + ticksDist;
+    const firstTickValue = range.from - (range.from % ticksDist);
     const tickValues = Array.from(
       { length: tickNum + 1 },
       (_, n) => firstTickValue + n * ticksDist,
