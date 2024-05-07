@@ -110,7 +110,9 @@ function dateTicks(
     subtext: displayUnit.formatInLargerPeriod(val, period),
   });
 
-  const firstTickVal = range.from.startOf(period).add(1, period);
+  const firstTickVal = range.from.startOf(period).isSame(range.from)
+    ? range.from
+    : range.from.startOf(period).add(1, period);
   let result: Tick[] = [];
   for (const multiple of niceMultiples) {
     const rangeLength = range.to
