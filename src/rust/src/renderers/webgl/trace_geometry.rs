@@ -12,10 +12,12 @@ use super::WebGlRenderer;
 pub struct TraceGeometry {
     pub x_range: NumericRange,
     pub y_range: NumericRange,
-    pub points: usize,
+
+    pub line_vertex_count: usize,
     pub line_buffer: WebGlBuffer,
     pub arc_length_buffer: WebGlBuffer,
-    pub fill_buffer: Option<WebGlBuffer>,
+
+    pub fill_buffer: Option<(usize, WebGlBuffer)>,
 }
 
 impl TraceGeometry {
@@ -23,7 +25,7 @@ impl TraceGeometry {
         ctx.delete_buffer(Some(&self.line_buffer));
         ctx.delete_buffer(Some(&self.arc_length_buffer));
 
-        if let Some(buffer) = self.fill_buffer {
+        if let Some((_, buffer)) = self.fill_buffer {
             ctx.delete_buffer(Some(&buffer));
         }
     }
@@ -50,7 +52,7 @@ impl TraceGeometry {
         y_range: NumericRange,
     ) -> Self {
         Self {
-            points: data.data.len(),
+            line_vertex_count: data.data.len(),
             x_range,
             y_range,
             line_buffer: create_trace_buffer(renderer, &data),
@@ -82,12 +84,12 @@ impl TraceGeometry {
         let data = TraceData { data: trace };
 
         Self {
-            points: data.data.len(),
             x_range,
             y_range,
+            line_vertex_count: data.data.len(),
             line_buffer: create_trace_buffer(renderer, &data),
             arc_length_buffer: create_arc_length_buffer(renderer, &data, x_range, y_range),
-            fill_buffer: Some(renderer.create_buffer(&area)),
+            fill_buffer: Some((data.data.len() * 2, renderer.create_buffer(&area))),
         }
     }
 }
@@ -101,14 +103,14 @@ fn create_trace_buffer(renderer: &WebGlRenderer, trace: &TraceData) -> WebGlBuff
     })
 }
 
-fn create_trace_fill_buffer(renderer: &WebGlRenderer, trace: &TraceData) -> WebGlBuffer {
+fn create_trace_fill_buffer(renderer: &WebGlRenderer, trace: &TraceData) -> (usize, WebGlBuffer) {
     let mut data = Vec::<f32>::with_capacity(trace.data.len() * 4);
 
     for &(x, y) in trace.data.iter() {
         data.extend([x, 0., x, y]);
     }
 
-    renderer.create_buffer(&data)
+    (trace.data.len() * 2, renderer.create_buffer(&data))
 }
 
 fn create_arc_length_buffer(

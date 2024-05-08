@@ -27,15 +27,15 @@ impl WebGlTrace {
         let line = style.get_line();
 
         let TraceGeometry {
-            points,
             x_range,
+            line_vertex_count,
             line_buffer,
             arc_length_buffer,
             fill_buffer,
             ..
         } = &self.geometry;
 
-        let points = *points as i32;
+        let points = *line_vertex_count as i32;
 
         gl.uniform2f(
             Some(&programs.trace_origin),
@@ -43,24 +43,11 @@ impl WebGlTrace {
             y_from,
         );
 
-        // Set the arc length buffer
-        gl.bind_buffer(
-            WebGl2RenderingContext::ARRAY_BUFFER,
-            Some(arc_length_buffer),
-        );
-        gl.vertex_attrib_pointer_with_i32(
-            ctx.length_along_ptr,
-            1,
-            WebGl2RenderingContext::FLOAT,
-            false,
-            0,
-            0,
-        );
-        gl.enable_vertex_attrib_array(ctx.length_along_ptr);
-
         match (fill_buffer, style.get_fill()) {
-            (Some(buffer), TraceFillStyle::ToZeroY | TraceFillStyle::ToNextInStack) => {
-                gl.uniform4f(Some(&programs.dash_gap_length), 1.0, 0.0, 0.0, 0.0);
+            (
+                Some((vertex_count, buffer)),
+                TraceFillStyle::ToZeroY | TraceFillStyle::ToNextInStack,
+            ) => {
                 gl.uniform4f(
                     Some(&programs.trace_color),
                     color[0],
@@ -68,6 +55,19 @@ impl WebGlTrace {
                     color[2],
                     0.25 * color[3],
                 );
+
+                // Dash buffer hack
+                gl.uniform4f(Some(&programs.dash_gap_length), 1.0, 0.0, 0.0, 0.0);
+                gl.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, Some(buffer));
+                gl.vertex_attrib_pointer_with_i32(
+                    ctx.length_along_ptr,
+                    1,
+                    WebGl2RenderingContext::FLOAT,
+                    false,
+                    0,
+                    0,
+                );
+                gl.enable_vertex_attrib_array(ctx.length_along_ptr);
 
                 // Set the fill buffer
                 gl.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, Some(buffer));
@@ -80,7 +80,11 @@ impl WebGlTrace {
                     0,
                 );
                 gl.enable_vertex_attrib_array(ctx.vertex_position_ptr);
-                gl.draw_arrays(WebGl2RenderingContext::TRIANGLE_STRIP, 0, 2 * points);
+                gl.draw_arrays(
+                    WebGl2RenderingContext::TRIANGLE_STRIP,
+                    0,
+                    *vertex_count as i32,
+                );
             }
             _ => {
                 // noop
@@ -114,6 +118,22 @@ impl WebGlTrace {
                     *second_gap,
                 ),
         }
+
+        // Set the arc length buffer
+        gl.bind_buffer(
+            WebGl2RenderingContext::ARRAY_BUFFER,
+            Some(arc_length_buffer),
+        );
+        gl.vertex_attrib_pointer_with_i32(
+            ctx.length_along_ptr,
+            1,
+            WebGl2RenderingContext::FLOAT,
+            false,
+            0,
+            0,
+        );
+        gl.enable_vertex_attrib_array(ctx.length_along_ptr);
+
         // Set the line buffer
         gl.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, Some(line_buffer));
         gl.vertex_attrib_pointer_with_i32(
