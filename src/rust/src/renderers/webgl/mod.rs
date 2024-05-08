@@ -12,7 +12,8 @@ use web_sys::{
 
 use crate::{
     data::{BundleHandle, TraceHandle},
-    trace::BoxedBundle,
+    structs::AdaptiveGrid,
+    trace::{extensions::PointIteratorExtension, BoxedBundle},
     trace_styles::TraceStyle,
 };
 
@@ -74,6 +75,7 @@ pub struct WebGlRenderer {
     programs: WebGlPrograms,
 
     geometry_cache: HashMap<(BundleHandle, TraceHandle), TraceGeometry>,
+    stack_cache: HashMap<isize, Vec<(BoxedBundle, TraceHandle, TraceGeometry)>>,
 }
 
 #[wasm_bindgen]
@@ -103,6 +105,7 @@ impl WebGlRenderer {
             line_width_limit: width_range.get_index(1),
 
             geometry_cache: HashMap::new(),
+            stack_cache: HashMap::new(),
 
             programs: programs.clone(),
 
@@ -193,6 +196,63 @@ impl WebGlRenderer {
         {
             prev.destroy(&self.context);
         }
+
+        geometry
+    }
+
+    pub fn get_stacked_trace_geometry(
+        &mut self,
+        bundle: &BoxedBundle,
+        trace: TraceHandle,
+        style: &TraceStyle,
+        (x_range, y_range): (NumericRange, NumericRange),
+        (stack_id, in_stack_idx, grid): (isize, usize, &mut AdaptiveGrid),
+    ) -> TraceGeometry {
+        {
+            let stack_cache = self.stack_cache.entry(stack_id).or_default();
+
+            if let Some((bundle_handle, trace_handle, geometry)) = stack_cache.get(in_stack_idx) {
+                if bundle_handle == bundle
+                    && trace_handle == &trace
+                    && !geometry.is_stale(style, x_range, y_range)
+                {
+                    // Reuse geometry if valid
+                    return geometry.clone();
+                }
+
+                // Empty the rest of the stack (must be stale)
+                stack_cache
+                    .drain(in_stack_idx..)
+                    .for_each(|(_, _, g)| g.destroy(&self.context));
+
+                // Insert previous data into the grid
+                stack_cache[0..in_stack_idx]
+                    .iter()
+                    .for_each(|(bundle, trace, _)| {
+                        let data = bundle
+                            .unwrap()
+                            .iter_in_range_with_neighbors_f64(*trace, x_range)
+                            .with_origin_at(x_range.from, 0.0);
+
+                        grid.sum_add_points(data).count();
+                    })
+            }
+        }
+
+        // Calculate the next curve in the stack
+        let data = bundle
+            .unwrap()
+            .iter_in_range_with_neighbors_f64(trace, x_range)
+            .with_origin_at(x_range.from, 0.0);
+
+        let geometry =
+            TraceGeometry::new_area(self, grid.sum_add_points(data), style, x_range, y_range);
+
+        self.stack_cache.get_mut(&stack_id).unwrap().push((
+            bundle.clone(),
+            trace,
+            geometry.clone(),
+        ));
 
         geometry
     }

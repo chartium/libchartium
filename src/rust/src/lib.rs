@@ -1,3 +1,5 @@
+#![allow(clippy::empty_docs)]
+
 use wasm_bindgen::prelude::*;
 
 pub mod data;

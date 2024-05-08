@@ -38,7 +38,7 @@ impl TraceGeometry {
         let prev_y_range = self.y_range;
 
         (!style.get_line().is_solid() && (x_range != prev_x_range || y_range != prev_y_range))
-            || (matches!(style.fill, OrUnset::Set(TraceFillStyle::ToZeroY))
+            || (!matches!(style.fill, OrUnset::Set(TraceFillStyle::None))
                 && self.fill_buffer.is_none())
     }
 

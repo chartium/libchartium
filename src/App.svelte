@@ -20,7 +20,7 @@
 
   const controller = new ChartiumController();
 
-  const traceCount = 6;
+  const traceCount = 8;
   const normalTraces = (async () => {
     const results = [];
 
@@ -59,7 +59,7 @@
           columns: ys,
         },
         style: {
-          "*": { "line-width": 2 },
+          "*": { "line-width": 2, fill: "to-next-in-stack", "stack-group": 0 },
           trace_2: {
             fill: "to-zero-y",
             line: "dashed",
