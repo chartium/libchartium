@@ -4,8 +4,6 @@
     zoom?: Zoom;
     shift?: Shift;
     highlightedPoints?: HighlightPoint[];
-    /** fraction of y range */
-    yThreshold?: number;
   };
 </script>
 
@@ -30,7 +28,6 @@
     HighlightPoint,
     Point,
     Shift,
-    Threshold,
     Zoom,
   } from "../types.js";
 
@@ -48,7 +45,6 @@
     reset: undefined;
     zoom: Zoom;
     shift: Shift;
-    yThreshold: Threshold;
   }>();
 
   export let visibleAction: WritableSignal<VisibleAction | undefined>;
@@ -63,19 +59,6 @@
   export let traceHovered: boolean;
   export let commonXRuler: WritableSignal<ChartValue | undefined>;
   export let commonYRuler: WritableSignal<ChartValue | undefined>;
-
-  let thresholdFilterMode: boolean = false;
-  export const filterByThreshold = () => {
-    thresholdFilterMode = true;
-  };
-
-  /** Fractions of the graphs width representing persistent thresholds */
-  export let presYThreshFracs: number[] = [];
-
-  let thresholdAddMode: boolean = false;
-  export const addPersistentThreshold = () => {
-    thresholdAddMode = true;
-  };
 
   // FIXME only for RulerBubble's which should be moved elsewhere
   export let xDisplayUnit: DisplayUnit;
@@ -95,10 +78,6 @@
   $: offsetMousePosition, scheduleDraw();
   $: $commonXRuler, scheduleDraw();
   $: $commonYRuler, scheduleDraw();
-  $: if ((thresholdFilterMode || thresholdAddMode) && offsetMousePosition)
-    visibleAction.update((a) => {
-      return { ...a, yThreshold: 1 - offsetMousePosition![1] / overlayHeight };
-    });
 
   let drawScheduled = false;
   function scheduleDraw() {
@@ -122,19 +101,10 @@
       ctx.strokeStyle = color;
       ctx.lineWidth = 1;
 
-      presYThreshFracs.forEach(drawThreshold);
-
       if (action && action.zoom && !disableInteractivity) {
         drawZoom(action.zoom);
       } else if (action && action.shift && !disableInteractivity) {
         drawShift(action.shift);
-      } else if (action && action.yThreshold && !disableInteractivity) {
-        drawThreshold(action.yThreshold);
-      } else if (offsetMousePosition) {
-        drawRuler({
-          x: offsetMousePosition[0] / overlayWidth,
-          y: 1 - offsetMousePosition[1] / overlayHeight,
-        });
       } else if (chart) {
         // Global Ruler
         // https://open.spotify.com/track/3vFZheR74pxUkzxqhXTZ2X
@@ -249,8 +219,8 @@
     if (!hideYRuler && axes.includes("y")) {
       drawSegment(
         ctx,
-        [0, (1 - point.y) * overlayHeight],
-        [overlayWidth, (1 - point.y) * overlayHeight],
+        [0, point.y * overlayHeight],
+        [overlayWidth, point.y * overlayHeight],
         style,
       );
     }
@@ -260,7 +230,7 @@
     start: (_) => {},
     move: (_, status) => {
       if (disableInteractivity) {
-        console.log("Chart interactivity disabled!");
+        console.warn("Chart interactivity disabled!");
         return;
       }
       visibleAction.update((action) => ({
@@ -270,7 +240,7 @@
     },
     end: (_, status) => {
       if (disableInteractivity) {
-        console.log("Chart interactivity disabled!");
+        console.warn("Chart interactivity disabled!");
         return;
       }
       visibleAction.update((action) => ({
@@ -336,18 +306,6 @@
     }
   }
 
-  function drawThreshold(thresholdFrac: number) {
-    const style = {
-      dash: [9, 3],
-    };
-    drawSegment(
-      ctx,
-      [0, (1 - thresholdFrac) * overlayHeight],
-      [overlayWidth, (1 - thresholdFrac) * overlayHeight],
-      style,
-    );
-  }
-
   const rightDragCallbacks: MouseDragCallbacks = {
     start: () => {},
     move: (_, status) => {
@@ -372,24 +330,6 @@
     },
   };
 
-  const leftClickCallback = (_e: MouseEvent) => {
-    const yThreshold = visibleAction.get()?.yThreshold;
-    if (yThreshold) {
-      visibleAction.update((a) => ({
-        ...a,
-        yThreshold: undefined,
-      }));
-      if (thresholdFilterMode) {
-        events("yThreshold", { thresholdFrac: yThreshold, type: "filtering" });
-        thresholdFilterMode = false;
-      }
-      if (thresholdAddMode) {
-        events("yThreshold", { thresholdFrac: yThreshold, type: "persistent" });
-        thresholdAddMode = false;
-      }
-    }
-  };
-
   let overlayWidth: number = 1;
   let overlayHeight: number = 1;
 
@@ -412,7 +352,6 @@
     },
     button: MouseButtons.Right,
   }}
-  use:mouseClick={{ callback: leftClickCallback, button: MouseButtons.Left }}
   use:relativeMousemove
   on:relativeMousemove={(e) =>
     (offsetMousePosition = [e.detail.offsetX, e.detail.offsetY])}

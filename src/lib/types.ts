@@ -121,11 +121,6 @@ export interface Shift {
   origin: Point;
 }
 
-export interface Threshold {
-  thresholdFrac: number;
-  type: "persistent" | "filtering";
-}
-
 /** Ranges x and y are fractions of the full range */
 export interface Zoom {
   x: NumericRange;

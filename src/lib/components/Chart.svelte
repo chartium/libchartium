@@ -271,19 +271,6 @@
     })
     .pipe(onDestroy);
 
-  /** In fractions of graph height */
-  // let persistentYThresholds: ChartValue[] = [];
-  // // TODO: remove this?
-  // $: _presYThreshFracs = persistentYThresholds.map((q) =>
-  //   chart$.valueOnAxis("y").fromQuantity(q).toFraction(),
-  // );
-  // // TODO make ValueOnAxis properly reactive
-  // chart$.axes.y.range$.subscribe(() => {
-  //   _presYThreshFracs = persistentYThresholds.map((q) =>
-  //     chart$.valueOnAxis("y").fromQuantity(q).toFraction(),
-  //   );
-  // });
-
   let parentDiv: HTMLDivElement;
   let wrapDiv: HTMLDivElement;
   export function getWrapDiv(): HTMLDivElement {
@@ -308,12 +295,6 @@
       }
     },
   });
-
-  // FIXME DEBUG
-  let addPersistentThreshold: () => void;
-  let filterByThreshold: () => void;
-  // $: (window as any).addPersistentThreshold = addPersistentThreshold;
-  // $: (window as any).filterByThreshold = filterByThreshold;
 </script>
 
 {#if !hideTooltip}
@@ -410,13 +391,10 @@
         {hideYBubble}
         {disableInteractivity}
         traceHovered={$hoveredTrace$ !== undefined}
-        presYThreshFracs={[]}
         commonXRuler={commonXRuler$}
         commonYRuler={commonYRuler$}
         xDisplayUnit={$xDisplayUnit$}
         yDisplayUnit={$yDisplayUnit$}
-        bind:filterByThreshold
-        bind:addPersistentThreshold
         on:reset={() => chart$.resetAllRanges()}
         on:zoom={(d) => {
           chart$.axes.x.zoomRange(d.detail.x);
@@ -425,23 +403,6 @@
         on:shift={(d) => {
           chart$.axes.x.shiftRange(d.detail.dx ?? 0);
           chart$.axes.y.shiftRange(d.detail.dy ?? 0);
-        }}
-        on:yThreshold={() => {
-          /*
-          if (t.detail.type === "persistent") {
-            const thresholdQ = chart$
-              .valueOnAxis("y")
-              .fromFraction(1 - t.detail.thresholdFrac)
-              .toQuantity();
-            if (thresholdQ) persistentYThresholds.push(thresholdQ);
-            persistentYThresholds = persistentYThresholds;
-          }
-          if (t.detail.type === "filtering")
-            hiddenTraceIds$.update((curr) => {
-              // for (const id of chart$?.idsUnderThreshold(t) ?? []) curr.add(id);
-              return curr;
-            });
-          */
         }}
         on:relativeMousemove={(e) =>
           hoverEvent$.set({ name: "move", event: asAny(e) })}
