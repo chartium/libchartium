@@ -1,106 +1,30 @@
-// https://github.com/madonoharu/tsify/issues/42
-#![allow(non_snake_case)]
-
 use std::{
-    rc::Rc,
+    rc::{Rc, Weak},
     sync::atomic::{AtomicU32, Ordering},
 };
 
+use js_sys::wasm_bindgen::prelude::*;
+
 use crate::{
     data::{BundleHandle, TraceHandle},
+    trace::BundleRange,
     types::NumericRange,
 };
-use serde::{Deserialize, Serialize};
-use tsify::Tsify;
-use wasm_bindgen::prelude::wasm_bindgen;
 
-#[derive(Tsify, Clone, Copy, Serialize, Deserialize)]
-#[tsify(into_wasm_abi, from_wasm_abi)]
-#[serde(rename_all = "kebab-case")]
-pub enum InterpolationStrategy {
-    None,
-    Nearest,
-    Linear,
-    Previous,
-    Next,
-}
-
-#[derive(Debug, Clone, Tsify, Serialize, Deserialize)]
-#[tsify(into_wasm_abi, from_wasm_abi)]
-#[serde(tag = "type", content = "value")]
-pub enum BundleRange {
-    Bounded { from: f64, to: f64 },
-    Everywhere,
-}
-impl BundleRange {
-    pub fn contains(&self, v: f64) -> bool {
-        use BundleRange::*;
-        match self {
-            Bounded { from, to } => *from <= v && v <= *to,
-            Everywhere => true,
-        }
-    }
-}
-
-pub trait Bundle {
-    fn traces(&self) -> Vec<TraceHandle>;
-    fn range(&self) -> BundleRange;
-    fn point_count(&self) -> usize;
-
-    fn contains_trace(&self, trace: TraceHandle) -> bool;
-
-    fn contains_point(&self, point: f64) -> bool {
-        match self.range() {
-            BundleRange::Bounded { from, to } => from <= point && to >= point,
-            BundleRange::Everywhere => false,
-        }
-    }
-
-    fn intersects(&self, x_from: f64, x_to: f64) -> bool {
-        match self.range() {
-            BundleRange::Bounded { from, to } => from <= x_to && to >= x_from,
-            BundleRange::Everywhere => true,
-        }
-    }
-
-    fn iter_in_range_f64<'a>(
-        &'a self,
-        handle: TraceHandle,
-        x_range: NumericRange,
-    ) -> Box<dyn Iterator<Item = (f64, f64)> + 'a>;
-
-    fn iter_in_range_with_neighbors_f64<'a>(
-        &'a self,
-        handle: TraceHandle,
-        x_range: NumericRange,
-    ) -> Box<dyn Iterator<Item = (f64, f64)> + 'a>;
-
-    fn iter_many_in_range_f64<'a>(
-        &'a self,
-        handles: Vec<TraceHandle>,
-        x_range: NumericRange,
-    ) -> Box<dyn Iterator<Item = Vec<f64>> + 'a>;
-
-    fn value_at(
-        &self,
-        trace: TraceHandle,
-        x: f64,
-        interpolation_strategy: InterpolationStrategy,
-    ) -> Option<(f64, f64)>;
-}
+use super::Bundle;
 
 static BUNDLE_COUNTER: AtomicU32 = AtomicU32::new(0);
 
 #[wasm_bindgen]
-pub struct BoxedBundle {
+pub struct BundleRc {
     handle: BundleHandle,
     bundle: Rc<dyn Bundle>,
 }
 
-impl BoxedBundle {
-    pub fn new(bundle: impl Bundle + 'static) -> BoxedBundle {
-        BoxedBundle {
-            handle: BUNDLE_COUNTER.fetch_add(1, Ordering::AcqRel),
+impl BundleRc {
+    pub fn new(bundle: impl Bundle + 'static) -> BundleRc {
+        BundleRc {
+            handle: BUNDLE_COUNTER.fetch_add(1, Ordering::Relaxed),
             bundle: Rc::new(bundle),
         }
     }
@@ -108,9 +32,16 @@ impl BoxedBundle {
     pub fn unwrap(&self) -> &dyn Bundle {
         &*self.bundle
     }
+
+    pub fn downgrade(&self) -> BundleWeak {
+        BundleWeak {
+            handle: self.handle,
+            bundle: Rc::downgrade(&self.bundle),
+        }
+    }
 }
 
-impl std::ops::Deref for BoxedBundle {
+impl std::ops::Deref for BundleRc {
     type Target = dyn Bundle;
 
     fn deref(&self) -> &Self::Target {
@@ -118,25 +49,25 @@ impl std::ops::Deref for BoxedBundle {
     }
 }
 
-impl Clone for BoxedBundle {
+impl Clone for BundleRc {
     fn clone(&self) -> Self {
-        BoxedBundle {
+        BundleRc {
             handle: self.handle,
             bundle: self.bundle.clone(),
         }
     }
 }
 
-impl PartialEq for BoxedBundle {
+impl PartialEq for BundleRc {
     fn eq(&self, other: &Self) -> bool {
         Rc::ptr_eq(&self.bundle, &other.bundle)
     }
 }
 
-impl Eq for BoxedBundle {}
+impl Eq for BundleRc {}
 
 #[wasm_bindgen]
-impl BoxedBundle {
+impl BundleRc {
     pub fn handle(&self) -> BundleHandle {
         self.handle
     }
@@ -207,31 +138,49 @@ impl BoxedBundle {
     }
 }
 
-#[wasm_bindgen]
-pub struct BundleVec(Vec<*const BoxedBundle>);
+pub struct BundleWeak {
+    handle: BundleHandle,
+    bundle: Weak<dyn Bundle>,
+}
 
-#[wasm_bindgen]
-impl BundleVec {
-    #[wasm_bindgen(constructor)]
-    pub fn new_empty() -> BundleVec {
-        BundleVec(Vec::new())
+impl BundleWeak {
+    pub fn handle(&self) -> BundleHandle {
+        self.handle
     }
 
-    pub fn push(&mut self, bundle: &BoxedBundle) {
-        self.0.push(bundle as *const BoxedBundle);
-    }
-
-    pub fn len(&self) -> usize {
-        self.0.len()
-    }
-
-    pub fn is_empty(&self) -> bool {
-        self.0.is_empty()
+    pub fn upgrade(&self) -> Option<BundleRc> {
+        self.bundle.upgrade().map(|b| BundleRc {
+            handle: self.handle,
+            bundle: b,
+        })
     }
 }
 
-impl BundleVec {
-    pub fn iter(&self) -> impl Iterator<Item = &BoxedBundle> {
-        self.0.iter().map(|ptr| unsafe { &**ptr })
+impl Clone for BundleWeak {
+    fn clone(&self) -> Self {
+        BundleWeak {
+            handle: self.handle,
+            bundle: self.bundle.clone(),
+        }
+    }
+}
+
+impl std::hash::Hash for BundleWeak {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.bundle.as_ptr().hash(state);
+    }
+}
+
+impl PartialEq for BundleWeak {
+    fn eq(&self, other: &Self) -> bool {
+        self.bundle.ptr_eq(&other.bundle)
+    }
+}
+
+impl Eq for BundleWeak {}
+
+impl PartialEq<BundleRc> for BundleWeak {
+    fn eq(&self, other: &BundleRc) -> bool {
+        std::ptr::addr_eq(self.bundle.as_ptr(), Rc::as_ptr(&other.bundle))
     }
 }

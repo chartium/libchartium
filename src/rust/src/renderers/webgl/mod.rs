@@ -13,7 +13,7 @@ use web_sys::{
 use crate::{
     data::{BundleHandle, TraceHandle},
     structs::AdaptiveGrid,
-    trace::{extensions::PointIteratorExtension, BoxedBundle},
+    trace::{extensions::PointIteratorExtension, BundleRc, BundleWeak},
     trace_styles::TraceStyle,
 };
 
@@ -75,7 +75,7 @@ pub struct WebGlRenderer {
     programs: WebGlPrograms,
 
     geometry_cache: HashMap<(BundleHandle, TraceHandle), TraceGeometry>,
-    stack_cache: HashMap<isize, Vec<(BoxedBundle, TraceHandle, TraceGeometry)>>,
+    stack_cache: HashMap<isize, Vec<(BundleWeak, TraceHandle, TraceGeometry)>>,
 }
 
 #[wasm_bindgen]
@@ -169,7 +169,7 @@ impl WebGlRenderer {
 impl WebGlRenderer {
     pub fn get_trace_geometry(
         &mut self,
-        bundle: &BoxedBundle,
+        bundle: &BundleRc,
         trace_handle: TraceHandle,
         style: &TraceStyle,
         x_range: NumericRange,
@@ -202,7 +202,7 @@ impl WebGlRenderer {
 
     pub fn get_stacked_trace_geometry(
         &mut self,
-        bundle: &BoxedBundle,
+        bundle: &BundleRc,
         trace: TraceHandle,
         style: &TraceStyle,
         (x_range, y_range): (NumericRange, NumericRange),
@@ -211,8 +211,8 @@ impl WebGlRenderer {
         {
             let stack_cache = self.stack_cache.entry(stack_id).or_default();
 
-            if let Some((bundle_handle, trace_handle, geometry)) = stack_cache.get(in_stack_idx) {
-                if bundle_handle == bundle
+            if let Some((prev_bundle, trace_handle, geometry)) = stack_cache.get(in_stack_idx) {
+                if prev_bundle == bundle
                     && trace_handle == &trace
                     && !geometry.is_stale(style, x_range, y_range)
                 {
@@ -229,8 +229,9 @@ impl WebGlRenderer {
                 stack_cache[0..in_stack_idx]
                     .iter()
                     .for_each(|(bundle, trace, _)| {
+                        let bundle = bundle.upgrade().unwrap();
+
                         let data = bundle
-                            .unwrap()
                             .iter_in_range_with_neighbors_f64(*trace, x_range)
                             .with_origin_at(x_range.from, 0.0);
 
@@ -249,7 +250,7 @@ impl WebGlRenderer {
             TraceGeometry::new_area(self, grid.sum_add_points(data), style, x_range, y_range);
 
         self.stack_cache.get_mut(&stack_id).unwrap().push((
-            bundle.clone(),
+            bundle.downgrade(),
             trace,
             geometry.clone(),
         ));

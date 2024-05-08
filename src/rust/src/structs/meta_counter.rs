@@ -2,7 +2,7 @@ use wasm_bindgen::prelude::wasm_bindgen;
 
 use crate::{
     data::TraceHandle,
-    trace::BoxedBundle,
+    trace::BundleRc,
     types::{NumericRange, TraceMetas},
 };
 
@@ -65,7 +65,7 @@ impl MetaCounter {
     // ! that are not present in the bundle
     pub fn add_bundle(
         &mut self,
-        bundle: &BoxedBundle,
+        bundle: &BundleRc,
         traces: &[TraceHandle],
         x_range: NumericRange,
         y_factor: f64,

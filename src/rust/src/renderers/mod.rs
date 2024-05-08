@@ -10,7 +10,7 @@ pub use webgl::WebGlRenderer;
 
 use crate::{
     data::TraceHandle,
-    trace::{extensions::PointIteratorExtension, BoxedBundle},
+    trace::{extensions::PointIteratorExtension, BundleRc},
     types::NumericRange,
 };
 
@@ -27,7 +27,7 @@ pub struct TraceData {
 }
 
 impl TraceData {
-    pub fn compute(bundle: &BoxedBundle, handle: TraceHandle, x_range: NumericRange) -> TraceData {
+    pub fn compute(bundle: &BundleRc, handle: TraceHandle, x_range: NumericRange) -> TraceData {
         let data = bundle
             .unwrap()
             .iter_in_range_with_neighbors_f64(handle, x_range)

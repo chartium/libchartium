@@ -5,14 +5,14 @@ use wasm_bindgen::prelude::*;
 use crate::{
     data::TraceHandle,
     structs::AdaptiveGrid,
-    trace::BoxedBundle,
+    trace::BundleRc,
     types::{NumericRange, TraceMetas, TracePoint},
 };
 
 use super::{BundleVec, InterpolationStrategy};
 
 #[wasm_bindgen]
-impl BoxedBundle {
+impl BundleRc {
     pub fn find_n_closest_points(
         &self,
         traces: Option<Box<[TraceHandle]>>,

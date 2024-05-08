@@ -18,7 +18,7 @@ import type { lib } from "./wasm.js";
 
 export class Bundle {
   constructor(
-    public boxed: lib.BoxedBundle,
+    public boxed: lib.BundleRc,
     public xDataUnit: DataUnit,
     public yDataUnit: DataUnit,
   ) {}

@@ -8,7 +8,7 @@ use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
 use crate::{
     data::TraceHandle,
     structs::bulkloader::data_types::TYPE_SIZES,
-    trace::{Batch, BoxedBundle, ConstantBatch},
+    trace::{Batch, BundleRc, ConstantBatch},
 };
 
 use self::data_types::TypeDescriptor;
@@ -90,7 +90,7 @@ impl Bulkloader {
         })
     }
 
-    pub fn apply(self) -> BoxedBundle {
+    pub fn apply(self) -> BundleRc {
         let Bulkloader {
             handles,
             x_desc,
@@ -113,7 +113,7 @@ impl Bulkloader {
             }
         }
 
-        BoxedBundle::new(Batch::new(x, y, &handles))
+        BundleRc::new(Batch::new(x, y, &handles))
     }
 
     pub fn from_columnar(
@@ -122,7 +122,7 @@ impl Bulkloader {
         y_type: String,
         input_x: Uint8Array,
         input_ys: Vec<Uint8Array>,
-    ) -> BoxedBundle {
+    ) -> BundleRc {
         let [x_desc, y_desc] = [x_type, y_type].map(|t| TYPE_SIZES.get(t.as_str()).unwrap());
 
         let point_count = input_x.length() as usize / x_desc.size;
@@ -147,14 +147,14 @@ impl Bulkloader {
             }
         }
 
-        BoxedBundle::new(Batch::new(x, y, &handles))
+        BundleRc::new(Batch::new(x, y, &handles))
     }
 
     // FIXME move this to a different file once it works :d
-    pub fn threshold_from_array(handles: Vec<TraceHandle>, input_ys: Float64Array) -> BoxedBundle {
+    pub fn threshold_from_array(handles: Vec<TraceHandle>, input_ys: Float64Array) -> BundleRc {
         let ys_as_vec: Vec<f64> = input_ys.to_vec();
         let ys = HashMap::from_iter(handles.iter().zip(ys_as_vec.iter()).map(|(h, y)| (*h, *y)));
 
-        BoxedBundle::new(ConstantBatch::new(ys))
+        BundleRc::new(ConstantBatch::new(ys))
     }
 }

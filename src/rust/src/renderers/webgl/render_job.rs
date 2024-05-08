@@ -1,7 +1,7 @@
 use js_sys::wasm_bindgen::prelude::*;
 
 use crate::{
-    data::TraceHandle, renderers::RenderJobCommon, structs::AdaptiveGrid, trace::BoxedBundle,
+    data::TraceHandle, renderers::RenderJobCommon, structs::AdaptiveGrid, trace::BundleRc,
     trace_styles::TraceStyle, utils::ResolvedColor,
 };
 
@@ -28,7 +28,7 @@ impl WebGlRenderJob {
     pub fn add_trace(
         &mut self,
         renderer: &mut WebGlRenderer,
-        bundle: &BoxedBundle,
+        bundle: &BundleRc,
         handle: TraceHandle,
         style: TraceStyle,
         color: ResolvedColor,
