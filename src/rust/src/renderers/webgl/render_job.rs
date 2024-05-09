@@ -38,7 +38,7 @@ impl WebGlRenderJob {
                 bundle,
                 handle,
                 &style,
-                (self.common.x_range, self.common.y_range),
+                &self.common,
                 (*stack_id, *in_stack_idx, grid),
             );
 
@@ -50,13 +50,7 @@ impl WebGlRenderJob {
                 geometry,
             })
         } else {
-            let geometry = renderer.get_trace_geometry(
-                bundle,
-                handle,
-                &style,
-                self.common.x_range,
-                self.common.y_range,
-            );
+            let geometry = renderer.get_trace_geometry(bundle, handle, &style, &self.common);
 
             self.traces.push(WebGlTrace {
                 style,

@@ -28,6 +28,7 @@ tsify = "0.4.5"
 optfield = "0.3.0"
 rand = { version = "0.8.5", features = ["small_rng"] }
 getrandom = { version = "0.2.14", features = ["js"] }
+once_cell = "1.19.0"
 
 [dependencies.web-sys]
 version = "0.3.69"

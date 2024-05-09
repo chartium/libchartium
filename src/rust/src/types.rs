@@ -16,11 +16,26 @@ pub struct NumericRange {
 }
 
 impl NumericRange {
+    pub fn new(from: f64, to: f64) -> Self {
+        Self { from, to }
+    }
+
     pub fn len(&self) -> f64 {
         self.to - self.from
     }
+
     pub fn as_tuple(&self) -> (f64, f64) {
         (self.from, self.to)
+    }
+
+    pub fn contains(&self, point: f64) -> bool {
+        self.from <= point && point <= self.to
+    }
+}
+
+impl From<(f64, f64)> for NumericRange {
+    fn from((from, to): (f64, f64)) -> Self {
+        Self { from, to }
     }
 }
 

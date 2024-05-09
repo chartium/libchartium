@@ -30,12 +30,22 @@ pub enum BundleRange {
     Bounded { from: f64, to: f64 },
     Everywhere,
 }
+
 impl BundleRange {
     pub fn contains(&self, v: f64) -> bool {
         use BundleRange::*;
         match self {
             Bounded { from, to } => *from <= v && v <= *to,
             Everywhere => true,
+        }
+    }
+}
+
+impl From<NumericRange> for BundleRange {
+    fn from(range: NumericRange) -> Self {
+        BundleRange::Bounded {
+            from: range.from,
+            to: range.to,
         }
     }
 }

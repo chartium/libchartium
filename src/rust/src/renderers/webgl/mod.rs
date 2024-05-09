@@ -13,11 +13,12 @@ use web_sys::{
 use crate::{
     data::{BundleHandle, TraceHandle},
     structs::AdaptiveGrid,
-    trace::{extensions::PointIteratorExtension, BundleRc, BundleWeak},
+    trace::{extensions::PointIteratorExtension, BundleRange, BundleRc, BundleWeak},
     trace_styles::TraceStyle,
+    types::NumericRange,
 };
 
-use super::{NumericRange, TraceData};
+use super::RenderJobCommon;
 use render_job::*;
 use trace_geometry::*;
 
@@ -172,27 +173,36 @@ impl WebGlRenderer {
         bundle: &BundleRc,
         trace_handle: TraceHandle,
         style: &TraceStyle,
-        x_range: NumericRange,
-        y_range: NumericRange,
+        job: &RenderJobCommon,
     ) -> TraceGeometry {
-        let bundle_handle = bundle.handle();
+        match self
+            .geometry_cache
+            .get_mut(&(bundle.handle(), trace_handle))
+        {
+            Some(geometry) => {
+                if !geometry.is_stale(bundle, style, job, (self.width, self.height)) {
+                    return geometry.clone();
+                } else {
+                    let mut geometry = geometry.clone();
 
-        match self.geometry_cache.get_mut(&(bundle_handle, trace_handle)) {
-            Some(geometry) if !geometry.is_stale(style, x_range, y_range) => {
-                return geometry.clone();
+                    if geometry.update_line(self, bundle, trace_handle, style, job) {
+                        self.geometry_cache
+                            .insert((bundle.handle(), trace_handle), geometry.clone());
+
+                        return geometry;
+                    }
+                }
             }
             _ => {
                 // continue
             }
         }
 
-        let data = TraceData::compute(bundle, trace_handle, x_range);
-
-        let geometry = TraceGeometry::new_line(self, data, style, x_range, y_range);
+        let geometry = TraceGeometry::new_line(self, bundle, trace_handle, style, job);
 
         if let Some(prev) = self
             .geometry_cache
-            .insert((bundle_handle, trace_handle), geometry.clone())
+            .insert((bundle.handle(), trace_handle), geometry.clone())
         {
             prev.destroy(&self.context);
         }
@@ -205,7 +215,7 @@ impl WebGlRenderer {
         bundle: &BundleRc,
         trace: TraceHandle,
         style: &TraceStyle,
-        (x_range, y_range): (NumericRange, NumericRange),
+        job: &RenderJobCommon,
         (stack_id, in_stack_idx, grid): (isize, usize, &mut AdaptiveGrid),
     ) -> TraceGeometry {
         {
@@ -214,7 +224,7 @@ impl WebGlRenderer {
             if let Some((prev_bundle, trace_handle, geometry)) = stack_cache.get(in_stack_idx) {
                 if prev_bundle == bundle
                     && trace_handle == &trace
-                    && !geometry.is_stale(style, x_range, y_range)
+                    && !geometry.is_stale(bundle, style, job, (self.width, self.height))
                 {
                     // Reuse geometry if valid
                     return geometry.clone();
@@ -231,6 +241,11 @@ impl WebGlRenderer {
                     .for_each(|(bundle, trace, _)| {
                         let bundle = bundle.upgrade().unwrap();
 
+                        let x_range = match bundle.range() {
+                            BundleRange::Bounded { from, to } => NumericRange::new(from, to),
+                            BundleRange::Everywhere => job.x_range,
+                        };
+
                         let data = bundle
                             .iter_in_range_with_neighbors_f64(*trace, x_range)
                             .with_origin_at(x_range.from, 0.0);
@@ -240,14 +255,18 @@ impl WebGlRenderer {
             }
         }
 
+        let x_range = match bundle.range() {
+            BundleRange::Bounded { from, to } => NumericRange::new(from, to),
+            BundleRange::Everywhere => job.x_range,
+        };
+
         // Calculate the next curve in the stack
         let data = bundle
             .unwrap()
             .iter_in_range_with_neighbors_f64(trace, x_range)
             .with_origin_at(x_range.from, 0.0);
 
-        let geometry =
-            TraceGeometry::new_area(self, grid.sum_add_points(data), style, x_range, y_range);
+        let geometry = TraceGeometry::new_area(self, bundle, grid.sum_add_points(data), style, job);
 
         self.stack_cache.get_mut(&stack_id).unwrap().push((
             bundle.downgrade(),
