@@ -21,7 +21,7 @@ impl WebGlTrace {
 
         let y_from = job.common.y_range.from as f32;
 
-        let style = &self.style;
+        let style: &TraceStyle = &self.style;
         let width = style.get_line_width() as f32;
         let color = self.color.as_floats();
         let line = style.get_line();
@@ -48,12 +48,14 @@ impl WebGlTrace {
                 Some((vertex_count, buffer)),
                 TraceFillStyle::ToZeroY | TraceFillStyle::ToNextInStack,
             ) => {
+                let opacity = style.get_fill_opacity();
+
                 gl.uniform4f(
                     Some(&programs.trace_color),
                     color[0],
                     color[1],
                     color[2],
-                    0.25 * color[3],
+                    opacity * color[3],
                 );
 
                 // Dash buffer hack

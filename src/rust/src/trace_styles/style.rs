@@ -35,6 +35,7 @@ pub struct TraceStyle {
     pub z_index: OrUnset<f64>,
     pub legend_priority: OrUnset<f64>,
     pub fill: OrUnset<TraceFillStyle>,
+    pub fill_opacity: OrUnset<f32>,
     pub stack_group: OrUnset<u32>,
 }
 
@@ -50,6 +51,7 @@ pub struct ComputedTraceStyle {
     pub z_index: f64,
     pub legend_priority: f64,
     pub fill: TraceFillStyle,
+    pub fill_opacity: f32,
     pub stack_group: Option<u32>,
 }
 
@@ -107,6 +109,10 @@ impl TraceStyle {
     pub fn get_fill(&self) -> TraceFillStyle {
         self.fill.unwrap_or_default()
     }
+    #[inline(always)]
+    pub fn get_fill_opacity(&self) -> f32 {
+        self.fill_opacity.unwrap_or(0.5)
+    }
 
     pub fn to_computed(&self) -> ComputedTraceStyle {
         ComputedTraceStyle {
@@ -118,6 +124,7 @@ impl TraceStyle {
             z_index: self.get_z_index(),
             legend_priority: self.get_legend_priority(),
             fill: self.get_fill(),
+            fill_opacity: self.get_fill_opacity(),
             stack_group: self.stack_group.into(),
         }
     }
