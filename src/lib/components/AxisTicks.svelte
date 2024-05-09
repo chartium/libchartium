@@ -32,7 +32,7 @@
   import { mapOpt } from "../utils/mapOpt.js";
   import type { UnitChangeActions } from "../state/core/axis.js";
 
-  export const events = createEventDispatcher<{
+  export const dispatchEvent = createEventDispatcher<{
     shift: Shift;
     reset: undefined;
   }>();
@@ -96,7 +96,7 @@
       if (axis === "x") delete shift.dy;
       if (axis === "y") delete shift.dx;
 
-      events("shift", shift);
+      dispatchEvent("shift", shift);
       visibleAction.set(undefined);
     },
   };
@@ -251,7 +251,7 @@
         button: MouseButtons.Left,
       }}
       role="presentation"
-      on:dblclick={() => events("reset")}
+      on:dblclick={() => dispatchEvent("reset")}
     >
       {#each ticks as tick}
         <span style={tickSpanStyle(tick)}>
@@ -284,7 +284,6 @@
   .label.y {
     height: fit-content;
     width: max-content;
-    transform: rotate(-90deg);
   }
   .ticks-container {
     height: 100%;
@@ -327,7 +326,6 @@
   .tooltip,
   .ticks {
     user-select: none;
-    pointer-events: none;
   }
 
   span {

@@ -90,10 +90,14 @@ export const mouseDrag = (
   let status: DragStatus | undefined = undefined;
 
   const onStart = (event: MouseEvent) => {
-    if (event.target !== elem) return;
+    if (!elem.contains(event.target as Node)) return;
     if (event.buttons !== params.button) return;
 
-    const point = { x: event.offsetX, y: event.offsetY };
+    const elemRect = elem.getBoundingClientRect();
+    const point = {
+      x: event.clientX - elemRect.x,
+      y: event.clientY - elemRect.y,
+    };
     status = new DragStatus(
       point,
       { ...point },
@@ -119,8 +123,10 @@ export const mouseDrag = (
 
     status.extents.width = elem.clientWidth;
     status.extents.height = elem.clientHeight;
-    status.to.x = event.offsetX;
-    status.to.y = event.offsetY;
+
+    const elemRect = elem.getBoundingClientRect();
+    status.to.x = event.clientX - elemRect.x;
+    status.to.y = event.clientY - elemRect.y;
 
     params.end(event, status);
     status = undefined;

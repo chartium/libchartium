@@ -35,11 +35,11 @@
     width: fit-content;
     height: fit-content;
 
-    :global(.cw) {
+    &.cw {
       transform: rotate(90deg);
     }
 
-    :global(.ccw) {
+    &.ccw {
       transform: rotate(-90deg);
     }
   }
