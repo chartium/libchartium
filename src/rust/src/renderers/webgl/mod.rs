@@ -234,8 +234,10 @@ impl WebGlRenderer {
                 stack_cache
                     .drain(in_stack_idx..)
                     .for_each(|(_, _, g)| g.destroy(&self.context));
+            }
 
-                // Insert previous data into the grid
+            // Insert previous data into the grid
+            if grid.layers() < in_stack_idx {
                 stack_cache[0..in_stack_idx]
                     .iter()
                     .for_each(|(bundle, trace, _)| {
@@ -251,7 +253,7 @@ impl WebGlRenderer {
                             .with_origin_at(x_range.from, 0.0);
 
                         grid.sum_add_points(data).count();
-                    })
+                    });
             }
         }
 

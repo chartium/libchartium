@@ -3,6 +3,7 @@ pub struct AdaptiveGrid {
     pub x: Vec<f64>,
     pub y: Vec<f64>,
     pub overlay: Vec<f64>,
+    layers: usize,
 }
 
 impl AdaptiveGrid {
@@ -15,6 +16,7 @@ impl AdaptiveGrid {
             x: Vec::with_capacity(capacity),
             y: Vec::with_capacity(capacity),
             overlay: Vec::with_capacity(capacity),
+            layers: 0,
         }
     }
 
@@ -23,6 +25,8 @@ impl AdaptiveGrid {
     }
 
     pub fn merge_overlay(&mut self) {
+        self.layers += 1;
+
         self.y
             .iter_mut()
             .zip(self.overlay.iter())
@@ -34,6 +38,10 @@ impl AdaptiveGrid {
         iter: impl IntoIterator<IntoIter = I>,
     ) -> SumAddIterator<'_, I> {
         SumAddIterator::new(self, iter)
+    }
+
+    pub fn layers(&self) -> usize {
+        self.layers
     }
 }
 
