@@ -24,7 +24,7 @@ export type TextMeasuringFunction = (text: string) => number;
 export interface AxisTicksProps {
   range$: Signal<Range>;
   currentDisplayUnit$: Signal<DisplayUnit>;
-  measureTextSize$: Signal<TextMeasuringFunction | undefined>;
+  measureTextSize$: Signal<TextMeasuringFunction>;
   lengthInPx$: Signal<number | undefined>;
 }
 
@@ -44,7 +44,7 @@ export const axisTicks$ = ({
     linearTicks(
       $(range$),
       $(lengthInPx$),
-      $(measureTextSize$) ?? ((s) => s.length * 10), // FIXME find a better solution
+      $(measureTextSize$),
       $(currentDisplayUnit$),
     ),
   );
@@ -70,6 +70,7 @@ function linearTicks(
   if (isDateFormat(displayUnit)) {
     throw TypeError("Trying to format a quantity with a date format");
   }
+
   return quantityTicks(range, axisSize, textSize, displayUnit);
 }
 
@@ -80,9 +81,50 @@ function quantityTicks(
   displayUnit: Unit | undefined,
 ): Tick[] {
   const numRange = toNumericRange(range, displayUnit);
-  const numTicks = getNumericTicks(numRange, axisSize, textSize);
+  if (numRange.to === numRange.from) return [];
 
-  return numTicks.map<Tick>(({ position, label }) => ({
+  let ticks: { label: string; position: number }[] = [];
+
+  const rangeWidth = numRange.to - numRange.from;
+
+  for (const multiple of niceMultiples) {
+    const oneOrderLess =
+      Math.floor(Math.log10(numRange.to - numRange.from)) - 1;
+    const distance = Math.pow(10, oneOrderLess) * multiple;
+    const maxTickNum = rangeWidth / distance;
+
+    const firstTickValue = numRange.from - (numRange.from % distance);
+    const tickValues = Array.from(
+      { length: maxTickNum + 2 },
+      (_, n) => firstTickValue + n * distance,
+    ).filter((tickVal) => tickVal >= numRange.from && tickVal <= numRange.to);
+    if (tickValues.length > MAX_TICK_COUNT) continue;
+
+    const decimalPlaces = uniqueDecimals(tickValues);
+    ticks = tickValues.map((val) => ({
+      label: qndFormat(val, { decimalPlaces }),
+      position: (val - numRange.from) / rangeWidth,
+    }));
+    const tickSize = ticks.reduce(
+      (prev, curr) =>
+        prev < textSize(curr.label) ? textSize(curr.label) : prev,
+      0,
+    ); // upper estimate
+    if (axisSize > maxTickNum * tickSize) break;
+  }
+  if (ticks.length == 0)
+    ticks = [
+      {
+        label: qndFormat((numRange.from + numRange.to) / 3),
+        position: 0.33,
+      },
+      {
+        label: qndFormat(((numRange.from + numRange.to) * 2) / 3),
+        position: 0.67,
+      },
+    ];
+
+  return ticks.map<Tick>(({ position, label }) => ({
     text: label,
     unit: displayUnit,
     position,
@@ -146,50 +188,4 @@ function dateTicks(
   }
 
   return result;
-}
-
-function getNumericTicks(
-  range: NumericRange,
-  axisSize: number,
-  textSize: (x: string) => number,
-): { label: string; position: number }[] {
-  if (range.to === range.from) return [];
-
-  const oneOrderLess = Math.floor(Math.log10(range.to - range.from)) - 1;
-
-  let ticks: { label: string; position: number }[] = [];
-
-  const rangeWidth = range.to - range.from;
-
-  for (const multiple of niceMultiples) {
-    const ticksDist = Math.pow(10, oneOrderLess) * multiple;
-    const tickNum = rangeWidth / ticksDist;
-    if (tickNum > MAX_TICK_COUNT) continue;
-
-    const firstTickValue = range.from - (range.from % ticksDist);
-    const tickValues = Array.from(
-      { length: tickNum + 1 },
-      (_, n) => firstTickValue + n * ticksDist,
-    );
-    const decimalPlaces = uniqueDecimals(tickValues);
-    ticks = tickValues.map((val) => ({
-      label: qndFormat(val, { decimalPlaces }),
-      position: (val - range.from) / rangeWidth,
-    }));
-    const tickSize = ticks.reduce(
-      (prev, curr) =>
-        prev < textSize(curr.label) ? textSize(curr.label) : prev,
-      0,
-    ); // upper estimate
-    if (axisSize > tickNum * tickSize) break;
-  }
-  ticks = ticks.filter((tick) => tick.position >= 0 && tick.position <= 1);
-  if (ticks.length == 0)
-    ticks = [
-      {
-        label: qndFormat((range.from + range.to) / 2),
-        position: 0.5,
-      },
-    ];
-  return ticks;
 }

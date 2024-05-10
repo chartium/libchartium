@@ -37,7 +37,7 @@ export interface AxisProps {
   visibleTraces$: Signal<TraceList>;
   displayUnitPreference$: Signal<DisplayUnitPreference>;
   showZero$: Signal<boolean>;
-  measureTextSize$: Signal<TextMeasuringFunction | undefined>;
+  measureTextSize$: Signal<TextMeasuringFunction>;
   lengthInPx$: Signal<number | undefined>;
 }
 
