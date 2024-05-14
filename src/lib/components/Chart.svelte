@@ -2,7 +2,13 @@
   import { onDestroy } from "svelte";
   import { chart$ as createChart$ } from "../state/core/chart.js";
 
-  import { mut, FlockRegistry, effect, cons } from "@mod.js/signals";
+  import {
+    mut,
+    FlockRegistry,
+    effect,
+    cons,
+    mutDerived,
+  } from "@mod.js/signals";
   import { setContext } from "svelte-typed-context";
   import { toolKey } from "./toolbar/toolKey.js";
   import { flockReduce } from "../utils/collection.js";
@@ -29,6 +35,7 @@
   import { type ChartMouseEvent, hover$ } from "../state/interactive/hover.js";
   import type { InterpolationStrategy } from "../../../dist/wasm/libchartium.js";
   import type { ChartStyleSheet } from "../state/guidelines/style.js";
+  import { derived } from "@mod.js/signals";
 
   // SECTION Props
   let klass: string = "";
@@ -122,9 +129,6 @@
   /** How many traces to show in the legend */
   export let legendTracesShown: number | "all" = "all";
 
-  /** Disables zooming and moving */ // TODO should this include context menu?
-  export let disableInteractivity: boolean = false;
-
   /** Disables possibility to change X units via context menu on chart axis */
   export let disableXUnitChanges: boolean = false;
   /** Disables possibility to change Y units via context menu on chart axis */
@@ -166,6 +170,20 @@
   const showYAxisZero$ = mut(showYAxisZero);
   $: showYAxisZero$.set(showYAxisZero);
 
+  /**  */
+  export let autoscaleY: boolean = true;
+  const autoscaleY$ = mut(autoscaleY);
+  $: autoscaleY$.set(autoscaleY);
+
+  /** Disallowes the user to manually change range in the direction of this axis */
+  export let disableUserRangeChanges: { x?: boolean; y?: boolean } = {};
+  const _disableUserRangeChanges$ = mut(disableUserRangeChanges);
+  $: _disableUserRangeChanges$.set(disableUserRangeChanges);
+  const disableUserRangeChanges$ = derived(($) => ({
+    x: $(_disableUserRangeChanges$).x ?? false,
+    y: ($(_disableUserRangeChanges$).y ?? false) || $(autoscaleY$),
+  }));
+
   export let margins: RangeMargins | undefined = undefined;
   const margins$ = mut(margins);
   $: margins$.set(margins);
@@ -191,6 +209,7 @@
     measureYAxisTextSize$,
     showXAxisZero$,
     showYAxisZero$,
+    autoscaleY$,
     xAxisDisplayUnitPreference$: defaultXUnit$,
     yAxisDisplayUnitPreference$: defaultYUnit$,
     defer: onDestroy,
@@ -217,9 +236,6 @@
   const yDisplayUnit$ = chart$.axes.y.currentDisplayUnit$;
 
   const visibleAction = mut<VisibleAction | undefined>(undefined);
-
-  /** How close to a trace is considered close enough to get only one trace info */
-  const _closenessDistance = 4;
 
   /** updates highilghted points in visibleAction */
   effect(($) => {
@@ -335,7 +351,7 @@
         unit={$yDisplayUnit$}
         hideLabelUnits={hideYLabelUnits}
         {visibleAction}
-        {disableInteractivity}
+        disableInteractivity={disableUserRangeChanges$.map((d) => d.y)}
         disableUnitChange={disableYUnitChanges}
         hideTicks={hideYTicks}
         on:shift={(d) => chart$.axes.y.shiftRange(d.detail.dy ?? 0)}
@@ -353,7 +369,7 @@
         unit={$xDisplayUnit$}
         hideLabelUnits={hideXLabelUnits}
         {visibleAction}
-        {disableInteractivity}
+        disableInteractivity={disableUserRangeChanges$.map((d) => d.y)}
         disableUnitChange={disableXUnitChanges}
         hideTicks={hideXTicks}
         on:shift={(d) => chart$.axes.x.shiftRange(d.detail.dx ?? 0)}
@@ -389,7 +405,10 @@
         {hideYRuler}
         {hideXBubble}
         {hideYBubble}
-        {disableInteractivity}
+        disableUserRangeChanges$={derived(($) => ({
+          x: $(disableUserRangeChanges$).x,
+          y: $(disableUserRangeChanges$).y,
+        }))}
         traceHovered={$hoveredTrace$ !== undefined}
         commonXRuler={commonXRuler$}
         commonYRuler={commonYRuler$}
@@ -397,12 +416,30 @@
         yDisplayUnit={$yDisplayUnit$}
         on:reset={() => chart$.resetAllRanges()}
         on:zoom={(d) => {
-          chart$.axes.x.zoomRange(d.detail.x);
-          chart$.axes.y.zoomRange(d.detail.y);
+          if (
+            !disableUserRangeChanges$.get().x &&
+            !(d.detail.x.from == 0 && d.detail.x.to == 1)
+          )
+            chart$.axes.x.zoomRange(d.detail.x);
+          if (
+            !disableUserRangeChanges$.get().y &&
+            !(d.detail.y.from == 0 && d.detail.y.to == 1)
+          )
+            chart$.axes.y.zoomRange(d.detail.y);
         }}
         on:shift={(d) => {
-          chart$.axes.x.shiftRange(d.detail.dx ?? 0);
-          chart$.axes.y.shiftRange(d.detail.dy ?? 0);
+          if (
+            d.detail.dx &&
+            d.detail.dx !== 0 &&
+            !disableUserRangeChanges$.get().x
+          )
+            chart$.axes.x.shiftRange(d.detail.dx);
+          if (
+            d.detail.dy &&
+            d.detail.dy !== 0 &&
+            !disableUserRangeChanges$.get().y
+          )
+            chart$.axes.y.shiftRange(d.detail.dy);
         }}
         on:relativeMousemove={(e) =>
           hoverEvent$.set({ name: "move", event: asAny(e) })}

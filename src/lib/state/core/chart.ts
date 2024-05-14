@@ -1,4 +1,4 @@
-import { Defer, type DeferLike, type Signal } from "@mod.js/signals";
+import { Defer, cons, type DeferLike, type Signal } from "@mod.js/signals";
 import type { ChartiumController, TraceList } from "../../index.js";
 import { axis$, type Axis } from "./axis.js";
 import { chartCanvas$ } from "./chartCanvas.js";
@@ -22,6 +22,7 @@ export interface ChartProps {
 
   showXAxisZero$: Signal<boolean>;
   showYAxisZero$: Signal<boolean>;
+  autoscaleY$: Signal<boolean>;
   xAxisDisplayUnitPreference$: Signal<DisplayUnitPreference>;
   yAxisDisplayUnitPreference$: Signal<DisplayUnitPreference>;
 
@@ -48,6 +49,7 @@ export const chart$ = ({
   measureYAxisTextSize$,
   showXAxisZero$,
   showYAxisZero$,
+  autoscaleY$,
   xAxisDisplayUnitPreference$,
   yAxisDisplayUnitPreference$,
   defer,
@@ -61,6 +63,7 @@ export const chart$ = ({
     measureYAxisTextSize$,
     showXAxisZero$,
     showYAxisZero$,
+    autoscaleY$,
     xAxisDisplayUnitPreference$,
     yAxisDisplayUnitPreference$,
 
@@ -76,6 +79,7 @@ const sanitizedChart$ = ({
   measureYAxisTextSize$,
   showXAxisZero$,
   showYAxisZero$,
+  autoscaleY$,
   xAxisDisplayUnitPreference$,
   yAxisDisplayUnitPreference$,
   defer,
@@ -88,18 +92,21 @@ const sanitizedChart$ = ({
     canvas$,
   });
 
+  const x = axis$({
+    axis: "x",
+    visibleTraces$,
+    lengthInPx$: canvasLogicalSize$.map((size) => size?.width),
+    measureTextSize$: measureXAxisTextSize$.map(
+      (fn) => fn ?? ((s) => s.length * 10),
+    ), // FIXME find a better solution,,
+    displayUnitPreference$: xAxisDisplayUnitPreference$,
+    showZero$: showXAxisZero$,
+    autoscale$: cons(false),
+    resetAllRanges,
+  });
+
   const axes = {
-    x: axis$({
-      axis: "x",
-      visibleTraces$,
-      lengthInPx$: canvasLogicalSize$.map((size) => size?.width),
-      measureTextSize$: measureXAxisTextSize$.map(
-        (fn) => fn ?? ((s) => s.length * 10),
-      ), // FIXME find a better solution,,
-      displayUnitPreference$: xAxisDisplayUnitPreference$,
-      showZero$: showXAxisZero$,
-      resetAllRanges,
-    }),
+    x,
     y: axis$({
       axis: "y",
       visibleTraces$,
@@ -107,6 +114,8 @@ const sanitizedChart$ = ({
       measureTextSize$: measureYAxisTextSize$.map((fn) => fn ?? ((s) => 10)), // FIXME find a better solution,
       displayUnitPreference$: yAxisDisplayUnitPreference$,
       showZero$: showYAxisZero$,
+      autoscale$: autoscaleY$,
+      xRange$: x.range$,
       resetAllRanges,
     }),
   };

@@ -39,6 +39,8 @@ export interface AxisProps {
   showZero$: Signal<boolean>;
   measureTextSize$: Signal<TextMeasuringFunction>;
   lengthInPx$: Signal<number | undefined>;
+  autoscale$: Signal<boolean>;
+  xRange$?: Signal<Range>;
 }
 
 export interface Axis {
@@ -62,13 +64,17 @@ export const axis$ = ({
   showZero$,
   measureTextSize$,
   lengthInPx$,
+  autoscale$,
+  xRange$,
 }: AxisProps): Axis => {
   const { range$, resetRange, shiftRange, zoomRange } = axisRange$({
     axis,
     resetAllRanges,
     visibleTraces$,
     showZero$: showZero$.skipEqual(),
+    autoscale$: autoscale$?.skipEqual(),
     fractionalMargins$: axis === "y" ? cons([0.1, 0.1]) : cons([0, 0]),
+    xRange$,
   });
 
   const { dataUnit$, currentDisplayUnit$, unitChangeActions$ } = axisUnits$({

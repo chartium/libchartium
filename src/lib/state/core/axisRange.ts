@@ -16,7 +16,9 @@ export interface AxisRangeProps {
   resetAllRanges: () => void;
   visibleTraces$: Signal<TraceList>;
   showZero$: Signal<boolean>;
+  autoscale$: Signal<boolean>;
   fractionalMargins$: Signal<[number, number]>;
+  xRange$?: Signal<Range>;
 }
 
 export interface AxisRange {
@@ -31,7 +33,9 @@ export const axisRange$ = ({
   resetAllRanges,
   visibleTraces$,
   showZero$,
+  autoscale$,
   fractionalMargins$,
+  xRange$,
 }: AxisRangeProps): AxisRange => {
   const tracesRange$ = derived(($) =>
     axis === "x" ? $(visibleTraces$).range : $(visibleTraces$).getYRange(),
@@ -51,7 +55,15 @@ export const axisRange$ = ({
   let isAutozoomed = true;
   const range$ = mutDerived<Range>(($, { prev }) => {
     const def = $(defaultRange$);
-
+    if ($(autoscale$)) {
+      if (xRange$ === undefined) return def;
+      return preventEmptyRange(
+        addFractionalMarginsToRange(
+          $(visibleTraces$).getYRange($(xRange$)),
+          $(fractionalMargins$),
+        ),
+      );
+    }
     if (isAutozoomed || prev === undefined) {
       return def;
     }
@@ -70,11 +82,19 @@ export const axisRange$ = ({
   };
 
   const zoomRange = (r: NumericRange) => {
+    if (autoscale$.get()) {
+      console.warn("Tried to change the yRange when autoscale is active");
+      return;
+    }
     isAutozoomed = false;
     range$.set(computeZoomedRange(range$.get(), r));
   };
 
   const shiftRange = (s: number) => {
+    if (autoscale$.get()) {
+      console.warn("Tried to change the yRange when autoscale is active");
+      return;
+    }
     isAutozoomed = false;
     range$.set(computeShiftedRange(range$.get(), s));
   };

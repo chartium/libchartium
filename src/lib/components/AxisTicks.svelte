@@ -52,7 +52,7 @@
 
   export let disableUnitChange: boolean;
 
-  export let disableInteractivity: boolean;
+  export let disableInteractivity: Signal<boolean>;
 
   export let visibleAction: WritableSignal<VisibleAction | undefined>;
 
@@ -76,7 +76,7 @@
   const dragCallbacks: MouseDragCallbacks = {
     start: () => {},
     move: (_, status) => {
-      if (disableInteractivity) return;
+      if (disableInteractivity.get()) return; // TODO tell the user he aint gettin any of dis?
       const shift = status.relativeShift;
 
       if (axis === "x") {

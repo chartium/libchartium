@@ -35,7 +35,7 @@
 
   import type { ContextItem } from "../contextMenu/contextMenu.js";
   import GenericContextMenu from "../contextMenu/GenericContextMenu.svelte";
-  import type { WritableSignal } from "@mod.js/signals";
+  import type { Signal, WritableSignal } from "@mod.js/signals";
   import RulerBubble from "./RulerBubble.svelte";
   import type { Chart } from "../state/core/chart.js";
   import { P, match } from "ts-pattern";
@@ -55,7 +55,7 @@
   export let hideYRuler: boolean;
   export let hideXBubble: boolean;
   export let hideYBubble: boolean;
-  export let disableInteractivity: boolean;
+  export let disableUserRangeChanges$: Signal<{ x?: boolean; y?: boolean }>;
   export let traceHovered: boolean;
   export let commonXRuler: WritableSignal<ChartValue | undefined>;
   export let commonYRuler: WritableSignal<ChartValue | undefined>;
@@ -101,10 +101,13 @@
       ctx.strokeStyle = color;
       ctx.lineWidth = 1;
 
-      if (action && action.zoom && !disableInteractivity) {
-        drawZoom(action.zoom);
-      } else if (action && action.shift && !disableInteractivity) {
-        drawShift(action.shift);
+      const { x: xDisabled = false, y: yDisabled = false } =
+        disableUserRangeChanges$.get();
+
+      if (action && action.zoom && !(xDisabled && yDisabled)) {
+        drawZoom(action.zoom, { xDisabled, yDisabled });
+      } else if (action && action.shift && !(xDisabled && yDisabled)) {
+        drawShift(action.shift, { xDisabled, yDisabled });
       } else if (chart) {
         // Global Ruler
         // https://open.spotify.com/track/3vFZheR74pxUkzxqhXTZ2X
@@ -146,7 +149,10 @@
     });
   }
 
-  function drawZoom(zoom: Zoom) {
+  function drawZoom(
+    zoom: Zoom,
+    options: { xDisabled: boolean; yDisabled: boolean },
+  ) {
     const lineStyle: DrawStyle = {
       dash: [10, 5],
     };
@@ -159,19 +165,18 @@
     const xTo = zoom.x.to * overlayWidth;
     const yFrom = (1 - zoom.y.from) * overlayHeight;
     const yTo = (1 - zoom.y.to) * overlayHeight;
-
     // the big lines
-    if (zoom.x.from !== zoom.x.to) {
+    if (zoom.x.from !== zoom.x.to && !options.xDisabled) {
       drawSegment(ctx, [xFrom, 0], [xFrom, overlayHeight], lineStyle);
       drawSegment(ctx, [xTo, 0], [xTo, overlayHeight], lineStyle);
     }
-    if (zoom.y.from !== zoom.y.to) {
+    if (zoom.y.from !== zoom.y.to && !options.yDisabled) {
       drawSegment(ctx, [0, yFrom], [overlayWidth, yFrom], lineStyle);
       drawSegment(ctx, [0, yTo], [overlayWidth, yTo], lineStyle);
     }
 
     // The little 1D zoom windows
-    if (zoom.y.from === zoom.y.to) {
+    if (zoom.y.from === zoom.y.to && !options.xDisabled) {
       drawSegment(
         ctx,
         [xFrom, yFrom - oneDZoomWindow],
@@ -186,7 +191,7 @@
       );
     }
 
-    if (zoom.x.from === zoom.x.to) {
+    if (zoom.x.from === zoom.x.to && !options.yDisabled) {
       drawSegment(
         ctx,
         [xFrom - oneDZoomWindow, yFrom],
@@ -229,6 +234,8 @@
   const leftDragCallbacks: MouseDragCallbacks = {
     start: (_) => {},
     move: (_, status) => {
+      const disableInteractivity =
+        disableUserRangeChanges$.get().x && disableUserRangeChanges$.get().y;
       if (disableInteractivity) {
         console.warn("Chart interactivity disabled!");
         return;
@@ -239,18 +246,37 @@
       }));
     },
     end: (_, status) => {
-      if (disableInteractivity) {
-        console.warn("Chart interactivity disabled!");
-        return;
+      const xDisabled = disableUserRangeChanges$.get().x;
+      const yDisabled = disableUserRangeChanges$.get().y;
+      if (status.beyondThreshold("x") && xDisabled) {
+        console.warn(
+          "Tried to interact with X but that interactivity is disabled",
+        );
       }
+      if (status.beyondThreshold("y") && yDisabled) {
+        console.warn(
+          "Tried to interact with Y but that interactivity is disabled",
+        );
+      }
+
       visibleAction.update((action) => ({
         highlightedPoints: action?.highlightedPoints,
       }));
-      if (status.beyondThreshold("any")) events("zoom", status.relativeZoom);
+
+      const notZoomed = { from: 0, to: 1 };
+      const zoom = {
+        x: xDisabled ? notZoomed : status.relativeZoom.x,
+        y: yDisabled ? notZoomed : status.relativeZoom.y,
+      };
+
+      if (status.beyondThreshold("any")) events("zoom", zoom);
     },
   };
 
-  function drawShift(shift: Shift) {
+  function drawShift(
+    shift: Shift,
+    options: { xDisabled: boolean; yDisabled: boolean },
+  ) {
     const wingLength = 20;
     const spreadRad = shift.dx && shift.dy ? Math.PI / 5 : Math.PI * 0.4;
     // const lineStyle: canvas.DrawStyle = {
@@ -261,11 +287,14 @@
       dash: [20, 5],
     };
 
-    if (shift.dx && shift.dy) {
+    const shiftingInX = shift.dx !== undefined && !options.xDisabled;
+    const shiftingInY = shift.dy !== undefined && !options.yDisabled;
+
+    if (shiftingInX && shiftingInY) {
       const fromX = shift.origin.x * overlayWidth;
-      const toX = (shift.origin.x + shift.dx) * overlayWidth;
+      const toX = (shift.origin.x + shift.dx!) * overlayWidth;
       const fromY = (1 - shift.origin.y) * overlayHeight;
-      const toY = (1 - shift.origin.y - shift.dy) * overlayHeight;
+      const toY = (1 - shift.origin.y - shift.dy!) * overlayHeight;
 
       drawArrow(
         ctx,
@@ -275,9 +304,9 @@
         spreadRad,
         arrowStyle,
       );
-    } else if (shift.dx) {
+    } else if (shiftingInX) {
       const fromX = shift.origin.x * overlayWidth;
-      const toX = (shift.origin.x + shift.dx) * overlayWidth;
+      const toX = (shift.origin.x + shift.dx!) * overlayWidth;
 
       // canvas.drawSegment(ctx, [fromX, 0], [fromX, overlayHeight], lineStyle);
       // canvas.drawSegment(ctx, [toX, 0], [toX, overlayHeight], lineStyle);
@@ -289,9 +318,9 @@
         spreadRad,
         arrowStyle,
       );
-    } else if (shift.dy) {
+    } else if (shiftingInY) {
       const fromY = (1 - shift.origin.y) * overlayHeight;
-      const toY = (1 - shift.origin.y - shift.dy) * overlayHeight;
+      const toY = (1 - shift.origin.y - shift.dy!) * overlayHeight;
 
       // canvas.drawSegment(ctx, [0, fromY], [overlayWidth, fromY], lineStyle);
       // canvas.drawSegment(ctx, [0, toY], [overlayWidth, toY], lineStyle);
@@ -309,6 +338,8 @@
   const rightDragCallbacks: MouseDragCallbacks = {
     start: () => {},
     move: (_, status) => {
+      const disableInteractivity =
+        disableUserRangeChanges$.get().x && disableUserRangeChanges$.get().y;
       if (disableInteractivity) {
         console.log("Chart interactivity disabled!");
         return;
@@ -319,14 +350,27 @@
       }));
     },
     end: (_, status) => {
-      if (disableInteractivity) {
-        console.log("Chart interactivity disabled!");
-        return;
+      const xDisabled = disableUserRangeChanges$.get().x;
+      const yDisabled = disableUserRangeChanges$.get().y;
+      if (status.beyondThreshold("x") && xDisabled) {
+        console.warn(
+          "Tried to interact with X but that interactivity is disabled",
+        );
+      }
+      if (status.beyondThreshold("y") && yDisabled) {
+        console.warn(
+          "Tried to interact with Y but that interactivity is disabled",
+        );
       }
       visibleAction.update((action) => ({
         highlightedPoints: action?.highlightedPoints,
       }));
-      events("shift", status.relativeShift);
+      const shift = {
+        dx: xDisabled ? 0 : status.relativeShift.dx,
+        dy: yDisabled ? 0 : status.relativeShift.dy,
+        ...status.relativeShift,
+      };
+      events("shift", shift);
     },
   };
 

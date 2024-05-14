@@ -510,15 +510,14 @@ export class TraceList {
   /**
    * Calculate the y axis range of this trace list.
    */
-  getYRange(): Range {
-    if (this.#yRange) return this.#yRange;
-
+  getYRange(xRange?: Range): Range {
+    if (this.#yRange && xRange === undefined) return this.#yRange;
     const { getStackData, freeStackData } = this.stackHelper(this.#p.bundles);
 
     const range = this[LAZY].traceHandleStacks.reduce<Range | undefined>(
       (prev, [stack, handles]) => {
         const { bundles, factors, xUnit, yUnit } = getStackData();
-        const range = toNumericRange(this.range, xUnit);
+        const range = toNumericRange(xRange ?? this.range, xUnit);
 
         const yRange =
           stack === null
