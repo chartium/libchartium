@@ -3,11 +3,11 @@
   import ToolExportToPNG from "./ToolExportToPNG.svelte";
   import ToolExportToCsv from "./ToolExportToCSV.svelte";
   import ToolFullscreen from "./ToolFullscreen.svelte";
+  import ToolAutoscaleY from "./ToolAutoscaleY.svelte";
 </script>
 
-<!-- <ToolbarButton title="Autoscale Y axis">
-  <Fa icon={faUpDown} />
-</ToolbarButton>
+<ToolAutoscaleY />
+<!--
 <ToolbarButton title="Change timezones">
   <Fa icon={faUserClock} />
 </ToolbarButton> -->

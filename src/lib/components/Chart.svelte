@@ -16,7 +16,7 @@
   import ChartGrid from "./ChartGrid.svelte";
   import AxisTicks from "./AxisTicks.svelte";
   import Guidelines from "./Guidelines.svelte";
-  import ActionsOverlay from "./ActionsOverlay.svelte";
+  import ActionsOverlay, { oneDZoomWindow } from "./ActionsOverlay.svelte";
   import DefaultToolbar from "./toolbar/DefaultToolbar.svelte";
   import ChartLegend from "./Legend.svelte";
   import TraceTooltip from "./tooltip/TraceTooltip.svelte";
@@ -171,7 +171,7 @@
   $: showYAxisZero$.set(showYAxisZero);
 
   /**  */
-  export let autoscaleY: boolean = true;
+  export let autoscaleY: boolean = false;
   const autoscaleY$ = mut(autoscaleY);
   $: autoscaleY$.set(autoscaleY);
 
@@ -287,18 +287,35 @@
     })
     .pipe(onDestroy);
 
+  const notifyOfAutozoom$ = derived(($) => {
+    if (!$(autoscaleY$)) return false;
+    const shift = $(visibleAction)?.shift;
+    if (shift?.dy !== undefined && shift.dy !== 0) return true;
+    const zoom = $(visibleAction)?.zoom;
+    if (zoom === undefined) return false;
+    const isZoominY =
+      Math.abs(zoom.y.from - zoom.y.to) >
+      chart$.valueOnAxis("y").fromLogicalPixels(oneDZoomWindow).toFraction();
+    if (isZoominY) return true;
+    return false;
+  }).skipEqual();
+
   let parentDiv: HTMLDivElement;
   let wrapDiv: HTMLDivElement;
-  export function getWrapDiv(): HTMLDivElement {
-    return wrapDiv;
-  }
+
   setContext(toolKey, {
-    getWrapDiv,
+    notifyOfAutozoom$,
+    getWrapDiv: () => {
+      return wrapDiv;
+    },
     toggleLegend: () => {
       hideLegend = !hideLegend;
     },
     getTracelist: () => traces,
     getTitle: () => title,
+    toggleAutoscaleY: () => {
+      autoscaleY = !autoscaleY;
+    },
     toggleFullscreen: () => {
       fullscreen = !fullscreen;
       if (fullscreen) {
@@ -416,16 +433,8 @@
         yDisplayUnit={$yDisplayUnit$}
         on:reset={() => chart$.resetAllRanges()}
         on:zoom={(d) => {
-          if (
-            !disableUserRangeChanges$.get().x &&
-            !(d.detail.x.from == 0 && d.detail.x.to == 1)
-          )
-            chart$.axes.x.zoomRange(d.detail.x);
-          if (
-            !disableUserRangeChanges$.get().y &&
-            !(d.detail.y.from == 0 && d.detail.y.to == 1)
-          )
-            chart$.axes.y.zoomRange(d.detail.y);
+          chart$.axes.x.zoomRange(d.detail.x);
+          chart$.axes.y.zoomRange(d.detail.y);
         }}
         on:shift={(d) => {
           if (

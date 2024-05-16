@@ -5,6 +5,9 @@
     shift?: Shift;
     highlightedPoints?: HighlightPoint[];
   };
+
+  /** If the zoom rectangle has one side this big or smaller the zoom will be just 1D */
+  export const oneDZoomWindow = 20;
 </script>
 
 <script lang="ts">
@@ -70,9 +73,6 @@
   onMount(() => {
     ctx = canvasRef.getContext("2d")!;
   });
-
-  /** If the zoom rectangle has one side this big or smaller the zoom will be just 1D */
-  const oneDZoomWindow = 20;
 
   $: $visibleAction, scheduleDraw();
   $: offsetMousePosition, scheduleDraw();
@@ -175,8 +175,9 @@
       drawSegment(ctx, [0, yTo], [overlayWidth, yTo], lineStyle);
     }
 
+    const anyDisabled = options.xDisabled || options.yDisabled;
     // The little 1D zoom windows
-    if (zoom.y.from === zoom.y.to && !options.xDisabled) {
+    if (zoom.y.from === zoom.y.to && !anyDisabled) {
       drawSegment(
         ctx,
         [xFrom, yFrom - oneDZoomWindow],
@@ -191,7 +192,7 @@
       );
     }
 
-    if (zoom.x.from === zoom.x.to && !options.yDisabled) {
+    if (zoom.x.from === zoom.x.to && !anyDisabled) {
       drawSegment(
         ctx,
         [xFrom - oneDZoomWindow, yFrom],
@@ -240,6 +241,7 @@
         console.warn("Chart interactivity disabled!");
         return;
       }
+      console.log(status);
       visibleAction.update((action) => ({
         ...action,
         zoom: status.relativeZoom,
@@ -250,12 +252,12 @@
       const yDisabled = disableUserRangeChanges$.get().y;
       if (status.beyondThreshold("x") && xDisabled) {
         console.warn(
-          "Tried to interact with X but that interactivity is disabled",
+          "Tried to interact with X but that interactivity is disabled", // FIXME yo rozhodni se jestli se budou propagovat at all or
         );
       }
       if (status.beyondThreshold("y") && yDisabled) {
         console.warn(
-          "Tried to interact with Y but that interactivity is disabled",
+          "Tried to interact with Y but that interactivity is disabled", // FIXME yo rozhodni se jestli se budou propagovat at all or
         );
       }
 
@@ -278,7 +280,9 @@
     options: { xDisabled: boolean; yDisabled: boolean },
   ) {
     const wingLength = 20;
-    const spreadRad = shift.dx && shift.dy ? Math.PI / 5 : Math.PI * 0.4;
+    const anyDisabled = options.xDisabled || options.yDisabled;
+    const spreadRad =
+      shift.dx && shift.dy && !anyDisabled ? Math.PI / 5 : Math.PI * 0.4;
     // const lineStyle: canvas.DrawStyle = {
     //   dash: [10, 5],
     // };
