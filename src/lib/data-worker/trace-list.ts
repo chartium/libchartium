@@ -557,6 +557,7 @@ export class TraceList {
     traceId: string;
     x: ChartValue;
     y: ChartValue;
+    displayY: ChartValue;
   }[] {
     const yToNum = (y: ChartValue) => toNumeric(y, this.yDataUnit);
 
@@ -564,7 +565,8 @@ export class TraceList {
       handle: TraceHandle;
       x: ChartValue;
       y: ChartValue;
-      distance: number;
+      displayY: ChartValue;
+      dist: number;
     }> = [];
 
     const intersecting = this.#p.bundles.filter((b) => {
@@ -591,8 +593,8 @@ export class TraceList {
           );
 
           for (const p of pts) {
-            const distance = Math.abs(yToNum(point.y) - yToNum(p.y));
-            closestPoints.push({ ...p, distance });
+            const dist = yToNum(p.dist);
+            closestPoints.push({ ...p, dist });
           }
         }
       } else {
@@ -606,35 +608,35 @@ export class TraceList {
           bundles,
           factors,
           handles,
+          howMany,
           x,
           y,
           interpolation,
-        ) as lib.TracePoint | undefined;
+        ) as lib.TracePoint[];
 
-        if (p) {
-          closestPoints = [
-            {
-              x: toChartValue(p.x, xUnit),
-              y: toChartValue(p.y, yUnit),
-              handle: p.handle,
-              distance: 0,
-            },
-          ];
-          break;
-        }
+        p.forEach((p) => {
+          closestPoints.push({
+            handle: p.handle,
+            x: toChartValue(p.x, xUnit),
+            y: toChartValue(p.y, yUnit),
+            displayY: toChartValue(p.displayY, yUnit),
+            dist: p.dist,
+          });
+        });
       }
     }
 
     freeStackData();
 
     // leave only the requested number of closest points
-    closestPoints.sort((a, b) => a.distance - b.distance);
+    closestPoints.sort((a, b) => a.dist - b.dist);
     closestPoints = closestPoints.slice(0, howMany);
 
-    return closestPoints.map(({ handle, x, y }) => ({
+    return closestPoints.map(({ handle, x, y, displayY }) => ({
       traceId: traceIds.get(handle)!,
       x,
       y,
+      displayY,
     }));
   }
 

@@ -30,6 +30,7 @@ export interface CloseTrace {
   style: ComputedTraceStyle;
   x: ChartValue;
   y: ChartValue;
+  displayY: ChartValue;
 }
 
 export interface HoveredTrace extends CloseTrace {
@@ -108,11 +109,12 @@ export const hover$ = ({
 
   const nearestTracesSortedByCloseness$ = derived(($): CloseTrace[] => {
     const traces = $(visibleTraces$);
-    return $(unstyledNearestTraces$).map(({ traceId, x, y }) => ({
+    return $(unstyledNearestTraces$).map(({ traceId, x, y, displayY }) => ({
       style: traces.getStyle(traceId),
       traceId,
       x,
       y,
+      displayY,
     }));
   });
 
@@ -124,7 +126,7 @@ export const hover$ = ({
     if (x === undefined || y === undefined) return false;
 
     const hoverPoint = point().fromQuantities(x, y);
-    const closestPoint = point().fromQuantities(trace.x, trace.y);
+    const closestPoint = point().fromQuantities(trace.x, trace.displayY);
 
     const dist = hoverPoint.vectorTo(closestPoint).magnitudeInLogicalPixels();
 

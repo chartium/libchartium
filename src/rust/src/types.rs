@@ -52,8 +52,11 @@ pub struct TraceMetas {
 
 #[derive(Tsify, Serialize, Deserialize, Clone, Copy)]
 #[tsify(into_wasm_abi, from_wasm_abi)]
+#[serde(rename_all = "camelCase")]
 pub struct TracePoint {
     pub handle: TraceHandle,
     pub x: f64,
     pub y: f64,
+    pub display_y: f64,
+    pub dist: f64,
 }

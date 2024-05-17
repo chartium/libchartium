@@ -45,7 +45,13 @@ impl BundleRc {
         dists
             .into_iter()
             .take(n)
-            .map(|(handle, (x, y), _)| TracePoint { handle, x, y })
+            .map(|(handle, (x, trace_y), _)| TracePoint {
+                handle,
+                x,
+                y: trace_y,
+                display_y: trace_y,
+                dist: (trace_y - y).abs(),
+            })
             .map(|tp| serde_wasm_bindgen::to_value(&tp).unwrap())
             .collect()
     }
@@ -116,7 +122,7 @@ impl BundleRc {
 
     /// Returns true if the given trace gets larger than the given
     /// threshold at any point in the specified range
-    pub fn is_trace_over_treshold(
+    pub fn is_trace_over_threshold(
         &self,
         trace: TraceHandle,
         x_range: NumericRange,
@@ -140,7 +146,7 @@ impl BundleRc {
     ) -> Box<[JsValue]> {
         traces
             .iter()
-            .map(|&t| self.contains_trace(t) && self.is_trace_over_treshold(t, x_range, tres))
+            .map(|&t| self.contains_trace(t) && self.is_trace_over_threshold(t, x_range, tres))
             .map(|b| b.into())
             .collect()
     }
@@ -151,10 +157,11 @@ pub fn find_closest_in_stack(
     bundles: &BundleVec,
     factors: &[f64],
     stack: &[TraceHandle],
+    how_many: usize,
     x: f64,
     y: f64,
     interpolation: InterpolationStrategy,
-) -> JsValue {
+) -> Box<[JsValue]> {
     assert_eq!(
         bundles.len(),
         factors.len(),
@@ -162,6 +169,7 @@ pub fn find_closest_in_stack(
     );
 
     let mut sum = 0.;
+    let mut traces = Vec::<TracePoint>::with_capacity(how_many);
 
     for handle in stack {
         let Some((bundle, factor)) = bundles
@@ -178,19 +186,37 @@ pub fn find_closest_in_stack(
 
         let trace_y = value.1 * factor;
 
-        if is_between(y, sum, sum + trace_y) {
-            return serde_wasm_bindgen::to_value(&TracePoint {
-                x: value.0,
-                y: sum + trace_y,
-                handle: *handle,
-            })
-            .unwrap();
+        let dist = (sum + trace_y - y).abs();
+
+        match traces.binary_search_by(|t| t.dist.total_cmp(&dist)) {
+            Err(i) if i == how_many => {
+                // Noop
+            }
+            Ok(i) | Err(i) => {
+                if traces.len() == how_many {
+                    traces.pop();
+                }
+
+                traces.insert(
+                    i,
+                    TracePoint {
+                        x: value.0,
+                        y: value.1,
+                        display_y: sum + trace_y,
+                        dist,
+                        handle: *handle,
+                    },
+                )
+            }
         }
 
         sum += trace_y;
     }
 
-    JsValue::null()
+    traces
+        .into_iter()
+        .map(|tp| serde_wasm_bindgen::to_value(&tp).unwrap())
+        .collect()
 }
 
 #[wasm_bindgen]
@@ -266,12 +292,4 @@ pub fn find_stack_extents(
     }
 
     y_range
-}
-
-fn is_between(val: f64, from: f64, to: f64) -> bool {
-    if from <= to {
-        from <= val && val <= to
-    } else {
-        from >= val && val >= to
-    }
 }

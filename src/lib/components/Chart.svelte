@@ -2,13 +2,7 @@
   import { onDestroy } from "svelte";
   import { chart$ as createChart$ } from "../state/core/chart.js";
 
-  import {
-    mut,
-    FlockRegistry,
-    effect,
-    cons,
-    mutDerived,
-  } from "@mod.js/signals";
+  import { mut, FlockRegistry, effect, cons } from "@mod.js/signals";
   import { setContext } from "svelte-typed-context";
   import { toolKey } from "./toolbar/toolKey.js";
   import { flockReduce } from "../utils/collection.js";
@@ -245,7 +239,7 @@
     } else {
       const points = closestTraces.map((trace) => ({
         x: trace.x,
-        y: trace.y,
+        y: trace.displayY,
         color: trace.style.color,
         radius: trace.style["line-width"],
       }));

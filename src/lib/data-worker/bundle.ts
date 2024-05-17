@@ -64,7 +64,7 @@ export class Bundle {
     const rangeNum = this.rangeInView(range).inBundleUnits();
 
     return filter(handles, (h) =>
-      this.boxed.is_trace_over_treshold(h, rangeNum, thresholdNum),
+      this.boxed.is_trace_over_threshold(h, rangeNum, thresholdNum),
     );
   }
 
@@ -77,6 +77,8 @@ export class Bundle {
     handle: TraceHandle;
     x: ChartValue;
     y: ChartValue;
+    displayY: ChartValue;
+    dist: ChartValue;
   }> {
     return this.boxed
       .find_n_closest_points(
@@ -87,10 +89,12 @@ export class Bundle {
         undefined,
         interpolation,
       )
-      .map(({ handle, x, y }: lib.TracePoint) => ({
+      .map(({ handle, x, y, displayY, dist }: lib.TracePoint) => ({
         handle,
         x: toChartValue(x, this.xDataUnit),
         y: toChartValue(y, this.yDataUnit),
+        displayY: toChartValue(displayY, this.yDataUnit),
+        dist: toChartValue(dist, this.yDataUnit),
       }));
   }
 }
