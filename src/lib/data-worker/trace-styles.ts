@@ -1,4 +1,8 @@
-import { MISSING_COLOR, colorStringToColor } from "../utils/color.js";
+import {
+  MISSING_COLOR,
+  colorStringToColor,
+  get2DContext,
+} from "../utils/color.js";
 import { traceIds } from "./controller.js";
 import { lib } from "./wasm.js";
 
@@ -90,7 +94,8 @@ const oxidizeColor = (
     const [red, green, blue, alpha] = colorStringToColor(s);
     return { exact: { red, green, blue, alpha } };
   } catch (e) {
-    console.warn("Failed while setting color.", e);
+    if (get2DContext() !== undefined)
+      console.warn("Failed while setting color.", e);
     return { exact: MISSING_COLOR };
   }
 };

@@ -17,7 +17,7 @@ export type SrgbColor =
   | `color(srgb ${number} ${number} ${number} / ${number})`;
 
 // Wrap OffscreenCanvas use, so that it doesn't throw in SSR
-const get2DContext = (() => {
+export const get2DContext = (() => {
   let canvas: OffscreenCanvas;
   let context: OffscreenCanvasRenderingContext2D | undefined;
   return () => {
