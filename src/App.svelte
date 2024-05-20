@@ -102,7 +102,7 @@
   let wrapDiv: HTMLDivElement;
 </script>
 
-<main class="dark">
+<main>
   <h1>Chartium test page</h1>
   {#await traces then traces}
     <div style="height:400px;width:900px;" bind:this={wrapDiv}>

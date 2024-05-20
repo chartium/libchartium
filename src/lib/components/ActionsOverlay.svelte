@@ -450,14 +450,10 @@
     width: 100%;
     height: 100%;
 
-    color: black;
+    color: #00bc8c;
   }
 
   canvas.trace-hovered {
     cursor: crosshair;
-  }
-
-  :global(.dark) canvas {
-    color: #00bc8c;
   }
 </style>

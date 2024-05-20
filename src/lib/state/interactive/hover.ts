@@ -150,7 +150,7 @@ export const hover$ = ({
   const nearestTraces$ = nearestTracesSortedByCloseness$.map((traces) => {
     const yDataUnit = yDataUnit$.get();
     const yToNum = (y: ChartValue) => toNumeric(y, yDataUnit);
-    return traces.toSorted((a, b) => yToNum(b.y) - yToNum(a.y));
+    return traces.toSorted((a, b) => yToNum(b.displayY) - yToNum(a.displayY));
   });
 
   return { nearestTraces$, hoveredTrace$ };
