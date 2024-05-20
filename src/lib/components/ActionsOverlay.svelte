@@ -153,12 +153,14 @@
     zoom: Zoom,
     options: { xDisabled: boolean; yDisabled: boolean },
   ) {
+    const width = 3;
+
     const lineStyle: DrawStyle = {
       dash: [10, 5],
     };
 
     const windowStyle: DrawStyle = {
-      lineWidth: 3,
+      lineWidth: width,
     };
 
     const xFrom = zoom.x.from * overlayWidth;
@@ -176,8 +178,11 @@
     }
 
     const anyDisabled = options.xDisabled || options.yDisabled;
+
+    if (anyDisabled) return;
+
     // The little 1D zoom windows
-    if (zoom.y.from === zoom.y.to && !anyDisabled) {
+    if (zoom.y.from === zoom.y.to) {
       drawSegment(
         ctx,
         [xFrom, yFrom - oneDZoomWindow],
@@ -190,9 +195,7 @@
         [xTo, yTo + oneDZoomWindow],
         windowStyle,
       );
-    }
-
-    if (zoom.x.from === zoom.x.to && !anyDisabled) {
+    } else if (zoom.x.from === zoom.x.to) {
       drawSegment(
         ctx,
         [xFrom - oneDZoomWindow, yFrom],
@@ -205,6 +208,31 @@
         [xFrom + oneDZoomWindow, yTo],
         windowStyle,
       );
+    } else {
+      const cornerLen = oneDZoomWindow / 2;
+
+      const corners: [number, number, number, number][] = [
+        [xFrom, yFrom, 1, -1],
+        [xTo, yFrom, -1, -1],
+        [xFrom, yTo, 1, 1],
+        [xTo, yTo, -1, 1],
+      ];
+
+      for (const [x, y, sX, sY] of corners) {
+        drawSegment(
+          ctx,
+          [x, y - (sY * width) / 2],
+          [x, y + sY * cornerLen],
+          windowStyle,
+        );
+
+        drawSegment(
+          ctx,
+          [x - (sX * width) / 2, y],
+          [x + sX * cornerLen, y],
+          windowStyle,
+        );
+      }
     }
   }
 
@@ -241,7 +269,7 @@
         console.warn("Chart interactivity disabled!");
         return;
       }
-      console.log(status);
+
       visibleAction.update((action) => ({
         ...action,
         zoom: status.relativeZoom,
@@ -279,16 +307,16 @@
     shift: Shift,
     options: { xDisabled: boolean; yDisabled: boolean },
   ) {
-    const wingLength = 20;
+    const wingLength = 15;
     const anyDisabled = options.xDisabled || options.yDisabled;
     const spreadRad =
-      shift.dx && shift.dy && !anyDisabled ? Math.PI / 5 : Math.PI * 0.4;
+      shift.dx && shift.dy && !anyDisabled ? Math.PI * 0.25 : Math.PI * 0.35;
     // const lineStyle: canvas.DrawStyle = {
     //   dash: [10, 5],
     // };
     const arrowStyle: DrawStyle = {
-      lineWidth: 1,
-      dash: [20, 5],
+      lineWidth: 2,
+      dash: [12, 4],
     };
 
     const shiftingInX = shift.dx !== undefined && !options.xDisabled;

@@ -80,17 +80,17 @@
       const shift = status.relativeShift;
 
       if (axis === "x") {
-        shift.origin.y = 0.5;
+        shift.origin.y = 0.1;
         delete shift.dy;
       }
       if (axis === "y") {
-        shift.origin.x = 0.5;
+        shift.origin.x = 0.1;
         delete shift.dx;
       }
       visibleAction.set({ shift });
     },
     end: (_, status) => {
-      if (disableInteractivity) return;
+      if (disableInteractivity.get()) return;
       const shift = status.relativeShift;
 
       if (axis === "x") delete shift.dy;
@@ -248,7 +248,7 @@
         4}px"
       use:mouseDrag={{
         ...dragCallbacks,
-        button: MouseButtons.Left,
+        button: MouseButtons.Right,
       }}
       role="presentation"
       on:dblclick={() => dispatchEvent("reset")}
