@@ -20,17 +20,14 @@ impl AdaptiveGrid {
         }
     }
 
-    pub fn point_at(&self, idx: usize) -> (f64, f64) {
+    pub fn nth_point(&self, idx: usize) -> (f64, f64) {
         (self.x[idx], self.y[idx])
     }
 
     pub fn merge_overlay(&mut self) {
         self.layers += 1;
 
-        self.y
-            .iter_mut()
-            .zip(self.overlay.iter())
-            .for_each(|(y, next)| *y = *next);
+        std::mem::swap(&mut self.y, &mut self.overlay);
     }
 
     pub fn sum_add_points<I: Iterator<Item = (f64, f64)>>(
@@ -40,7 +37,11 @@ impl AdaptiveGrid {
         SumAddIterator::new(self, iter)
     }
 
-    pub fn layers(&self) -> usize {
+    pub fn point_count(&self) -> usize {
+        self.x.len()
+    }
+
+    pub fn layer_count(&self) -> usize {
         self.layers
     }
 }
@@ -70,6 +71,42 @@ impl<'a, I: Iterator<Item = (f64, f64)>> SumAddIterator<'a, I> {
             prev_point: None,
         }
     }
+
+    fn initialize_state(&mut self) -> Option<()> {
+        if self.grid.x.is_empty() {
+            // handle empty grid by appending
+            self.state = Some(SumAddIteratorState::Append);
+        } else {
+            // find the starting point
+
+            let (x, y) = self.iter.next()?;
+            self.stash = Some((x, y));
+
+            match self.grid.x.binary_search_by(|p| p.total_cmp(&x)) {
+                Err(i) if i == self.grid.x.len() => {
+                    self.state = Some(SumAddIteratorState::Append);
+                }
+                Err(0) => {
+                    // Assumption B: x is before grid_x, therefore at least one point will be appended
+                    self.state = Some(SumAddIteratorState::Prepend {
+                        until: self.grid.x[0],
+                        idx: 0,
+                    });
+                }
+                Ok(i) | Err(i) => {
+                    // Assumption A: i == 0 => grid_x == x
+                    // Proof: only Ok(0) is possible, but then grid_x == x
+                    // Assumption B: grid_x >= x
+                    // Proof:
+                    // * Ok(i) => grid.x[i] == x
+                    // * Err(i) => grid.x[i] > x from binary_search definition
+                    self.state = Some(SumAddIteratorState::Combine { grid_idx: i });
+                }
+            }
+        }
+
+        Some(())
+    }
 }
 
 impl<'a, I> Drop for SumAddIterator<'a, I> {
@@ -84,39 +121,7 @@ impl<'a, I: Iterator<Item = (f64, f64)>> Iterator for SumAddIterator<'a, I> {
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.state.is_none() {
-            // initial state
-
-            if self.grid.x.is_empty() {
-                // handle empty grid by appending
-                self.state = Some(SumAddIteratorState::Append);
-            } else {
-                // find the starting point
-
-                let (x, y) = self.iter.next()?;
-                self.stash = Some((x, y));
-
-                match self.grid.x.binary_search_by(|p| p.total_cmp(&x)) {
-                    Err(i) if i == self.grid.x.len() => {
-                        self.state = Some(SumAddIteratorState::Append);
-                    }
-                    Err(0) => {
-                        // Assumption B: x is before grid_x, therefore at least one point will be appended
-                        self.state = Some(SumAddIteratorState::Prepend {
-                            until: self.grid.x[0],
-                            idx: 0,
-                        });
-                    }
-                    Ok(i) | Err(i) => {
-                        // Assumption A: i == 0 => grid_x == x
-                        // Proof: only Ok(0) is possible, but then grid_x == x
-                        // Assumption B: grid_x >= x
-                        // Proof:
-                        // * Ok(i) => grid.x[i] == x
-                        // * Err(i) => grid.x[i] > x from binary_search definition
-                        self.state = Some(SumAddIteratorState::Combine { grid_idx: i });
-                    }
-                }
-            }
+            self.initialize_state()?;
         }
 
         let (x, y) = self.stash.take().or_else(|| self.iter.next())?;
@@ -156,47 +161,48 @@ impl<'a, I: Iterator<Item = (f64, f64)>> Iterator for SumAddIterator<'a, I> {
                 SumAddIteratorState::Combine { grid_idx } => {
                     if grid_idx >= self.grid.x.len() {
                         self.state = Some(SumAddIteratorState::Append);
+                        continue;
+                    }
+
+                    let (grid_x, grid_y) = self.grid.nth_point(grid_idx);
+
+                    if x < grid_x {
+                        // point is missing in the grid
+                        // Assumption A used here: x < grid_x => grid_idx > 0
+                        let prev = self.grid.nth_point(grid_idx - 1);
+                        let next = self.grid.nth_point(grid_idx);
+                        let grid_y = interpolate(prev, next, x);
+
+                        self.grid.x.insert(grid_idx, x);
+                        self.grid.y.insert(grid_idx, grid_y);
+                        self.grid.overlay.insert(grid_idx, grid_y + y);
+
+                        self.prev_point = Some((x, y));
+
+                        return Some((x, grid_y, grid_y + y));
+                    } else if x == grid_x {
+                        self.state = Some(SumAddIteratorState::Combine {
+                            grid_idx: grid_idx + 1,
+                        });
+                        self.prev_point = Some((x, y));
+
+                        self.grid.overlay[grid_idx] = grid_y + y;
+
+                        return Some((grid_x, grid_y, grid_y + y));
                     } else {
-                        let (grid_x, grid_y) = self.grid.point_at(grid_idx);
+                        // point is missing along the curve
 
-                        if x < grid_x {
-                            // point is missing in the grid
-                            // Assumption A used here: x < grid_x => grid_idx > 0
-                            let prev = self.grid.point_at(grid_idx - 1);
-                            let next = self.grid.point_at(grid_idx);
-                            let grid_y = interpolate(prev, next, x);
+                        self.state = Some(SumAddIteratorState::Combine {
+                            grid_idx: grid_idx + 1,
+                        });
+                        self.stash = Some((x, y));
 
-                            self.grid.x.insert(grid_idx, x);
-                            self.grid.y.insert(grid_idx, grid_y);
-                            self.grid.overlay.insert(grid_idx, grid_y + y);
+                        // unwrap safe by assumption B
+                        let y = interpolate(self.prev_point.unwrap(), (x, y), grid_x);
 
-                            self.prev_point = Some((x, y));
+                        self.grid.overlay[grid_idx] = grid_y + y;
 
-                            return Some((x, grid_y, grid_y + y));
-                        } else if x == grid_x {
-                            self.state = Some(SumAddIteratorState::Combine {
-                                grid_idx: grid_idx + 1,
-                            });
-                            self.prev_point = Some((x, y));
-
-                            self.grid.overlay[grid_idx] = grid_y + y;
-
-                            return Some((grid_x, grid_y, grid_y + y));
-                        } else {
-                            // point is missing along the curve
-
-                            self.state = Some(SumAddIteratorState::Combine {
-                                grid_idx: grid_idx + 1,
-                            });
-                            self.stash = Some((x, y));
-
-                            // unwrap safe by assumption B
-                            let y = interpolate(self.prev_point.unwrap(), (x, y), grid_x);
-
-                            self.grid.overlay[grid_idx] = grid_y + y;
-
-                            return Some((grid_x, grid_y, grid_y + y));
-                        }
+                        return Some((grid_x, grid_y, grid_y + y));
                     }
                 }
             }

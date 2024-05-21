@@ -237,7 +237,7 @@ impl WebGlRenderer {
             }
 
             // Insert previous data into the grid
-            if grid.layers() < in_stack_idx {
+            if grid.layer_count() < in_stack_idx {
                 stack_cache[0..in_stack_idx]
                     .iter()
                     .for_each(|(bundle, trace, _)| {
@@ -268,7 +268,16 @@ impl WebGlRenderer {
             .iter_in_range_with_neighbors_f64(trace, x_range)
             .with_origin_at(x_range.from, 0.0);
 
-        let geometry = TraceGeometry::new_area(self, bundle, grid.sum_add_points(data), style, job);
+        let estimate = Some(bundle.point_count().max(grid.point_count()));
+
+        let geometry = TraceGeometry::new_area(
+            self,
+            bundle,
+            grid.sum_add_points(data),
+            estimate,
+            style,
+            job,
+        );
 
         self.stack_cache.get_mut(&stack_id).unwrap().push((
             bundle.downgrade(),

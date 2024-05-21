@@ -23,11 +23,11 @@ pub struct RenderJobCommon {
 }
 
 pub struct TraceData {
-    data: Vec<(f32, f32)>,
+    pub data: Vec<(f32, f32)>,
 }
 
 impl TraceData {
-    pub fn compute(bundle: &BundleRc, handle: TraceHandle, x_range: NumericRange) -> TraceData {
+    pub fn compute(bundle: &BundleRc, handle: TraceHandle, x_range: NumericRange) -> Self {
         let data = bundle
             .unwrap()
             .iter_in_range_with_neighbors_f64(handle, x_range)

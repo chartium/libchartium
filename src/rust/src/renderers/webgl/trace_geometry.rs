@@ -1,3 +1,5 @@
+use std::sync::Mutex;
+
 use once_cell::sync::Lazy;
 use web_sys::{WebGl2RenderingContext, WebGlBuffer};
 
@@ -148,32 +150,43 @@ impl TraceGeometry {
         renderer: &WebGlRenderer,
         bundle: &BundleRc,
         data: impl Iterator<Item = (f64, f64, f64)>,
+        point_count_estimate: Option<usize>,
         _style: &TraceStyle,
         job: &RenderJobCommon,
     ) -> Self {
+        static TRACE_BUFFER: Mutex<TraceData> = Mutex::new(TraceData { data: Vec::new() });
+        static AREA_BUFFER: Mutex<Vec<f32>> = Mutex::new(Vec::new());
+
         let x_range = match bundle.range() {
             BundleRange::Bounded { from, to } => NumericRange::new(from, to),
             BundleRange::Everywhere => job.x_range,
         };
 
-        let mut trace = Vec::<(f32, f32)>::new();
-        let mut area = Vec::<f32>::new();
+        let mut trace = TRACE_BUFFER.lock().unwrap();
+        let mut area = AREA_BUFFER.lock().unwrap();
 
-        for (x, y1, y2) in data {
-            area.extend([x, y1, x, y2].map(|v| v as f32));
-            trace.push((x as f32, y2 as f32));
+        trace.data.clear();
+        area.clear();
+
+        if let Some(point_count_estimate) = point_count_estimate {
+            trace.data.reserve(point_count_estimate);
+            area.reserve(point_count_estimate * 4);
         }
 
-        let data = TraceData { data: trace };
-        let (pixel_ratio, arc_buffer) = create_arc_length_buffer(renderer, &data, job);
+        for (x, y1, y2) in data {
+            trace.data.push((x as f32, y2 as f32));
+            area.extend([x, y1, x, y2].map(|v| v as f32));
+        }
+
+        let (pixel_ratio, arc_buffer) = create_arc_length_buffer(renderer, &trace, job);
 
         Self {
             x_range,
-            line_vertex_count: data.data.len(),
-            line_buffer: create_trace_buffer(renderer, &data),
+            line_vertex_count: trace.data.len(),
+            line_buffer: create_trace_buffer(renderer, &trace),
             arc_pixel_ratio: pixel_ratio,
             arc_length_buffer: arc_buffer,
-            fill_buffer: Some((data.data.len() * 2, renderer.create_buffer(&area))),
+            fill_buffer: Some((trace.data.len() * 2, renderer.create_buffer(&area))),
         }
     }
 }
