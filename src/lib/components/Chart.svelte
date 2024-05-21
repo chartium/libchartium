@@ -444,9 +444,8 @@
           )
             chart$.axes.y.shiftRange(d.detail.dy);
         }}
-        on:relativeMousemove={(e) =>
-          hoverEvent$.set({ name: "move", event: asAny(e) })}
-        on:relativeMouseout={() => hoverEvent$.set({ name: "out" })}
+        on:mousemove={(e) => hoverEvent$.set({ name: "move", event: asAny(e) })}
+        on:mouseout={() => hoverEvent$.set({ name: "out" })}
         on:blur={() => hoverEvent$.set({ name: "out" })}
       />
 

@@ -16,7 +16,7 @@
     MouseButtons,
     mouseDrag,
     mouseClick,
-    relativeMousemove,
+    scrollMouseEvents,
   } from "../utils/mouseActions.js";
   import {
     drawArrow,
@@ -428,14 +428,13 @@
     },
     button: MouseButtons.Right,
   }}
-  use:relativeMousemove
-  on:relativeMousemove={(e) =>
-    (offsetMousePosition = [e.detail.offsetX, e.detail.offsetY])}
-  on:relativeMousemove
-  on:relativeMouseout={() => (offsetMousePosition = undefined)}
-  on:relativeMouseout
+  on:mousemove
+  on:mousemove={(e) => (offsetMousePosition = [e.offsetX, e.offsetY])}
+  on:mouseout
+  on:mouseout={() => (offsetMousePosition = undefined)}
   on:blur={() => (offsetMousePosition = undefined)}
   on:blur
+  use:scrollMouseEvents
   use:scaleCanvas={([width, height]) => {
     overlayWidth = width;
     overlayHeight = height;

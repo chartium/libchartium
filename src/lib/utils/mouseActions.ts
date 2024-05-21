@@ -225,6 +225,66 @@ export type RelativeMousemoveEvent = {
   offsetY: number;
 };
 
+export function scrollMouseEvents(node: HTMLElement): ActionReturn<void> {
+  const mousePosition: { x: number; y: number } = { x: 0, y: 0 };
+  const moveHandler = (e: MouseEvent) => {
+    mousePosition.x = e.clientX;
+    mousePosition.y = e.clientY;
+  };
+
+  let wasIn = false;
+  const onEnter = () => (wasIn = true);
+  const onLeave = () => (wasIn = false);
+
+  const handler = () => {
+    const pointee = document.elementFromPoint(mousePosition.x, mousePosition.y);
+
+    if (node.contains(pointee)) {
+      const init = {
+        clientX: mousePosition.x,
+        clientY: mousePosition.y,
+      };
+
+      if (!wasIn) {
+        wasIn = true;
+
+        node.dispatchEvent(new MouseEvent("mouseenter", init));
+      }
+
+      node.dispatchEvent(new MouseEvent("mousemove", init));
+    } else if (wasIn) {
+      wasIn = false;
+
+      node.dispatchEvent(
+        new MouseEvent("mouseout", {
+          clientX: mousePosition.x,
+          clientY: mousePosition.y,
+        }),
+      );
+    }
+  };
+
+  node.addEventListener("mouseenter", onEnter, { passive: true });
+  node.addEventListener("mouseout", onLeave, { passive: true });
+  document.addEventListener("mousemove", moveHandler, {
+    passive: true,
+    capture: true,
+  });
+  document.addEventListener("scroll", handler, {
+    passive: true,
+    capture: true,
+  });
+
+  return {
+    destroy: () => {
+      document.removeEventListener("scroll", handler);
+      document.removeEventListener("mousemove", moveHandler);
+      node.removeEventListener("mouseout", onLeave);
+      node.removeEventListener("mouseenter", onEnter);
+    },
+  };
+}
+
 /**
  * Action that adds three events to the node:
  *  * relativeMousemove
@@ -260,9 +320,12 @@ export function relativeMousemove(node: HTMLElement): ActionReturn<
   const handleEvent = (e: Event) => {
     if (e instanceof MouseEvent)
       lastClients = { clientX: e.clientX, clientY: e.clientY };
+
     if (lastClients === undefined) return;
+
     const { clientX, clientY } = lastClients;
     const elements = document.elementsFromPoint(clientX, clientY);
+
     const { offsetX, offsetY } = getOffsets({ clientX, clientY }, node);
     const detail: RelativeMousemoveEvent = {
       clientX,
@@ -274,6 +337,7 @@ export function relativeMousemove(node: HTMLElement): ActionReturn<
     const currentlyWeAreIn = elements.includes(node);
     if (!currentlyWeAreIn) {
       if (lastTimeWeWereIn) {
+        console.count("out");
         node.dispatchEvent(new CustomEvent("relativeMouseout", { detail }));
       }
       lastTimeWeWereIn = false;
@@ -281,7 +345,10 @@ export function relativeMousemove(node: HTMLElement): ActionReturn<
     }
 
     if (!lastTimeWeWereIn) {
+      console.count("in");
       node.dispatchEvent(new CustomEvent("relativeMousein", { detail }));
+    } else {
+      console.count("move");
     }
     lastTimeWeWereIn = true;
     node.dispatchEvent(new CustomEvent("relativeMousemove", { detail }));
