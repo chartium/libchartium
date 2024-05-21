@@ -225,6 +225,14 @@ export type RelativeMousemoveEvent = {
   offsetY: number;
 };
 
+/**
+ * An action that causes the element to emit mouse events when scrolling.
+ *
+ * Currently, the mouseenter, mousemove and mouseout events are covered.
+ *
+ * @param node the node to attach the action to
+ * @returns a Svelte action
+ */
 export function scrollMouseEvents(node: HTMLElement): ActionReturn<void> {
   const mousePosition: { x: number; y: number } = { x: 0, y: 0 };
   const moveHandler = (e: MouseEvent) => {
@@ -283,89 +291,6 @@ export function scrollMouseEvents(node: HTMLElement): ActionReturn<void> {
       node.removeEventListener("mouseenter", onEnter);
     },
   };
-}
-
-/**
- * Action that adds three events to the node:
- *  * relativeMousemove
- *  * relativeMousein
- *  * relativeMouseout
- *
- * all with detail of type RelativeMousemoveEvent. Similar usage to mousemove, mouseout
- * and mousein, however they also get triggered by pure scrolling
- */
-export function relativeMousemove(node: HTMLElement): ActionReturn<
-  void,
-  {
-    "on:relativeMousemove"?: (e: CustomEvent<RelativeMousemoveEvent>) => void;
-    "on:relativeMousein"?: (e: CustomEvent<RelativeMousemoveEvent>) => void;
-    "on:relativeMouseout"?: (e: CustomEvent<RelativeMousemoveEvent>) => void;
-  }
-> {
-  const abort = new AbortController();
-
-  const getOffsets = (
-    clients: { clientX: number; clientY: number },
-    node: HTMLElement,
-  ) => {
-    const rect = node.getBoundingClientRect();
-    return {
-      offsetX: clients.clientX - rect.left,
-      offsetY: clients.clientY - rect.top,
-    };
-  };
-
-  let lastClients: { clientX: number; clientY: number } | undefined;
-  let lastTimeWeWereIn = false;
-  const handleEvent = (e: Event) => {
-    if (e instanceof MouseEvent)
-      lastClients = { clientX: e.clientX, clientY: e.clientY };
-
-    if (lastClients === undefined) return;
-
-    const { clientX, clientY } = lastClients;
-    const elements = document.elementsFromPoint(clientX, clientY);
-
-    const { offsetX, offsetY } = getOffsets({ clientX, clientY }, node);
-    const detail: RelativeMousemoveEvent = {
-      clientX,
-      clientY,
-      offsetX,
-      offsetY,
-    };
-
-    const currentlyWeAreIn = elements.includes(node);
-    if (!currentlyWeAreIn) {
-      if (lastTimeWeWereIn) {
-        console.count("out");
-        node.dispatchEvent(new CustomEvent("relativeMouseout", { detail }));
-      }
-      lastTimeWeWereIn = false;
-      return;
-    }
-
-    if (!lastTimeWeWereIn) {
-      console.count("in");
-      node.dispatchEvent(new CustomEvent("relativeMousein", { detail }));
-    } else {
-      console.count("move");
-    }
-    lastTimeWeWereIn = true;
-    node.dispatchEvent(new CustomEvent("relativeMousemove", { detail }));
-  };
-
-  document.addEventListener("mousemove", handleEvent, {
-    passive: true,
-    signal: abort.signal,
-  });
-
-  document.addEventListener("scroll", handleEvent, {
-    capture: true,
-    passive: true,
-    signal: abort.signal,
-  });
-
-  return { destroy: () => abort.abort() };
 }
 
 /**
