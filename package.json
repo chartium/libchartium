@@ -42,6 +42,7 @@
     "build": "pnpm build-wasm && svelte-package -i src/lib -o dist/lib",
     "build-wasm": "sh ./build-wasm.sh",
     "clean": "sh ./clean.sh",
+    "test": "cd src/rust && cargo test; cd ../..",
     "preview": "vite preview",
     "check": "svelte-check --tsconfig ./tsconfig.json",
     "lint": "prettier -c . && eslint ."
