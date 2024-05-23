@@ -5,7 +5,7 @@ use crate::{
     utils::ResolvedColor,
 };
 
-use super::{RenderContext, TraceGeometry};
+use super::{RenderContext, TraceGeometry, MAX_LINE_WIDTH};
 
 pub struct WebGlTrace {
     pub style: TraceStyle,
@@ -153,22 +153,27 @@ impl WebGlTrace {
         // gl.enable_vertex_attrib_array(0);
         // // END REMOVE
 
-        if width < ctx.renderer.line_width_limit + 0.1 {
-            gl.line_width(width);
-            gl.draw_arrays(WebGl2RenderingContext::LINE_STRIP, 0, points);
-        } else {
-            gl.line_width(1.0);
-            let start_offset = width / 2.0 - 0.5;
-            let amount = width.round() as usize;
+        {
+            gl.bind_buffer(
+                WebGl2RenderingContext::ARRAY_BUFFER,
+                Some(&ctx.renderer.brushpoint_buffer),
+            );
+            gl.enable_vertex_attrib_array(programs.trace_pixel_offset);
+            gl.vertex_attrib_divisor(programs.trace_pixel_offset, 1);
 
-            for i in 0..amount {
-                gl.uniform2f(
-                    Some(&programs.trace_csoffset),
-                    0.0,
-                    2.0 * (start_offset + i as f32) / ctx.renderer.height as f32,
-                );
-                gl.draw_arrays(WebGl2RenderingContext::LINE_STRIP, 0, points);
-            }
+            let closest = (width as i32).clamp(1, MAX_LINE_WIDTH);
+
+            let (from, count) = ctx.renderer.brush_indices[closest as usize - 1];
+
+            gl.vertex_attrib_pointer_with_i32(
+                programs.trace_pixel_offset,
+                2,
+                WebGl2RenderingContext::FLOAT,
+                false,
+                8,        // two f32
+                from * 8, // multiples of f32 pairs
+            );
+            gl.draw_arrays_instanced(WebGl2RenderingContext::LINE_STRIP, 0, points, count);
         }
 
         if matches!(style.get_points(), TracePointsStyle::Show) {

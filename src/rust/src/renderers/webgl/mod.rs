@@ -4,8 +4,7 @@ mod trace_geometry;
 
 use std::collections::HashMap;
 
-use js_sys::Float32Array;
-use wasm_bindgen::{prelude::*, JsCast, JsValue};
+use wasm_bindgen::{prelude::*, JsValue};
 use web_sys::{
     OffscreenCanvas, WebGl2RenderingContext, WebGlBuffer, WebGlProgram, WebGlUniformLocation,
 };
@@ -22,6 +21,8 @@ use super::RenderJobCommon;
 use render_job::*;
 use trace_geometry::*;
 
+pub const MAX_LINE_WIDTH: i32 = 16;
+
 #[wasm_bindgen(module = "/src/renderers/webgl/webgl.ts")]
 extern "C" {
     fn render_between(source: &OffscreenCanvas, target: &OffscreenCanvas);
@@ -31,12 +32,27 @@ extern "C" {
 #[wasm_bindgen]
 pub struct WebGlPrograms {
     trace_program: WebGlProgram,
+
+    /// Scaling of trace data.
     trace_transform: WebGlUniformLocation,
+
+    /// The origin point of trace data.
     trace_origin: WebGlUniformLocation,
-    trace_size: WebGlUniformLocation,
-    trace_csoffset: WebGlUniformLocation,
+
+    /// The rendered data range in numerical units.
+    range: WebGlUniformLocation,
+
+    /// Offset in pixels for brush rendering.
+    trace_pixel_offset: u32,
+
+    /// The color of the trace.
     trace_color: WebGlUniformLocation,
+
+    /// The dash gap length in pixels array.
     dash_gap_length: WebGlUniformLocation,
+
+    /// The viewport resolution in pixels.
+    resolution: WebGlUniformLocation,
 }
 
 #[wasm_bindgen]
@@ -47,19 +63,21 @@ impl WebGlPrograms {
         trace_program: WebGlProgram,
         trace_transform: WebGlUniformLocation,
         trace_origin: WebGlUniformLocation,
-        trace_size: WebGlUniformLocation,
-        trace_csoffset: WebGlUniformLocation,
+        range: WebGlUniformLocation,
+        trace_pixel_offset: u32,
         trace_color: WebGlUniformLocation,
         dash_gap_length: WebGlUniformLocation,
+        resolution: WebGlUniformLocation,
     ) -> WebGlPrograms {
         WebGlPrograms {
             trace_program,
             trace_transform,
             trace_origin,
-            trace_size,
-            trace_csoffset,
+            range,
+            trace_pixel_offset,
             trace_color,
             dash_gap_length,
+            resolution,
         }
     }
 }
@@ -68,12 +86,14 @@ impl WebGlPrograms {
 pub struct WebGlRenderer {
     width: u32,
     height: u32,
-    line_width_limit: f32,
 
     canvas: OffscreenCanvas,
     present_canvas: OffscreenCanvas,
     context: WebGl2RenderingContext,
     programs: WebGlPrograms,
+
+    brushpoint_buffer: WebGlBuffer,
+    brush_indices: Vec<(i32, i32)>,
 
     geometry_cache: HashMap<(BundleHandle, TraceHandle), TraceGeometry>,
     stack_cache: HashMap<isize, Vec<(BundleWeak, TraceHandle, TraceGeometry)>>,
@@ -88,25 +108,45 @@ impl WebGlRenderer {
         programs: &WebGlPrograms,
         present_canvas: OffscreenCanvas,
     ) -> Result<WebGlRenderer, JsValue> {
-        let width_range = context
-            .get_parameter(WebGl2RenderingContext::ALIASED_LINE_WIDTH_RANGE)?
-            .dyn_into::<Float32Array>()?;
-
         context.enable(WebGl2RenderingContext::BLEND);
         context.blend_func(
             WebGl2RenderingContext::SRC_ALPHA,
             WebGl2RenderingContext::ONE_MINUS_SRC_ALPHA,
         );
 
+        let brushpoint_buffer = context.create_buffer().unwrap();
+
+        context.bind_buffer(
+            WebGl2RenderingContext::ARRAY_BUFFER,
+            Some(&brushpoint_buffer),
+        );
+
+        // Preallocate the brushpoint buffer
+        let brush_indices = {
+            let (points, indices) = generate_concentric_brush_points(MAX_LINE_WIDTH);
+
+            unsafe {
+                context.buffer_data_with_array_buffer_view(
+                    WebGl2RenderingContext::ARRAY_BUFFER,
+                    &js_sys::Float32Array::view(&points),
+                    WebGl2RenderingContext::STATIC_DRAW,
+                );
+            }
+
+            indices
+        };
+
         Ok(WebGlRenderer {
             width: present_canvas.width(),
             height: present_canvas.height(),
             canvas: shared_canvas,
             present_canvas,
-            line_width_limit: width_range.get_index(1),
 
             geometry_cache: HashMap::new(),
             stack_cache: HashMap::new(),
+
+            brushpoint_buffer,
+            brush_indices,
 
             programs: programs.clone(),
 
@@ -124,11 +164,16 @@ impl WebGlRenderer {
 
         gl.use_program(Some(&self.programs.trace_program));
         gl.uniform2f(
-            Some(&self.programs.trace_size),
+            Some(&self.programs.range),
             job.common.x_range.len() as f32,
             job.common.y_range.len() as f32,
         );
         gl.uniform2f(Some(&self.programs.trace_transform), 1.0, 0.0);
+        gl.uniform2f(
+            Some(&self.programs.resolution),
+            self.width as f32,
+            self.height as f32,
+        );
 
         let context = RenderContext {
             renderer: self,
@@ -308,4 +353,30 @@ pub struct RenderContext<'a> {
 
     pub vertex_position_ptr: u32,
     pub length_along_ptr: u32,
+}
+
+fn generate_concentric_brush_points(max_width: i32) -> (Vec<f32>, Vec<(i32, i32)>) {
+    let mut points = Vec::new();
+    let mut ranges = vec![(0, 0); max_width as usize];
+
+    points.extend([0., 0.]);
+    ranges[0] = (0, 1);
+
+    for i in 2..=max_width {
+        let start = points.len() as i32 / 2;
+
+        let diameter = i as f32 / 2.;
+        let point_count = 2 + i;
+
+        points.extend([0., 0.]);
+
+        for j in 0..point_count {
+            let angle = 2. * std::f32::consts::PI * j as f32 / point_count as f32;
+            points.extend([diameter * angle.cos(), diameter * angle.sin()]);
+        }
+
+        ranges[i as usize - 1] = (start, points.len() as i32 / 2);
+    }
+
+    (points, ranges)
 }

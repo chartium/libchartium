@@ -71,7 +71,11 @@
           },
           trace_3: { fill: "to-next-in-stack", "stack-group": 0 },
           trace_4: { fill: "to-next-in-stack", "stack-group": 0 },
-          trace_5: { fill: "to-next-in-stack", "stack-group": 0 },
+          trace_5: {
+            fill: "to-next-in-stack",
+            "stack-group": 0,
+            "line-width": 8,
+          },
           sin: { color: "red" },
         },
       });
