@@ -1,9 +1,6 @@
-use libchartium::{
-    trace_styles::{
-        OrUnset, TraceColor, TraceFillStyle, TraceStylePatch, TraceStyleSheet,
-        TraceStyleSheetPatchBuilder,
-    },
-    utils::ResolvedColor,
+use libchartium::trace_styles::{
+    OrUnset, TraceColor, TraceFillStyle, TraceStylePatch, TraceStyleSheet,
+    TraceStyleSheetPatchBuilder,
 };
 
 #[test]
