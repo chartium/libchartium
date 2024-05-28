@@ -111,7 +111,7 @@ const sanitizedChart$ = ({
       axis: "y",
       visibleTraces$,
       lengthInPx$: canvasLogicalSize$.map((size) => size?.height),
-      measureTextSize$: measureYAxisTextSize$.map((fn) => fn ?? ((s) => 10)), // FIXME find a better solution,
+      measureTextSize$: measureYAxisTextSize$.map((fn) => fn ?? (() => 10)), // FIXME find a better solution,
       displayUnitPreference$: yAxisDisplayUnitPreference$,
       showZero$: showYAxisZero$,
       autoscale$: autoscaleY$,

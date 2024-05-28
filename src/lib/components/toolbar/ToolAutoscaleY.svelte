@@ -1,14 +1,16 @@
 <script lang="ts">
+  import ToolbarButton from "./ToolbarButton.svelte";
   import { faUpDown } from "@fortawesome/free-solid-svg-icons";
   import { getContext } from "svelte-typed-context";
-  import ToolbarButton from "./ToolbarButton.svelte";
   import { toolKey } from "./toolKey.js";
   import { cons, effect, mut } from "@mod.js/signals";
   import { onDestroy } from "svelte";
+
   const toggleAutoscaleY = getContext(toolKey)?.toggleAutoscaleY;
   const notifyOfAutozoom$ = getContext(toolKey)?.notifyOfAutozoom$;
 
-  let opacity$ = mut<number>(+!notifyOfAutozoom$?.get() ?? 0);
+  let opacity$ = mut<number>(+(notifyOfAutozoom$?.get() ?? false));
+
   effect(($, { defer }) => {
     if (!$(notifyOfAutozoom$ ?? cons(false))) return opacity$.set(0);
     const timerID = setTimeout(() => opacity$.set(1), 500);

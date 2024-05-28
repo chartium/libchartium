@@ -283,15 +283,18 @@
 
   const notifyOfAutozoom$ = derived(($) => {
     if (!$(autoscaleY$)) return false;
+
     const shift = $(visibleAction)?.shift;
     if (shift?.dy !== undefined && shift.dy !== 0) return true;
+
     const zoom = $(visibleAction)?.zoom;
     if (zoom === undefined) return false;
+
     const isZoominY =
       Math.abs(zoom.y.from - zoom.y.to) >
       chart$.valueOnAxis("y").fromLogicalPixels(oneDZoomWindow).toFraction();
-    if (isZoominY) return true;
-    return false;
+
+    return isZoominY;
   }).skipEqual();
 
   let parentDiv: HTMLDivElement;
