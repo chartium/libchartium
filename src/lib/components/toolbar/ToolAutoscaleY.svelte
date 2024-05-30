@@ -1,32 +1,44 @@
 <script lang="ts">
   import ToolbarButton from "./ToolbarButton.svelte";
-  import { faUpDown } from "@fortawesome/free-solid-svg-icons";
+  import {
+    faUpDown,
+    faArrowsLeftRightToLine,
+  } from "@fortawesome/free-solid-svg-icons";
   import { getContext } from "svelte-typed-context";
   import { toolKey } from "./toolKey.js";
   import { cons, effect, mut } from "@mod.js/signals";
   import { onDestroy } from "svelte";
+  import Fa from "svelte-fa";
 
-  const toggleAutoscaleY = getContext(toolKey)?.toggleAutoscaleY;
+  const autoscaleY$ = getContext(toolKey)?.autoscaleY$;
+
+  const toggleAutoscaleY = () => autoscaleY$?.update((b) => !b);
   const notifyOfAutozoom$ = getContext(toolKey)?.notifyOfAutozoom$;
 
-  let opacity$ = mut<number>(+(notifyOfAutozoom$?.get() ?? false));
+  let bubbleOpacity$ = mut<number>(+(notifyOfAutozoom$?.get() ?? false));
 
   effect(($, { defer }) => {
-    if (!$(notifyOfAutozoom$ ?? cons(false))) return opacity$.set(0);
-    const timerID = setTimeout(() => opacity$.set(1), 500);
+    if (!$(notifyOfAutozoom$ ?? cons(false))) return bubbleOpacity$.set(0);
+    const timerID = setTimeout(() => bubbleOpacity$.set(1), 200);
     defer(() => clearTimeout(timerID));
   }).pipe(onDestroy);
 </script>
 
 <div class="wrpa">
-  <div class="positioned" style:opacity={$opacity$}>
-    <div class="bubble">Y scales<br />automatically</div>
+  <div class="positioned" style:opacity={$bubbleOpacity$}>
+    {#if $notifyOfAutozoom$}
+      <div class="bubble">
+        Y scales<br />automatically
+      </div>
+    {/if}
   </div>
-  <ToolbarButton
-    on:click={toggleAutoscaleY}
-    icon={faUpDown}
-    title="Autoscale Y axis"
-  />
+  <ToolbarButton on:click={toggleAutoscaleY} title="Autoscale Y axis">
+    <Fa
+      icon={$autoscaleY$ ? faArrowsLeftRightToLine : faUpDown}
+      rotate={$autoscaleY$ ? 90 : undefined}
+      style={$autoscaleY$ ? "margin: 0px -6px" : undefined}
+    />
+  </ToolbarButton>
 </div>
 
 <style>

@@ -302,6 +302,7 @@
 
   setContext(toolKey, {
     notifyOfAutozoom$,
+    autoscaleY$,
     getWrapDiv: () => {
       return wrapDiv;
     },
@@ -310,9 +311,6 @@
     },
     getTracelist: () => traces,
     getTitle: () => title,
-    toggleAutoscaleY: () => {
-      autoscaleY = !autoscaleY;
-    },
     toggleFullscreen: () => {
       fullscreen = !fullscreen;
       if (fullscreen) {
