@@ -2,7 +2,13 @@
   import { onDestroy } from "svelte";
   import { chart$ as createChart$ } from "../state/core/chart.js";
 
-  import { mut, FlockRegistry, effect, cons } from "@mod.js/signals";
+  import {
+    mut,
+    FlockRegistry,
+    effect,
+    cons,
+    mutDerived,
+  } from "@mod.js/signals";
   import { setContext } from "svelte-typed-context";
   import { toolKey } from "./toolbar/toolKey.js";
   import { flockReduce } from "../utils/collection.js";
@@ -21,6 +27,7 @@
     asAny,
     type ChartValue,
     type DisplayUnitPreference,
+    type Range,
   } from "../types.js";
   import type { TraceList } from "../data-worker/trace-list.js";
   import type { VisibleAction } from "./ActionsOverlay.svelte";
@@ -134,6 +141,11 @@
   /** Bind this property among several charts to make them all display an y axis ruler when one of them is hovered */
   export let commonYRuler$ = mut<ChartValue>();
 
+  /** Bind this property among several charts to make them all able to share the same X range as you zoom or shift it */
+  export let commonXRange$ = mut<Range>();
+  /** can be turned off via toolbar */
+  const doUseCommonXRange$ = mut<boolean>(commonXRange$.get() !== undefined);
+
   /** Charts supplied with the same FlockRegistry will have x axis of the same width */
   export let commonXAxisHeight: FlockRegistry<number> | undefined = undefined;
   $: xAxisHeight = mapOpt(commonXAxisHeight, (f) =>
@@ -204,11 +216,12 @@
     showXAxisZero$,
     showYAxisZero$,
     autoscaleY$,
+    doUseCommonXRange$,
+    commonXRange$,
     xAxisDisplayUnitPreference$: defaultXUnit$,
     yAxisDisplayUnitPreference$: defaultYUnit$,
     defer: onDestroy,
   });
-
   const { nearestTraces$, hoveredTrace$ } = hover$({
     visibleTraces$,
     commonXRuler$,
@@ -250,7 +263,6 @@
       }));
     }
   }).pipe(onDestroy);
-
   // forbidden rectangle for tooltip to avoid
   let forbiddenRectangle:
     | {
@@ -303,6 +315,7 @@
   setContext(toolKey, {
     notifyOfAutozoom$,
     autoscaleY$,
+    doUseCommonXRange$,
     getWrapDiv: () => {
       return wrapDiv;
     },

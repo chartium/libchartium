@@ -1,4 +1,9 @@
-import { derived, mutDerived, type Signal } from "@mod.js/signals";
+import {
+  WritableSignal,
+  derived,
+  mutDerived,
+  type Signal,
+} from "@mod.js/signals";
 import { NumericDateRepresentation, type TraceList } from "../../index.js";
 import {
   rangesHaveMeaningfulIntersection,
@@ -7,19 +12,25 @@ import {
   Quantity,
   type DataUnit,
   isQuantity,
+  type ResolvedType,
 } from "../../types.js";
 import { isDayjs, type Dayjs } from "../../utils/dayjs.js";
 import { toNumeric, toRange } from "../../utils/unit.js";
 
-export interface AxisRangeProps {
-  axis: "x" | "y";
+export type XAxisRangeProps = {
   resetAllRanges: () => void;
   visibleTraces$: Signal<TraceList>;
   showZero$: Signal<boolean>;
-  autoscale$: Signal<boolean>;
   fractionalMargins$: Signal<[number, number]>;
-  xRange$?: Signal<Range>;
-}
+  commonRange$: WritableSignal<Range | undefined>;
+  doUseCommonRange$: Signal<boolean>;
+};
+export type YAxisRangeProps = ResolvedType<
+  {
+    autoscale$: Signal<boolean>;
+    xRange$: Signal<Range>;
+  } & Omit<XAxisRangeProps, "commonRange$" | "doUseCommonRange$">
+>;
 
 export interface AxisRange {
   range$: Signal<Range>;
@@ -27,20 +38,76 @@ export interface AxisRange {
   zoomRange: (fractionalRange: NumericRange) => void;
   shiftRange: (fractionalShift: number) => void;
 }
+export const xAxisRange$ = ({
+  resetAllRanges,
+  visibleTraces$,
+  showZero$,
+  fractionalMargins$,
+  commonRange$,
+  doUseCommonRange$,
+}: XAxisRangeProps): AxisRange => {
+  const tracesRange$ = derived(($) => $(visibleTraces$).range);
+  const defaultRange$ = derived(($) => {
+    const rangeWithMargins = preventEmptyRange(
+      addFractionalMarginsToRange($(tracesRange$), $(fractionalMargins$)),
+    );
+    if ($(showZero$)) {
+      return addZeroToRange(rangeWithMargins);
+    } else {
+      return rangeWithMargins;
+    }
+  });
 
-export const axisRange$ = ({
-  axis,
+  let isAutozoomed = true;
+  const range$ = mutDerived<Range>(($, { prev }) => {
+    const def = $(defaultRange$);
+    if ($(commonRange$) !== undefined && $(doUseCommonRange$))
+      return $(commonRange$) as Range;
+
+    if (isAutozoomed || prev === undefined) {
+      return def;
+    }
+
+    if (!rangesHaveMeaningfulIntersection(def, prev)) {
+      resetAllRanges();
+      return def;
+    }
+
+    return prev;
+  });
+
+  const shouldUpdateCommon = () =>
+    doUseCommonRange$.get() && commonRange$.get() !== undefined;
+  const resetRange = () => {
+    isAutozoomed = true;
+    range$.set(defaultRange$.get());
+    if (shouldUpdateCommon()) commonRange$.set(range$.get());
+  };
+
+  const zoomRange = (r: NumericRange) => {
+    isAutozoomed = false;
+    range$.set(computeZoomedRange(range$.get(), r));
+    if (shouldUpdateCommon()) commonRange$.set(range$.get());
+  };
+
+  const shiftRange = (s: number) => {
+    isAutozoomed = false;
+    range$.set(computeShiftedRange(range$.get(), s));
+    if (shouldUpdateCommon()) commonRange$.set(range$.get());
+  };
+
+  return { range$: range$.toReadonly(), resetRange, zoomRange, shiftRange };
+};
+
+export const yAxisRange$ = ({
   resetAllRanges,
   visibleTraces$,
   showZero$,
   autoscale$,
   fractionalMargins$,
   xRange$,
-}: AxisRangeProps): AxisRange => {
-  const tracesRange$ = derived(($) =>
-    axis === "x" ? $(visibleTraces$).range : $(visibleTraces$).getYRange(),
-  );
-
+}: YAxisRangeProps): AxisRange => {
+  const tracesRange$ = derived(($) => $(visibleTraces$).getYRange());
   const defaultRange$ = derived(($) => {
     const rangeWithMargins = preventEmptyRange(
       addFractionalMarginsToRange($(tracesRange$), $(fractionalMargins$)),

@@ -11,6 +11,7 @@
   import { NumericDateRepresentation, TraceList } from "./lib/index.js";
 
   import Fa from "svelte-fa";
+  import { mut } from "@mod.js/signals";
 
   // autogenerate a lot of data
   const from = 0;
@@ -104,11 +105,14 @@
   );
 
   let wrapDiv: HTMLDivElement;
+
+  let commonXRuler$ = mut();
 </script>
 
 <main>
   <h1>Chartium test page</h1>
   {#await traces then traces}
+    {@const commonXRange$ = mut(traces.range)}
     <div style="height:400px;width:900px;" bind:this={wrapDiv}>
       <Chart
         {controller}
@@ -120,6 +124,33 @@
         defaultYUnit={IEC.parseUnit("MiB")}
         legendPosition="bottom"
         hoverPointsInterpolation="nearest"
+        {commonXRange$}
+      >
+        <!-- <svelte:fragment slot="toolbar">
+            <ToolFullscreen on:click={() => (fullscreen = !fullscreen)} />
+            <ToolExportToPng />
+            <ToolHideLegend />
+            <ToolExportToCsv />
+          </svelte:fragment> -->
+        <svelte:fragment slot="infobox">
+          <Fa icon={faArrowRight} />&ensp;1<br />
+          <Fa icon={faArrowLeft} />&ensp;1000<br />
+          <Fa icon={faChartLine} />&ensp;3/3
+        </svelte:fragment>
+      </Chart>
+    </div>
+    <div style="height:400px;width:900px;" bind:this={wrapDiv}>
+      <Chart
+        {controller}
+        {traces}
+        title="Titulek"
+        subtitle="Podtitulek"
+        xLabel="Time"
+        yLabel="Amount"
+        defaultYUnit={IEC.parseUnit("MiB")}
+        legendPosition="bottom"
+        hoverPointsInterpolation="nearest"
+        {commonXRange$}
       >
         <!-- <svelte:fragment slot="toolbar">
             <ToolFullscreen on:click={() => (fullscreen = !fullscreen)} />

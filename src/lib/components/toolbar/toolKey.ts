@@ -5,6 +5,7 @@ export type ToolContext = {
   /** Div that wraps the entire chart component */
   notifyOfAutozoom$: Signal<boolean>;
   autoscaleY$: WritableSignal<boolean>;
+  doUseCommonXRange$: WritableSignal<boolean>;
   getWrapDiv: () => HTMLDivElement;
   toggleLegend: () => void;
   getTracelist: () => TraceList;

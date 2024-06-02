@@ -1,4 +1,4 @@
-import { cons, type Signal } from "@mod.js/signals";
+import { Signal, WritableSignal, cons } from "@mod.js/signals";
 import { type TraceList } from "../../index.js";
 import {
   Quantity,
@@ -8,10 +8,11 @@ import {
   type DisplayUnitPreference,
   type DisplayUnit,
   type DataUnit,
+  type ResolvedType,
 } from "../../types.js";
 import { axisUnits$ } from "./axisUnits.js";
-import { axisRange$ } from "./axisRange.js";
 import { axisTicks$, type TextMeasuringFunction } from "./axisTicks.js";
+import { xAxisRange$, yAxisRange$ } from "./axisRange.js";
 
 export interface UnitChangeAction {
   unit: DisplayUnit;
@@ -31,17 +32,26 @@ export type RangeMarginValue =
   | { px: number }
   | 0;
 
-export interface AxisProps {
-  axis: "x" | "y";
+export type AxisProps = ResolvedType<XAxisProps | YAxisProps>;
+
+export type XAxisProps = {
+  axis: "x";
   resetAllRanges: () => void;
   visibleTraces$: Signal<TraceList>;
   displayUnitPreference$: Signal<DisplayUnitPreference>;
   showZero$: Signal<boolean>;
   measureTextSize$: Signal<TextMeasuringFunction>;
   lengthInPx$: Signal<number | undefined>;
-  autoscale$: Signal<boolean>;
-  xRange$?: Signal<Range>;
-}
+  commonRange$: WritableSignal<Range | undefined>;
+  doUseCommonRange$: Signal<boolean>;
+};
+export type YAxisProps = ResolvedType<
+  {
+    axis: "y";
+    xRange$: Signal<Range>;
+    autoscale$: Signal<boolean>;
+  } & Omit<XAxisProps, "axis" | "commonRange$" | "doUseCommonRange$">
+>;
 
 export interface Axis {
   range$: Signal<Range>;
@@ -56,7 +66,7 @@ export interface Axis {
   ticks$: Signal<Tick[]>;
 }
 
-export const axis$ = ({
+export const yAxis$ = ({
   axis,
   resetAllRanges,
   visibleTraces$,
@@ -66,30 +76,23 @@ export const axis$ = ({
   lengthInPx$,
   autoscale$,
   xRange$,
-}: AxisProps): Axis => {
-  const { range$, resetRange, shiftRange, zoomRange } = axisRange$({
-    axis,
+}: YAxisProps): Axis => {
+  const { range$, resetRange, shiftRange, zoomRange } = yAxisRange$({
     resetAllRanges,
-    visibleTraces$,
     showZero$: showZero$.skipEqual(),
-    autoscale$: autoscale$?.skipEqual(),
-    fractionalMargins$: axis === "y" ? cons([0.1, 0.1]) : cons([0, 0]),
+    visibleTraces$,
+    fractionalMargins$: cons([0, 0]),
+    autoscale$,
     xRange$,
   });
-
-  const { dataUnit$, currentDisplayUnit$, unitChangeActions$ } = axisUnits$({
-    axis,
-    range$,
-    visibleTraces$,
-    displayUnitPreference$: displayUnitPreference$.skipEqual(),
-  });
-
-  const { ticks$ } = axisTicks$({
-    range$,
-    currentDisplayUnit$,
-    measureTextSize$,
-    lengthInPx$,
-  });
+  const { dataUnit$, currentDisplayUnit$, unitChangeActions$, ticks$ } =
+    axisCommon(range$, {
+      axis,
+      displayUnitPreference$: displayUnitPreference$.skipEqual(),
+      lengthInPx$,
+      measureTextSize$,
+      visibleTraces$,
+    });
 
   return {
     range$,
@@ -101,4 +104,80 @@ export const axis$ = ({
     unitChangeActions$,
     ticks$,
   };
+};
+
+export const xAxis$ = ({
+  axis,
+  resetAllRanges,
+  visibleTraces$,
+  displayUnitPreference$,
+  showZero$,
+  measureTextSize$,
+  lengthInPx$,
+  commonRange$,
+  doUseCommonRange$,
+}: XAxisProps): Axis => {
+  //displayUnitPreference$: axisProps.displayUnitPreference$.skipEqual(),
+  //showZero$: axisProps.showZero$.skipEqual(),
+  //autoscale$: axisProps.autoscale$.skipEqual(),
+  const { range$, resetRange, shiftRange, zoomRange } = xAxisRange$({
+    resetAllRanges,
+    commonRange$,
+    showZero$: showZero$.skipEqual(),
+    visibleTraces$,
+    fractionalMargins$: cons([0, 0]),
+    doUseCommonRange$,
+  });
+  const { dataUnit$, currentDisplayUnit$, unitChangeActions$, ticks$ } =
+    axisCommon(range$, {
+      axis,
+      displayUnitPreference$: displayUnitPreference$.skipEqual(),
+      lengthInPx$,
+      measureTextSize$,
+      visibleTraces$,
+    });
+
+  return {
+    range$,
+    resetRange,
+    shiftRange,
+    zoomRange,
+    dataUnit$,
+    currentDisplayUnit$,
+    unitChangeActions$,
+    ticks$,
+  };
+};
+
+const axisCommon = (
+  range$: Signal<Range>,
+  {
+    axis,
+    measureTextSize$,
+    lengthInPx$,
+    visibleTraces$,
+    displayUnitPreference$,
+  }: Pick<
+    AxisProps,
+    | "axis"
+    | "measureTextSize$"
+    | "lengthInPx$"
+    | "visibleTraces$"
+    | "displayUnitPreference$"
+  >,
+) => {
+  const { dataUnit$, currentDisplayUnit$, unitChangeActions$ } = axisUnits$({
+    displayUnitPreference$,
+    range$,
+    axis,
+    visibleTraces$,
+  });
+
+  const { ticks$ } = axisTicks$({
+    range$,
+    currentDisplayUnit$,
+    measureTextSize$,
+    lengthInPx$,
+  });
+  return { dataUnit$, currentDisplayUnit$, unitChangeActions$, ticks$ };
 };

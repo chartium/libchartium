@@ -1,6 +1,11 @@
-import { Defer, cons, type DeferLike, type Signal } from "@mod.js/signals";
+import {
+  Defer,
+  WritableSignal,
+  type DeferLike,
+  type Signal,
+} from "@mod.js/signals";
 import type { ChartiumController, TraceList } from "../../index.js";
-import { axis$, type Axis } from "./axis.js";
+import { xAxis$, yAxis$, type Axis } from "./axis.js";
 import { chartCanvas$ } from "./chartCanvas.js";
 import { chartRenderer$ } from "./chartRenderer.js";
 import type { TextMeasuringFunction } from "./axisTicks.js";
@@ -9,7 +14,7 @@ import {
   type PointInChartFactory,
   type ValueOnAxisFactory,
 } from "./chartAffineSpace.js";
-import type { DisplayUnitPreference } from "../../types.js";
+import type { DisplayUnitPreference, Range } from "../../types.js";
 
 export interface ChartProps {
   controller$: Signal<ChartiumController | undefined>;
@@ -23,6 +28,8 @@ export interface ChartProps {
   showXAxisZero$: Signal<boolean>;
   showYAxisZero$: Signal<boolean>;
   autoscaleY$: Signal<boolean>;
+  commonXRange$: WritableSignal<Range | undefined>;
+  doUseCommonXRange$: Signal<boolean>;
   xAxisDisplayUnitPreference$: Signal<DisplayUnitPreference>;
   yAxisDisplayUnitPreference$: Signal<DisplayUnitPreference>;
 
@@ -50,6 +57,8 @@ export const chart$ = ({
   showXAxisZero$,
   showYAxisZero$,
   autoscaleY$,
+  commonXRange$,
+  doUseCommonXRange$,
   xAxisDisplayUnitPreference$,
   yAxisDisplayUnitPreference$,
   defer,
@@ -64,6 +73,8 @@ export const chart$ = ({
     showXAxisZero$,
     showYAxisZero$,
     autoscaleY$,
+    commonXRange$,
+    doUseCommonXRange$,
     xAxisDisplayUnitPreference$,
     yAxisDisplayUnitPreference$,
 
@@ -80,6 +91,8 @@ const sanitizedChart$ = ({
   showXAxisZero$,
   showYAxisZero$,
   autoscaleY$,
+  commonXRange$,
+  doUseCommonXRange$,
   xAxisDisplayUnitPreference$,
   yAxisDisplayUnitPreference$,
   defer,
@@ -92,7 +105,7 @@ const sanitizedChart$ = ({
     canvas$,
   });
 
-  const x = axis$({
+  const x = xAxis$({
     axis: "x",
     visibleTraces$,
     lengthInPx$: canvasLogicalSize$.map((size) => size?.width),
@@ -101,13 +114,14 @@ const sanitizedChart$ = ({
     ), // FIXME find a better solution,,
     displayUnitPreference$: xAxisDisplayUnitPreference$,
     showZero$: showXAxisZero$,
-    autoscale$: cons(false),
+    commonRange$: commonXRange$,
+    doUseCommonRange$: doUseCommonXRange$,
     resetAllRanges,
   });
 
   const axes = {
     x,
-    y: axis$({
+    y: yAxis$({
       axis: "y",
       visibleTraces$,
       lengthInPx$: canvasLogicalSize$.map((size) => size?.height),
