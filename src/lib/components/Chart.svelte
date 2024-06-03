@@ -176,7 +176,7 @@
   const showYAxisZero$ = mut(showYAxisZero);
   $: showYAxisZero$.set(showYAxisZero);
 
-  /**  */
+  /** Reactively sets such a range for the Y axis such that all the data for current X range are visible (+ margins) */
   export let autoscaleY: boolean = false;
   const autoscaleY$ = mut(autoscaleY);
   $: autoscaleY$.set(autoscaleY);
@@ -196,6 +196,18 @@
 
   /** Bindable property saying whether the chart is currently in fullscreen mode */
   export let fullscreen = false;
+  const fullscreen$ = mut(fullscreen);
+  $: fullscreen$.set(fullscreen);
+  fullscreen$.subscribe((f) => {
+    if (f) {
+      document.addEventListener("keydown", function callback(e) {
+        if (e.key === "Escape") {
+          fullscreen = false;
+          document.removeEventListener("keydown", callback);
+        }
+      });
+    }
+  });
 
   let measureXAxisTextSize: TextMeasuringFunction | undefined;
   const measureXAxisTextSize$ = mut(measureXAxisTextSize);
@@ -316,6 +328,7 @@
     notifyOfAutozoom$,
     autoscaleY$,
     doUseCommonXRange$,
+    fullscreen$,
     getWrapDiv: () => {
       return wrapDiv;
     },
@@ -324,17 +337,6 @@
     },
     getTracelist: () => traces,
     getTitle: () => title,
-    toggleFullscreen: () => {
-      fullscreen = !fullscreen;
-      if (fullscreen) {
-        document.addEventListener("keydown", function callback(e) {
-          if (e.key === "Escape") {
-            fullscreen = false;
-            document.removeEventListener("keydown", callback);
-          }
-        });
-      }
-    },
   });
 </script>
 
@@ -351,8 +353,8 @@
 <div bind:this={parentDiv} style="height: 100%; width: 100%">
   <div
     bind:this={wrapDiv}
-    use:portal={fullscreen ? "body" : parentDiv}
-    class:fullscreen
+    use:portal={$fullscreen$ ? "body" : parentDiv}
+    class:fullscreen={$fullscreen$}
     class={klass}
     style={"height: 100%; width: 100%"}
   >

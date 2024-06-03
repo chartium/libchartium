@@ -6,11 +6,11 @@ export type ToolContext = {
   notifyOfAutozoom$: Signal<boolean>;
   autoscaleY$: WritableSignal<boolean>;
   doUseCommonXRange$: WritableSignal<boolean>;
+  fullscreen$: WritableSignal<boolean>;
   getWrapDiv: () => HTMLDivElement;
   toggleLegend: () => void;
   getTracelist: () => TraceList;
   getTitle: () => string;
-  toggleFullscreen: () => void;
 };
 
 export const toolKey: InjectionKey<ToolContext> = Symbol("toolKey");

@@ -35,7 +35,14 @@
    * to avoid overflowing the page */
   export let avoidEdges: boolean = true;
 
-  let container: DOMRect | undefined;
+  let bBS: ResizeObserverSize[] | undefined;
+  $: container =
+    bBS?.[0] === undefined
+      ? undefined
+      : {
+          height: bBS[0].blockSize,
+          width: bBS[0].inlineSize,
+        };
   let innerWidth: number;
   let innerHeight: number;
 
@@ -54,6 +61,10 @@
     }
   }
 
+  const clampBetween = (x: number, min: number, max: number) => {
+    return Math.min(Math.max(x, min), max);
+  };
+
   /** returns position of self (top left corner) such that it doesn't overflow */
   function repairedPosition(
     positionRelativeToPage: { x: number; y: number },
@@ -65,29 +76,37 @@
     let toReturnY;
 
     if (right) {
-      const positionOfRightMenuBoundary = x + tooltipWidth + 3;
+      const positionOfRightMenuBoundary = x + tooltipWidth;
       const rightOverflow = positionOfRightMenuBoundary - innerWidth;
       toReturnX = rightOverflow > 0 ? x - tooltipWidth : x;
     }
     if (left) {
-      const positionOfLeftMenuBoundary = x - tooltipWidth - 3;
+      const positionOfLeftMenuBoundary = x - tooltipWidth;
       const leftOverflow = positionOfLeftMenuBoundary;
       toReturnX = leftOverflow < 0 ? x : x - tooltipWidth;
     }
     if (bottom) {
-      const positionOfBottomMenuBoundary = y + tooltipHeight + 3;
+      const positionOfBottomMenuBoundary = y + tooltipHeight;
       const bottomOverflow = positionOfBottomMenuBoundary - innerHeight;
       toReturnY = bottomOverflow > 0 ? y - tooltipHeight : y;
     }
     if (top) {
-      const positionOfTopMenuBoundary = y - tooltipHeight - 3;
+      const positionOfTopMenuBoundary = y - tooltipHeight;
       const topOverflow = positionOfTopMenuBoundary;
       toReturnY = topOverflow < 0 ? y : y - tooltipHeight;
     }
 
     return {
-      x: toReturnX ?? x - tooltipWidth / 2,
-      y: toReturnY ?? y - tooltipHeight / 2,
+      x: clampBetween(
+        toReturnX ?? x - tooltipWidth / 2,
+        0,
+        innerWidth - tooltipWidth,
+      ),
+      y: clampBetween(
+        toReturnY ?? y - tooltipHeight / 2,
+        0,
+        innerHeight - tooltipHeight,
+      ),
     };
   }
 </script>
@@ -95,7 +114,7 @@
 <svelte:window bind:innerHeight bind:innerWidth />
 {#if position !== undefined}
   <div
-    bind:contentRect={container}
+    bind:borderBoxSize={bBS}
     use:portal
     class="tooltip"
     style:top={renderPosition?.y + "px"}
@@ -108,10 +127,12 @@
 <style lang="scss">
   .tooltip {
     position: fixed;
-    height: fit-content;
+    padding: 0px 4px;
     width: fit-content;
+    height: fit-content;
     z-index: var(--libchartium-popup-z-index, 100);
     pointer-events: none;
     user-select: none;
+    white-space: nowrap;
   }
 </style>

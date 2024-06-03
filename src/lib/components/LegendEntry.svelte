@@ -16,6 +16,7 @@
 <div
   class="trace-legend"
   class:hidden
+  on:click={() => (hidden = !hidden)}
   use:singleOrDoubleclick={{
     single: () => toggleTraceVisibility(traceId),
     double: () => toggleVisibilityOfAllTraces(traceId),

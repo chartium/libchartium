@@ -1,15 +1,14 @@
 <script lang="ts">
-  import { faExpand } from "@fortawesome/free-solid-svg-icons";
-  // weird hack to import svelte-fa bc of NodeNext module resolution
-  import { default as Fa_1, type Fa as Fa_2 } from "svelte-fa";
+  import { faExpand, faCompress } from "@fortawesome/free-solid-svg-icons";
   import ToolbarButton from "./ToolbarButton.svelte";
   import { toolKey } from "./toolKey.js";
   import { getContext } from "svelte-typed-context";
 
-  const Fa = Fa_1 as any as typeof Fa_2;
-  const toggleFullscreen = getContext(toolKey)?.toggleFullscreen;
+  const fullscreen$ = getContext(toolKey)?.fullscreen$;
 </script>
 
-<ToolbarButton title="Toggle fullscreen" on:click={toggleFullscreen}>
-  <Fa icon={faExpand} />
-</ToolbarButton>
+<ToolbarButton
+  title={$fullscreen$ ? "Exit fullscreen" : "Enter fullscreen"}
+  on:click={() => fullscreen$?.update((f) => !f)}
+  icon={$fullscreen$ ? faCompress : faExpand}
+/>

@@ -305,7 +305,7 @@ export function singleOrDoubleclick(
     single: (event: MouseEvent) => void;
     double: (event: MouseEvent) => void;
   },
-  delayMS: number = 300,
+  delayMS: number = 250,
 ) {
   const handleFirstClick = (event: MouseEvent) => {
     let secondClickHappened = false;

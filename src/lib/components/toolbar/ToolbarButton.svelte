@@ -86,5 +86,8 @@
     padding: 3px;
     opacity: 0.9;
     background-color: var(--libchartium-secondary-background);
+    display: flex;
+    justify-content: center;
+    align-items: center;
   }
 </style>
