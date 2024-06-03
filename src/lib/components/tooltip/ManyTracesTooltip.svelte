@@ -1,7 +1,10 @@
 <script lang="ts">
   import type { CloseTrace } from "../../state/interactive/hover.js";
   import type { DisplayUnit } from "../../types.js";
-  import { qndFormat } from "../../utils/format.js";
+  import { DateFormat } from "../../utils/dateFormat.js";
+  import { qndFormat, uniqueDecimals } from "../../utils/format.js";
+  import { NumericDateRepresentation } from "../../utils/numericDateRepresentation.js";
+  import { toNumeric } from "../../utils/unit.js";
   import TracePreview from "../TracePreview.svelte";
 
   export let previewStyle: "simplified" | "full";
@@ -9,6 +12,16 @@
   export let xDisplayUnit: DisplayUnit;
   export let yDisplayUnit: DisplayUnit;
 
+  $: decimalPlaces = uniqueDecimals(
+    nearestTraces.map((t) =>
+      toNumeric(
+        t.y,
+        yDisplayUnit instanceof DateFormat
+          ? NumericDateRepresentation.prototype
+          : yDisplayUnit,
+      ),
+    ),
+  );
   $: first = nearestTraces[0];
 </script>
 
@@ -26,7 +39,7 @@
         {trace.style.label ?? trace.traceId}
       </div>
       <div class="trace-value">
-        {qndFormat(trace.y, { unit: yDisplayUnit })}
+        {qndFormat(trace.y, { unit: yDisplayUnit, decimalPlaces })}
       </div>
     </div>
   {/each}

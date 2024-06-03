@@ -1,7 +1,10 @@
 <script lang="ts">
   import type { HoveredTrace } from "../../state/interactive/hover.js";
   import type { DisplayUnit } from "../../types.js";
-  import { qndFormat } from "../../utils/format.js";
+  import { DateFormat } from "../../utils/dateFormat.js";
+  import { qndFormat, uniqueDecimals } from "../../utils/format.js";
+  import { NumericDateRepresentation } from "../../utils/numericDateRepresentation.js";
+  import { toNumeric } from "../../utils/unit.js";
   import TracePreview from "../TracePreview.svelte";
 
   export let previewStyle: "simplified" | "full";
@@ -16,6 +19,16 @@
     max: hoveredTrace.statistics.max,
     avg: hoveredTrace.statistics.average,
   };
+  $: decimalPlaces = uniqueDecimals(
+    Object.values(traceMetas).map((v) =>
+      toNumeric(
+        v,
+        yDisplayUnit instanceof DateFormat
+          ? NumericDateRepresentation.prototype
+          : yDisplayUnit,
+      ),
+    ),
+  );
 </script>
 
 <div class="tooltip-container">
@@ -38,7 +51,7 @@
     <div class="trace-info">
       <div class="value-name">{key}:</div>
       <div class="value-value">
-        {qndFormat(value, { unit: yDisplayUnit })}
+        {qndFormat(value, { unit: yDisplayUnit, decimalPlaces })}
       </div>
     </div>
   {/each}
