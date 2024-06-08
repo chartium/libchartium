@@ -7,6 +7,10 @@
     downloadCSVSensibly,
     downloadCSVUnhingedly,
   } from "../../utils/downloaders.js";
+
+  /** Use <a> element to download as opposed to a stream. This approach is widely supported but may take up more time and or memory */
+  export let useAnchorDownload = false;
+
   const getTracelist = getContext(toolKey)?.getTracelist;
   const getTitle = getContext(toolKey)?.getTitle;
 
@@ -23,7 +27,7 @@
         }
       })();
 
-    if (supportsFileSystemAccess) {
+    if (supportsFileSystemAccess && !useAnchorDownload) {
       downloadCSVSensibly(getTracelist(), filename);
     } else {
       downloadCSVUnhingedly(getTracelist(), filename);
