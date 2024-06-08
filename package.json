@@ -45,7 +45,8 @@
     "test": "cd src/rust && cargo test; cd ../..",
     "preview": "vite preview",
     "check": "svelte-check --tsconfig ./tsconfig.json",
-    "lint": "prettier -c . && eslint ."
+    "lint": "prettier -c . && eslint .",
+    "prepublishOnly": "pnpm build"
   },
   "devDependencies": {
     "@eslint/js": "^9.1.1",
