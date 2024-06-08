@@ -1,4 +1,4 @@
-import { Signal, WritableSignal, cons } from "@mod.js/signals";
+import { Signal, WritableSignal } from "@mod.js/signals";
 import { type TraceList } from "../../index.js";
 import {
   Quantity,
@@ -13,6 +13,7 @@ import {
 import { axisUnits$ } from "./axisUnits.js";
 import { axisTicks$, type TextMeasuringFunction } from "./axisTicks.js";
 import { xAxisRange$, yAxisRange$ } from "./axisRange.js";
+import type { ExplicitRangeMargins } from "../../utils/rangeMargins.js";
 
 export interface UnitChangeAction {
   unit: DisplayUnit;
@@ -40,10 +41,11 @@ export type XAxisProps = {
   visibleTraces$: Signal<TraceList>;
   displayUnitPreference$: Signal<DisplayUnitPreference>;
   showZero$: Signal<boolean>;
-  measureTextSize$: Signal<TextMeasuringFunction>;
+  measureTextSize$: Signal<TextMeasuringFunction | undefined>;
   lengthInPx$: Signal<number | undefined>;
   commonRange$: WritableSignal<Range | undefined>;
   doUseCommonRange$: Signal<boolean>;
+  margins$: Signal<ExplicitRangeMargins>;
 };
 export type YAxisProps = ResolvedType<
   {
@@ -75,13 +77,15 @@ export const yAxis$ = ({
   measureTextSize$,
   lengthInPx$,
   autoscale$,
+  margins$,
   xRange$,
 }: YAxisProps): Axis => {
   const { range$, resetRange, shiftRange, zoomRange } = yAxisRange$({
     resetAllRanges,
     showZero$: showZero$.skipEqual(),
     visibleTraces$,
-    fractionalMargins$: cons([0, 0]),
+    margins$: margins$.map((m) => [m.bottom ?? 0, m.top ?? 0]),
+    lengthInPx$,
     autoscale$,
     xRange$,
   });
@@ -116,6 +120,7 @@ export const xAxis$ = ({
   lengthInPx$,
   commonRange$,
   doUseCommonRange$,
+  margins$,
 }: XAxisProps): Axis => {
   //displayUnitPreference$: axisProps.displayUnitPreference$.skipEqual(),
   //showZero$: axisProps.showZero$.skipEqual(),
@@ -125,7 +130,8 @@ export const xAxis$ = ({
     commonRange$,
     showZero$: showZero$.skipEqual(),
     visibleTraces$,
-    fractionalMargins$: cons([0, 0]),
+    margins$: margins$.map((m) => [m.left ?? 0, m.right ?? 0]),
+    lengthInPx$,
     doUseCommonRange$,
   });
   const { dataUnit$, currentDisplayUnit$, unitChangeActions$, ticks$ } =

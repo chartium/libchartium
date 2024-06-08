@@ -237,3 +237,10 @@ export function maxValue(x: ChartValue, y: ChartValue): ChartValue {
     return (x as Dayjs).isAfter(y as Dayjs) ? x : y;
   }
 }
+
+export const unitOf = (v: number | Dayjs | Quantity): DataUnit =>
+  isQuantity(v)
+    ? v.unit
+    : isDayjs(v)
+      ? NumericDateRepresentation.EpochMilliseconds()
+      : undefined;

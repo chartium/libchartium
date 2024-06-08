@@ -4,26 +4,25 @@ import {
   mutDerived,
   type Signal,
 } from "@mod.js/signals";
-import { NumericDateRepresentation, type TraceList } from "../../index.js";
+import { type TraceList } from "../../index.js";
 import {
   rangesHaveMeaningfulIntersection,
   type Range,
   type NumericRange,
-  Quantity,
-  type DataUnit,
-  isQuantity,
   type ResolvedType,
 } from "../../types.js";
-import { isDayjs, type Dayjs } from "../../utils/dayjs.js";
-import { toNumeric, toRange } from "../../utils/unit.js";
+import { toNumeric, toRange, unitOf } from "../../utils/unit.js";
+import { addMarginsToRange } from "../../utils/rangeMargins.js";
+import type { RangeMarginValue } from "./axis.js";
 
 export type XAxisRangeProps = {
   resetAllRanges: () => void;
   visibleTraces$: Signal<TraceList>;
   showZero$: Signal<boolean>;
-  fractionalMargins$: Signal<[number, number]>;
+  margins$: Signal<[RangeMarginValue, RangeMarginValue]>;
   commonRange$: WritableSignal<Range | undefined>;
   doUseCommonRange$: Signal<boolean>;
+  lengthInPx$: Signal<number | undefined>;
 };
 export type YAxisRangeProps = ResolvedType<
   {
@@ -42,14 +41,15 @@ export const xAxisRange$ = ({
   resetAllRanges,
   visibleTraces$,
   showZero$,
-  fractionalMargins$,
+  margins$,
   commonRange$,
   doUseCommonRange$,
+  lengthInPx$,
 }: XAxisRangeProps): AxisRange => {
   const tracesRange$ = derived(($) => $(visibleTraces$).range);
   const defaultRange$ = derived(($) => {
     const rangeWithMargins = preventEmptyRange(
-      addFractionalMarginsToRange($(tracesRange$), $(fractionalMargins$)),
+      addMarginsToRange($(tracesRange$), $(margins$), $(lengthInPx$)), // FIXME is this the best idea?
     );
     if ($(showZero$)) {
       return addZeroToRange(rangeWithMargins);
@@ -104,13 +104,14 @@ export const yAxisRange$ = ({
   visibleTraces$,
   showZero$,
   autoscale$,
-  fractionalMargins$,
+  margins$,
+  lengthInPx$,
   xRange$,
 }: YAxisRangeProps): AxisRange => {
   const tracesRange$ = derived(($) => $(visibleTraces$).getYRange());
   const defaultRange$ = derived(($) => {
     const rangeWithMargins = preventEmptyRange(
-      addFractionalMarginsToRange($(tracesRange$), $(fractionalMargins$)),
+      addMarginsToRange($(tracesRange$), $(margins$), $(lengthInPx$)), // FIXME
     );
     if ($(showZero$)) {
       return addZeroToRange(rangeWithMargins);
@@ -125,10 +126,7 @@ export const yAxisRange$ = ({
     if ($(autoscale$)) {
       if (xRange$ === undefined) return def;
       return preventEmptyRange(
-        addFractionalMarginsToRange(
-          $(visibleTraces$).getYRange($(xRange$)),
-          $(fractionalMargins$),
-        ),
+        addMarginsToRange($(tracesRange$), $(margins$), $(lengthInPx$)), // FIXME
       );
     }
     if (isAutozoomed || prev === undefined) {
@@ -167,35 +165,6 @@ export const yAxisRange$ = ({
   };
 
   return { range$: range$.toReadonly(), resetRange, zoomRange, shiftRange };
-};
-
-const addFractionalMarginsToRange = (
-  currentRange: Range,
-  [lower, higher]: [number, number],
-) => {
-  /*
-    |<--------------100%--------------->|
-    |<--lower-->|<--curr-->|<--higher-->|
-  */
-  if (lower + higher >= 1) {
-    throw new Error("The specified margins add up to more than 100%");
-  }
-
-  const lengthMultiplier = 1 / (1 - lower - higher);
-
-  const unit = unitOf(currentRange.from);
-  const from = toNumeric(currentRange.from, unit);
-  const to = toNumeric(currentRange.to, unit);
-
-  const newLength = (to - from) * lengthMultiplier;
-
-  return toRange(
-    {
-      from: from - lower * newLength,
-      to: to + higher * newLength,
-    },
-    unit,
-  );
 };
 
 const preventEmptyRange = (currentRange: Range) => {
@@ -257,10 +226,3 @@ const computeShiftedRange = (
     unit,
   );
 };
-
-export const unitOf = (v: number | Dayjs | Quantity): DataUnit =>
-  isQuantity(v)
-    ? v.unit
-    : isDayjs(v)
-      ? NumericDateRepresentation.EpochMilliseconds()
-      : undefined;

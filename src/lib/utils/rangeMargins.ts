@@ -1,16 +1,22 @@
-import type { Quantity, Range, Size, Unit } from "../types.js";
+import type { Quantity, Range, Unit } from "../types.js";
 import {
-  add,
-  divide,
-  multiply,
-  subtract,
   toNumeric,
   toChartValue,
+  toRange,
+  unitOf,
+  toNumericRange,
 } from "./unit.js";
-import type { NumericDateRepresentation } from "./numericDateRepresentation.js";
+import { NumericDateRepresentation } from "./numericDateRepresentation.js";
 import type { RangeMarginValue } from "../state/core/axis.js";
 
 export type Test = HTMLButtonElement;
+
+export type ExplicitRangeMargins = {
+  top?: RangeMarginValue;
+  right?: RangeMarginValue;
+  bottom?: RangeMarginValue;
+  left?: RangeMarginValue;
+};
 
 export type RangeMargins =
   | { all: RangeMarginValue }
@@ -22,76 +28,110 @@ export type RangeMargins =
       vertical?: RangeMarginValue;
       horizontal: RangeMarginValue;
     }
-  | {
-      top?: RangeMarginValue;
-      right?: RangeMarginValue;
-      bottom?: RangeMarginValue;
-      left?: RangeMarginValue;
+  | ExplicitRangeMargins;
+
+export function explicifyRangeMargins(
+  m: RangeMargins | undefined,
+): ExplicitRangeMargins {
+  if (m === undefined) return {};
+  if ("all" in m)
+    return {
+      top: m.all,
+      bottom: m.all,
+      left: m.all,
+      right: m.all,
     };
+  if ("horizontal" in m || "vertical" in m)
+    return {
+      top: m.vertical,
+      bottom: m.vertical,
+      left: m.horizontal,
+      right: m.horizontal,
+    };
+  return m;
+}
+
+export function toFractionalMargins(
+  currentRange: Range,
+  margins: [RangeMarginValue, RangeMarginValue],
+  sizeInPX: number | undefined,
+): [number, number] {
+  const compatibleUnit = unitOf(currentRange.from);
+  const numericRange = toNumericRange(currentRange, compatibleUnit);
+  const rangeWidth = numericRange.to - numericRange.from;
+  if (margins.every((v) => v !== 0 && "value" in v)) {
+    const numericMargins = margins.map((m) =>
+      toNumeric((m as { value: number | Quantity }).value, compatibleUnit),
+    );
+    return numericMargins.map(
+      (m) => m / (rangeWidth + numericMargins[0] + numericMargins[1]),
+    ) as [number, number];
+  }
+
+  const nonQuantIndex = margins.findIndex((m) => m === 0 || !("value" in m));
+  const maybeQuantIdex = Number(!nonQuantIndex);
+
+  const nonQuant = (() => {
+    const margin = margins[nonQuantIndex];
+    if (margin === 0) return 0;
+    if ("percent" in margin) return margin.percent / 100;
+    if ("px" in margin)
+      return sizeInPX === undefined ? 0 : margin.px / sizeInPX;
+  })() as number;
+
+  const maybeQuant = (() => {
+    const margin = margins[maybeQuantIdex];
+    if (margin === 0) return 0;
+    if ("percent" in margin) return margin.percent / 100;
+    if ("px" in margin)
+      return sizeInPX === undefined ? 0 : margin.px / sizeInPX;
+    // ("value" in margin)
+    const numericMargin = toNumeric(margin.value, compatibleUnit);
+    return numericMargin * ((1 - nonQuant) / (numericMargin + rangeWidth));
+  })();
+  const res = [];
+  res[nonQuantIndex] = nonQuant;
+  res[maybeQuantIdex] = maybeQuant;
+  return res as [number, number];
+}
+
+export const addFractionalMarginsToRange = (
+  currentRange: Range,
+  [lower, higher]: [number, number],
+) => {
+  /*
+    |<--------------100%--------------->|
+    |<--lower-->|<--curr-->|<--higher-->|
+  */
+
+  const lengthMultiplier = 1 / (1 - lower - higher);
+
+  const unit = unitOf(currentRange.from);
+  const from = toNumeric(currentRange.from, unit);
+  const to = toNumeric(currentRange.to, unit);
+
+  const newLength = (to - from) * lengthMultiplier;
+
+  return toRange(
+    {
+      from: from - lower * newLength,
+      to: to + higher * newLength,
+    },
+    unit,
+  );
+};
 
 export const addMarginsToRange = (
-  margins: RangeMargins,
-  { width, height }: Size,
-  xRange: Range,
-  yRange: Range,
-): { xRange: Range; yRange: Range } => {
-  if ("all" in margins)
-    margins = {
-      top: margins.all,
-      right: margins.all,
-      bottom: margins.all,
-      left: margins.all,
-    };
-
-  if ("vertical" in margins || "horizontal" in margins)
-    margins = {
-      top: margins.vertical,
-      right: margins.horizontal,
-      bottom: margins.vertical,
-      left: margins.horizontal,
-    };
-
-  let { top, right, bottom, left } = margins;
-
-  const pxToPercent = (part: number, total: number) => (100 * part) / total;
-  const coercePx = (dim: typeof top, total: number) =>
-    dim && "px" in dim ? { percent: pxToPercent(dim.px, total) } : dim;
-
-  top = coercePx(top, height);
-  right = coercePx(right, width);
-  bottom = coercePx(bottom, height);
-  left = coercePx(left, width);
-
-  type M = typeof top;
-  const expandRange = ({ from, to }: Range, margins: [M, M]): Range => {
-    // calculate the new length of the range
-    // the absolute margins are simply added to the current length
-    // the relative margins are counted as L ↦ L/(1 - Σrᵢ)
-    const numerator = margins.reduce(
-      (a, b) => (b && "value" in b ? add(a, b.value) : a),
-      subtract(to, from),
-    ) as number | Quantity;
-    const denominator = margins.reduce(
-      (a, b) => (b && "percent" in b ? a - b.percent / 100 : a),
-      1,
-    );
-    const newLength = divide(numerator, denominator);
-
-    // convert relative margins to absolute margins
-    const absoluteMargins = margins.map((m) =>
-      !m ? 0 : "value" in m ? m.value : multiply(newLength, m.percent / 100),
-    );
-
-    return {
-      from: subtract(from, absoluteMargins[0]),
-      to: add(to, absoluteMargins[1]),
-    } as Range;
-  };
-
-  return {
-    xRange: expandRange(xRange, [left, right]),
-    yRange: expandRange(yRange, [top, bottom]),
-  };
+  currentRange: Range,
+  margins: [RangeMarginValue, RangeMarginValue],
+  lengthInPx: number | undefined,
+) => {
+  let fractional = toFractionalMargins(currentRange, margins, lengthInPx);
+  if (lengthInPx !== undefined && fractional[0] + fractional[1] >= 1) {
+    console.warn("The specified margins add up to more than 100%");
+    fractional = [0.49, 0.49];
+  }
+  return addFractionalMarginsToRange(currentRange, fractional);
 };
 
 export const addZeroToRange = (

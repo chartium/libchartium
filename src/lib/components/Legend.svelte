@@ -13,6 +13,7 @@
   } from "../data-worker/trace-list.js";
   import type { WritableSignal } from "@mod.js/signals";
   import { createVirtualizer } from "@tanstack/svelte-virtual";
+  import { measureText } from "../utils/format.js";
 
   export let numberOfShownTraces: number = 5;
 
@@ -63,37 +64,14 @@
     ? calculateWidestLegend(shownTraces)
     : PREVIEW_WIDTH + GAP;
 
-  let calcCanvas: HTMLCanvasElement;
   let containerElem: HTMLDivElement;
   const calculateWidestLegend = (
     traces: { traceId: string; style: ComputedTraceStyle }[],
   ) => {
-    if (!calcCanvas) {
-      calcCanvas = document.createElement("canvas");
-    }
-
-    const ctx = calcCanvas.getContext("2d")!;
-
-    // This API is brand new, released only 8 years ago
-    // No need to rush this, Firefox
-    const getStyle = (() => {
-      if ("computedStyleMap" in containerElem) {
-        const style = containerElem.computedStyleMap();
-        return (key: string) => style.get(key)?.toString() ?? "";
-      } else {
-        const style = getComputedStyle(containerElem);
-        return (key: string) => style.getPropertyValue(key);
-      }
-    })();
-
-    ctx.font = ["font-style", "font-weight", "font-size", "font-family"]
-      .map(getStyle)
-      .join(" ");
-
     const max = traces.reduce<number>((prev, trace) => {
       return Math.max(
         prev,
-        ctx.measureText(trace.style.label ?? trace.traceId).width,
+        measureText(trace.style.label ?? trace.traceId, containerElem),
       );
     }, 0);
 

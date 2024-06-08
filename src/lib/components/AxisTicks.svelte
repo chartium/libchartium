@@ -64,8 +64,7 @@
   );
   $: onDestroy(dimensionFlock?.register(minorDim) ?? noop);
 
-  export const textLength = (text: string) =>
-    measureText(text, measuringSpan, axis === "x" ? "horizontal" : "vertical");
+  export const textLength = (text: string) => measureText(text, measuringSpan);
 
   export let unitChangeActions: Signal<UnitChangeActions>;
 
@@ -182,8 +181,8 @@
   function tickSpanStyle(tick: Tick): string {
     const absolutePos =
       axis === "x"
-        ? `left: ${(tick.position * 100).toFixed(2)}%`
-        : `top: ${((1 - tick.position) * 100).toFixed(2)}%`;
+        ? `margin-x: -100%; left: ${(tick.position * 100).toFixed(2)}%`
+        : `margin-y: -100%; top: ${((1 - tick.position) * 100).toFixed(2)}%`;
 
     const transform = `${
       axis === "x" ? "translateX(-50%)" : "translateY(-50%)"
@@ -191,27 +190,6 @@
 
     const transformOrigin = "center center";
     return `${absolutePos}; transform: ${transform}; transform-origin: ${transformOrigin};`;
-  }
-
-  function maxPerpendicularSize(ticks: Tick[]): number {
-    if (!measuringSpan) return 0;
-    let direction: "horizontal" | "vertical" =
-      axis === "x" ? "vertical" : "horizontal";
-
-    let maxSize = 0;
-    for (const tick of ticks) {
-      const content =
-        tick.text + (tick.subtext !== undefined ? "<br/>" + tick.subtext : "");
-      const size = measureText(content, measuringSpan, direction);
-
-      if (size > maxSize) {
-        maxSize = size;
-      }
-    }
-
-    measuringSpan.style.rotate = "";
-
-    return maxSize;
   }
 </script>
 
@@ -244,8 +222,6 @@
   {#if !hideTicks}
     <div
       class="{axis} ticks"
-      style="{axis === `x` ? `height` : `width`}: {maxPerpendicularSize(ticks) +
-        4}px"
       use:mouseDrag={{
         ...dragCallbacks,
         button: MouseButtons.Right,
@@ -255,11 +231,13 @@
     >
       {#each ticks as tick}
         <span style={tickSpanStyle(tick)}>
-          {tick.text}
-          {#if tick.subtext}
-            <br />
-            {tick.subtext}
-          {/if}
+          <div class="{axis} innermost">
+            {tick.text}
+            {#if tick.subtext}
+              <br />
+              {tick.subtext}
+            {/if}
+          </div>
         </span>
       {/each}
       <span class="measuring-span" bind:this={measuringSpan} />
@@ -289,37 +267,44 @@
     height: 100%;
     width: 100%;
   }
-  .y {
-    height: 100%;
+  .ticks {
+    position: static;
+    display: flex;
   }
-
-  .x {
-    writing-mode: horizontal-tb;
+  .x.ticks {
+    padding-top: 4px;
+    flex-direction: row;
+    align-items: start;
     width: 100%;
   }
-
-  .ticks {
-    position: relative;
+  .y.ticks {
+    padding-left: 4px;
+    flex-direction: column;
+    align-items: end;
+    height: 100%;
   }
   .x.ticks > span {
-    position: absolute;
+    position: relative;
     line-height: 1;
-    width: max-content;
+    width: 0;
     top: 4px;
+    height: fit-content;
   }
-
   .y.ticks > span {
-    position: absolute;
+    position: relative;
     line-height: 1;
     width: max-content;
     right: 4px;
+    height: 0;
+    overflow: visible;
   }
-
-  .ticks.x {
-    padding-top: 4px;
+  .x.innermost {
+    width: fit-content;
+    transform: translateX(-50%);
   }
-  .ticks.y {
-    padding-left: 4px;
+  .y.innermost {
+    height: fit-content;
+    transform: translateY(-50%);
   }
 
   span,

@@ -32,42 +32,35 @@ export function uniqueDecimals(
   return i;
 }
 
-/** Measures physical amount of space text takes up */
-export function measureText(
-  text: string,
-  measuringSpan: HTMLSpanElement,
-  direction: "horizontal" | "vertical" = "horizontal",
-): number {
-  measuringSpan.innerHTML = text;
-  return direction === "horizontal"
-    ? measuringSpan.getBoundingClientRect().width
-    : measuringSpan.getBoundingClientRect().height;
-}
-
 /**
- * Checks if the content (ticks) overlaps within the available space.
- * @param content - An array of objects containing the value and position of each tick.
- * @param measuringSpan - A span element used to measure the width of the text.
+ * Return length of `text` in pixels as it would appear inside `element`
  */
-export function doOverlap(
-  content: { text: string; position: number }[],
-  measuringSpan: HTMLSpanElement,
-  direction: "horizontal" | "vertical" = "horizontal",
-): boolean {
-  for (let i = 0; i < content.length - 1; i++) {
-    const thisTick = content[i];
-    const nextTick = content[i + 1];
-    const distance = nextTick.position - thisTick.position;
-    const textLength =
-      measureText(thisTick.text, measuringSpan, direction) / 2 +
-      measureText(nextTick.text, measuringSpan, direction) / 2;
-    if (distance < textLength + 4) {
-      return true;
-    }
-  }
+export const measureText = (() => {
+  let canvas: HTMLCanvasElement | undefined = undefined;
+  return (text: string, element: HTMLElement) => {
+    if (canvas === undefined) canvas = document.createElement("canvas");
 
-  return false;
-}
+    const ctx = canvas.getContext("2d")!;
+
+    // This API is brand new, released only 8 years ago
+    // No need to rush this, Firefox
+    const getStyle = (() => {
+      if ("computedStyleMap" in element) {
+        const style = element.computedStyleMap();
+        return (key: string) => style.get(key)?.toString() ?? "";
+      } else {
+        const style = getComputedStyle(element);
+        return (key: string) => style.getPropertyValue(key);
+      }
+    })();
+
+    ctx.font = ["font-style", "font-weight", "font-size", "font-family"]
+      .map(getStyle)
+      .join(" ");
+
+    return ctx.measureText(text).width;
+  };
+})();
 
 export interface QndFormatOptions extends QuantityFormatOptions {
   unit?: DisplayUnit;

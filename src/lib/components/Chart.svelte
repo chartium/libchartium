@@ -8,6 +8,7 @@
     effect,
     cons,
     mutDerived,
+    WritableSignal,
   } from "@mod.js/signals";
   import { setContext } from "svelte-typed-context";
   import { toolKey } from "./toolbar/toolKey.js";
@@ -31,7 +32,10 @@
   } from "../types.js";
   import type { TraceList } from "../data-worker/trace-list.js";
   import type { VisibleAction } from "./ActionsOverlay.svelte";
-  import type { RangeMargins } from "../utils/rangeMargins.js";
+  import {
+    explicifyRangeMargins,
+    type RangeMargins,
+  } from "../utils/rangeMargins.js";
   import type { TextMeasuringFunction } from "../state/core/axisTicks.js";
   import { type ChartMouseEvent, hover$ } from "../state/interactive/hover.js";
   import type { InterpolationStrategy } from "../../../dist/wasm/libchartium.js";
@@ -209,13 +213,13 @@
     }
   });
 
-  let measureXAxisTextSize: TextMeasuringFunction | undefined;
-  const measureXAxisTextSize$ = mut(measureXAxisTextSize);
-  $: measureXAxisTextSize$.set(measureXAxisTextSize);
+  const measureXAxisTextSize$: WritableSignal<
+    TextMeasuringFunction | undefined
+  > = mut(undefined);
 
-  let measureYAxisTextSize: TextMeasuringFunction | undefined;
-  const measureYAxisTextSize$ = mut(measureYAxisTextSize);
-  $: measureYAxisTextSize$.set(measureYAxisTextSize);
+  const measureYAxisTextSize$: WritableSignal<
+    TextMeasuringFunction | undefined
+  > = mut(undefined);
 
   const hoverEvent$ = mut<ChartMouseEvent>();
 
@@ -230,6 +234,7 @@
     autoscaleY$,
     doUseCommonXRange$,
     commonXRange$,
+    margins$: margins$.map((m) => explicifyRangeMargins(m)),
     xAxisDisplayUnitPreference$: defaultXUnit$,
     yAxisDisplayUnitPreference$: defaultYUnit$,
     defer: onDestroy,
@@ -384,7 +389,7 @@
         on:shift={(d) => chart$.axes.y.shiftRange(d.detail.dy ?? 0)}
         on:reset={() => chart$.axes.y.resetRange()}
         unitChangeActions={chart$.axes.y.unitChangeActions$}
-        bind:textLength={measureYAxisTextSize}
+        bind:textLength={$measureYAxisTextSize$}
         dimensionFlock={commonYAxisWidth}
       />
 
@@ -402,7 +407,7 @@
         on:shift={(d) => chart$.axes.x.shiftRange(d.detail.dx ?? 0)}
         on:reset={() => chart$.axes.x.resetRange()}
         unitChangeActions={chart$.axes.x.unitChangeActions$}
-        bind:textLength={measureXAxisTextSize}
+        bind:textLength={$measureXAxisTextSize$}
         dimensionFlock={commonXAxisHeight}
       />
 

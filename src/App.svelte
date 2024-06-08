@@ -12,6 +12,7 @@
 
   import Fa from "svelte-fa";
   import { mut } from "@mod.js/signals";
+  import { Quantity } from "unitlib";
 
   // autogenerate a lot of data
   const from = 0;
@@ -150,7 +151,11 @@
         defaultYUnit={IEC.parseUnit("MiB")}
         legendPosition="bottom"
         hoverPointsInterpolation="nearest"
-        {commonXRange$}
+        margins={{
+          top: { value: new Quantity(0.3, IEC.parseUnit("MiB")) },
+          left: { px: 10 },
+          right: { percent: 10 },
+        }}
       >
         <!-- <svelte:fragment slot="toolbar">
             <ToolFullscreen on:click={() => (fullscreen = !fullscreen)} />

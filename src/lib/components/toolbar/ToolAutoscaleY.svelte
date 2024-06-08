@@ -6,32 +6,22 @@
   } from "@fortawesome/free-solid-svg-icons";
   import { getContext } from "svelte-typed-context";
   import { toolKey } from "./toolKey.js";
-  import { cons, effect, mut } from "@mod.js/signals";
-  import { onDestroy } from "svelte";
   import Fa from "svelte-fa";
-
+  import { fade } from "svelte/transition";
   const autoscaleY$ = getContext(toolKey)?.autoscaleY$;
 
   const toggleAutoscaleY = () => autoscaleY$?.update((b) => !b);
   const notifyOfAutozoom$ = getContext(toolKey)?.notifyOfAutozoom$;
-
-  let bubbleOpacity$ = mut<number>(+(notifyOfAutozoom$?.get() ?? false));
-
-  effect(($, { defer }) => {
-    if (!$(notifyOfAutozoom$ ?? cons(false))) return bubbleOpacity$.set(0);
-    const timerID = setTimeout(() => bubbleOpacity$.set(1), 200);
-    defer(() => clearTimeout(timerID));
-  }).pipe(onDestroy);
 </script>
 
 <div class="wrpa">
-  <div class="positioned" style:opacity={$bubbleOpacity$}>
-    {#if $notifyOfAutozoom$}
+  {#if $notifyOfAutozoom$}
+    <div class="positioned" transition:fade={{ duration: 300 }}>
       <div class="bubble">
         Y scales<br />automatically
       </div>
-    {/if}
-  </div>
+    </div>
+  {/if}
   <ToolbarButton on:click={toggleAutoscaleY} title="Autoscale Y axis">
     <Fa
       icon={$autoscaleY$ ? faArrowsLeftRightToLine : faUpDown}
@@ -50,8 +40,6 @@
     bottom: 0;
     left: 50%;
     transform: translate(-50%, 110%);
-    transition: ease-in-out;
-    transition-duration: 200ms;
   }
   .bubble {
     position: relative;

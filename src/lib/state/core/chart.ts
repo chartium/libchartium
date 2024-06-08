@@ -15,6 +15,7 @@ import {
   type ValueOnAxisFactory,
 } from "./chartAffineSpace.js";
 import type { DisplayUnitPreference, Range } from "../../types.js";
+import type { ExplicitRangeMargins } from "../../utils/rangeMargins.js";
 
 export interface ChartProps {
   controller$: Signal<ChartiumController | undefined>;
@@ -27,6 +28,7 @@ export interface ChartProps {
 
   showXAxisZero$: Signal<boolean>;
   showYAxisZero$: Signal<boolean>;
+  margins$: Signal<ExplicitRangeMargins>;
   autoscaleY$: Signal<boolean>;
   commonXRange$: WritableSignal<Range | undefined>;
   doUseCommonXRange$: Signal<boolean>;
@@ -61,13 +63,14 @@ export const chart$ = ({
   doUseCommonXRange$,
   xAxisDisplayUnitPreference$,
   yAxisDisplayUnitPreference$,
+  margins$,
   defer,
 }: ChartProps): Chart => {
   return sanitizedChart$({
     controller$: controller$.skipEqual(),
     canvas$: canvas$.skipEqual(),
     visibleTraces$: visibleTraces$.skipEqual(),
-
+    margins$,
     measureXAxisTextSize$,
     measureYAxisTextSize$,
     showXAxisZero$,
@@ -90,6 +93,7 @@ const sanitizedChart$ = ({
   measureYAxisTextSize$,
   showXAxisZero$,
   showYAxisZero$,
+  margins$,
   autoscaleY$,
   commonXRange$,
   doUseCommonXRange$,
@@ -109,11 +113,10 @@ const sanitizedChart$ = ({
     axis: "x",
     visibleTraces$,
     lengthInPx$: canvasLogicalSize$.map((size) => size?.width),
-    measureTextSize$: measureXAxisTextSize$.map(
-      (fn) => fn ?? ((s) => s.length * 10),
-    ), // FIXME find a better solution,,
+    measureTextSize$: measureXAxisTextSize$,
     displayUnitPreference$: xAxisDisplayUnitPreference$,
     showZero$: showXAxisZero$,
+    margins$,
     commonRange$: commonXRange$,
     doUseCommonRange$: doUseCommonXRange$,
     resetAllRanges,
@@ -125,9 +128,10 @@ const sanitizedChart$ = ({
       axis: "y",
       visibleTraces$,
       lengthInPx$: canvasLogicalSize$.map((size) => size?.height),
-      measureTextSize$: measureYAxisTextSize$.map((fn) => fn ?? (() => 10)), // FIXME find a better solution,
+      measureTextSize$: measureYAxisTextSize$,
       displayUnitPreference$: yAxisDisplayUnitPreference$,
       showZero$: showYAxisZero$,
+      margins$,
       autoscale$: autoscaleY$,
       xRange$: x.range$,
       resetAllRanges,

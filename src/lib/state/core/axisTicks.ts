@@ -24,7 +24,7 @@ export type TextMeasuringFunction = (text: string) => number;
 export interface AxisTicksProps {
   range$: Signal<Range>;
   currentDisplayUnit$: Signal<DisplayUnit>;
-  measureTextSize$: Signal<TextMeasuringFunction>;
+  measureTextSize$: Signal<TextMeasuringFunction | undefined>;
   lengthInPx$: Signal<number | undefined>;
 }
 
@@ -55,10 +55,10 @@ export const axisTicks$ = ({
 function linearTicks(
   range: Range,
   axisSize: number | undefined,
-  textSize: (x: string) => number,
+  textSize: ((x: string) => number) | undefined,
   displayUnit: DisplayUnit,
 ): Tick[] {
-  if (axisSize === undefined) return [];
+  if (axisSize === undefined || textSize === undefined) return [];
   if (isDateRange(range)) {
     if (!isDateFormat(displayUnit))
       throw TypeError(
