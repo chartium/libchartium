@@ -251,7 +251,6 @@
     display: flex;
     align-items: center;
     justify-content: flex-end;
-    margin-bottom: 5px;
   }
   .axis-container.x {
     flex-direction: column-reverse;
@@ -274,6 +273,7 @@
   }
   .x.ticks {
     padding-top: 4px;
+    padding-bottom: 4px;
     flex-direction: row;
     align-items: start;
     width: 100%;
