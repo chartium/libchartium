@@ -112,7 +112,7 @@ const sanitizedChart$ = ({
   const x = xAxis$({
     axis: "x",
     visibleTraces$,
-    lengthInPx$: canvasLogicalSize$.map((size) => size?.width),
+    lengthInPx$: canvasLogicalSize$.map((size) => size?.width).skipEqual(),
     measureTextSize$: measureXAxisTextSize$,
     displayUnitPreference$: xAxisDisplayUnitPreference$,
     showZero$: showXAxisZero$,
@@ -127,7 +127,7 @@ const sanitizedChart$ = ({
     y: yAxis$({
       axis: "y",
       visibleTraces$,
-      lengthInPx$: canvasLogicalSize$.map((size) => size?.height),
+      lengthInPx$: canvasLogicalSize$.map((size) => size?.height).skipEqual(),
       measureTextSize$: measureYAxisTextSize$,
       displayUnitPreference$: yAxisDisplayUnitPreference$,
       showZero$: showYAxisZero$,
