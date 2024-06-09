@@ -41,6 +41,7 @@
   import type { InterpolationStrategy } from "../../../dist/wasm/libchartium.js";
   import type { ChartStyleSheet } from "../state/guidelines/style.js";
   import { derived } from "@mod.js/signals";
+  import RulerBubble from "./RulerBubble.svelte";
 
   // SECTION Props
   let klass: string = "";
@@ -256,6 +257,8 @@
 
   const xTicks$ = chart$.axes.x.ticks$;
   const yTicks$ = chart$.axes.y.ticks$;
+  const xTicksDecimalPlaces$ = chart$.axes.x.tickDecimalPlaces$;
+  const yTicksDecimalPlaces$ = chart$.axes.y.tickDecimalPlaces$;
   const xDisplayUnit$ = chart$.axes.x.currentDisplayUnit$;
   const yDisplayUnit$ = chart$.axes.y.currentDisplayUnit$;
 
@@ -392,6 +395,40 @@
         bind:textLength={$measureYAxisTextSize$}
         dimensionFlock={commonYAxisWidth}
       />
+      {#if !hideYBubble && $commonXRuler$ !== undefined && $commonYRuler$ !== undefined}
+        <div class="y bubble-reference">
+          <RulerBubble
+            decimalPlaces={$yTicksDecimalPlaces$ + 1}
+            axis="y"
+            position={{
+              x: 0,
+              y: chart$
+                .valueOnAxis("y")
+                .fromQuantity($commonYRuler$)
+                .toLogicalPixels(),
+            }}
+            value={$commonYRuler$}
+            displayUnit={$yDisplayUnit$}
+          />
+        </div>
+      {/if}
+      {#if !hideXBubble && $commonXRuler$ !== undefined}
+        <div class="x bubble-reference">
+          <RulerBubble
+            decimalPlaces={$xTicksDecimalPlaces$ + 1}
+            axis="x"
+            position={{
+              y: 0,
+              x: chart$
+                .valueOnAxis("x")
+                .fromQuantity($commonXRuler$)
+                .toLogicalPixels(),
+            }}
+            value={$commonXRuler$}
+            displayUnit={$xDisplayUnit$}
+          />
+        </div>
+      {/if}
 
       <AxisTicks
         slot="xticks"
@@ -435,8 +472,6 @@
         {hideHoverPoints}
         {hideXRuler}
         {hideYRuler}
-        {hideXBubble}
-        {hideYBubble}
         disableUserRangeChanges$={derived(($) => ({
           x: $(disableUserRangeChanges$).x,
           y: $(disableUserRangeChanges$).y,
@@ -444,8 +479,6 @@
         traceHovered={$hoveredTrace$ !== undefined}
         commonXRuler={commonXRuler$}
         commonYRuler={commonYRuler$}
-        xDisplayUnit={$xDisplayUnit$}
-        yDisplayUnit={$yDisplayUnit$}
         on:reset={() => chart$.resetAllRanges()}
         on:zoom={(d) => {
           chart$.axes.x.zoomRange(d.detail.x);
@@ -555,5 +588,17 @@
       opacity: 0.9;
       background-color: rgba(58, 3, 3, 0.6);
     }
+  }
+
+  .bubble-reference {
+    &.x {
+      bottom: 0;
+    }
+    position: absolute;
+    height: 0;
+    width: 0;
+    overflow: visible;
+    user-select: none;
+    pointer-events: none;
   }
 </style>

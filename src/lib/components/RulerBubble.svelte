@@ -1,52 +1,34 @@
 <script lang="ts">
   import type { ChartValue, DisplayUnit, Point } from "../types.js";
-  import { observeClientSize } from "../utils/actions.js";
   import { qndFormat } from "../utils/format.js";
-  import { portal } from "svelte-portal";
 
   /** position relative to body; i.e. absolute :d */
   export let position: Point;
   export let value: ChartValue | undefined;
   export let axis: "x" | "y";
-  export let rotated: boolean = false;
   export let displayUnit: DisplayUnit;
+  export let decimalPlaces = 2;
 
-  let clientHeight: number;
-  let clientWidth: number;
-  $: expectedLeft = position.x - (axis === "y" ? clientWidth + 4 : 0);
-  $: overlapsRight = expectedLeft + clientWidth > window.innerWidth;
-  $: overlapsLeft = expectedLeft < 0;
-  $: style = `top: ${position.y - (+(axis === "y") * clientHeight) / 2}px; left: ${expectedLeft - (+(axis === "x") * clientWidth) / 2 + (+overlapsLeft - +overlapsRight) * clientWidth}px; ${
-    rotated
-      ? axis === "y"
-        ? `transform-origin: bottom right; transform: rotate(-90deg) translateX(${clientHeight}px)`
-        : `transform-origin: top left; transform: rotate(-90deg) translateX(-${clientWidth}px);`
-      : ""
-  }`;
+  $: style =
+    axis === "x"
+      ? `left: ${position.x.toFixed(1)}px; top: ${position.y.toFixed(1)}px; transform: translateX(-50%)`
+      : `right: ${position.x.toFixed(1)}px; top: ${position.y.toFixed(1)}px; transform: translateY(-50%)`;
 </script>
 
-{#if value !== undefined}
-  <div
-    class="axis-bubble"
-    class:x-axis-bubble={axis === "x"}
-    class:y-axis-bubble={axis === "y"}
-    {style}
-    use:observeClientSize={([w, h]) => {
-      clientWidth = w;
-      clientHeight = h;
-    }}
-    use:portal
-  >
-    {qndFormat(value ?? 0, { unit: displayUnit })}
+<div class="positioned" {style}>
+  <div class="axis-bubble">
+    {qndFormat(value ?? 0, { unit: displayUnit, decimalPlaces })}
   </div>
-{/if}
+</div>
 
 <style lang="scss">
-  .axis-bubble {
-    position: fixed;
+  .positioned {
+    padding: 4px;
+    position: absolute;
     pointer-events: none;
     user-select: none;
-
+  }
+  .axis-bubble {
     background-color: var(--libchartium-secondary-background);
     border-radius: 4px;
     padding: 4px;
@@ -55,13 +37,5 @@
     width: max-content;
     height: max-content;
     overflow: visible;
-  }
-
-  .x-axis-bubble {
-    margin-top: 4px;
-  }
-
-  .y-axis-bubble {
-    margin-right: 4px;
   }
 </style>

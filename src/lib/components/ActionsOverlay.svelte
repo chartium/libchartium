@@ -56,16 +56,10 @@
   export let hideHoverPoints: boolean;
   export let hideXRuler: boolean;
   export let hideYRuler: boolean;
-  export let hideXBubble: boolean;
-  export let hideYBubble: boolean;
   export let disableUserRangeChanges$: Signal<{ x?: boolean; y?: boolean }>;
   export let traceHovered: boolean;
   export let commonXRuler: WritableSignal<ChartValue | undefined>;
   export let commonYRuler: WritableSignal<ChartValue | undefined>;
-
-  // FIXME only for RulerBubble's which should be moved elsewhere
-  export let xDisplayUnit: DisplayUnit;
-  export let yDisplayUnit: DisplayUnit;
 
   let canvasRef: HTMLCanvasElement;
   let ctx: CanvasRenderingContext2D;
@@ -451,28 +445,6 @@
   }}
   use:mouseDrag={{ ...rightDragCallbacks, button: MouseButtons.Right }}
 />
-
-{#if !hideXBubble && offsetMousePosition}
-  {@const x = offsetMousePosition[0] + canvasRef.getBoundingClientRect().x}
-  {@const y = canvasRef.getBoundingClientRect().bottom}
-  <RulerBubble
-    axis="x"
-    position={{ x, y }}
-    value={$commonXRuler}
-    displayUnit={xDisplayUnit}
-  />
-{/if}
-
-{#if !hideYBubble && offsetMousePosition}
-  {@const x = canvasRef.getBoundingClientRect().left}
-  {@const y = offsetMousePosition[1] + canvasRef.getBoundingClientRect().y}
-  <RulerBubble
-    axis="y"
-    position={{ x, y }}
-    value={$commonYRuler}
-    displayUnit={yDisplayUnit}
-  />
-{/if}
 
 <style>
   canvas {

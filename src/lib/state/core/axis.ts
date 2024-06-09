@@ -66,6 +66,7 @@ export interface Axis {
   unitChangeActions$: Signal<UnitChangeActions>;
 
   ticks$: Signal<Tick[]>;
+  tickDecimalPlaces$: Signal<number>;
 }
 
 export const yAxis$ = ({
@@ -89,14 +90,19 @@ export const yAxis$ = ({
     autoscale$,
     xRange$,
   });
-  const { dataUnit$, currentDisplayUnit$, unitChangeActions$, ticks$ } =
-    axisCommon(range$, {
-      axis,
-      displayUnitPreference$: displayUnitPreference$.skipEqual(),
-      lengthInPx$,
-      measureTextSize$,
-      visibleTraces$,
-    });
+  const {
+    dataUnit$,
+    currentDisplayUnit$,
+    unitChangeActions$,
+    ticks$,
+    tickDecimalPlaces$,
+  } = axisCommon(range$, {
+    axis,
+    displayUnitPreference$: displayUnitPreference$.skipEqual(),
+    lengthInPx$,
+    measureTextSize$,
+    visibleTraces$,
+  });
 
   return {
     range$,
@@ -107,6 +113,7 @@ export const yAxis$ = ({
     currentDisplayUnit$,
     unitChangeActions$,
     ticks$,
+    tickDecimalPlaces$,
   };
 };
 
@@ -134,14 +141,19 @@ export const xAxis$ = ({
     lengthInPx$,
     doUseCommonRange$,
   });
-  const { dataUnit$, currentDisplayUnit$, unitChangeActions$, ticks$ } =
-    axisCommon(range$, {
-      axis,
-      displayUnitPreference$: displayUnitPreference$.skipEqual(),
-      lengthInPx$,
-      measureTextSize$,
-      visibleTraces$,
-    });
+  const {
+    dataUnit$,
+    currentDisplayUnit$,
+    unitChangeActions$,
+    ticks$,
+    tickDecimalPlaces$,
+  } = axisCommon(range$, {
+    axis,
+    displayUnitPreference$: displayUnitPreference$.skipEqual(),
+    lengthInPx$,
+    measureTextSize$,
+    visibleTraces$,
+  });
 
   return {
     range$,
@@ -152,6 +164,7 @@ export const xAxis$ = ({
     currentDisplayUnit$,
     unitChangeActions$,
     ticks$,
+    tickDecimalPlaces$,
   };
 };
 
@@ -179,11 +192,17 @@ const axisCommon = (
     visibleTraces$,
   });
 
-  const { ticks$ } = axisTicks$({
+  const { ticks$, decimalPlaces$ } = axisTicks$({
     range$,
     currentDisplayUnit$,
     measureTextSize$,
     lengthInPx$,
   });
-  return { dataUnit$, currentDisplayUnit$, unitChangeActions$, ticks$ };
+  return {
+    dataUnit$,
+    currentDisplayUnit$,
+    unitChangeActions$,
+    ticks$,
+    tickDecimalPlaces$: decimalPlaces$,
+  };
 };

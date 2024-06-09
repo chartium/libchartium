@@ -30,6 +30,7 @@ export interface AxisTicksProps {
 
 export interface AxisTicks {
   ticks$: Signal<Tick[]>;
+  decimalPlaces$: Signal<number>;
 }
 
 const MAX_TICK_COUNT = 10;
@@ -40,7 +41,7 @@ export const axisTicks$ = ({
   measureTextSize$,
   lengthInPx$,
 }: AxisTicksProps): AxisTicks => {
-  const ticks$ = derived(($) =>
+  const res = derived(($) =>
     linearTicks(
       $(range$),
       $(lengthInPx$),
@@ -49,7 +50,11 @@ export const axisTicks$ = ({
     ),
   );
 
-  return { ticks$ };
+  return {
+    // FIXME ughhh, how does destructuring of signals work?
+    ticks$: res.map((t) => t.ticks),
+    decimalPlaces$: res.map((t) => t.decimalPlaces),
+  };
 };
 
 function linearTicks(
@@ -57,8 +62,9 @@ function linearTicks(
   axisSize: number | undefined,
   textSize: ((x: string) => number) | undefined,
   displayUnit: DisplayUnit,
-): Tick[] {
-  if (axisSize === undefined || textSize === undefined) return [];
+): { ticks: Tick[]; decimalPlaces: number } {
+  if (axisSize === undefined || textSize === undefined)
+    return { ticks: [], decimalPlaces: 0 };
   if (isDateRange(range)) {
     if (!isDateFormat(displayUnit))
       throw TypeError(
@@ -79,14 +85,14 @@ function quantityTicks(
   axisSize: number,
   textSize: (x: string) => number,
   displayUnit: Unit | undefined,
-): Tick[] {
+): { ticks: Tick[]; decimalPlaces: number } {
   const numRange = toNumericRange(range, displayUnit);
-  if (numRange.to === numRange.from) return [];
+  let decimalPlaces = 0;
+  if (numRange.to === numRange.from) return { ticks: [], decimalPlaces };
 
   let ticks: { label: string; position: number }[] = [];
 
   const rangeWidth = numRange.to - numRange.from;
-
   for (const multiple of niceMultiples) {
     const oneOrderLess =
       Math.floor(Math.log10(numRange.to - numRange.from)) - 1;
@@ -100,7 +106,7 @@ function quantityTicks(
     ).filter((tickVal) => tickVal >= numRange.from && tickVal <= numRange.to);
     if (tickValues.length > MAX_TICK_COUNT) continue;
 
-    const decimalPlaces = uniqueDecimals(tickValues);
+    decimalPlaces = uniqueDecimals(tickValues);
     ticks = tickValues.map((val) => ({
       label: qndFormat(val, { decimalPlaces }),
       position: (val - numRange.from) / rangeWidth,
@@ -112,23 +118,32 @@ function quantityTicks(
     ); // upper estimate
     if (axisSize > maxTickNum * tickSize) break;
   }
-  if (ticks.length == 0)
+  if (ticks.length == 0) {
+    const tickValues = [
+      (numRange.from + numRange.to) / 3,
+      ((numRange.from + numRange.to) * 2) / 3,
+    ];
+    decimalPlaces = uniqueDecimals(tickValues);
     ticks = [
       {
-        label: qndFormat((numRange.from + numRange.to) / 3),
+        label: qndFormat(tickValues[0], { decimalPlaces }),
         position: 0.33,
       },
       {
-        label: qndFormat(((numRange.from + numRange.to) * 2) / 3),
+        label: qndFormat(tickValues[1], { decimalPlaces }),
         position: 0.67,
       },
     ];
+  }
 
-  return ticks.map<Tick>(({ position, label }) => ({
-    text: label,
-    unit: displayUnit,
-    position,
-  }));
+  return {
+    ticks: ticks.map<Tick>(({ position, label }) => ({
+      text: label,
+      unit: displayUnit,
+      position,
+    })),
+    decimalPlaces,
+  };
 }
 
 const niceMultiples = [1, 2, 3, 5, 10, 20, 25, 30, 50, 100];
@@ -139,7 +154,7 @@ function dateTicks(
   displayUnit: DateFormat,
   axisSize: number,
   textSize: (x: string) => number,
-): Tick[] {
+): { ticks: Tick[]; decimalPlaces: number } {
   const position = (
     val: Dayjs, // FIXME replace with AxisValue
   ) =>
@@ -187,5 +202,5 @@ function dateTicks(
     }
   }
 
-  return result;
+  return { ticks: result, decimalPlaces: 0 };
 }
