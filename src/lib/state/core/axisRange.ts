@@ -111,7 +111,7 @@ export const yAxisRange$ = ({
   const tracesRange$ = derived(($) => $(visibleTraces$).getYRange());
   const defaultRange$ = derived(($) => {
     const rangeWithMargins = preventEmptyRange(
-      addMarginsToRange($(tracesRange$), $(margins$), $(lengthInPx$)), // FIXME
+      addMarginsToRange($(tracesRange$), $(margins$), $(lengthInPx$)),
     );
     if ($(showZero$)) {
       return addZeroToRange(rangeWithMargins);
@@ -124,9 +124,12 @@ export const yAxisRange$ = ({
   const range$ = mutDerived<Range>(($, { prev }) => {
     const def = $(defaultRange$);
     if ($(autoscale$)) {
-      if (xRange$ === undefined) return def;
       return preventEmptyRange(
-        addMarginsToRange($(tracesRange$), $(margins$), $(lengthInPx$)), // FIXME
+        addMarginsToRange(
+          $(visibleTraces$).getYRange($(xRange$)),
+          $(margins$),
+          $(lengthInPx$),
+        ),
       );
     }
     if (isAutozoomed || prev === undefined) {
@@ -137,7 +140,6 @@ export const yAxisRange$ = ({
       resetAllRanges();
       return def;
     }
-
     return prev;
   });
 

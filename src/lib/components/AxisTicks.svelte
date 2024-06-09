@@ -289,21 +289,21 @@
     line-height: 1;
     width: 0;
     top: 4px;
-    height: fit-content;
   }
   .y.ticks > span {
     position: relative;
     line-height: 1;
-    width: max-content;
     right: 4px;
     height: 0;
     overflow: visible;
   }
   .x.innermost {
-    width: fit-content;
+    width: max-content;
+    height: fit-content;
     transform: translateX(-50%);
   }
   .y.innermost {
+    width: max-content;
     height: fit-content;
     transform: translateY(-50%);
   }
