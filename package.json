@@ -68,7 +68,7 @@
   },
   "dependencies": {
     "@fortawesome/free-solid-svg-icons": "^6.5.2",
-    "@mod.js/signals": "^0.0.32",
+    "@mod.js/signals": "^0.0.33",
     "@risai/bim": "^1.4.2",
     "@tanstack/svelte-virtual": "^3.5.0",
     "@types/lodash-es": "^4.17.12",
