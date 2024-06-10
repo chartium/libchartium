@@ -4,10 +4,10 @@ import {
   type Signal,
   type Unsubscriber,
 } from "@mod.js/signals";
-import { debounce } from "lodash-es";
 import { devicePixelRatio$ } from "../../utils/reactive-globals.js";
 import type { ChartiumController, TraceList } from "../../index.js";
 import type { Range, Size } from "../../types.js";
+import type { Renderer } from "../../data-worker/renderers/mod.js";
 
 export interface ChartRendererProps {
   controller$: Signal<ChartiumController | undefined>;
@@ -50,28 +50,34 @@ export const chartRenderer$ = ({
     };
   });
 
-  // TODO: find a smarter way to deal with too much reactivity
-  const render = debounce(
-    (renderer, visibleTraces, xRange, yRange) => {
-      renderer.render({
-        traces: visibleTraces,
-        clear: true,
-        xRange: xRange,
-        yRange: yRange,
-      });
-    },
-    16,
-    { maxWait: 16 },
-  );
+  const awaitedRenderParams$ = renderer$
+    .zip(canvasPhysicalSize$, visibleTraces$, xRange$, yRange$)
+    .awaited()
+    .currentlyFulfilled();
+
+  const render = (
+    renderer: Renderer,
+    visibleTraces: TraceList,
+    xRange: Range,
+    yRange: Range,
+  ) => {
+    console.log("render");
+    renderer.render({
+      traces: visibleTraces,
+      clear: true,
+      xRange,
+      yRange,
+    });
+  };
 
   // reactively re-render
   effect(($) => {
-    const renderer = $(renderer$);
-    const size = $(canvasPhysicalSize$);
+    const awaited = $(awaitedRenderParams$);
+    if (awaited === undefined) return;
+    const [renderer, size, visibleTraces, xRange, yRange] = awaited; // Just a TS issue, will be fixed in next mod.js version
     if (!renderer || !size) return;
-
     renderer.setSize(size.width, size.height);
 
-    render(renderer, $(visibleTraces$), $(xRange$), $(yRange$));
+    render(renderer, visibleTraces, xRange, yRange);
   }).pipe(defer);
 };

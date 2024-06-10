@@ -56,7 +56,6 @@ export class ChartiumController {
   }
 
   // TODO add better documentation
-  // TODO add a function for streamed download
   /**
    * Upload new trace data in the "vertical" order, ie. `[ x[0], y1[0], y2[0], ... x[1], y1[1], y2[1], ...]`.
    */

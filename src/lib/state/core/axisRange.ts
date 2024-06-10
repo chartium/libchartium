@@ -49,7 +49,7 @@ export const xAxisRange$ = ({
   const tracesRange$ = derived(($) => $(visibleTraces$).range);
   const defaultRange$ = derived(($) => {
     const rangeWithMargins = preventEmptyRange(
-      addMarginsToRange($(tracesRange$), $(margins$), $(lengthInPx$)), // FIXME is this the best idea?
+      addMarginsToRange($(tracesRange$), $(margins$), $(lengthInPx$)),
     );
     if ($(showZero$)) {
       return addZeroToRange(rangeWithMargins);
