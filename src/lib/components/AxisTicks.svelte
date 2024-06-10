@@ -75,7 +75,7 @@
   const dragCallbacks: MouseDragCallbacks = {
     start: () => {},
     move: (_, status) => {
-      if (disableInteractivity.get()) return; // TODO tell the user he aint gettin any of dis?
+      if (disableInteractivity.get()) return;
       const shift = status.relativeShift;
 
       if (axis === "x") {
@@ -89,7 +89,10 @@
       visibleAction.set({ shift });
     },
     end: (_, status) => {
-      if (disableInteractivity.get()) return;
+      if (disableInteractivity.get()) {
+        console.warn("Chart interactivity disabled");
+        return;
+      }
       const shift = status.relativeShift;
 
       if (axis === "x") delete shift.dy;

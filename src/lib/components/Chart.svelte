@@ -594,6 +594,10 @@
     &.x {
       bottom: 0;
     }
+    &.y {
+      top: 0;
+    }
+    left: 0;
     position: absolute;
     height: 0;
     width: 0;

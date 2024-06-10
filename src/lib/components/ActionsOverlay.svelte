@@ -262,35 +262,30 @@
   const leftDragCallbacks: MouseDragCallbacks = {
     start: (_) => {},
     move: (_, status) => {
-      const disableInteractivity =
-        disableUserRangeChanges$.get().x && disableUserRangeChanges$.get().y;
-      if (disableInteractivity) {
-        console.warn("Chart interactivity disabled!");
-        return;
-      }
-
       visibleAction.update((action) => ({
         ...action,
         zoom: status.relativeZoom,
       }));
     },
     end: (_, status) => {
-      const xDisabled = disableUserRangeChanges$.get().x;
-      const yDisabled = disableUserRangeChanges$.get().y;
-      if (status.beyondThreshold("x") && xDisabled) {
-        console.warn(
-          "Tried to interact with X but that interactivity is disabled", // FIXME yo rozhodni se jestli se budou propagovat at all or
-        );
-      }
-      if (status.beyondThreshold("y") && yDisabled) {
-        console.warn(
-          "Tried to interact with Y but that interactivity is disabled", // FIXME yo rozhodni se jestli se budou propagovat at all or
-        );
-      }
-
       visibleAction.update((action) => ({
         highlightedPoints: action?.highlightedPoints,
       }));
+      if (!status.beyondThreshold("any")) return;
+      const xDisabled = disableUserRangeChanges$.get().x;
+      const yDisabled = disableUserRangeChanges$.get().y;
+      if (xDisabled && yDisabled) {
+        console.warn("Chart interactivity disabled");
+        return;
+      }
+
+      if (xDisabled && !status.beyondThreshold("y")) {
+        console.warn("Interacting with X axis disabled");
+        return;
+      } else if (yDisabled && !status.beyondThreshold("x")) {
+        console.warn("Interacting with Y axis disabled");
+        return;
+      }
 
       const notZoomed = { from: 0, to: 1 };
       const zoom = {
