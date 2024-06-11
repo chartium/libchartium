@@ -200,14 +200,12 @@
   $: margins$.set(margins);
 
   /** Bindable property saying whether the chart is currently in fullscreen mode */
-  export let fullscreen = false;
-  const fullscreen$ = mut(fullscreen);
-  $: fullscreen$.set(fullscreen);
+  export const fullscreen$ = mut(false);
   fullscreen$.subscribe((f) => {
     if (f) {
       document.addEventListener("keydown", function callback(e) {
         if (e.key === "Escape") {
-          fullscreen = false;
+          fullscreen$.set(false);
           document.removeEventListener("keydown", callback);
         }
       });
