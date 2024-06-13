@@ -149,7 +149,9 @@
   /** Bind this property among several charts to make them all able to share the same X range as you zoom or shift it */
   export let commonXRange$ = mut<Range>();
   /** can be turned off via toolbar */
-  const doUseCommonXRange$ = mut<boolean>(commonXRange$.get() !== undefined);
+  export let doUseCommonXRange$ = mut<boolean>(
+    commonXRange$.get() !== undefined,
+  );
 
   /** Charts supplied with the same FlockRegistry will have x axis of the same width */
   export let commonXAxisHeight: FlockRegistry<number> | undefined = undefined;
