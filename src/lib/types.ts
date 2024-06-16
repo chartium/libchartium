@@ -88,6 +88,23 @@ export const isDateRange = (x: unknown): x is DateRange =>
   isDayjs(x.from) &&
   isDayjs(x.to);
 
+export const isQuantityRange = (x: unknown): x is QuantityRange =>
+  isRange(x) &&
+  typeof x.from === "object" &&
+  typeof x.to === "object" &&
+  isQuantity(x.from) &&
+  isQuantity(x.to);
+
+export const isSameRange = (a: Range, b: Range): boolean => {
+  if (isNumericRange(a) && isNumericRange(b))
+    return a.from === b.from && a.to === b.to;
+  if (isDateRange(a) && isDateRange(b))
+    return a.from.isSame(b.from) && a.to.isSame(b.to);
+  if (isQuantityRange(a) && isQuantityRange(b))
+    return a.from.isEqual(b.from) && a.to.isEqual(b.to);
+  return false;
+};
+
 export const rangesHaveMeaningfulIntersection = function isect(
   a: Range,
   b: Range,

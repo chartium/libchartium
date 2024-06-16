@@ -10,6 +10,7 @@ import {
   type Range,
   type NumericRange,
   type ResolvedType,
+  isSameRange,
 } from "../../types.js";
 import { toNumeric, toRange, unitOf } from "../../utils/unit.js";
 import { addMarginsToRange } from "../../utils/rangeMargins.js";
@@ -76,27 +77,35 @@ export const xAxisRange$ = ({
     return prev;
   });
 
-  const shouldUpdateCommon = () =>
-    doUseCommonRange$.get() && commonRange$.get() !== undefined;
   const resetRange = () => {
     isAutozoomed = true;
     range$.set(defaultRange$.get());
-    if (shouldUpdateCommon()) commonRange$.set(range$.get());
+    commonRange$.set(range$.get());
   };
 
   const zoomRange = (r: NumericRange) => {
     isAutozoomed = false;
     range$.set(computeZoomedRange(range$.get(), r));
-    if (shouldUpdateCommon()) commonRange$.set(range$.get());
+    commonRange$.set(range$.get());
   };
 
   const shiftRange = (s: number) => {
     isAutozoomed = false;
     range$.set(computeShiftedRange(range$.get(), s));
-    if (shouldUpdateCommon()) commonRange$.set(range$.get());
+    commonRange$.set(range$.get());
   };
 
-  return { range$: range$.toReadonly(), resetRange, zoomRange, shiftRange };
+  return {
+    range$: range$
+      .toReadonly()
+      .skip(
+        (v, { prev }) => prev === undefined || isSameRange(v, prev),
+        range$.get(),
+      ),
+    resetRange,
+    zoomRange,
+    shiftRange,
+  };
 };
 
 export const yAxisRange$ = ({
