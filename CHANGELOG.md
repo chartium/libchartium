@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.18.0](https://github.com/chartium/libchartium/compare/libchartium-v0.17.1...libchartium-v0.18.0) (2024-06-16)
+
+
+### Features
+
+* exporting some range stuffs ([cd2f0ad](https://github.com/chartium/libchartium/commit/cd2f0adbe065a9ed8fe9529aabad56e6c7e9c746))
+
 ## [0.17.1](https://github.com/chartium/libchartium/compare/libchartium-v0.17.0...libchartium-v0.17.1) (2024-06-16)
 
 
