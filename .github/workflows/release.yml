@@ -36,6 +36,11 @@ jobs:
       - name: Install rust wasm target
         run: rustup target add wasm32-unknown-unknown
 
+      - name: Use rust build cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src/rust -> target
+
       - name: Install wasm-bindgen-cli
         uses: jetli/wasm-bindgen-action@v0.2.0
         with:
@@ -43,9 +48,6 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install
-
-      - name: Build libchartium
-        run: pnpm build
 
       - name: Publish libchartium
         run: npm publish
