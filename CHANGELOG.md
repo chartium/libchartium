@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.17.1](https://github.com/chartium/libchartium/compare/libchartium-v0.17.0...libchartium-v0.17.1) (2024-06-16)
+
+
+### Bug Fixes
+
+* pipeline corrections ([25d0f6b](https://github.com/chartium/libchartium/commit/25d0f6b1583bd2e063631fa6dc445ecfbe35736a))
+
 ## [0.17.0](https://github.com/chartium/libchartium/compare/libchartium-v0.16.69...libchartium-v0.17.0) (2024-06-16)
 
 
