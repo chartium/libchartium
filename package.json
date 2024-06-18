@@ -21,16 +21,12 @@
   "files": [
     "dist"
   ],
-  "module": "./dist/lib/index.js",
-  "types": "./dist/lib/index.d.ts",
+  "module": "./dist/lib/mod.js",
+  "types": "./dist/lib/mod.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/lib/index.d.ts",
-      "svelte": "./dist/lib/index.js"
-    },
-    "./worker": {
-      "types": "./dist/lib/data-worker/worker.d.ts",
-      "import": "./dist/lib/data-worker/worker.js"
+      "types": "./dist/lib/mod.d.ts",
+      "svelte": "./dist/lib/mod.js"
     },
     "./wasm": {
       "types": "./dist/wasm/libchartium.wasm.d.ts",
