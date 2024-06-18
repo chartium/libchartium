@@ -23,7 +23,7 @@
   import TraceTooltip from "./tooltip/TraceTooltip.svelte";
   import { portal } from "svelte-portal";
 
-  import type { ChartiumController, TraceList } from "../data/mod.ts";
+  import type { ChartiumController, TraceList } from "../data/mod.js";
   import {
     asAny,
     type ChartValue,
