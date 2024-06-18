@@ -1,5 +1,5 @@
-import type { TraceList } from "../trace-list.js";
-import type { Range } from "../../types.js";
+import type { TraceList } from "../data/trace-list.js";
+import type { ChartRange } from "../types.js";
 
 export interface Renderer {
   render(job: RenderJob): void;
@@ -10,6 +10,6 @@ export interface RenderJob {
   traces: TraceList;
 
   clear: boolean;
-  xRange: Range;
-  yRange: Range;
+  xRange: ChartRange;
+  yRange: ChartRange;
 }

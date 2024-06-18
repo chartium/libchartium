@@ -1,4 +1,4 @@
-import type { TraceList } from "../index.js";
+import type { TraceList } from "../mod.js";
 import { X, type ExportRow } from "../types.js";
 
 /** Copies the tracelist data and makes an anchor element to download it and clicks it */

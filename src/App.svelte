@@ -1,14 +1,16 @@
 <script lang="ts">
-  import Chart from "./lib/components/Chart.svelte";
-
-  import { ChartiumController } from "./lib/data-worker/index.js";
   import {
     faArrowRight,
     faArrowLeft,
     faChartLine,
   } from "@fortawesome/free-solid-svg-icons";
   import { IEC } from "unitlib/systems";
-  import { NumericDateRepresentation, TraceList } from "./lib/index.js";
+  import {
+    ChartiumController,
+    ChartComponent as Chart,
+    NumericDateRepresentation,
+    TraceList,
+  } from "./lib/mod.js";
 
   import Fa from "svelte-fa";
   import { mut } from "@mod.js/signals";

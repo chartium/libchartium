@@ -11,8 +11,8 @@ import type {
   ComputedTraceStyle,
   TraceList,
   TraceStatistics,
-} from "../../data-worker/trace-list.js";
-import { toNumeric } from "../../utils/unit.js";
+} from "../../data/trace-list.js";
+import { toNumeric } from "../../units/mod.js";
 import type { InterpolationStrategy } from "../../../../dist/wasm/libchartium.js";
 
 export type ChartMouseEvent =

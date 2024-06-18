@@ -5,7 +5,7 @@
  -->
 
 <script lang="ts" generics="T">
-  import { observeClientSize } from "../utils/actions.js";
+  import { observeClientSize } from "../../utils/actions.js";
 
   import { portal } from "svelte-portal";
   import ContextItemComponent from "./ContextItemComponent.svelte";

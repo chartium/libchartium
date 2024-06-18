@@ -23,14 +23,13 @@
   import TraceTooltip from "./tooltip/TraceTooltip.svelte";
   import { portal } from "svelte-portal";
 
-  import type { ChartiumController } from "../data-worker/index.js";
+  import type { ChartiumController, TraceList } from "../data/mod.ts";
   import {
     asAny,
     type ChartValue,
     type DisplayUnitPreference,
-    type Range,
+    type ChartRange,
   } from "../types.js";
-  import type { TraceList } from "../data-worker/trace-list.js";
   import type { VisibleAction } from "./ActionsOverlay.svelte";
   import {
     explicifyRangeMargins,
@@ -147,7 +146,7 @@
   export let commonYRuler$ = mut<ChartValue>();
 
   /** Bind this property among several charts to make them all able to share the same X range as you zoom or shift it */
-  export let commonXRange$ = mut<Range>();
+  export let commonXRange$ = mut<ChartRange>();
   /** can be turned off via toolbar */
   export let doUseCommonXRange$ = mut<boolean>(
     commonXRange$.get() !== undefined,

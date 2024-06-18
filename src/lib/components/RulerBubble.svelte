@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { ChartValue, DisplayUnit, Point } from "../types.js";
-  import { qndFormat } from "../utils/format.js";
+  import { formatChartValue } from "../units/mod.js";
 
   /** position relative to body; i.e. absolute :d */
   export let position: Point;
@@ -17,7 +17,7 @@
 
 <div class="positioned" {style}>
   <div class="axis-bubble">
-    {qndFormat(value ?? 0, { unit: displayUnit, decimalPlaces })}
+    {formatChartValue(value ?? 0, { unit: displayUnit, decimalPlaces })}
   </div>
 </div>
 

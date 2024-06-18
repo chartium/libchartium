@@ -4,7 +4,7 @@ import {
   type DeferLike,
   type Signal,
 } from "@mod.js/signals";
-import type { ChartiumController, TraceList } from "../../index.js";
+import type { ChartiumController, TraceList } from "../../mod.js";
 import { xAxis$, yAxis$, type Axis } from "./axis.js";
 import { chartCanvas$ } from "./chartCanvas.js";
 import { chartRenderer$ } from "./chartRenderer.js";
@@ -14,7 +14,7 @@ import {
   type PointInChartFactory,
   type ValueOnAxisFactory,
 } from "./chartAffineSpace.js";
-import type { DisplayUnitPreference, Range } from "../../types.js";
+import type { DisplayUnitPreference, ChartRange } from "../../types.js";
 import type { ExplicitRangeMargins } from "../../utils/rangeMargins.js";
 
 export interface ChartProps {
@@ -30,7 +30,7 @@ export interface ChartProps {
   showYAxisZero$: Signal<boolean>;
   margins$: Signal<ExplicitRangeMargins>;
   autoscaleY$: Signal<boolean>;
-  commonXRange$: WritableSignal<Range | undefined>;
+  commonXRange$: WritableSignal<ChartRange | undefined>;
   doUseCommonXRange$: Signal<boolean>;
   xAxisDisplayUnitPreference$: Signal<DisplayUnitPreference>;
   yAxisDisplayUnitPreference$: Signal<DisplayUnitPreference>;

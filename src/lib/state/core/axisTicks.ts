@@ -3,15 +3,15 @@ import {
   isDateRange,
   type NumericRange,
   type QuantityRange,
-  type Range,
+  type ChartRange,
   type Tick,
   type DateRange,
   type DisplayUnit,
   Unit,
 } from "../../types.js";
 import type { Dayjs } from "../../utils/dayjs.js";
-import { toNumericRange } from "../../utils/unit.js";
-import { qndFormat, uniqueDecimals } from "../../utils/format.js";
+import { formatChartValue, toNumericRange } from "../../units/mod.js";
+import { uniqueDecimals } from "../../utils/format.js";
 import { isDateFormat, type DateFormat } from "../../utils/dateFormat.js";
 // import {
 //   formatInEra,
@@ -22,7 +22,7 @@ import { isDateFormat, type DateFormat } from "../../utils/dateFormat.js";
 export type TextMeasuringFunction = (text: string) => number;
 
 export interface AxisTicksProps {
-  range$: Signal<Range>;
+  range$: Signal<ChartRange>;
   currentDisplayUnit$: Signal<DisplayUnit>;
   measureTextSize$: Signal<TextMeasuringFunction | undefined>;
   lengthInPx$: Signal<number | undefined>;
@@ -58,7 +58,7 @@ export const axisTicks$ = ({
 };
 
 function linearTicks(
-  range: Range,
+  range: ChartRange,
   axisSize: number | undefined,
   textSize: ((x: string) => number) | undefined,
   displayUnit: DisplayUnit,
@@ -108,7 +108,7 @@ function quantityTicks(
 
     decimalPlaces = uniqueDecimals(tickValues);
     ticks = tickValues.map((val) => ({
-      label: qndFormat(val, { decimalPlaces }),
+      label: formatChartValue(val, { decimalPlaces }),
       position: (val - numRange.from) / rangeWidth,
     }));
     const tickSize = ticks.reduce(
@@ -126,11 +126,11 @@ function quantityTicks(
     decimalPlaces = uniqueDecimals(tickValues);
     ticks = [
       {
-        label: qndFormat(tickValues[0], { decimalPlaces }),
+        label: formatChartValue(tickValues[0], { decimalPlaces }),
         position: 0.33,
       },
       {
-        label: qndFormat(tickValues[1], { decimalPlaces }),
+        label: formatChartValue(tickValues[1], { decimalPlaces }),
         position: 0.67,
       },
     ];

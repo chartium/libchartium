@@ -7,10 +7,7 @@
 <script lang="ts">
   import LegendEntry from "./LegendEntry.svelte";
 
-  import type {
-    ComputedTraceStyle,
-    TraceList,
-  } from "../data-worker/trace-list.js";
+  import type { ComputedTraceStyle, TraceList } from "../data/trace-list.js";
   import type { WritableSignal } from "@mod.js/signals";
   import { createVirtualizer } from "@tanstack/svelte-virtual";
   import { measureText } from "../utils/format.js";

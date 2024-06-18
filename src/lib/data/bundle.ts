@@ -3,18 +3,18 @@ import type {
   ChartValue,
   DataUnit,
   NumericRange,
-  Range,
-  TraceHandle,
-  TraceHandleArray,
+  ChartRange,
+  VariantHandle,
+  VariantHandleArray,
 } from "../types.js";
 import { filter } from "../utils/collection.js";
 import {
   toChartValue,
   toNumeric,
   toNumericRange,
-  toRange,
-} from "../utils/unit.js";
-import type { lib } from "./wasm.js";
+  toChartRange,
+} from "../units/mod.js";
+import type { lib } from "../wasm.js";
 
 export class Bundle {
   constructor(
@@ -23,14 +23,16 @@ export class Bundle {
     public yDataUnit: DataUnit,
   ) {}
 
-  get traces(): TraceHandleArray {
+  get traces(): VariantHandleArray {
     return this.boxed.traces();
   }
 
-  rangeInView(view: Range): Range & { inBundleUnits(): NumericRange } {
+  rangeInView(
+    view: ChartRange,
+  ): ChartRange & { inBundleUnits(): NumericRange } {
     const viewNumeric = toNumericRange(view, this.xDataUnit);
     const reducedNumeric = this.boxed.range_in_view(viewNumeric);
-    const reduced = toRange(reducedNumeric, this.xDataUnit);
+    const reduced = toChartRange(reducedNumeric, this.xDataUnit);
     return {
       ...reduced,
       inBundleUnits() {
@@ -40,10 +42,10 @@ export class Bundle {
   }
 
   tracesOverThreshold(
-    handles: TraceHandleArray,
-    range: Range,
+    handles: VariantHandleArray,
+    range: ChartRange,
     threshold: ChartValue,
-  ): Iterable<TraceHandle> {
+  ): Iterable<VariantHandle> {
     const thresholdNum = toNumeric(threshold, this.yDataUnit);
     const include: boolean[] = this.boxed.are_traces_over_threshold(
       handles,
@@ -56,10 +58,10 @@ export class Bundle {
   }
 
   tracesOverThreshold_alt(
-    handles: TraceHandleArray,
-    range: Range,
+    handles: VariantHandleArray,
+    range: ChartRange,
     threshold: ChartValue,
-  ): Iterable<TraceHandle> {
+  ): Iterable<VariantHandle> {
     const thresholdNum = toNumeric(threshold, this.yDataUnit);
     const rangeNum = this.rangeInView(range).inBundleUnits();
 
@@ -69,12 +71,12 @@ export class Bundle {
   }
 
   findClosestTraces(
-    handles: TraceHandleArray,
+    handles: VariantHandleArray,
     point: { x: ChartValue; y: ChartValue },
     howMany: number,
     interpolation: InterpolationStrategy,
   ): Array<{
-    handle: TraceHandle;
+    handle: VariantHandle;
     x: ChartValue;
     y: ChartValue;
     displayY: ChartValue;

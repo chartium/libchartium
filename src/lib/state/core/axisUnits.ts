@@ -1,12 +1,11 @@
 import { derived, mutDerived, type Signal } from "@mod.js/signals";
-import { isQuantity, isUnit, type FactorDefinition } from "unitlib";
+import { type FactorDefinition } from "unitlib";
 import Fraction from "fraction.js";
 
-import { TraceList } from "../../index.js";
+import { TraceList } from "../../mod.js";
 import {
-  Quantity,
   type DisplayUnitPreference,
-  type Range,
+  type ChartRange,
   type Unit,
   type DisplayUnit,
   type DataUnit,
@@ -14,14 +13,18 @@ import {
 import { mapOpt } from "../../utils/mapOpt.js";
 
 import type { UnitChangeAction, UnitChangeActions } from "./axis.js";
-import { eq } from "../../utils/unit.js";
-import { isNumericDateRepresentation } from "../../utils/numericDateRepresentation.js";
-import { DateFormat, isDateFormat } from "../../utils/dateFormat.js";
+import {
+  eq,
+  bestDisplayUnit,
+  computeDefaultUnit,
+  isDisplayUnitValidForDataUnit,
+} from "../../units/mod.js";
+import { isDateFormat } from "../../utils/dateFormat.js";
 
 export interface AxisUnitsProps {
   axis: "x" | "y";
   visibleTraces$: Signal<TraceList>;
-  range$: Signal<Range>;
+  range$: Signal<ChartRange>;
   displayUnitPreference$: Signal<DisplayUnitPreference>;
 }
 
@@ -41,11 +44,11 @@ export const axisUnits$ = ({
     axis === "x" ? $(visibleTraces$).xDataUnit : $(visibleTraces$).yDataUnit,
   ).skipEqual();
 
-  const bestUnit$ = bestDisplayUnit(dataUnit$, range$);
+  const bestUnit$ = bestDisplayUnit$(dataUnit$, range$);
   const defaultDisplayUnit$ = createDefaultUnit$(
     dataUnit$,
-    bestUnit$,
     displayUnitPreference$,
+    range$,
   );
 
   const { currentDisplayUnit$, resetDisplayUnit, setDisplayUnit } =
@@ -85,31 +88,13 @@ export const axisUnits$ = ({
 
 const createDefaultUnit$ = (
   dataUnit$: Signal<DataUnit>,
-  bestUnit$: Signal<DisplayUnit>,
   displayUnitPreference$: Signal<DisplayUnitPreference>,
-) => {
-  return derived(($): DisplayUnit => {
-    const pref = $(displayUnitPreference$);
-    const dat = $(dataUnit$);
-    switch (pref) {
-      case "data":
-        return dataUnitToDisplayUnit(dat);
-
-      case "auto":
-        return $(bestUnit$);
-
-      default:
-        if (isDisplayUnitValidForDataUnit(pref, dat)) {
-          return pref;
-        } else {
-          console.warn(
-            `The specified display unit "${displayUnitPreference$}" is invalid for the data unit "${dataUnit$}"`,
-          );
-          return dataUnitToDisplayUnit(dat);
-        }
-    }
-  }).skipEqual();
-};
+  range$: Signal<ChartRange>,
+) =>
+  derived(
+    ($): DisplayUnit =>
+      computeDefaultUnit($(dataUnit$), $(displayUnitPreference$), $(range$)),
+  ).skipEqual();
 
 const createCurrentUnit$ = ({
   dataUnit$,
@@ -212,45 +197,13 @@ const createUnitChangeActions$ = ({
     return { raise, reset, lower };
   });
 
-const isDisplayUnitValidForDataUnit = (
-  displayUnit: DisplayUnit,
-  dataUnit: DataUnit,
-): boolean => {
-  if (dataUnit === undefined) return displayUnit === undefined;
-  if (isDateFormat(displayUnit)) return isNumericDateRepresentation(dataUnit);
-  if (isNumericDateRepresentation(dataUnit)) return isDateFormat(displayUnit);
-  try {
-    new Quantity(1, dataUnit).inUnits(displayUnit!);
-    return true;
-  } catch {
-    return false;
-  }
-};
-
-const dataUnitToDisplayUnit = (u: DataUnit): DisplayUnit =>
-  isNumericDateRepresentation(u) ? new DateFormat() : u;
-
-const bestDisplayUnit = (dataUnit$: Signal<DataUnit>, range$: Signal<Range>) =>
-  derived(($): DisplayUnit => {
-    let dataUnit = $(dataUnit$);
-    const range = $(range$);
-
-    if (isUnit(dataUnit)) {
-      const { to } = range;
-      const dataUnit_ = dataUnit as Unit;
-
-      if (typeof to === "number") dataUnit = dataUnit_.withBestFactorFor(to);
-      else if (isQuantity(to)) {
-        const to_ = to as Quantity;
-
-        dataUnit = dataUnit_.withBestFactorFor(
-          to_.unit.conversionFactorTo(dataUnit_) * to_.value,
-        );
-      }
-    }
-
-    return dataUnitToDisplayUnit(dataUnit);
-  }).skipEqual();
+const bestDisplayUnit$ = (
+  dataUnit$: Signal<DataUnit>,
+  range$: Signal<ChartRange>,
+) =>
+  derived(
+    ($): DisplayUnit => bestDisplayUnit($(dataUnit$), $(range$)),
+  ).skipEqual();
 
 const changeFactor = ({
   direction,

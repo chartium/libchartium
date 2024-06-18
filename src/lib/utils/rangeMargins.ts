@@ -1,11 +1,11 @@
-import type { Quantity, Range, Unit } from "../types.js";
+import type { Quantity, ChartRange, Unit } from "../types.js";
 import {
   toNumeric,
   toChartValue,
-  toRange,
+  toChartRange,
   unitOf,
   toNumericRange,
-} from "./unit.js";
+} from "../units/mod.js";
 import { NumericDateRepresentation } from "./numericDateRepresentation.js";
 import type { RangeMarginValue } from "../state/core/axis.js";
 
@@ -52,7 +52,7 @@ export function explicifyRangeMargins(
 }
 
 export function toFractionalMargins(
-  currentRange: Range,
+  currentRange: ChartRange,
   margins: [RangeMarginValue, RangeMarginValue],
   sizeInPX: number | undefined,
 ): [number, number] {
@@ -96,7 +96,7 @@ export function toFractionalMargins(
 }
 
 export const addFractionalMarginsToRange = (
-  currentRange: Range,
+  currentRange: ChartRange,
   [lower, higher]: [number, number],
 ) => {
   /*
@@ -112,7 +112,7 @@ export const addFractionalMarginsToRange = (
 
   const newLength = (to - from) * lengthMultiplier;
 
-  return toRange(
+  return toChartRange(
     {
       from: from - lower * newLength,
       to: to + higher * newLength,
@@ -122,7 +122,7 @@ export const addFractionalMarginsToRange = (
 };
 
 export const addMarginsToRange = (
-  currentRange: Range,
+  currentRange: ChartRange,
   margins: [RangeMarginValue, RangeMarginValue],
   lengthInPx: number | undefined,
 ) => {
@@ -135,13 +135,13 @@ export const addMarginsToRange = (
 };
 
 export const addZeroToRange = (
-  range: Range,
+  range: ChartRange,
   dataUnit: Unit | NumericDateRepresentation | undefined,
-): Range => {
+): ChartRange => {
   const from = toNumeric(range.from, dataUnit);
   const to = toNumeric(range.to, dataUnit);
   return {
     from: toChartValue(Math.min(0, from), dataUnit),
     to: toChartValue(Math.max(0, to), dataUnit),
-  } as Range;
+  } as ChartRange;
 };

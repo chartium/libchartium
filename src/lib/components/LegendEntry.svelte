@@ -1,7 +1,7 @@
 <script lang="ts">
   import TracePreview from "./TracePreview.svelte";
   import { singleOrDoubleclick } from "../utils/mouseActions.js";
-  import type { ComputedTraceStyle } from "../data-worker/trace-list.js";
+  import type { ComputedTraceStyle } from "../data/trace-list.js";
 
   export let traceId: string;
   export let traceStyle: ComputedTraceStyle;

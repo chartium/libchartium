@@ -4,15 +4,15 @@ import {
   mutDerived,
   type Signal,
 } from "@mod.js/signals";
-import { type TraceList } from "../../index.js";
+import { type TraceList } from "../../mod.js";
 import {
   rangesHaveMeaningfulIntersection,
-  type Range,
+  type ChartRange,
   type NumericRange,
   type ResolvedType,
   isSameRange,
 } from "../../types.js";
-import { toNumeric, toRange, unitOf } from "../../utils/unit.js";
+import { toNumeric, toChartRange, unitOf } from "../../units/mod.js";
 import { addMarginsToRange } from "../../utils/rangeMargins.js";
 import type { RangeMarginValue } from "./axis.js";
 
@@ -21,19 +21,19 @@ export type XAxisRangeProps = {
   visibleTraces$: Signal<TraceList>;
   showZero$: Signal<boolean>;
   margins$: Signal<[RangeMarginValue, RangeMarginValue]>;
-  commonRange$: WritableSignal<Range | undefined>;
+  commonRange$: WritableSignal<ChartRange | undefined>;
   doUseCommonRange$: Signal<boolean>;
   lengthInPx$: Signal<number | undefined>;
 };
 export type YAxisRangeProps = ResolvedType<
   {
     autoscale$: Signal<boolean>;
-    xRange$: Signal<Range>;
+    xRange$: Signal<ChartRange>;
   } & Omit<XAxisRangeProps, "commonRange$" | "doUseCommonRange$">
 >;
 
 export interface AxisRange {
-  range$: Signal<Range>;
+  range$: Signal<ChartRange>;
   resetRange: () => void;
   zoomRange: (fractionalRange: NumericRange) => void;
   shiftRange: (fractionalShift: number) => void;
@@ -60,10 +60,10 @@ export const xAxisRange$ = ({
   });
 
   let isAutozoomed = true;
-  const range$ = mutDerived<Range>(($, { prev }) => {
+  const range$ = mutDerived<ChartRange>(($, { prev }) => {
     const def = $(defaultRange$);
     if ($(commonRange$) !== undefined && $(doUseCommonRange$))
-      return $(commonRange$) as Range;
+      return $(commonRange$) as ChartRange;
 
     if (isAutozoomed || prev === undefined) {
       return def;
@@ -130,7 +130,7 @@ export const yAxisRange$ = ({
   });
 
   let isAutozoomed = true;
-  const range$ = mutDerived<Range>(($, { prev }) => {
+  const range$ = mutDerived<ChartRange>(($, { prev }) => {
     const def = $(defaultRange$);
     if ($(autoscale$)) {
       return preventEmptyRange(
@@ -178,20 +178,20 @@ export const yAxisRange$ = ({
   return { range$: range$.toReadonly(), resetRange, zoomRange, shiftRange };
 };
 
-const preventEmptyRange = (currentRange: Range) => {
+const preventEmptyRange = (currentRange: ChartRange) => {
   const unit = unitOf(currentRange.from);
   const from = toNumeric(currentRange.from, unit);
   const to = toNumeric(currentRange.to, unit);
 
-  if (from === to) return toRange({ from: from - 1, to: to + 1 }, unit);
+  if (from === to) return toChartRange({ from: from - 1, to: to + 1 }, unit);
   return currentRange;
 };
 
-const addZeroToRange = (range: Range): Range => {
+const addZeroToRange = (range: ChartRange): ChartRange => {
   const unit = unitOf(range.from);
   const from = toNumeric(range.from, unit);
   const to = toNumeric(range.to, unit);
-  return toRange(
+  return toChartRange(
     {
       from: Math.min(0, from),
       to: Math.max(0, to),
@@ -201,7 +201,7 @@ const addZeroToRange = (range: Range): Range => {
 };
 
 const computeZoomedRange = (
-  currentRange: Range,
+  currentRange: ChartRange,
   zoomToFractional: NumericRange,
 ) => {
   const unit = unitOf(currentRange.from);
@@ -211,7 +211,7 @@ const computeZoomedRange = (
 
   if (zoomToFractional.to - zoomToFractional.from <= 0) return currentRange;
 
-  return toRange(
+  return toChartRange(
     {
       from: toNumeric(currentRange.from, unit) + d * zoomToFractional.from,
       to: toNumeric(currentRange.from, unit) + d * zoomToFractional.to,
@@ -221,7 +221,7 @@ const computeZoomedRange = (
 };
 
 const computeShiftedRange = (
-  currentRange: Range,
+  currentRange: ChartRange,
   shiftByFractional: number,
 ) => {
   const unit = unitOf(currentRange.from);
@@ -229,7 +229,7 @@ const computeShiftedRange = (
   const to = toNumeric(currentRange.to, unit);
 
   const delta = (to - from) * -shiftByFractional;
-  return toRange(
+  return toChartRange(
     {
       from: from + delta,
       to: to + delta,

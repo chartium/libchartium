@@ -1,6 +1,6 @@
 <!-- component for showing a bit of the trace for legends and tooltips and such -->
 <script lang="ts">
-  import type { ComputedTraceStyle } from "../data-worker/trace-list.js";
+  import type { ComputedTraceStyle } from "../data/trace-list.js";
   import * as canvas from "./canvas.js";
 
   export let traceStyle: ComputedTraceStyle;

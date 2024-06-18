@@ -1,6 +1,3 @@
-import { type ChartValue, isQuantity, type DisplayUnit } from "../types.js";
-import { formatFloat, type QuantityFormatOptions } from "unitlib";
-import { isDateFormat, type Period } from "./dateFormat.js";
 /** Writes exponential notation that doesn't make your eyes bleed */
 export function prettyExp(input: number, decimals: number): string {
   const exp = Math.floor(Math.log10(input));
@@ -61,39 +58,3 @@ export const measureText = (() => {
     return ctx.measureText(text).width;
   };
 })();
-
-export interface QndFormatOptions extends QuantityFormatOptions {
-  unit?: DisplayUnit;
-  dateAccuracy?: Period;
-}
-
-/** Formats input based on options */
-export function qndFormat(
-  input: ChartValue,
-  options: QndFormatOptions = {},
-): string {
-  options = { ...options };
-  options.decimalPlaces ??= 2;
-  options.digitGroupLength ??= 3;
-  options.fancyUnicode ??= true;
-  options.dateAccuracy ??= "minutes";
-
-  if (typeof input === "number") {
-    if (isNaN(input)) return "—";
-    return formatFloat(input, options);
-  } else if (isQuantity(input)) {
-    if (isNaN(input.value)) return "—";
-    if (options.unit) {
-      try {
-        if (isDateFormat(options.unit)) throw "";
-        input = input.inUnits(options.unit);
-      } catch {}
-    }
-    return input.toString(options);
-  } else {
-    if (isDateFormat(options.unit)) {
-      return options.unit.formatWithAccuracy(input, options.dateAccuracy);
-    }
-    return input.utc().format("YYYY-MM-DD");
-  }
-}

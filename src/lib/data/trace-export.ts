@@ -1,14 +1,14 @@
-import type { TraceList } from "../index.js";
+import type { TraceList } from "../mod.js";
 import {
   X,
   type ExportRow,
-  type Range,
+  type ChartRange,
   type TypedArray,
-  type TraceHandle,
+  type VariantHandle,
 } from "../types.js";
-import { toNumeric } from "../utils/unit.js";
+import { toNumeric } from "../units/mod.js";
 import { Queue } from "../utils/queue.js";
-import { traceIds } from "./controller.js";
+import { variantIds } from "./controller.js";
 import { PARAMS } from "./trace-list.js";
 import type { Bundle } from "./bundle.js";
 
@@ -28,7 +28,7 @@ export interface TraceListExportOptions {
   ) => ArrayBuffer | TypedArray | DataView | Blob | string;
 
   /** From what range to export. Defaults to `traceList.range` */
-  range?: Range;
+  range?: ChartRange;
 }
 
 export async function exportTraceListData(
@@ -82,7 +82,9 @@ export async function exportTraceListData(
       if (isFirstColumn) row = { [X]: el };
       else {
         row[
-          traceIds.get(handles[(i % (handles.length + 1)) - 1] as TraceHandle)!
+          variantIds.get(
+            handles[(i % (handles.length + 1)) - 1] as VariantHandle,
+          )!
         ] = el;
       }
       if (isLastColumn) queue.enqueue(row);

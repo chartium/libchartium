@@ -1,19 +1,19 @@
 import {
-  type Range,
-  type TraceHandle,
+  type ChartRange,
+  type VariantHandle,
   type ChartValue,
   type DataUnit,
-  type TraceHandleArray,
+  type VariantHandleArray,
   Unit,
 } from "../types.js";
-import { lib } from "./wasm.js";
+import { lib } from "../wasm.js";
 import {
   oxidizeStyleSheetPatch,
   type TraceStyleSheet,
 } from "./trace-styles.js";
 import { yeet } from "yeet-ts";
-import { UnknownTraceHandleError, UnknownTraceIdError } from "../errors.js";
-import { traceIds } from "./controller.js";
+import { UnknownVariantHandleError, UnknownVariantIdError } from "../errors.js";
+import { variantIds } from "./controller.js";
 import {
   filter,
   flatMap,
@@ -29,10 +29,10 @@ import {
   toNumeric,
   toNumericRange,
   toChartValue,
-  toRange,
+  toChartRange,
   assertAllUnitsCompatible,
   unitConversionFactor,
-} from "../utils/unit.js";
+} from "../units/mod.js";
 import {
   exportTraceListData,
   type TraceListExportOptions,
@@ -67,9 +67,9 @@ export interface ComputedTraceStyle {
 }
 
 export interface TraceListParams {
-  handles: TraceHandleArray;
+  handles: VariantHandleArray;
   bundles: Bundle[];
-  range: Range;
+  range: ChartRange;
   rangeArbitrary: boolean;
 
   labels: ReadonlyMap<string, string>;
@@ -119,7 +119,7 @@ export class TraceList {
   /**
    * The x axis range this trace list is limited to.
    */
-  get range(): Range {
+  get range(): ChartRange {
     return { ...this.#p.range };
   }
 
@@ -146,13 +146,13 @@ export class TraceList {
    */
   *traces(): Iterable<string> {
     for (const handle of this.#p.handles) {
-      const id = traceIds.get(handle as TraceHandle);
-      yield id ?? yeet(UnknownTraceHandleError, handle);
+      const id = variantIds.get(handle as VariantHandle);
+      yield id ?? yeet(UnknownVariantHandleError, handle);
     }
   }
 
-  #traceHandleSet_: Set<TraceHandle> | undefined;
-  get #traceHandlesSet(): Set<TraceHandle> {
+  #traceHandleSet_: Set<VariantHandle> | undefined;
+  get #traceHandlesSet(): Set<VariantHandle> {
     if (!this.#traceHandleSet_)
       this.#traceHandleSet_ = new Set(this.#p.handles);
     return this.#traceHandleSet_;
@@ -161,7 +161,7 @@ export class TraceList {
   #traceHandleStacks_: [null | number, Uint32Array][] | undefined;
   get #traceHandleStacks(): [null | number, Uint32Array][] {
     if (!this.#traceHandleStacks_) {
-      const groupMap = new Map<null | number, [TraceHandle, number][]>();
+      const groupMap = new Map<null | number, [VariantHandle, number][]>();
       const getStack = (v: lib.TraceStyle["stack-group"]) => {
         if (v === "unset") return null;
 
@@ -244,14 +244,14 @@ export class TraceList {
 
   getStyle(traceId: string): ComputedTraceStyle {
     const style = this.#p.styles.get_computed(
-      traceIds.getKey(traceId) ?? yeet(UnknownTraceIdError, traceId),
+      variantIds.getKey(traceId) ?? yeet(UnknownVariantIdError, traceId),
     );
     return {
       ...style,
       label: this.getLabel(traceId),
       color: this.getColor(traceId),
       "palette-index": this.#colorIndices.get_trace_index(
-        traceIds.getKey(traceId)!,
+        variantIds.getKey(traceId)!,
       ),
     };
   }
@@ -259,7 +259,7 @@ export class TraceList {
   getColor(traceId: string): `#${string}` {
     return resolvedColorToHex(
       this.#p.styles.get_color(
-        traceIds.getKey(traceId) ?? yeet(UnknownTraceIdError, traceId),
+        variantIds.getKey(traceId) ?? yeet(UnknownVariantIdError, traceId),
         this.#colorIndices,
         this.#p.randomSeed,
       ),
@@ -272,7 +272,7 @@ export class TraceList {
    * or may not be deleted – if you narrow down the range of a trace list and
    * than expand it again, don't expect you'll get back all the data.
    */
-  withRange(range: Range): TraceList {
+  withRange(range: ChartRange): TraceList {
     const bundles = this.#p.bundles.filter((bundle) => {
       const { from, to } = toNumericRange(range, bundle.xDataUnit);
       return bundle.boxed.intersects(from, to);
@@ -297,8 +297,8 @@ export class TraceList {
   withoutTraces(tracesToExclude: Iterable<string>) {
     const exclude = new Set(
       filter(
-        map(tracesToExclude, (id) => traceIds.getKey(id)),
-        (n): n is TraceHandle => n !== undefined,
+        map(tracesToExclude, (id) => variantIds.getKey(id)),
+        (n): n is VariantHandle => n !== undefined,
       ),
     );
 
@@ -318,8 +318,8 @@ export class TraceList {
   withTraces(tracesToInclude: Iterable<string>) {
     const include = new Set(
       filter(
-        map(tracesToInclude, (id) => traceIds.getKey(id)),
-        (n): n is TraceHandle => n !== undefined,
+        map(tracesToInclude, (id) => variantIds.getKey(id)),
+        (n): n is VariantHandle => n !== undefined,
       ),
     );
 
@@ -375,7 +375,7 @@ export class TraceList {
           this.#p.range,
           thresholdValue,
         );
-        return map(filteredHandles, (h) => traceIds.get(h)!);
+        return map(filteredHandles, (h) => variantIds.get(h)!);
       }),
     );
   }
@@ -422,7 +422,7 @@ export class TraceList {
       map(ranges, (r) => r.to),
       Math.max,
     );
-    const range = toRange({ from, to }, xDataUnit);
+    const range = toChartRange({ from, to }, xDataUnit);
     const rangeArbitrary = allRangesArbitrary;
 
     // Compute Styles
@@ -472,10 +472,10 @@ export class TraceList {
 
     from ??= this.range.from;
     to ??= this.range.to;
-    const range = { from, to } as Range;
+    const range = { from, to } as ChartRange;
 
     const handles = traces
-      ? Uint32Array.from(traces.map((id) => traceIds.getKey(id)!))
+      ? Uint32Array.from(traces.map((id) => variantIds.getKey(id)!))
       : this.#p.handles;
 
     const counter = new lib.MetaCounter(handles.length);
@@ -493,7 +493,7 @@ export class TraceList {
       map(
         zip(metas, handles),
         ([meta, handle]): TraceStatistics => ({
-          traceId: traceIds.get(handle)!,
+          traceId: variantIds.get(handle)!,
           min: withYUnit(meta.min),
           max: withYUnit(meta.max),
           average: withYUnit(meta.avg),
@@ -506,15 +506,15 @@ export class TraceList {
     return convertedMetas;
   }
 
-  #yRange: Range | undefined;
+  #yRange: ChartRange | undefined;
   /**
    * Calculate the y axis range of this trace list.
    */
-  getYRange(xRange?: Range): Range {
+  getYRange(xRange?: ChartRange): ChartRange {
     if (this.#yRange && xRange === undefined) return this.#yRange;
     const { getStackData, freeStackData } = this.stackHelper(this.#p.bundles);
 
-    const range = this[LAZY].traceHandleStacks.reduce<Range | undefined>(
+    const range = this[LAZY].traceHandleStacks.reduce<ChartRange | undefined>(
       (prev, [stack, handles]) => {
         const { bundles, factors, xUnit, yUnit } = getStackData();
         const range = toNumericRange(xRange ?? this.range, xUnit);
@@ -528,7 +528,7 @@ export class TraceList {
           toChartValue(v, yUnit),
         );
 
-        if (prev === undefined) return { from, to } as Range;
+        if (prev === undefined) return { from, to } as ChartRange;
 
         prev.from = minValue(prev.from, from);
         prev.to = maxValue(prev.to, to);
@@ -562,7 +562,7 @@ export class TraceList {
     const yToNum = (y: ChartValue) => toNumeric(y, this.yDataUnit);
 
     let closestPoints: Array<{
-      handle: TraceHandle;
+      handle: VariantHandle;
       x: ChartValue;
       y: ChartValue;
       displayY: ChartValue;
@@ -633,7 +633,7 @@ export class TraceList {
     closestPoints = closestPoints.slice(0, howMany);
 
     return closestPoints.map(({ handle, x, y, displayY }) => ({
-      traceId: traceIds.get(handle)!,
+      traceId: variantIds.get(handle)!,
       x,
       y,
       displayY,

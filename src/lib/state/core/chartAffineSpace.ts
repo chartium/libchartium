@@ -1,10 +1,10 @@
 import type { Signal } from "@mod.js/signals";
-import type { ChartValue, Range, Size } from "../../types.js";
-import { toNumeric, toChartValue, unitOf } from "../../utils/unit.js";
+import type { ChartValue, ChartRange, Size } from "../../types.js";
+import { toNumeric, toChartValue, unitOf } from "../../units/mod.js";
 
 export interface ChartAffineSpaceProps {
-  xRange$: Signal<Range>;
-  yRange$: Signal<Range>;
+  xRange$: Signal<ChartRange>;
+  yRange$: Signal<ChartRange>;
   canvasLogicalSize$: Signal<Size | undefined>;
 }
 

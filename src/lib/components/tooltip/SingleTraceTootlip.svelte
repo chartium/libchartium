@@ -2,9 +2,9 @@
   import type { HoveredTrace } from "../../state/interactive/hover.js";
   import type { DisplayUnit } from "../../types.js";
   import { DateFormat } from "../../utils/dateFormat.js";
-  import { qndFormat, uniqueDecimals } from "../../utils/format.js";
+  import { uniqueDecimals } from "../../utils/format.js";
   import { NumericDateRepresentation } from "../../utils/numericDateRepresentation.js";
-  import { toNumeric } from "../../utils/unit.js";
+  import { formatChartValue, toNumeric } from "../../units/mod.js";
   import TracePreview from "../TracePreview.svelte";
 
   export let previewStyle: "simplified" | "full";
@@ -42,7 +42,7 @@
   <div class="trace-info">
     <div class="value-name">date:</div>
     <div class="value-value">
-      {qndFormat(hoveredTrace.x, { unit: xDisplayUnit })}
+      {formatChartValue(hoveredTrace.x, { unit: xDisplayUnit })}
     </div>
   </div>
 
@@ -51,7 +51,7 @@
     <div class="trace-info">
       <div class="value-name">{key}:</div>
       <div class="value-value">
-        {qndFormat(value, { unit: yDisplayUnit, decimalPlaces })}
+        {formatChartValue(value, { unit: yDisplayUnit, decimalPlaces })}
       </div>
     </div>
   {/each}

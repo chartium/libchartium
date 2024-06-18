@@ -13,12 +13,12 @@ export const Unit = Unit_;
 export const isUnit = (x: unknown): x is Unit => _isUnit(x);
 
 import { Quantity as Quantity_ } from "unitlib";
-import { toNumeric } from "./utils/unit.js";
+import { toNumeric } from "./units/mod.js";
 export type Quantity = Quantity_<any, any, any>;
 export const Quantity = Quantity_;
 export const isQuantity = (x: unknown): x is Quantity => _isQuantity(x);
 
-import type { NumericDateRepresentation } from "./index.js";
+import type { NumericDateRepresentation } from "./mod.js";
 import type { DateFormat } from "./utils/dateFormat.js";
 
 export type DataUnit = NumericDateRepresentation | Unit | undefined;
@@ -50,8 +50,8 @@ export type TypeOfData =
   | "f32"
   | "f64";
 
-export type TraceHandle = number;
-export type TraceHandleArray = Uint32Array;
+export type VariantHandle = number;
+export type VariantHandleArray = Uint32Array;
 
 export interface Size {
   width: number;
@@ -73,9 +73,9 @@ export type DateRange = {
   to: Dayjs;
 };
 
-export type Range = NumericRange | QuantityRange | DateRange;
+export type ChartRange = NumericRange | QuantityRange | DateRange;
 
-export const isRange = (x: unknown): x is Range =>
+export const isRange = (x: unknown): x is ChartRange =>
   typeof x === "object" && x !== null && "from" in x && "to" in x;
 
 export const isNumericRange = (x: unknown): x is NumericRange =>
@@ -95,7 +95,7 @@ export const isQuantityRange = (x: unknown): x is QuantityRange =>
   isQuantity(x.from) &&
   isQuantity(x.to);
 
-export const isSameRange = (a: Range, b: Range): boolean => {
+export const isSameRange = (a: ChartRange, b: ChartRange): boolean => {
   if (isNumericRange(a) && isNumericRange(b))
     return a.from === b.from && a.to === b.to;
   if (isDateRange(a) && isDateRange(b))
@@ -106,8 +106,8 @@ export const isSameRange = (a: Range, b: Range): boolean => {
 };
 
 export const rangesHaveMeaningfulIntersection = function isect(
-  a: Range,
-  b: Range,
+  a: ChartRange,
+  b: ChartRange,
 ): boolean {
   if (isNumericRange(a)) {
     if (!isNumericRange(b)) return false;

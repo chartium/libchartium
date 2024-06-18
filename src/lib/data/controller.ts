@@ -9,33 +9,32 @@
  */
 
 import { BiMap } from "@risai/bim";
-import { lib } from "./wasm.js";
+import { lib } from "../wasm.js";
 
 import type {
   DataUnit,
-  Range,
-  TraceHandle,
-  TraceHandleArray,
+  ChartRange,
+  VariantHandle,
+  VariantHandleArray,
   TypedArray,
   TypeOfData,
 } from "../types.js";
 import { CONSTRUCTOR, randomUint, TraceList } from "./trace-list.js";
-import type { TraceStylesheet } from "../index.js";
 import { enumerate } from "../utils/collection.js";
 import { Bundle } from "./bundle.js";
-import { toNumericRange, toRange } from "../utils/unit.js";
-import { oxidizeStyleSheet } from "./trace-styles.js";
-import { createRenderer as createWebgl2Renderer } from "./renderers/webgl2.js";
-import type { Renderer } from "./renderers/mod.js";
+import { toNumericRange, toChartRange } from "../units/mod.js";
+import { oxidizeStyleSheet, type TraceStyleSheet } from "./trace-styles.js";
+import { createRenderer as createWebgl2Renderer } from "../renderers/webgl2.js";
+import type { Renderer } from "../renderers/mod.js";
 
 export type RenderingMode = "webgl2";
 
-export const traceIds = new BiMap<TraceHandle, string>();
+export const variantIds = new BiMap<VariantHandle, string>();
 
-let nextTraceHandle: TraceHandle = 1;
-export function registerNewTraceHandle(id: string): TraceHandle {
-  const handle = nextTraceHandle++;
-  traceIds.set(handle, id);
+let nextVariantHandle: VariantHandle = 1;
+export function registerNewVariantHandle(id: string): VariantHandle {
+  const handle = nextVariantHandle++;
+  variantIds.set(handle, id);
   return handle;
 }
 
@@ -75,17 +74,17 @@ export class ChartiumController {
     yType: TypeOfData;
     xDataUnit?: DataUnit;
     yDataUnit?: DataUnit;
-    style?: TraceStylesheet;
+    style?: TraceStyleSheet;
     labels?: Iterable<[string, string | undefined]>;
   }): Promise<TraceList> {
     if (ids.length === 0) return TraceList.empty();
 
     const dataBuffer = data instanceof ArrayBuffer ? data : data.buffer;
 
-    const handles: TraceHandleArray = new Uint32Array(ids.length);
+    const handles: VariantHandleArray = new Uint32Array(ids.length);
 
     for (const [i, id] of enumerate(ids)) {
-      handles[i] = traceIds.getKey(id) ?? registerNewTraceHandle(id);
+      handles[i] = variantIds.getKey(id) ?? registerNewVariantHandle(id);
     }
 
     const bulkload = await lib.Bulkloader.from_array(
@@ -103,7 +102,7 @@ export class ChartiumController {
 
     let tl = TraceList[CONSTRUCTOR]({
       handles,
-      range: toRange(range.value, xDataUnit),
+      range: toChartRange(range.value, xDataUnit),
       rangeArbitrary: false,
       bundles: [new Bundle(bundle, xDataUnit, yDataUnit)],
       labels: new Map(),
@@ -140,7 +139,7 @@ export class ChartiumController {
         data: ArrayBuffer | TypedArray;
       }[];
     };
-    style?: TraceStylesheet;
+    style?: TraceStyleSheet;
     labels?: Iterable<[string, string | undefined]>;
   }): Promise<TraceList> {
     if (y.columns.length === 0) return TraceList.empty();
@@ -153,10 +152,10 @@ export class ChartiumController {
         new Uint8Array(data instanceof ArrayBuffer ? data : data.buffer),
     );
 
-    const handles: TraceHandleArray = new Uint32Array(y.columns.length);
+    const handles: VariantHandleArray = new Uint32Array(y.columns.length);
 
     for (const [i, { id }] of enumerate(y.columns)) {
-      handles[i] = traceIds.getKey(id) ?? registerNewTraceHandle(id);
+      handles[i] = variantIds.getKey(id) ?? registerNewVariantHandle(id);
     }
 
     const bundle = lib.Bulkloader.from_columnar(
@@ -174,7 +173,7 @@ export class ChartiumController {
 
     let tl = TraceList[CONSTRUCTOR]({
       handles,
-      range: toRange(range.value, x.unit),
+      range: toChartRange(range.value, x.unit),
       rangeArbitrary: false,
       bundles: [new Bundle(bundle, x.unit, y.unit)],
       labels: new Map(),
@@ -203,16 +202,16 @@ export class ChartiumController {
     ys: Float64Array;
     xDataUnit?: DataUnit;
     yDataUnit?: DataUnit;
-    style?: TraceStylesheet;
+    style?: TraceStyleSheet;
     labels?: Iterable<[string, string | undefined]>;
-    tracelistsRange: Range;
+    tracelistsRange: ChartRange;
   }): Promise<TraceList> {
     if (ids.length === 0) return TraceList.empty();
 
-    const handles: TraceHandleArray = new Uint32Array(ids.length);
+    const handles: VariantHandleArray = new Uint32Array(ids.length);
 
     for (const [i, id] of enumerate(ids)) {
-      handles[i] = traceIds.getKey(id) ?? registerNewTraceHandle(id);
+      handles[i] = variantIds.getKey(id) ?? registerNewVariantHandle(id);
     }
 
     const bundle = lib.Bulkloader.threshold_from_array(handles, ys);

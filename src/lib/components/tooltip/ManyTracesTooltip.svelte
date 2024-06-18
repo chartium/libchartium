@@ -2,9 +2,9 @@
   import type { CloseTrace } from "../../state/interactive/hover.js";
   import type { DisplayUnit } from "../../types.js";
   import { DateFormat } from "../../utils/dateFormat.js";
-  import { qndFormat, uniqueDecimals } from "../../utils/format.js";
+  import { uniqueDecimals } from "../../utils/format.js";
   import { NumericDateRepresentation } from "../../utils/numericDateRepresentation.js";
-  import { toNumeric } from "../../utils/unit.js";
+  import { formatChartValue, toNumeric } from "../../units/mod.js";
   import TracePreview from "../TracePreview.svelte";
 
   export let previewStyle: "simplified" | "full";
@@ -27,7 +27,7 @@
 
 <div class="tooltip-container">
   <div class="header">
-    {qndFormat(first?.x, { unit: xDisplayUnit })}
+    {formatChartValue(first?.x, { unit: xDisplayUnit })}
   </div>
   {#each nearestTraces as trace}
     <div class="trace-info">
@@ -39,7 +39,7 @@
         {trace.style.label ?? trace.traceId}
       </div>
       <div class="trace-value">
-        {qndFormat(trace.y, { unit: yDisplayUnit, decimalPlaces })}
+        {formatChartValue(trace.y, { unit: yDisplayUnit, decimalPlaces })}
       </div>
     </div>
   {/each}

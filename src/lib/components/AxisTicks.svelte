@@ -15,10 +15,7 @@
     type Tick,
   } from "../types.js";
   import type { VisibleAction } from "./ActionsOverlay.svelte";
-  import {
-    type ContextItem,
-    GenericContextMenu,
-  } from "../contextMenu/index.js";
+  import { type ContextItem, GenericContextMenu } from "./context-menu/mod.js";
   import {
     FlockRegistry,
     mut,

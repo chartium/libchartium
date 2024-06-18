@@ -4,14 +4,14 @@ export class InternalError extends Error {
   }
 }
 
-export class UnknownTraceHandleError extends InternalError {
+export class UnknownVariantHandleError extends InternalError {
   constructor(handle: number) {
-    super(`Trace with handle ${handle} has no id!`);
+    super(`Variant with handle ${handle} has no id!`);
   }
 }
 
-export class UnknownTraceIdError extends InternalError {
+export class UnknownVariantIdError extends InternalError {
   constructor(id: string) {
-    super(`Trace with id ${id} was not found!`);
+    super(`Variant with id ${id} was not found!`);
   }
 }

@@ -3,8 +3,8 @@ import {
   colorStringToColor,
   get2DContext,
 } from "../utils/color.js";
-import { traceIds } from "./controller.js";
-import { lib } from "./wasm.js";
+import { variantIds } from "./controller.js";
+import { lib } from "../wasm.js";
 
 export type TraceRandomColorSpace = lib.TraceRandomColorSpace;
 export type TracePointsStyle = lib.TracePointsStyle;
@@ -45,7 +45,7 @@ export function oxidizeStyleSheetPatch(
   const patchBuilder = lib.TraceStyleSheetPatchBuilder.base(baseStyle);
   for (const selector of Object.keys(s)) {
     if (selector === "*") continue;
-    const handle = traceIds.getKey(selector);
+    const handle = variantIds.getKey(selector);
     if (handle === undefined) continue;
     const style = s[selector];
     if (style === undefined) continue;

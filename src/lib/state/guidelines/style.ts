@@ -1,4 +1,4 @@
-import type { TraceStyle } from "../../data-worker/trace-styles.js";
+import type { TraceStyle } from "../../data/trace-styles.js";
 
 export const defaultAxisStyle: ResolvedGuidelineStyle = {
   color: "rgba(128, 128, 128, 1)",

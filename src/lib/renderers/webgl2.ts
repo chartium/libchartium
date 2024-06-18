@@ -1,9 +1,9 @@
 import { lib } from "../wasm.js";
 import { yeet } from "yeet-ts";
 import { type RenderJob, type Renderer } from "./mod.js";
-import { LAZY, PARAMS } from "../trace-list.js";
-import { toNumericRange } from "../../utils/unit.js";
-import type { DataUnit } from "../../types.js";
+import { LAZY, PARAMS } from "../data/trace-list.js";
+import { toNumericRange } from "../units/mod.js";
+import type { DataUnit } from "../types.js";
 
 export function createRenderer(presentCanvas: OffscreenCanvas): WebGL2Renderer {
   const { canvas, context, programs } = init();

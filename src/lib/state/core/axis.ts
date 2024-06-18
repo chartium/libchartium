@@ -1,9 +1,9 @@
 import { Signal, WritableSignal } from "@mod.js/signals";
-import { type TraceList } from "../../index.js";
+import { type TraceList } from "../../mod.js";
 import {
   Quantity,
   type NumericRange,
-  type Range,
+  type ChartRange,
   type Tick,
   type DisplayUnitPreference,
   type DisplayUnit,
@@ -43,20 +43,20 @@ export type XAxisProps = {
   showZero$: Signal<boolean>;
   measureTextSize$: Signal<TextMeasuringFunction | undefined>;
   lengthInPx$: Signal<number | undefined>;
-  commonRange$: WritableSignal<Range | undefined>;
+  commonRange$: WritableSignal<ChartRange | undefined>;
   doUseCommonRange$: Signal<boolean>;
   margins$: Signal<ExplicitRangeMargins>;
 };
 export type YAxisProps = ResolvedType<
   {
     axis: "y";
-    xRange$: Signal<Range>;
+    xRange$: Signal<ChartRange>;
     autoscale$: Signal<boolean>;
   } & Omit<XAxisProps, "axis" | "commonRange$" | "doUseCommonRange$">
 >;
 
 export interface Axis {
-  range$: Signal<Range>;
+  range$: Signal<ChartRange>;
   resetRange: () => void;
   shiftRange: (fractionalShift: number) => void;
   zoomRange: (fractionalRange: NumericRange) => void;
@@ -169,7 +169,7 @@ export const xAxis$ = ({
 };
 
 const axisCommon = (
-  range$: Signal<Range>,
+  range$: Signal<ChartRange>,
   {
     axis,
     measureTextSize$,

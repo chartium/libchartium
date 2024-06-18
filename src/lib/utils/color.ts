@@ -1,4 +1,4 @@
-import type { lib } from "../data-worker/wasm.js";
+import type { lib } from "../wasm.js";
 import { startsWith } from "./string.js";
 
 // "Missing Texture" magenta

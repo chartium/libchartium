@@ -5,9 +5,9 @@ import {
   type Unsubscriber,
 } from "@mod.js/signals";
 import { devicePixelRatio$ } from "../../utils/reactive-globals.js";
-import type { ChartiumController, TraceList } from "../../index.js";
-import type { Range, Size } from "../../types.js";
-import type { Renderer } from "../../data-worker/renderers/mod.js";
+import type { ChartiumController, TraceList } from "../../mod.js";
+import type { ChartRange, Size } from "../../types.js";
+import type { Renderer } from "../../renderers/mod.js";
 
 export interface ChartRendererProps {
   controller$: Signal<ChartiumController | undefined>;
@@ -15,8 +15,8 @@ export interface ChartRendererProps {
   canvasLogicalSize$: Signal<Size | undefined>;
 
   visibleTraces$: Signal<TraceList>;
-  xRange$: Signal<Range>;
-  yRange$: Signal<Range>;
+  xRange$: Signal<ChartRange>;
+  yRange$: Signal<ChartRange>;
 
   defer: (u: Unsubscriber) => void;
 }
@@ -58,8 +58,8 @@ export const chartRenderer$ = ({
   const render = (
     renderer: Renderer,
     visibleTraces: TraceList,
-    xRange: Range,
-    yRange: Range,
+    xRange: ChartRange,
+    yRange: ChartRange,
   ) => {
     console.log("render");
     renderer.render({
