@@ -8,7 +8,7 @@ import {
 } from "../types.js";
 import { toNumeric } from "../units/mod.js";
 import { Queue } from "../utils/queue.js";
-import { variantIds } from "./controller.js";
+import { variantIds } from "./variant-ids.js";
 import { PARAMS } from "./trace-list.js";
 import type { Bundle } from "./bundle.js";
 

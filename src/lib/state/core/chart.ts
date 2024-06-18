@@ -4,7 +4,7 @@ import {
   type DeferLike,
   type Signal,
 } from "@mod.js/signals";
-import type { ChartiumController, TraceList } from "../../mod.js";
+import type { TraceList } from "../../mod.js";
 import { xAxis$, yAxis$, type Axis } from "./axis.js";
 import { chartCanvas$ } from "./chartCanvas.js";
 import { chartRenderer$ } from "./chartRenderer.js";
@@ -18,7 +18,6 @@ import type { DisplayUnitPreference, ChartRange } from "../../types.js";
 import type { ExplicitRangeMargins } from "../../utils/rangeMargins.js";
 
 export interface ChartProps {
-  controller$: Signal<ChartiumController | undefined>;
   canvas$: Signal<HTMLCanvasElement | undefined>;
 
   visibleTraces$: Signal<TraceList>;
@@ -51,7 +50,6 @@ export interface Chart {
 }
 
 export const chart$ = ({
-  controller$,
   canvas$,
   visibleTraces$,
   measureXAxisTextSize$,
@@ -67,7 +65,6 @@ export const chart$ = ({
   defer,
 }: ChartProps): Chart => {
   return sanitizedChart$({
-    controller$: controller$.skipEqual(),
     canvas$: canvas$.skipEqual(),
     visibleTraces$: visibleTraces$.skipEqual(),
     margins$,
@@ -86,7 +83,6 @@ export const chart$ = ({
 };
 
 const sanitizedChart$ = ({
-  controller$,
   canvas$,
   visibleTraces$,
   measureXAxisTextSize$,
@@ -145,7 +141,6 @@ const sanitizedChart$ = ({
   });
 
   chartRenderer$({
-    controller$,
     canvasLogicalSize$,
     offscreenCanvas$,
 

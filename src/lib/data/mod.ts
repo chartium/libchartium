@@ -1,4 +1,3 @@
-export { ChartiumController, type RenderingMode } from "./controller.js";
 export {
   TraceList,
   type ComputedTraceStyle,

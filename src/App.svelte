@@ -6,7 +6,6 @@
   } from "@fortawesome/free-solid-svg-icons";
   import { IEC } from "unitlib/systems";
   import {
-    ChartiumController,
     ChartComponent as Chart,
     NumericDateRepresentation,
     TraceList,
@@ -21,8 +20,6 @@
   const to = new Date(1973, 1, 1).getTime() / 1000;
   const numSteps = 5000;
   const stepSize = (to - from) / numSteps;
-
-  const controller = new ChartiumController();
 
   const traceCount = 8;
   const normalTraces = (async () => {
@@ -51,7 +48,7 @@
 
       console.time("load");
 
-      const result = await controller.addFromColumnarArrayBuffers({
+      const result = TraceList.fromColumns({
         x: {
           type: "f32",
           unit: NumericDateRepresentation.EpochSeconds(),
@@ -90,7 +87,7 @@
 
     return results;
   })();
-  const threshold = controller.addThresholdTracelist({
+  const threshold = TraceList.fromThresholds({
     ids: ["threshold"],
     ys: new Float64Array([100]),
     xDataUnit: NumericDateRepresentation.EpochSeconds(),
@@ -118,7 +115,6 @@
     {@const commonXRange$ = mut(traces.range)}
     <div style="height:400px;width:900px;" bind:this={wrapDiv}>
       <Chart
-        {controller}
         {traces}
         title="Titulek"
         subtitle="Podtitulek"
@@ -144,7 +140,6 @@
     </div>
     <div style="height:400px;width:900px;" bind:this={wrapDiv}>
       <Chart
-        {controller}
         {traces}
         title="Titulek"
         subtitle="Podtitulek"

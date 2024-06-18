@@ -3,7 +3,7 @@ import {
   colorStringToColor,
   get2DContext,
 } from "../utils/color.js";
-import { variantIds } from "./controller.js";
+import { variantIds } from "./variant-ids.js";
 import { lib } from "../wasm.js";
 
 export type TraceRandomColorSpace = lib.TraceRandomColorSpace;

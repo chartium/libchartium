@@ -5,12 +5,11 @@ import {
   type Unsubscriber,
 } from "@mod.js/signals";
 import { devicePixelRatio$ } from "../../utils/reactive-globals.js";
-import type { ChartiumController, TraceList } from "../../mod.js";
+import type { TraceList } from "../../mod.js";
 import type { ChartRange, Size } from "../../types.js";
-import type { Renderer } from "../../renderers/mod.js";
+import { createRenderer, type Renderer } from "../../renderers/mod.js";
 
 export interface ChartRendererProps {
-  controller$: Signal<ChartiumController | undefined>;
   offscreenCanvas$: Signal<OffscreenCanvas | undefined>;
   canvasLogicalSize$: Signal<Size | undefined>;
 
@@ -22,7 +21,6 @@ export interface ChartRendererProps {
 }
 
 export const chartRenderer$ = ({
-  controller$,
   offscreenCanvas$,
   canvasLogicalSize$,
   visibleTraces$,
@@ -31,12 +29,9 @@ export const chartRenderer$ = ({
   defer,
 }: ChartRendererProps) => {
   // create a renderer
-  const renderer$ = controller$.flatMap((controller) =>
-    offscreenCanvas$.map((canvas) =>
-      !canvas ? undefined : controller?.createRenderer(canvas),
-    ),
+  const renderer$ = offscreenCanvas$.map((canvas) =>
+    !canvas ? undefined : createRenderer(canvas),
   );
-
   // TODO destroy the renderer
 
   const canvasPhysicalSize$ = derived(($) => {

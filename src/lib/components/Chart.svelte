@@ -23,7 +23,7 @@
   import TraceTooltip from "./tooltip/TraceTooltip.svelte";
   import { portal } from "svelte-portal";
 
-  import type { ChartiumController, TraceList } from "../data/mod.js";
+  import type { TraceList } from "../data/mod.js";
   import {
     asAny,
     type ChartValue,
@@ -47,10 +47,6 @@
   export { klass as class };
 
   let contentSize: [number, number] | undefined; // TODO maybe remove
-
-  export let controller: ChartiumController;
-  const controller$ = mut(controller);
-  $: controller$.set(controller);
 
   let canvas: HTMLCanvasElement | undefined;
   const canvas$ = mut(canvas);
@@ -224,7 +220,6 @@
   const hoverEvent$ = mut<ChartMouseEvent>();
 
   const chart$ = createChart$({
-    controller$,
     canvas$,
     visibleTraces$,
     measureXAxisTextSize$,

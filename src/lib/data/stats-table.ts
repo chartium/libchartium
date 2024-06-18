@@ -8,7 +8,7 @@ import type {
   VariantHandle,
   VariantHandleArray,
 } from "../types.js";
-import { registerNewVariantHandle, variantIds } from "./controller.js";
+import { registerNewVariantHandle, variantIds } from "./variant-ids.js";
 import {
   CONSTRUCTOR,
   PARAMS,

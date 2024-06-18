@@ -5,16 +5,20 @@ import {
   type DataUnit,
   type VariantHandleArray,
   Unit,
+  type TypedArray,
+  type TypeOfData,
 } from "../types.js";
 import { lib } from "../wasm.js";
 import {
+  oxidizeStyleSheet,
   oxidizeStyleSheetPatch,
   type TraceStyleSheet,
 } from "./trace-styles.js";
 import { yeet } from "yeet-ts";
 import { UnknownVariantHandleError, UnknownVariantIdError } from "../errors.js";
-import { variantIds } from "./controller.js";
+import { registerNewVariantHandle, variantIds } from "./variant-ids.js";
 import {
+  enumerate,
   filter,
   flatMap,
   intersection,
@@ -37,7 +41,7 @@ import {
   exportTraceListData,
   type TraceListExportOptions,
 } from "./trace-export.js";
-import type { Bundle } from "./bundle.js";
+import { Bundle } from "./bundle.js";
 import { resolvedColorToHex } from "../utils/color.js";
 import { hashAny } from "../utils/hash.js";
 import type { InterpolationStrategy } from "../../../dist/wasm/libchartium.js";
@@ -64,6 +68,45 @@ export interface ComputedTraceStyle {
   "palette-index": number;
   "z-index": number;
   "legend-priority": number;
+}
+
+export interface FromRowBufferParams {
+  ids: string[];
+  data: ArrayBuffer | TypedArray;
+  xType: TypeOfData;
+  yType: TypeOfData;
+  xDataUnit?: DataUnit;
+  yDataUnit?: DataUnit;
+  style?: TraceStyleSheet;
+  labels?: Iterable<[string, string | undefined]>;
+}
+
+export interface FromColumnsParams {
+  x: {
+    type: TypeOfData;
+    unit?: DataUnit;
+    data: ArrayBuffer | TypedArray;
+  };
+  y: {
+    type: TypeOfData;
+    unit?: DataUnit;
+    columns: {
+      id: string;
+      data: ArrayBuffer | TypedArray;
+    }[];
+  };
+  style?: TraceStyleSheet;
+  labels?: Iterable<[string, string | undefined]>;
+}
+
+export interface FromThresholdsParams {
+  ids: string[];
+  ys: Float64Array;
+  xDataUnit?: DataUnit;
+  yDataUnit?: DataUnit;
+  style?: TraceStyleSheet;
+  labels?: Iterable<[string, string | undefined]>;
+  tracelistsRange: ChartRange;
 }
 
 export interface TraceListParams {
@@ -114,6 +157,153 @@ export class TraceList {
 
       randomSeed: randomUint(),
     });
+  }
+
+  /**
+   * Create a trace list from a single two-dimensional
+   * array buffer with row-oriented data, ie.
+   * `[ x[0], y1[0], y2[0], ... x[1], y1[1], y2[1], ...]`.
+   */
+  static async fromRowBuffer({
+    ids,
+    data,
+    xType,
+    yType,
+    xDataUnit,
+    yDataUnit,
+    style,
+    labels,
+  }: FromRowBufferParams): Promise<TraceList> {
+    if (ids.length === 0) return TraceList.empty();
+
+    const dataBuffer = data instanceof ArrayBuffer ? data : data.buffer;
+
+    const handles: VariantHandleArray = new Uint32Array(ids.length);
+
+    for (const [i, id] of enumerate(ids)) {
+      handles[i] = variantIds.getKey(id) ?? registerNewVariantHandle(id);
+    }
+
+    const bulkload = await lib.Bulkloader.from_array(
+      handles,
+      xType,
+      yType,
+      new Uint8Array(dataBuffer),
+    );
+
+    const bundle = bulkload.apply();
+    const range = bundle.range();
+    if (range.type === "Everywhere") {
+      throw Error("Unexpected error while parsing the trace list's range.");
+    }
+
+    let tl = new TraceList({
+      handles,
+      range: toChartRange(range.value, xDataUnit),
+      rangeArbitrary: false,
+      bundles: [new Bundle(bundle, xDataUnit, yDataUnit)],
+      labels: new Map(),
+      styles: oxidizeStyleSheet(style),
+      precomputedColorIndices: undefined,
+      xDataUnit,
+      yDataUnit,
+      randomSeed: randomUint(),
+    });
+
+    if (labels) tl = tl.withLabels(labels);
+    return tl;
+  }
+
+  /**
+   * Create a trace list from a common x-data buffer and
+   * several y-data buffers, one per trace.
+   */
+  static fromColumns({ x, y, style, labels }: FromColumnsParams): TraceList {
+    if (y.columns.length === 0) return TraceList.empty();
+
+    const xBuffer = new Uint8Array(
+      x.data instanceof ArrayBuffer ? x.data : x.data.buffer,
+    );
+    const yBuffers = y.columns.map(
+      ({ data }) =>
+        new Uint8Array(data instanceof ArrayBuffer ? data : data.buffer),
+    );
+
+    const handles: VariantHandleArray = new Uint32Array(y.columns.length);
+
+    for (const [i, { id }] of enumerate(y.columns)) {
+      handles[i] = variantIds.getKey(id) ?? registerNewVariantHandle(id);
+    }
+
+    const bundle = lib.Bulkloader.from_columnar(
+      handles,
+      x.type,
+      y.type,
+      xBuffer,
+      yBuffers,
+    );
+
+    const range = bundle.range();
+    if (range.type === "Everywhere") {
+      throw Error("Unexpected error while parsing the trace list's range.");
+    }
+
+    let tl = new TraceList({
+      handles,
+      range: toChartRange(range.value, x.unit),
+      rangeArbitrary: false,
+      bundles: [new Bundle(bundle, x.unit, y.unit)],
+      labels: new Map(),
+      styles: oxidizeStyleSheet(style),
+      precomputedColorIndices: undefined,
+      xDataUnit: x.unit,
+      yDataUnit: y.unit,
+      randomSeed: randomUint(),
+    });
+
+    if (labels) tl = tl.withLabels(labels);
+
+    return tl;
+  }
+
+  static fromThresholds({
+    ids,
+    ys,
+    xDataUnit,
+    yDataUnit,
+    style,
+    labels,
+    tracelistsRange,
+  }: FromThresholdsParams) {
+    if (ids.length === 0) return TraceList.empty();
+
+    const handles: VariantHandleArray = new Uint32Array(ids.length);
+
+    for (const [i, id] of enumerate(ids)) {
+      handles[i] = variantIds.getKey(id) ?? registerNewVariantHandle(id);
+    }
+
+    const bundle = lib.Bulkloader.threshold_from_array(handles, ys);
+
+    // assert range's units are compatible with xDataUnit
+    toNumericRange(tracelistsRange, xDataUnit);
+
+    let tl = TraceList[CONSTRUCTOR]({
+      handles,
+      range: tracelistsRange,
+      rangeArbitrary: true,
+      bundles: [new Bundle(bundle, xDataUnit, yDataUnit)],
+      styles: oxidizeStyleSheet(style),
+      labels: new Map(),
+      precomputedColorIndices: undefined,
+      xDataUnit,
+      yDataUnit,
+      randomSeed: randomUint(),
+    });
+
+    if (labels) tl = tl.withLabels(labels);
+
+    return tl;
   }
 
   /**
