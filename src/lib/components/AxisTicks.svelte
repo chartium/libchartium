@@ -166,28 +166,6 @@
       ).map(([bestUnit, ...arr_]): ContextItem<string>[] => {
         let items = arr_.filter((x) => x) as ContextItem<string>[];
 
-        items.push(
-          ...([
-            { type: "separator" },
-            {
-              type: "branch",
-              content: "Lol",
-              children: [
-                {
-                  type: "leaf",
-                  content: "win",
-                  callback: () => alert("vyhral jsi 10 centu"),
-                },
-                {
-                  type: "leaf",
-                  content: "lose",
-                  callback: () => alert("projebal si mrdiardu"),
-                },
-              ],
-            },
-          ] satisfies ContextItem<string>[]),
-        );
-
         if (bestUnit) {
           return [...items, { type: "separator" }, bestUnit];
         }
