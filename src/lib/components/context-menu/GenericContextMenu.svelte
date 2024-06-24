@@ -130,22 +130,26 @@
       close();
       return;
     }
-    if (!active) {
-      return;
-    }
+
+    if (!active) return;
+
     if (event.key === "ArrowDown") {
       currentlyFocusedIndex++;
+
       if (currentlyFocusedIndex >= items.length) {
         currentlyFocusedIndex = 0;
       }
+
       if (items[currentlyFocusedIndex].type === "separator") {
         currentlyFocusedIndex++;
       }
     } else if (event.key === "ArrowUp") {
       currentlyFocusedIndex--;
+
       if (currentlyFocusedIndex < 0) {
         currentlyFocusedIndex = items.length - 1;
       }
+
       if (items[currentlyFocusedIndex].type === "separator") {
         currentlyFocusedIndex--;
       }
@@ -159,6 +163,11 @@
       }
     } else if (event.key === "ArrowRight") {
       giveFocus();
+    } else if (event.key === "Enter") {
+      const item = items[currentlyFocusedIndex];
+
+      if (item.type === "leaf") item.callback?.();
+      else if (item.type === "branch") giveFocus();
     }
   }
 </script>
