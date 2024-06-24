@@ -35,7 +35,7 @@
     on:mouseover
     on:focus
   >
-    <slot />
+    {item.content}
   </div>
 {:else if item.type === "branch"}
   <div
@@ -48,13 +48,11 @@
     on:mouseover
     on:focus
   >
-    <slot />
+    {item.content}
   </div>
 {:else if item.type === "separator"}
   <div class="context-separator" role="separator" bind:this={boundingDiv}>
-    <div
-      style="height: 5px; border-bottom: 1px solid rgb(131, 130, 130); margin-bottom: 5px;"
-    />
+    <div />
   </div>
 {/if}
 
@@ -62,14 +60,22 @@
   div:focus {
     outline: none;
   }
+
   .context-item {
     display: flex;
     align-items: flex-start;
-    padding: 5px;
+    padding: 8px 12px;
     padding-left: 10px;
+    line-height: 1;
   }
 
   .focused {
-    background-color: var(--libchartium-accent-background);
+    background-color: var(--libchartium-highlight-background);
+  }
+
+  .context-separator > div {
+    height: 1px;
+    border-bottom: 1px solid rgb(131, 130, 130, 0.6);
+    margin: 4px 0;
   }
 </style>

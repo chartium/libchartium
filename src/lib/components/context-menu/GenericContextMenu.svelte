@@ -197,13 +197,7 @@
             active = true;
           }
         }}
-      >
-        {#if item.type !== "separator"}
-          <slot {item}>
-            {item.content}
-          </slot>
-        {/if}
-      </ContextItemComponent>
+      />
       {#if item.type === "branch"}
         <div
           role="menu"
@@ -231,12 +225,16 @@
 
 <style>
   .context-menu {
-    border: 1px solid rgb(131, 130, 130);
+    border: none;
     border-radius: 4px;
     background-color: var(--libchartium-secondary-background);
+
+    padding: 4px 0;
 
     position: fixed;
     user-select: none;
     z-index: var(--libchartium-popup-z-index, 100);
+
+    box-shadow: 0px 2px 4px 2px rgba(0, 0, 0, 0.3);
   }
 </style>
