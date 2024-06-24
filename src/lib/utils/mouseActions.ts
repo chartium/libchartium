@@ -22,7 +22,7 @@ export class DragStatus {
       origin: { ...this.from },
     };
 
-    for (const key of ["x", "y"] as ("x" | "y")[]) {
+    for (const key of <const>["x", "y"]) {
       const delta = this.to[key] - this.from[key];
       if (Math.abs(delta) > this.threshold)
         result[`d${key}`] = delta * (key === "y" ? -1 : 1);
@@ -41,10 +41,10 @@ export class DragStatus {
       },
     };
 
-    for (const [key, size] of [
+    for (const [key, size] of <const>[
       ["dx", this.extents.width],
       ["dy", this.extents.height],
-    ] as ["dx" | "dy", number][]) {
+    ]) {
       if (abs[key]) result[key] = abs[key]! / size;
     }
 
@@ -88,12 +88,12 @@ export const mouseDrag = (
   params: MouseDragCallbacks & { button: MouseButtons; threshold?: number },
 ) => {
   let status: DragStatus | undefined = undefined;
-
+  let elemRect: DOMRect | undefined = undefined;
   const onStart = (event: MouseEvent) => {
     if (!elem.contains(event.target as Node)) return;
     if (event.buttons !== params.button) return;
 
-    const elemRect = elem.getBoundingClientRect();
+    elemRect = elem.getBoundingClientRect();
     const point = {
       x: event.clientX - elemRect.x,
       y: event.clientY - elemRect.y,
@@ -109,27 +109,27 @@ export const mouseDrag = (
   };
 
   const onMove = (event: MouseEvent) => {
-    if (!status) return;
+    if (!status || !elemRect) return;
     event.preventDefault();
 
-    status.to.x += event.movementX;
-    status.to.y += event.movementY;
+    status.to.x = event.clientX - elemRect.x;
+    status.to.y = event.clientY - elemRect.y;
 
     params.move(event, status);
   };
 
   const onEnd = (event: MouseEvent) => {
-    if (!status) return;
+    if (!status || !elemRect) return;
 
     status.extents.width = elem.clientWidth;
     status.extents.height = elem.clientHeight;
 
-    const elemRect = elem.getBoundingClientRect();
     status.to.x = event.clientX - elemRect.x;
     status.to.y = event.clientY - elemRect.y;
 
     params.end(event, status);
     status = undefined;
+    elemRect = undefined;
   };
 
   elem.addEventListener("mousedown", onStart);
