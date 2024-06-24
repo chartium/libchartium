@@ -56,14 +56,14 @@
   </div>
 {/if}
 
-<style>
+<style lang="scss">
   div:focus {
     outline: none;
   }
 
   .context-item {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     padding: 8px 12px;
     padding-left: 10px;
     line-height: 1;
@@ -77,5 +77,20 @@
     height: 1px;
     border-bottom: 1px solid rgb(131, 130, 130, 0.6);
     margin: 4px 0;
+  }
+
+  .context-submenu::after {
+    $size: 5px;
+
+    content: "";
+    width: 0;
+    height: 0;
+
+    border-top: $size solid transparent;
+    border-bottom: $size solid transparent;
+    border-left: $size solid currentColor;
+
+    padding-left: 4px;
+    margin-left: auto;
   }
 </style>

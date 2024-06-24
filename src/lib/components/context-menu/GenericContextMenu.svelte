@@ -5,6 +5,8 @@
  -->
 
 <script lang="ts" generics="T">
+  import { fade } from "svelte/transition";
+
   import { observeClientSize } from "../../utils/actions.js";
 
   import { portal } from "svelte-portal";
@@ -186,28 +188,30 @@
       menuHeight = h;
     }}
     use:portal
+    in:fade={{ duration: 100 }}
   >
     {#each items as item, index}
+      {@const activate = () => {
+        if (opened) {
+          currentlyFocusedIndex = index;
+          active = true;
+        }
+      }}
+
       <ContextItemComponent
         {item}
         focused={currentlyFocusedIndex === index && item.type !== "separator"}
         on:select={(e) => {
           currentlySelectedRect = e.detail.rect;
         }}
-        on:mouseover={() => {
-          if (opened) {
-            currentlyFocusedIndex = index;
-            active = true;
-          }
-        }}
-        on:focus={() => {
-          if (opened) {
-            currentlyFocusedIndex = index;
-            active = true;
-          }
-        }}
+        on:mouseover={activate}
+        on:focus={activate}
       />
+
       {#if item.type === "branch"}
+        {@const sourceActive = currentlyFocusedIndex === index}
+        {@const active = sourceActive && surrenderedFocus}
+
         <div
           role="menu"
           tabindex="-1"
@@ -217,12 +221,9 @@
           <svelte:self
             items={item.children}
             main={false}
-            active={currentlyFocusedIndex === index && surrenderedFocus}
-            currentlyFocusedIndex={currentlyFocusedIndex === index &&
-            surrenderedFocus
-              ? 0
-              : -1}
-            sourceActive={currentlyFocusedIndex === index}
+            currentlyFocusedIndex={active ? 0 : -1}
+            {active}
+            {sourceActive}
             sourceRect={currentlySelectedRect}
             returnFocus={takeBackFocus}
           />
@@ -232,18 +233,20 @@
   </div>
 {/if}
 
-<style>
+<style lang="scss">
   .context-menu {
+    $radius: 8px;
+
     border: none;
-    border-radius: 4px;
+    border-radius: $radius;
     background-color: var(--libchartium-secondary-background);
 
-    padding: 4px 0;
+    padding: $radius 0;
 
     position: fixed;
     user-select: none;
     z-index: var(--libchartium-popup-z-index, 100);
 
-    box-shadow: 0px 2px 4px 2px rgba(0, 0, 0, 0.3);
+    box-shadow: 0px 2px 6px 1px rgba(0, 0, 0, 0.3);
   }
 </style>
