@@ -27,7 +27,6 @@
   import type { MouseDragCallbacks } from "../utils/mouseActions.js";
   import type {
     ChartValue,
-    DisplayUnit,
     HighlightPoint,
     Point,
     Shift,

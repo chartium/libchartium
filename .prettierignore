@@ -4,3 +4,6 @@ target/
 README.md
 pnpm-lock.yaml
 package.json
+.github
+*release-please-*.json
+CHANGELOG.md
