@@ -224,6 +224,10 @@
       class="{axis} ticks"
       use:mouseDrag={{
         ...dragCallbacks,
+        button: MouseButtons.Left,
+      }}
+      use:mouseDrag={{
+        ...dragCallbacks,
         button: MouseButtons.Right,
       }}
       role="presentation"

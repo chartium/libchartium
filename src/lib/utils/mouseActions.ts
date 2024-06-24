@@ -9,7 +9,7 @@ export interface MouseDragCallbacks {
   end: (event: MouseEvent, status: DragStatus) => void;
 }
 
-class DragStatus {
+export class DragStatus {
   constructor(
     public from: Point,
     public to: Point,
