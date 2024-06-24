@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { CloseTrace } from "../../state/interactive/hover.js";
-  import type { DisplayUnit } from "../../types.js";
+  import type { ChartValue, DisplayUnit } from "../../types.js";
   import { DateFormat } from "../../utils/dateFormat.js";
   import { uniqueDecimals } from "../../utils/format.js";
   import { NumericDateRepresentation } from "../../utils/numericDateRepresentation.js";
@@ -8,26 +8,16 @@
   import TracePreview from "../TracePreview.svelte";
 
   export let previewStyle: "simplified" | "full";
+  export let hoverX: ChartValue;
   export let nearestTraces: CloseTrace[];
   export let xDisplayUnit: DisplayUnit;
   export let yDisplayUnit: DisplayUnit;
-
-  $: decimalPlaces = uniqueDecimals(
-    nearestTraces.map((t) =>
-      toNumeric(
-        t.y,
-        yDisplayUnit instanceof DateFormat
-          ? NumericDateRepresentation.prototype
-          : yDisplayUnit,
-      ),
-    ),
-  );
-  $: first = nearestTraces[0];
+  export let decimalPlaces: number = 3;
 </script>
 
 <div class="tooltip-container">
   <div class="header">
-    {formatChartValue(first?.x, { unit: xDisplayUnit })}
+    {formatChartValue(hoverX, { unit: xDisplayUnit })}
   </div>
   {#each nearestTraces as trace}
     <div class="trace-info">

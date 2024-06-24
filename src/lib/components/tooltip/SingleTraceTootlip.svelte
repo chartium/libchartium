@@ -12,6 +12,7 @@
   export let hoveredTrace: HoveredTrace;
   export let xDisplayUnit: DisplayUnit;
   export let yDisplayUnit: DisplayUnit;
+  export let decimalPlaces: number = 3;
 
   $: traceMetas = {
     value: hoveredTrace.y,
@@ -19,16 +20,6 @@
     max: hoveredTrace.statistics.max,
     avg: hoveredTrace.statistics.average,
   };
-  $: decimalPlaces = uniqueDecimals(
-    Object.values(traceMetas).map((v) =>
-      toNumeric(
-        v,
-        yDisplayUnit instanceof DateFormat
-          ? NumericDateRepresentation.prototype
-          : yDisplayUnit,
-      ),
-    ),
-  );
 </script>
 
 <div class="tooltip-container">

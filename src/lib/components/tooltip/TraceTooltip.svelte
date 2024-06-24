@@ -1,6 +1,6 @@
 <!-- Component for displaying a lil tooltip by the cursor that shows info about nearby traces -->
 <script lang="ts">
-  import type { DisplayUnit, Point } from "../../types.js";
+  import type { ChartValue, DisplayUnit, Point } from "../../types.js";
   import { globalMouseMove } from "../../utils/mouseActions.js";
   import GenericTooltip from "../../utils/GenericTooltip.svelte";
   import SingleTraceTootlip from "./SingleTraceTootlip.svelte";
@@ -19,8 +19,9 @@
   export let hoveredTrace: HoveredTrace | undefined;
   export let xDisplayUnit: DisplayUnit;
   export let yDisplayUnit: DisplayUnit;
-
+  export let decimalPlaces: number = 3;
   export let previewStyle: "simplified" | "full";
+  export let hoverX: ChartValue;
 
   $: show = nearestTraces.length > 0 || hoveredTrace;
 
@@ -71,13 +72,16 @@
     {#if hoveredTrace !== undefined}
       <SingleTraceTootlip
         {previewStyle}
+        {decimalPlaces}
         {hoveredTrace}
         {xDisplayUnit}
         {yDisplayUnit}
       />
     {:else}
       <ManyTracesTooltip
+        {hoverX}
         {previewStyle}
+        {decimalPlaces}
         {nearestTraces}
         {xDisplayUnit}
         {yDisplayUnit}

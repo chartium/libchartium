@@ -341,12 +341,14 @@
   });
 </script>
 
-{#if !hideTooltip}
+{#if !hideTooltip && $commonXRuler$ !== undefined}
   <TraceTooltip
     {forbiddenRectangle}
+    hoverX={$commonXRuler$}
     nearestTraces={$nearestTraces$}
     hoveredTrace={$hoveredTrace$}
     previewStyle={legendPreviewStyle}
+    decimalPlaces={$yTicksDecimalPlaces$ + 1}
     xDisplayUnit={$xDisplayUnit$}
     yDisplayUnit={$yDisplayUnit$}
   />
