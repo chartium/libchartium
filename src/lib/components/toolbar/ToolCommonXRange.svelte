@@ -4,9 +4,9 @@
     faLeftRight,
     faArrowsLeftRightToLine,
   } from "@fortawesome/free-solid-svg-icons";
-  import { getContext } from "svelte-typed-context";
   import { toolKey } from "./toolKey.js";
   import { cons, derived } from "@mod.js/signals";
+  import { getContext } from "svelte";
 
   const doUseCommonXRange$ = getContext(toolKey)?.doUseCommonXRange$;
   const icon$ = derived(($) =>

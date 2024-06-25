@@ -1,6 +1,6 @@
-import type { InjectionKey } from "svelte-typed-context";
 import type { TraceList } from "../../mod.js";
 import type { Signal, WritableSignal } from "@mod.js/signals";
+import type { ContextKey } from "svelte";
 export type ToolContext = {
   /** Div that wraps the entire chart component */
   notifyOfAutozoom$: Signal<boolean>;
@@ -13,4 +13,4 @@ export type ToolContext = {
   getTitle: () => string;
 };
 
-export const toolKey: InjectionKey<ToolContext> = Symbol("toolKey");
+export const toolKey: ContextKey<ToolContext> = Symbol("toolKey");

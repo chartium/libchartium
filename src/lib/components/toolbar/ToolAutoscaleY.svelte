@@ -4,10 +4,11 @@
     faUpDown,
     faArrowsLeftRightToLine,
   } from "@fortawesome/free-solid-svg-icons";
-  import { getContext } from "svelte-typed-context";
   import { toolKey } from "./toolKey.js";
   import Fa from "svelte-fa";
   import { fade } from "svelte/transition";
+  import { getContext } from "svelte";
+
   const autoscaleY$ = getContext(toolKey)?.autoscaleY$;
 
   const toggleAutoscaleY = () => autoscaleY$?.update((b) => !b);

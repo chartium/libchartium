@@ -2,11 +2,11 @@
   import { faFileCsv } from "@fortawesome/free-solid-svg-icons";
   import ToolbarButton from "./ToolbarButton.svelte";
   import { toolKey } from "./toolKey.js";
-  import { getContext } from "svelte-typed-context";
   import {
     downloadCSVSensibly,
     downloadCSVUnhingedly,
   } from "../../utils/downloaders.js";
+  import { getContext } from "svelte";
 
   /** Use <a> element to download as opposed to a stream. This approach is widely supported but may take up more time and or memory */
   export let useAnchorDownload = false;

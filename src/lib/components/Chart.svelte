@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onDestroy } from "svelte";
+  import { onDestroy, setContext } from "svelte";
   import { chart$ as createChart$ } from "../state/core/chart.js";
 
   import {
@@ -9,7 +9,6 @@
     cons,
     WritableSignal,
   } from "@mod.js/signals";
-  import { setContext } from "svelte-typed-context";
   import { toolKey } from "./toolbar/toolKey.js";
   import { flockReduce } from "../utils/collection.js";
   import { mapOpt } from "../utils/mapOpt.js";

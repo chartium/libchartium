@@ -1,10 +1,7 @@
 <script lang="ts">
   import type { CloseTrace } from "../../state/interactive/hover.js";
   import type { ChartValue, DisplayUnit } from "../../types.js";
-  import { DateFormat } from "../../utils/dateFormat.js";
-  import { uniqueDecimals } from "../../utils/format.js";
-  import { NumericDateRepresentation } from "../../utils/numericDateRepresentation.js";
-  import { formatChartValue, toNumeric } from "../../units/mod.js";
+  import { formatChartValue } from "../../units/mod.js";
   import TracePreview from "../TracePreview.svelte";
 
   export let previewStyle: "simplified" | "full";
