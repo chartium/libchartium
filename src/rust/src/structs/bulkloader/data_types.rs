@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use lazy_static::lazy_static;
 
 pub struct TypeDescriptor {
+    #[allow(unused)]
     pub name: String,
     pub size: usize,
     pub parser: fn(&[u8]) -> f64,
