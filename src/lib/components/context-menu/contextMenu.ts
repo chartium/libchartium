@@ -93,11 +93,11 @@ export function mouseDownOutside(
     }
   };
 
-  document.addEventListener("mousedown", handleClick, true);
+  document.addEventListener("mousedown", handleClick, false);
 
   return {
     destroy() {
-      document.removeEventListener("mousedown", handleClick, true);
+      document.removeEventListener("mousedown", handleClick, false);
     },
   };
 }

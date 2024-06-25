@@ -66,9 +66,8 @@
       console.warn("Tried to open an empty context menu");
       return;
     }
-    opened = true;
-    sourceActive = true;
-    active = true;
+
+    opened = active = sourceActive = true;
     renderPosition = openPositionNextToPoint(
       positionRelativeToPage,
       menuHeight,
@@ -81,14 +80,15 @@
 
   /** opens on the right of this rect or, if there isn't enough space, on the left */
   export async function openNextToSourceRect(): Promise<void> {
-    if (sourceRect === undefined) {
-      return;
-    }
-    opened = true;
-    sourceActive = true;
+    if (sourceRect === undefined) return;
+
+    opened = sourceActive = true;
+
     await tick();
+
     renderPosition = openPositionNextToRect(sourceRect, menuHeight, menuWidth);
   }
+
   $: if (sourceActive) {
     setTimeout(() => {
       openNextToSourceRect();
@@ -101,6 +101,7 @@
     active = false;
     opened = false;
     callPosition = undefined;
+
     if (!main) {
       returnFocus();
     }
@@ -127,34 +128,22 @@
   /** Whether a submenu took focus */
   let surrenderedFocus: boolean = false;
 
+  const mod = (a: number, b: number) => (b + (a % b)) % b;
   function handleKeyboardNavigation(event: KeyboardEvent) {
-    if (event.key === "Escape") {
-      close();
-      return;
-    }
-
+    if (event.key === "Escape") return close();
     if (!active) return;
 
-    if (event.key === "ArrowDown") {
-      currentlyFocusedIndex++;
+    const dir =
+      event.key === "ArrowDown" ? 1 : event.key === "ArrowUp" ? -1 : 0;
 
-      if (currentlyFocusedIndex >= items.length) {
-        currentlyFocusedIndex = 0;
-      }
+    if (dir !== 0) {
+      // cycle through the items, skipping separators
+      let next = currentlyFocusedIndex;
+      do {
+        next = mod(next + dir, items.length);
+      } while (items[next].type === "separator");
 
-      if (items[currentlyFocusedIndex].type === "separator") {
-        currentlyFocusedIndex++;
-      }
-    } else if (event.key === "ArrowUp") {
-      currentlyFocusedIndex--;
-
-      if (currentlyFocusedIndex < 0) {
-        currentlyFocusedIndex = items.length - 1;
-      }
-
-      if (items[currentlyFocusedIndex].type === "separator") {
-        currentlyFocusedIndex--;
-      }
+      (element.children[next] as HTMLElement).focus();
     } else if (event.key === "ArrowLeft") {
       if (!main && !surrenderedFocus) {
         active = false;
@@ -172,6 +161,18 @@
       else if (item.type === "branch") giveFocus();
     }
   }
+
+  const activateIdx = (idx: number) => (e: Event) => {
+    if (opened) {
+      currentlyFocusedIndex = idx;
+      active = true;
+      currentlySelectedRect = (
+        e.currentTarget! as HTMLElement
+      ).getBoundingClientRect();
+    }
+  };
+
+  let element: HTMLDivElement;
 </script>
 
 {#if visibility !== "hidden"}
@@ -181,6 +182,7 @@
     tabindex="-1"
     style="left:{renderPosition?.x ?? 0}px;
     top:{renderPosition?.y ?? 0}px;"
+    bind:this={element}
     use:mouseDownOutside={close}
     use:genericKeydown={handleKeyboardNavigation}
     use:observeClientSize={([w, h]) => {
@@ -188,22 +190,15 @@
       menuHeight = h;
     }}
     use:portal
-    in:fade={{ duration: 100 }}
+    in:fade={{ duration: 100, delay: main ? 0 : 200 }}
+    on:mousedown|stopPropagation
   >
     {#each items as item, index}
-      {@const activate = () => {
-        if (opened) {
-          currentlyFocusedIndex = index;
-          active = true;
-        }
-      }}
+      {@const activate = activateIdx(index)}
 
       <ContextItemComponent
         {item}
         focused={currentlyFocusedIndex === index && item.type !== "separator"}
-        on:select={(e) => {
-          currentlySelectedRect = e.detail.rect;
-        }}
         on:mouseover={activate}
         on:focus={activate}
       />
@@ -212,22 +207,15 @@
         {@const sourceActive = currentlyFocusedIndex === index}
         {@const active = sourceActive && surrenderedFocus}
 
-        <div
-          role="menu"
-          tabindex="-1"
-          on:mouseover={giveFocus}
-          on:focus={giveFocus}
-        >
-          <svelte:self
-            items={item.children}
-            main={false}
-            currentlyFocusedIndex={active ? 0 : -1}
-            {active}
-            {sourceActive}
-            sourceRect={currentlySelectedRect}
-            returnFocus={takeBackFocus}
-          />
-        </div>
+        <svelte:self
+          items={item.children}
+          main={false}
+          currentlyFocusedIndex={active ? 0 : -1}
+          {active}
+          {sourceActive}
+          sourceRect={currentlySelectedRect}
+          returnFocus={takeBackFocus}
+        />
       {/if}
     {/each}
   </div>
@@ -240,7 +228,6 @@
     border: none;
     border-radius: $radius;
     background-color: var(--libchartium-secondary-background);
-
     padding: $radius 0;
 
     position: fixed;
