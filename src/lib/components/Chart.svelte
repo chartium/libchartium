@@ -148,14 +148,14 @@
   );
 
   /** Charts supplied with the same FlockRegistry will have x axis of the same width */
-  export let commonXAxisHeight: FlockRegistry<number> | undefined = undefined;
-  $: xAxisHeight = mapOpt(commonXAxisHeight, (f) =>
+  export let commonXAxisHeight$: FlockRegistry<number> | undefined = undefined;
+  $: xAxisHeight = mapOpt(commonXAxisHeight$, (f) =>
     flockReduce(f, (a, b) => Math.max(a, b), 0),
   );
 
   /** Charts supplied with the same FlockRegistry will have y axis of the same width */
-  export let commonYAxisWidth: FlockRegistry<number> | undefined = undefined;
-  $: yAxisWidth = mapOpt(commonYAxisWidth, (f) =>
+  export let commonYAxisWidth$: FlockRegistry<number> | undefined = undefined;
+  $: yAxisWidth = mapOpt(commonYAxisWidth$, (f) =>
     flockReduce(f, (a, b) => Math.max(a, b), 0),
   );
 
@@ -388,7 +388,7 @@
         on:reset={() => chart$.axes.y.resetRange()}
         unitChangeActions={chart$.axes.y.unitChangeActions$}
         bind:textLength={$measureYAxisTextSize$}
-        dimensionFlock={commonYAxisWidth}
+        dimensionFlock={commonYAxisWidth$}
       />
       {#if !hideYBubble && $commonXRuler$ !== undefined && $commonYRuler$ !== undefined}
         <div class="y bubble-reference">
@@ -440,7 +440,7 @@
         on:reset={() => chart$.axes.x.resetRange()}
         unitChangeActions={chart$.axes.x.unitChangeActions$}
         bind:textLength={$measureXAxisTextSize$}
-        dimensionFlock={commonXAxisHeight}
+        dimensionFlock={commonXAxisHeight$}
       />
 
       <Guidelines
