@@ -1,4 +1,3 @@
-import { yeet } from "yeet-ts";
 import { pipe } from "@mod.js/signals";
 import type {
   ChartRange,
@@ -34,6 +33,7 @@ import {
   fold,
   map,
   unique,
+  yeet,
   zip,
 } from "@typek/typek";
 

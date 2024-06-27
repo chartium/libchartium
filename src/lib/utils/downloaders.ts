@@ -1,6 +1,5 @@
 import { concat, map, pipe } from "@typek/typek";
 import type { TraceList } from "../mod.js";
-import { X } from "../types.js";
 
 /** Copies the tracelist data and makes an anchor element to download it and clicks it */
 export async function downloadCSVUnhingedly(
@@ -16,7 +15,10 @@ export async function downloadCSVUnhingedly(
 
     // format rows
     (x) =>
-      map(x, (r) => `${r[X]},${ids.map((id) => r[id] ?? NO_DATA).join(",")}\n`),
+      map(
+        x,
+        ({ x, y }) => `${x},${ids.map((id) => y[id] ?? NO_DATA).join(",")}\n`,
+      ),
 
     // prepend header
     (x) => concat([`timestamp,${ids.join(",")}\n`], x),
@@ -54,7 +56,7 @@ export async function downloadCSVSensibly(
   for (const row of tracelist.exportData()) {
     await writer.ready;
     await writer.write(
-      `${row[X]},${ids.map((id) => row[id] ?? NO_DATA).join(",")}\n`,
+      `${row.x},${ids.map((id) => row.y[id] ?? NO_DATA).join(",")}\n`,
     );
   }
 

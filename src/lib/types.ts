@@ -180,9 +180,3 @@ export type RectanglePosition =
       width: number;
       height: number;
     };
-
-export const X = Symbol("x");
-export type ExportRow = {
-  [X]: number;
-  [traceId: string]: number;
-};

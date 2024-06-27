@@ -7,7 +7,6 @@ import {
   Unit,
   type TypedArray,
   type TypeOfData,
-  type ExportRow,
 } from "../types.js";
 import { lib } from "../wasm.js";
 import {
@@ -15,7 +14,6 @@ import {
   oxidizeStyleSheetPatch,
   type TraceStyleSheet,
 } from "./trace-styles.js";
-import { yeet } from "yeet-ts";
 import { UnknownVariantHandleError, UnknownVariantIdError } from "../errors.js";
 import { registerNewVariantHandle, variantIds } from "./variant-ids.js";
 import { intersection } from "../utils/collection.js";
@@ -31,6 +29,7 @@ import {
 } from "../units/mod.js";
 import {
   exportTraceListData,
+  type ExportRow,
   type TraceListExportOptions,
 } from "./trace-export.js";
 import { Bundle } from "./bundle.js";
@@ -46,6 +45,7 @@ import {
   map,
   pipe,
   unique,
+  yeet,
   zip,
 } from "@typek/typek";
 

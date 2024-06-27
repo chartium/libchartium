@@ -1,15 +1,15 @@
 import type { TraceList } from "../mod.js";
-import {
-  X,
-  type ExportRow,
-  type ChartRange,
-  type VariantHandle,
-} from "../types.js";
+import { type ChartRange, type VariantHandle } from "../types.js";
 import { toNumeric } from "../units/mod.js";
-import { Queue } from "../utils/queue.js";
 import { variantIds } from "./variant-ids.js";
 import { PARAMS } from "./trace-list.js";
 import type { Bundle } from "./bundle.js";
+import { Queue } from "@typek/typek";
+
+export type ExportRow = {
+  x: number;
+  y: { [traceId: string]: number };
+};
 
 /**
  * Export data of all traces into a stream.
@@ -25,7 +25,7 @@ export interface TraceListExportOptions {
 export function* exportTraceListData(
   traces: TraceList,
   { range }: TraceListExportOptions = {},
-) {
+): IterableIterator<ExportRow> {
   range ??= traces.range;
   const linesPerBuffer = 1000;
 
@@ -55,7 +55,7 @@ export function* exportTraceListData(
     currentBufferLength.set(bundle, length);
 
     const queue = queues.get(bundle)!;
-    let row: ExportRow = { [X]: buffer[0] };
+    let row: ExportRow = { x: buffer[0], y: {} };
     for (const [i, el] of buffer.entries()) {
       if (i >= length) break;
 
@@ -64,9 +64,9 @@ export function* exportTraceListData(
       const isFirstColumn = columnIndex === 0;
       const isLastColumn = columnIndex === columnCount - 1;
 
-      if (isFirstColumn) row = { [X]: el };
+      if (isFirstColumn) row = { x: el, y: {} };
       else {
-        row[
+        row.y[
           variantIds.get(
             handles[(i % (handles.length + 1)) - 1] as VariantHandle,
           )!
@@ -80,7 +80,7 @@ export function* exportTraceListData(
     fillUpQueue(b, toNumeric(range!.from, b.xDataUnit)),
   );
   unfinishedBundles = unfinishedBundles.filter(
-    (b) => queues.get(b)!.length !== 0,
+    (b) => queues.get(b)!.size !== 0,
   );
 
   const lastLines: Map<Bundle, ExportRow> = new Map(
@@ -93,11 +93,12 @@ export function* exportTraceListData(
   const getOrInterpolate = (x: number, bundle: Bundle, lastLine: ExportRow) => {
     const thisQueue = queues.get(bundle)!;
     const nextLine = thisQueue.peek()!;
-    if (x === nextLine[X]) return thisQueue.dequeue()!;
-    const fraction = (x - lastLine[X]) / (nextLine[X] - lastLine[X]);
-    const toReturn: ExportRow = { [X]: x };
+    if (x === nextLine.x) return thisQueue.dequeue()!;
+    const fraction = (x - lastLine.x) / (nextLine.x - lastLine.x);
+    const toReturn: ExportRow = { x: x, y: {} };
     for (const id of Object.keys(lastLine)) {
-      toReturn[id] = fraction * (nextLine[id] - lastLine[id]) + lastLine[id];
+      toReturn.y[id] =
+        fraction * (nextLine.y[id] - lastLine.y[id]) + lastLine.y[id];
     }
     return toReturn;
   };
@@ -111,7 +112,7 @@ export function* exportTraceListData(
           queues
             .get(b)!
             .peekAll()
-            .map((h) => h[X]),
+            .map((h) => h.x),
         ),
       ),
     )
@@ -119,19 +120,19 @@ export function* exportTraceListData(
       .toSorted((a, b) => a - b);
     if (xs[0] === lastX) {
       xs.shift();
-      for (const q of queues.values()) if (q.peek()?.[X] === lastX) q.dequeue();
+      for (const q of queues.values()) if (q.peek()?.x === lastX) q.dequeue();
     }
     const rangeToInLatest = Math.max(
       ...unfinishedBundles.map((b) => toNumeric(range!.to, b.xDataUnit)),
     );
     if (xs[0] >= rangeToInLatest || xs.length === 0) break;
     for (const x of xs) {
-      let row: ExportRow = { [X]: x };
+      let row: ExportRow = { x: x, y: {} };
       for (const bundle of unfinishedBundles) {
         if (queues.get(bundle)!.peek() === undefined) {
           continue;
         }
-        if (queues.get(bundle)!.peek()?.[X] === x)
+        if (queues.get(bundle)!.peek()?.x === x)
           lastLines.set(bundle, queues.get(bundle)!.peek()!);
 
         row = {
@@ -147,7 +148,7 @@ export function* exportTraceListData(
     lastX = xs.at(-1)!;
     unfinishedBundles.forEach((b) => fillUpQueue(b, lastX));
     unfinishedBundles = unfinishedBundles.filter(
-      (b) => queues.get(b)!.length !== 0,
+      (b) => queues.get(b)!.size !== 0,
     );
   }
 }
