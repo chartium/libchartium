@@ -17,16 +17,6 @@ import {
 } from "./trace-list.js";
 import { lib } from "../wasm.js";
 import { UnknownVariantHandleError, UnknownVariantIdError } from "../errors.js";
-import {
-  concat,
-  enumerate,
-  filter,
-  flatMap,
-  map,
-  reduce,
-  unique,
-  zip,
-} from "../utils/collection.js";
 import { resolvedColorToHex } from "../utils/color.js";
 import { oxidizeStyleSheet, type TraceStyleSheet } from "./trace-styles.js";
 import {
@@ -36,6 +26,16 @@ import {
   computeDefaultUnit,
   formatChartValue,
 } from "../units/mod.js";
+import {
+  concat,
+  enumerate,
+  filter,
+  flatMap,
+  fold,
+  map,
+  unique,
+  zip,
+} from "@typek/typek";
 
 export interface Stat {
   title: string;
@@ -140,7 +140,7 @@ export class StatsTable {
         data.values(),
         (values) => map(values, (v) => toChartValue(v, dataUnit)),
         (values) =>
-          reduce<ChartValue, { from?: ChartValue; to?: ChartValue }>(
+          fold<ChartValue, { from?: ChartValue; to?: ChartValue }>(
             values,
             ({ from: min, to: max }, v) => ({
               from: min ? minValue(min, v) : v,

@@ -3,7 +3,6 @@ import {
   X,
   type ExportRow,
   type ChartRange,
-  type TypedArray,
   type VariantHandle,
 } from "../types.js";
 import { toNumeric } from "../units/mod.js";
@@ -20,29 +19,15 @@ import type { Bundle } from "./bundle.js";
  * @param interpolationStrategy How to interpolate missing ys
  */
 export interface TraceListExportOptions {
-  /** A writer that writes the output of transformer into whatever you want */
-  writer: Pick<WritableStreamDefaultWriter, "ready" | "write">;
-  /** Function that turns one row of data into whatever format the writer will write */
-  transformer: (
-    data: ExportRow,
-  ) => ArrayBuffer | TypedArray | DataView | Blob | string;
-
-  /** From what range to export. Defaults to `traceList.range` */
   range?: ChartRange;
 }
 
-export async function exportTraceListData(
+export function* exportTraceListData(
   traces: TraceList,
-  { writer, transformer, range }: TraceListExportOptions,
+  { range }: TraceListExportOptions = {},
 ) {
   range ??= traces.range;
-
   const linesPerBuffer = 1000;
-  const writeLine = async (data: ExportRow) => {
-    writer.ready.then(() => {
-      writer.write(transformer(data));
-    });
-  };
 
   let unfinishedBundles = traces[PARAMS].bundles.slice();
   const buffers: Map<Bundle, Float64Array> = unfinishedBundles.reduce(
@@ -55,7 +40,7 @@ export async function exportTraceListData(
     },
     new Map(),
   );
-  // fill up queues for all buffrs
+  // fill up queues for all buffers
   const queues: Map<Bundle, Queue<ExportRow>> = new Map(
     unfinishedBundles.map((bundle) => [bundle, new Queue<ExportRow>()]),
   );
@@ -104,11 +89,11 @@ export async function exportTraceListData(
       .filter((_, q) => q !== undefined) as [Bundle, ExportRow][],
   );
 
+  // TODO implement different interpolation strategies
   const getOrInterpolate = (x: number, bundle: Bundle, lastLine: ExportRow) => {
     const thisQueue = queues.get(bundle)!;
     const nextLine = thisQueue.peek()!;
     if (x === nextLine[X]) return thisQueue.dequeue()!;
-    // FIXME match the strategy
     const fraction = (x - lastLine[X]) / (nextLine[X] - lastLine[X]);
     const toReturn: ExportRow = { [X]: x };
     for (const id of Object.keys(lastLine)) {
@@ -116,6 +101,7 @@ export async function exportTraceListData(
     }
     return toReturn;
   };
+
   let lastX = Number.NEGATIVE_INFINITY;
   while (unfinishedBundles.length > 0) {
     const toWrite: ExportRow[] = [];
@@ -156,9 +142,8 @@ export async function exportTraceListData(
       toWrite.push(row);
     }
 
-    for (const line of toWrite) {
-      await writeLine(line);
-    }
+    for (const line of toWrite) yield line;
+
     lastX = xs.at(-1)!;
     unfinishedBundles.forEach((b) => fillUpQueue(b, lastX));
     unfinishedBundles = unfinishedBundles.filter(

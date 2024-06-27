@@ -7,7 +7,7 @@
   import { toolKey } from "./toolKey.js";
   import Fa from "svelte-fa";
   import { fade } from "svelte/transition";
-  import { getContext } from "svelte";
+  import { getContext } from "../../utils/svelte-context.js";
 
   const autoscaleY$ = getContext(toolKey)?.autoscaleY$;
 

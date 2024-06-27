@@ -20,12 +20,18 @@ importers:
       '@tanstack/svelte-virtual':
         specifier: ^3.7.0
         version: 3.7.0(svelte@4.2.18)
+      '@typek/typek':
+        specifier: npm:@jsr/typek__typek@^0.1.8
+        version: '@jsr/typek__typek@0.1.8'
       '@types/lodash-es':
         specifier: ^4.17.12
         version: 4.17.12
       '@types/seedrandom':
         specifier: ^3.0.8
         version: 3.0.8
+      '@types/wicg-file-system-access':
+        specifier: ^2023.10.5
+        version: 2023.10.5
       dayjs:
         specifier: ^1.11.11
         version: 1.11.11
@@ -326,6 +332,15 @@ packages:
   '@jridgewell/trace-mapping@0.3.25':
     resolution: {integrity: sha512-vNk6aEwybGtawWmy/PzwnGDOjCkLWSD2wqvjGGAgOAwCGWySYXfYoxt00IJkTF+8Lb57DwOb3Aa0o9CApepiYQ==}
 
+  '@jsr/std__assert@0.226.0':
+    resolution: {integrity: sha512-xCuUFDfHkIZd96glKgjZbnYFqu6blu8Y53SyvDMlFDJm1Y/j+/FcW6xq7TzGFIaF5B9QecIlDfamfhzA8ZdVbg==, tarball: https://npm.jsr.io/~/11/@jsr/std__assert/0.226.0.tgz}
+
+  '@jsr/std__internal@1.0.0':
+    resolution: {integrity: sha512-6kp0FsXcHW4QvGYpOPAtglYSh/813OYKBP7RlH8VCaMyKwnWcRvcH+fhVc92RQ1a39Gh2XDwD6WGRYaFXZJxGw==, tarball: https://npm.jsr.io/~/11/@jsr/std__internal/1.0.0.tgz}
+
+  '@jsr/typek__typek@0.1.8':
+    resolution: {integrity: sha512-0OcWTdOZPnLv/oCcz+66AEYDK/xaHT0Owzo21xaaeUg1fE/1/ShZu0LWpdKB5Ndw7t5H0zjnJyGKzw0JZglCTA==, tarball: https://npm.jsr.io/~/11/@jsr/typek__typek/0.1.8.tgz}
+
   '@mod.js/signals@0.0.34':
     resolution: {integrity: sha512-kJsL1PKSjQh6RogviJCIcMH74w7FemUE0W8SayLJh9ExWIl0NvlSvXasuZ80L+6pHSSzfUojrAo0UWo/FUjw2Q==}
 
@@ -477,6 +492,9 @@ packages:
 
   '@types/seedrandom@3.0.8':
     resolution: {integrity: sha512-TY1eezMU2zH2ozQoAFAQFOPpvP15g+ZgSfTZt31AUUH/Rxtnz3H+A/Sv1Snw2/amp//omibc+AEkTaA8KUeOLQ==}
+
+  '@types/wicg-file-system-access@2023.10.5':
+    resolution: {integrity: sha512-e9kZO9kCdLqT2h9Tw38oGv9UNzBBWaR1MzuAavxPcsV/7FJ3tWbU6RI3uB+yKIDPGLkGVbplS52ub0AcRLvrhA==}
 
   '@typescript-eslint/eslint-plugin@7.14.1':
     resolution: {integrity: sha512-aAJd6bIf2vvQRjUG3ZkNXkmBpN+J7Wd0mfQiiVCJMu9Z5GcZZdcc0j8XwN/BM97Fl7e3SkTXODSk4VehUv7CGw==}
@@ -1692,6 +1710,16 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.4.15
 
+  '@jsr/std__assert@0.226.0':
+    dependencies:
+      '@jsr/std__internal': 1.0.0
+
+  '@jsr/std__internal@1.0.0': {}
+
+  '@jsr/typek__typek@0.1.8':
+    dependencies:
+      '@jsr/std__assert': 0.226.0
+
   '@mod.js/signals@0.0.34': {}
 
   '@nodelib/fs.scandir@2.1.5':
@@ -1816,6 +1844,8 @@ snapshots:
   '@types/pug@2.0.10': {}
 
   '@types/seedrandom@3.0.8': {}
+
+  '@types/wicg-file-system-access@2023.10.5': {}
 
   '@typescript-eslint/eslint-plugin@7.14.1(@typescript-eslint/parser@7.14.1(eslint@9.5.0)(typescript@5.5.2))(eslint@9.5.0)(typescript@5.5.2)':
     dependencies:

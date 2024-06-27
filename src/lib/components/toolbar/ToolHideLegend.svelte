@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { getContext } from "svelte";
   import { faList } from "@fortawesome/free-solid-svg-icons";
   import ToolbarButton from "./ToolbarButton.svelte";
   import { toolKey } from "./toolKey.js";
+  import { getContext } from "../../utils/svelte-context.js";
 
   const toggleLegend = getContext(toolKey)?.toggleLegend;
 </script>

@@ -2,7 +2,7 @@
   import { faExpand, faCompress } from "@fortawesome/free-solid-svg-icons";
   import ToolbarButton from "./ToolbarButton.svelte";
   import { toolKey } from "./toolKey.js";
-  import { getContext } from "svelte";
+  import { getContext } from "../../utils/svelte-context.js";
 
   const fullscreen$ = getContext(toolKey)?.fullscreen$;
 </script>

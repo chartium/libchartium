@@ -1,6 +1,7 @@
 import type { TraceList } from "../../mod.js";
 import type { Signal, WritableSignal } from "@mod.js/signals";
-import type { ContextKey } from "svelte";
+import type { ContextKey } from "../../utils/svelte-context.js";
+
 export type ToolContext = {
   /** Div that wraps the entire chart component */
   notifyOfAutozoom$: Signal<boolean>;

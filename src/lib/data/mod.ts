@@ -15,7 +15,4 @@ export type {
   TracePointsStyle,
   PaletteName,
 } from "./trace-styles.js";
-export {
-  exportTraceListData,
-  type TraceListExportOptions,
-} from "./trace-export.js";
+export type { TraceListExportOptions } from "./trace-export.js";

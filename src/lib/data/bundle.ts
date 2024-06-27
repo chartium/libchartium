@@ -1,3 +1,4 @@
+import { filter } from "@typek/typek";
 import type { InterpolationStrategy } from "../../../dist/wasm/libchartium.js";
 import type {
   ChartValue,
@@ -7,7 +8,6 @@ import type {
   VariantHandle,
   VariantHandleArray,
 } from "../types.js";
-import { filter } from "../utils/collection.js";
 import {
   toChartValue,
   toNumeric,

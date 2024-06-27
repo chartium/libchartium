@@ -6,7 +6,7 @@
   } from "@fortawesome/free-solid-svg-icons";
   import { toolKey } from "./toolKey.js";
   import { cons, derived } from "@mod.js/signals";
-  import { getContext } from "svelte";
+  import { getContext } from "../../utils/svelte-context.js";
 
   const doUseCommonXRange$ = getContext(toolKey)?.doUseCommonXRange$;
   const icon$ = derived(($) =>

@@ -7,6 +7,7 @@ import {
   Unit,
   type TypedArray,
   type TypeOfData,
+  type ExportRow,
 } from "../types.js";
 import { lib } from "../wasm.js";
 import {
@@ -17,16 +18,7 @@ import {
 import { yeet } from "yeet-ts";
 import { UnknownVariantHandleError, UnknownVariantIdError } from "../errors.js";
 import { registerNewVariantHandle, variantIds } from "./variant-ids.js";
-import {
-  enumerate,
-  filter,
-  flatMap,
-  intersection,
-  map,
-  reduce,
-  unique,
-  zip,
-} from "../utils/collection.js";
+import { intersection } from "../utils/collection.js";
 import {
   maxValue,
   minValue,
@@ -46,6 +38,16 @@ import { resolvedColorToHex } from "../utils/color.js";
 import { hashAny } from "../utils/hash.js";
 import type { InterpolationStrategy } from "../../../dist/wasm/libchartium.js";
 import { isUnit } from "unitlib";
+import {
+  enumerate,
+  filter,
+  flatMap,
+  fold,
+  map,
+  pipe,
+  unique,
+  zip,
+} from "@typek/typek";
 
 export const PARAMS = Symbol("trace-list-params");
 export const CONSTRUCTOR = Symbol("trace-list-constructor");
@@ -485,11 +487,10 @@ export class TraceList {
    * traces with the provided ids.
    */
   withoutTraces(tracesToExclude: Iterable<string>) {
-    const exclude = new Set(
-      filter(
-        map(tracesToExclude, (id) => variantIds.getKey(id)),
-        (n): n is VariantHandle => n !== undefined,
-      ),
+    const exclude = pipe(
+      map(tracesToExclude, (id) => variantIds.getKey(id)),
+      (ids) => filter(ids, (n) => n !== undefined),
+      (ids) => new Set(ids),
     );
 
     const handles = this.#p.handles.filter((h) => !exclude.has(h));
@@ -588,9 +589,15 @@ export class TraceList {
     const yDataUnit = lists[0].yDataUnit;
 
     // Unify Bundles, Handles & Labels
-    const bundles = Array.from(unique(flatMap(lists, (l) => l.#p.bundles)));
-    const handles = new Uint32Array(
-      unique(flatMap(lists, (l) => l.#p.handles)),
+    const bundles = pipe(
+      flatMap(lists, (l) => l.#p.bundles),
+      unique,
+      Array.from<Bundle>,
+    );
+    const handles = pipe(
+      flatMap(lists, (l) => l.#p.handles),
+      unique,
+      (x) => new Uint32Array(x),
     );
     const labels = new Map(flatMap(lists, (l) => l.#p.labels.entries()));
 
@@ -604,13 +611,15 @@ export class TraceList {
       else return [toNumericRange(t.range, xDataUnit)];
     });
 
-    const from = reduce(
+    const from = fold(
       map(ranges, (r) => r.from),
       Math.min,
+      Infinity,
     );
-    const to = reduce(
+    const to = fold(
       map(ranges, (r) => r.to),
       Math.max,
+      -Infinity,
     );
     const range = toChartRange({ from, to }, xDataUnit);
     const rangeArbitrary = allRangesArbitrary;
@@ -879,13 +888,9 @@ export class TraceList {
   };
 
   /**
-   * Export data of all traces into a stream.
-   * @param writer A writer that writes the output of transformer into whatever you want
-   * @param transformer Function that turns one "line" of data into whatever format the writer will write
-   * @param range From what range to export
-   * @param interpolationStrategy How to interpolate missing ys
+   * Creates an iterator that goes over all the available trace data.
    */
-  async exportData(opts: TraceListExportOptions) {
+  exportData(opts: TraceListExportOptions = {}): IterableIterator<ExportRow> {
     return exportTraceListData(this, opts);
   }
 }

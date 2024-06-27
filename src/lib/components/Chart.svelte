@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onDestroy, setContext } from "svelte";
+  import { onDestroy } from "svelte";
   import { chart$ as createChart$ } from "../state/core/chart.js";
 
   import {
@@ -39,6 +39,7 @@
   import type { ChartStyleSheet } from "../state/guidelines/style.js";
   import { derived } from "@mod.js/signals";
   import RulerBubble from "./RulerBubble.svelte";
+  import { setContext } from "../utils/svelte-context.js";
 
   // SECTION Props
   let klass: string = "";

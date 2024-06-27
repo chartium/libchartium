@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { getContext } from "svelte";
   import { toPng } from "html-to-image";
   import { faCamera } from "@fortawesome/free-solid-svg-icons";
   import ToolbarButton from "./ToolbarButton.svelte";
   import { toolKey } from "./toolKey.js";
+  import { getContext } from "../../utils/svelte-context.js";
 
   const getWrapDiv = getContext(toolKey)?.getWrapDiv;
   const getTitle = getContext(toolKey)?.getTitle;

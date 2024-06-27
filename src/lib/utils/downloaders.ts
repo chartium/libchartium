@@ -1,5 +1,6 @@
+import { concat, map, pipe } from "@typek/typek";
 import type { TraceList } from "../mod.js";
-import { X, type ExportRow } from "../types.js";
+import { X } from "../types.js";
 
 /** Copies the tracelist data and makes an anchor element to download it and clicks it */
 export async function downloadCSVUnhingedly(
@@ -9,21 +10,22 @@ export async function downloadCSVUnhingedly(
   const NO_DATA = "";
 
   const ids = Array.from(tracelist.traces());
-  const header = `timestamp,${ids.join(",")}\n`;
-  const transformer = (row: ExportRow) =>
-    `${row[X]},${ids.map((id) => row[id] ?? NO_DATA).join(",")}\n`;
 
-  const rows: string[] = [];
-  const writer: Pick<WritableStreamDefaultWriter, "ready" | "write"> = {
-    ready: Promise.resolve(undefined),
-    write: (data: string) => {
-      rows.push(data);
-      return Promise.resolve();
-    },
-  };
-  await tracelist.exportData({ writer, transformer });
+  const rows = pipe(
+    tracelist.exportData(),
 
-  const blob = new Blob([header, ...rows], { type: "text/csv" });
+    // format rows
+    (x) =>
+      map(x, (r) => `${r[X]},${ids.map((id) => r[id] ?? NO_DATA).join(",")}\n`),
+
+    // prepend header
+    (x) => concat([`timestamp,${ids.join(",")}\n`], x),
+
+    // collect
+    Array.from<string>,
+  );
+
+  const blob = new Blob(rows, { type: "text/csv" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
@@ -37,21 +39,24 @@ export async function downloadCSVSensibly(
   tracelist: TraceList,
   filename: string,
 ) {
-  const fileHandle: FileSystemFileHandle = await (
-    window as any
-  ).showSaveFilePicker({
+  const NO_DATA = "";
+
+  const fileHandle = await window.showSaveFilePicker({
     suggestedName: filename,
   });
   const writer = (await fileHandle.createWritable()).getWriter();
 
-  const NO_DATA = "";
-
   const ids = Array.from(tracelist.traces());
-  const header = `timestamp,${ids.join(",")}\n`;
-  const transformer = (row: ExportRow) =>
-    `${row[X]},${ids.map((id) => row[id] ?? NO_DATA).join(",")}\n`;
 
-  writer.ready.then(() => writer.write(header));
+  await writer.ready;
+  await writer.write(`timestamp,${ids.join(",")}\n`);
 
-  return tracelist.exportData({ writer, transformer });
+  for (const row of tracelist.exportData()) {
+    await writer.ready;
+    await writer.write(
+      `${row[X]},${ids.map((id) => row[id] ?? NO_DATA).join(",")}\n`,
+    );
+  }
+
+  await writer.close();
 }
