@@ -132,12 +132,12 @@ export function randomUint() {
 }
 
 export class TraceList {
-  #p: Readonly<TraceListParams>;
+  #params: Readonly<TraceListParams>;
   private constructor(params: TraceListParams) {
-    this.#p = params;
+    this.#params = params;
   }
   get [PARAMS]() {
-    return this.#p;
+    return this.#params;
   }
   static [CONSTRUCTOR](params: TraceListParams) {
     return new TraceList(params);
@@ -312,32 +312,32 @@ export class TraceList {
    * The x axis range this trace list is limited to.
    */
   get range(): ChartRange {
-    return { ...this.#p.range };
+    return { ...this.#params.range };
   }
 
   /**
    * The number of traces in this trace list.
    */
   get traceCount(): number {
-    return this.#p.handles.length;
+    return this.#params.handles.length;
   }
 
   get xDataUnit(): DataUnit {
-    return this.#p.xDataUnit;
+    return this.#params.xDataUnit;
   }
   get yDataUnit(): DataUnit {
-    return this.#p.yDataUnit;
+    return this.#params.yDataUnit;
   }
 
   get randomSeed(): number {
-    return this.#p.randomSeed;
+    return this.#params.randomSeed;
   }
 
   /**
    * An iterable containing all the trace ids of this list.
    */
   *traces(): Iterable<string> {
-    for (const handle of this.#p.handles) {
+    for (const handle of this.#params.handles) {
       const id = variantIds.get(handle as VariantHandle);
       yield id ?? yeet(UnknownVariantHandleError, handle);
     }
@@ -346,7 +346,7 @@ export class TraceList {
   #traceHandleSet_: Set<VariantHandle> | undefined;
   get #traceHandlesSet(): Set<VariantHandle> {
     if (!this.#traceHandleSet_)
-      this.#traceHandleSet_ = new Set(this.#p.handles);
+      this.#traceHandleSet_ = new Set(this.#params.handles);
     return this.#traceHandleSet_;
   }
 
@@ -360,8 +360,8 @@ export class TraceList {
         return v;
       };
 
-      for (const handle of this.#p.handles) {
-        const style = this.#p.styles.get_cloned(handle);
+      for (const handle of this.#params.handles) {
+        const style = this.#params.styles.get_cloned(handle);
         const stack = getStack(style["stack-group"]);
         const zIndex = style["z-index"] === "unset" ? 0 : style["z-index"];
 
@@ -395,8 +395,11 @@ export class TraceList {
     return (
       this.#colorIndices_ ??
       (this.#colorIndices_ =
-        this.#p.precomputedColorIndices ??
-        lib.ResolvedColorIndices.compute(this.#p.styles, this.#p.handles))
+        this.#params.precomputedColorIndices ??
+        lib.ResolvedColorIndices.compute(
+          this.#params.styles,
+          this.#params.handles,
+        ))
     );
   }
 
@@ -417,7 +420,7 @@ export class TraceList {
 
   withRandomSeed(seed: number | string): TraceList {
     return new TraceList({
-      ...this.#p,
+      ...this.#params,
       randomSeed: hashAny(seed),
     });
   }
@@ -429,13 +432,13 @@ export class TraceList {
     const patch = oxidizeStyleSheetPatch(styleSheet);
 
     return new TraceList({
-      ...this.#p,
-      styles: this.#p.styles.patch(patch),
+      ...this.#params,
+      styles: this.#params.styles.patch(patch),
     });
   }
 
   getStyle(traceId: string): ComputedTraceStyle {
-    const style = this.#p.styles.get_computed(
+    const style = this.#params.styles.get_computed(
       variantIds.getKey(traceId) ?? yeet(UnknownVariantIdError, traceId),
     );
     return {
@@ -450,10 +453,10 @@ export class TraceList {
 
   getColor(traceId: string): `#${string}` {
     return resolvedColorToHex(
-      this.#p.styles.get_color(
+      this.#params.styles.get_color(
         variantIds.getKey(traceId) ?? yeet(UnknownVariantIdError, traceId),
         this.#colorIndices,
-        this.#p.randomSeed,
+        this.#params.randomSeed,
       ),
     );
   }
@@ -465,17 +468,17 @@ export class TraceList {
    * than expand it again, don't expect you'll get back all the data.
    */
   withRange(range: ChartRange): TraceList {
-    const bundles = this.#p.bundles.filter((bundle) => {
+    const bundles = this.#params.bundles.filter((bundle) => {
       const { from, to } = toNumericRange(range, bundle.xDataUnit);
       return bundle.boxed.intersects(from, to);
     });
 
     const availableHandles = new Set(flatMap(bundles, (b) => b.traces));
-    const handles = this.#p.handles.filter((t) => availableHandles.has(t));
+    const handles = this.#params.handles.filter((t) => availableHandles.has(t));
     if (handles.length === 0) return TraceList.empty();
 
     return new TraceList({
-      ...this.#p,
+      ...this.#params,
       handles,
       range,
       bundles,
@@ -493,11 +496,11 @@ export class TraceList {
       (ids) => new Set(ids),
     );
 
-    const handles = this.#p.handles.filter((h) => !exclude.has(h));
+    const handles = this.#params.handles.filter((h) => !exclude.has(h));
     if (handles.length === 0) return TraceList.empty();
 
     return new TraceList({
-      ...this.#p,
+      ...this.#params,
       handles,
     });
   }
@@ -514,11 +517,11 @@ export class TraceList {
       ),
     );
 
-    const handles = this.#p.handles.filter((h) => include.has(h));
+    const handles = this.#params.handles.filter((h) => include.has(h));
     if (handles.length === 0) return TraceList.empty();
 
     return new TraceList({
-      ...this.#p,
+      ...this.#params,
       handles,
     });
   }
@@ -530,7 +533,7 @@ export class TraceList {
    */
   withResolvedColors() {
     return new TraceList({
-      ...this.#p,
+      ...this.#params,
       precomputedColorIndices: this.#colorIndices,
     });
   }
@@ -540,18 +543,18 @@ export class TraceList {
    */
   withLabels(newLabels: Iterable<[string, string | undefined]>) {
     const labels = new Map([
-      ...this.#p.labels,
+      ...this.#params.labels,
       ...filter(newLabels, (kv): kv is [string, string] => kv[1] !== undefined),
     ]);
 
     return new TraceList({
-      ...this.#p,
+      ...this.#params,
       labels,
     });
   }
 
   getLabel(traceId: string): string | undefined {
-    return this.#p.labels.get(traceId);
+    return this.#params.labels.get(traceId);
   }
 
   /**
@@ -560,10 +563,10 @@ export class TraceList {
    */
   tracesLargerThanThreshold(thresholdValue: ChartValue): Set<string> {
     return new Set(
-      flatMap(this.#p.bundles, (bundle) => {
+      flatMap(this.#params.bundles, (bundle) => {
         const filteredHandles = bundle.tracesOverThreshold(
-          this.#p.handles,
-          this.#p.range,
+          this.#params.handles,
+          this.#params.range,
           thresholdValue,
         );
         return map(filteredHandles, (h) => variantIds.get(h)!);
@@ -590,24 +593,24 @@ export class TraceList {
 
     // Unify Bundles, Handles & Labels
     const bundles = pipe(
-      flatMap(lists, (l) => l.#p.bundles),
+      flatMap(lists, (l) => l.#params.bundles),
       unique,
       Array.from<Bundle>,
     );
     const handles = pipe(
-      flatMap(lists, (l) => l.#p.handles),
+      flatMap(lists, (l) => l.#params.handles),
       unique,
       (x) => new Uint32Array(x),
     );
-    const labels = new Map(flatMap(lists, (l) => l.#p.labels.entries()));
+    const labels = new Map(flatMap(lists, (l) => l.#params.labels.entries()));
 
     // Compute Range
-    const allRangesArbitrary = lists.every((t) => t.#p.rangeArbitrary);
+    const allRangesArbitrary = lists.every((t) => t.#params.rangeArbitrary);
     // const anyRangeArbitrary = lists.some((t) => t.#p.rangeArbitrary);
     const ignoreArbitraryRanges = !allRangesArbitrary;
 
     const ranges = lists.flatMap((t) => {
-      if (ignoreArbitraryRanges && t.#p.rangeArbitrary) return [];
+      if (ignoreArbitraryRanges && t.#params.rangeArbitrary) return [];
       else return [toNumericRange(t.range, xDataUnit)];
     });
 
@@ -627,9 +630,11 @@ export class TraceList {
     // Compute Styles
     // beware: mutating `lists`!
     const first = lists.pop()!;
-    const styleBuilder = new lib.TraceStyleSheetUnionBuilder(first.#p.styles);
+    const styleBuilder = new lib.TraceStyleSheetUnionBuilder(
+      first.#params.styles,
+    );
     for (const next of lists) {
-      styleBuilder.add(next.#p.handles, next.#p.styles);
+      styleBuilder.add(next.#params.handles, next.#params.styles);
     }
     const styles = styleBuilder.collect();
 
@@ -675,11 +680,11 @@ export class TraceList {
 
     const handles = traces
       ? Uint32Array.from(traces.map((id) => variantIds.getKey(id)!))
-      : this.#p.handles;
+      : this.#params.handles;
 
     const counter = new lib.MetaCounter(handles.length);
 
-    for (const bundle of this.#p.bundles) {
+    for (const bundle of this.#params.bundles) {
       const bundleRange = bundle.rangeInView(range).inBundleUnits();
       const factor = unitConversionFactor(bundle.yDataUnit, this.yDataUnit);
       counter.add_bundle(bundle.boxed, handles, bundleRange, factor);
@@ -709,9 +714,13 @@ export class TraceList {
   /**
    * Calculate the y axis range of this trace list.
    */
-  getYRange(xRange?: ChartRange): ChartRange {
+  getYRange(xRange?: ChartRange, includeConstantBundles = true): ChartRange {
     if (this.#yRange && xRange === undefined) return this.#yRange;
-    const { getStackData, freeStackData } = this.stackHelper(this.#p.bundles);
+    const { getStackData, freeStackData } = this.stackHelper(
+      this.#params.bundles.filter(
+        (b) => includeConstantBundles || b.boxed.range().type !== "Everywhere",
+      ),
+    );
 
     const range = this[LAZY].traceHandleStacks.reduce<ChartRange | undefined>(
       (prev, [stack, handles]) => {
@@ -768,7 +777,7 @@ export class TraceList {
       dist: number;
     }> = [];
 
-    const intersecting = this.#p.bundles.filter((b) => {
+    const intersecting = this.#params.bundles.filter((b) => {
       const x = toNumeric(point.x, b.xDataUnit);
 
       return b.boxed.contains_point(x);
@@ -852,13 +861,11 @@ export class TraceList {
     const getStackData = () => {
       if (!_stackData) {
         const first = bundles.at(0)!;
-
         const bundleVec = new lib.BundleVec();
         const factors: number[] = [];
 
         bundles.forEach((b) => {
           bundleVec.push(b.boxed);
-
           if (isUnit(first.yDataUnit) && isUnit(b.yDataUnit)) {
             factors.push(
               (b.yDataUnit as Unit).conversionFactorTo(first.yDataUnit as Unit),

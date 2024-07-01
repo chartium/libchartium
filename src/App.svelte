@@ -89,7 +89,7 @@
   })();
   const threshold = TraceList.fromThresholds({
     ids: ["threshold"],
-    ys: new Float64Array([100]),
+    ys: new Float64Array([1000]),
     xDataUnit: NumericDateRepresentation.EpochSeconds(),
     yDataUnit: IEC.parseUnit("KiB"),
     tracelistsRange: { from: 0, to: 1 },

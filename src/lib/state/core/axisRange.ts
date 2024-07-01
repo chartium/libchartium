@@ -135,7 +135,7 @@ export const yAxisRange$ = ({
     if ($(autoscale$)) {
       return preventEmptyRange(
         addMarginsToRange(
-          $(visibleTraces$).getYRange($(xRange$)),
+          $(visibleTraces$).getYRange($(xRange$), false),
           $(margins$),
           $(lengthInPx$),
         ),
