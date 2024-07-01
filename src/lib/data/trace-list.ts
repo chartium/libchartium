@@ -179,6 +179,7 @@ export class TraceList {
     if (ids.length === 0) return TraceList.empty();
 
     const dataBuffer = data instanceof ArrayBuffer ? data : data.buffer;
+    if (dataBuffer.byteLength === 0) return TraceList.empty();
 
     const handles: VariantHandleArray = new Uint32Array(ids.length);
 
@@ -226,6 +227,7 @@ export class TraceList {
     const xBuffer = new Uint8Array(
       x.data instanceof ArrayBuffer ? x.data : x.data.buffer,
     );
+    if (xBuffer.byteLength === 0) return TraceList.empty();
     const yBuffers = y.columns.map(
       ({ data }) =>
         new Uint8Array(data instanceof ArrayBuffer ? data : data.buffer),
