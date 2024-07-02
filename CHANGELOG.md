@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.20.0](https://github.com/chartium/libchartium/compare/libchartium-v0.19.0...libchartium-v0.20.0) (2024-07-02)
+
+
+### Features
+
+* **axisRange.ts:** threshold traces are no longer considered in autoscale range, only in the default reset range. Fixes [#103](https://github.com/chartium/libchartium/issues/103) ([ef504c2](https://github.com/chartium/libchartium/commit/ef504c274d8361e9083bc7fb5e3b64b08959ba28))
+* change .exportData to return an iterator, add @typek/typek, minor fixes & refactors ([537b199](https://github.com/chartium/libchartium/commit/537b199d19e191d4039417ebaddd11e5abd91ca9))
+* **Chart.svelte:** add $ suffix to common*AxisWidth props ([be6a7a4](https://github.com/chartium/libchartium/commit/be6a7a4dca74945ad2b303993e970afe95c41934))
+* export more types and formatting functions ([91ca50b](https://github.com/chartium/libchartium/commit/91ca50ba1787f6e4187ae96be53c35b65af7d06f))
+* improve ExportRow interface, move Queue and yeet to [@typek](https://github.com/typek) ([dd0a5d6](https://github.com/chartium/libchartium/commit/dd0a5d6a0c21238b5b6d8b8baac84a3634e4b5f7))
+
+
+### Bug Fixes
+
+* **TraceList:** return an empty list when given an empty buffer ([72d9072](https://github.com/chartium/libchartium/commit/72d9072701a938b07022ae3a5d27a1f0e8980c59))
+
 ## [0.19.0](https://github.com/chartium/libchartium/compare/libchartium-v0.18.0...libchartium-v0.19.0) (2024-06-25)
 
 
