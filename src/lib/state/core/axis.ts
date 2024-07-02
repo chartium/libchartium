@@ -8,12 +8,12 @@ import {
   type DisplayUnitPreference,
   type DisplayUnit,
   type DataUnit,
-  type ResolvedType,
 } from "../../types.js";
 import { axisUnits$ } from "./axisUnits.js";
 import { axisTicks$, type TextMeasuringFunction } from "./axisTicks.js";
 import { xAxisRange$, yAxisRange$ } from "./axisRange.js";
 import type { ExplicitRangeMargins } from "../../utils/rangeMargins.js";
+import type { SimplifyType } from "@typek/typek";
 
 export interface UnitChangeAction {
   unit: DisplayUnit;
@@ -33,7 +33,7 @@ export type RangeMarginValue =
   | { px: number }
   | 0;
 
-export type AxisProps = ResolvedType<XAxisProps | YAxisProps>;
+export type AxisProps = SimplifyType<XAxisProps | YAxisProps>;
 
 export type XAxisProps = {
   axis: "x";
@@ -47,7 +47,7 @@ export type XAxisProps = {
   doUseCommonRange$: Signal<boolean>;
   margins$: Signal<ExplicitRangeMargins>;
 };
-export type YAxisProps = ResolvedType<
+export type YAxisProps = SimplifyType<
   {
     axis: "y";
     xRange$: Signal<ChartRange>;

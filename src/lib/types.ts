@@ -7,7 +7,6 @@ import {
 } from "unitlib";
 
 export const asAny = (x: any) => x;
-export type ResolvedType<T> = T extends object ? { [K in keyof T]: T[K] } : T;
 export type Unit = Unit_<any, any, any>;
 export const Unit = Unit_;
 export const isUnit = (x: unknown): x is Unit => _isUnit(x);

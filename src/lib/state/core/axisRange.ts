@@ -9,12 +9,12 @@ import {
   rangesHaveMeaningfulIntersection,
   type ChartRange,
   type NumericRange,
-  type ResolvedType,
   isSameRange,
 } from "../../types.js";
 import { toNumeric, toChartRange, unitOf } from "../../units/mod.js";
 import { addMarginsToRange } from "../../utils/rangeMargins.js";
 import type { RangeMarginValue } from "./axis.js";
+import type { SimplifyType } from "@typek/typek";
 
 export type XAxisRangeProps = {
   resetAllRanges: () => void;
@@ -25,7 +25,7 @@ export type XAxisRangeProps = {
   doUseCommonRange$: Signal<boolean>;
   lengthInPx$: Signal<number | undefined>;
 };
-export type YAxisRangeProps = ResolvedType<
+export type YAxisRangeProps = SimplifyType<
   {
     autoscale$: Signal<boolean>;
     xRange$: Signal<ChartRange>;
