@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.20.1](https://github.com/chartium/libchartium/compare/libchartium-v0.20.0...libchartium-v0.20.1) (2024-07-09)
+
+
+### Bug Fixes
+
+* **stats-table:** the typical JS this issue, had to swap `Uint32Array.from` -&gt; `(v)=>Uint32Array.from(v)` ([259f449](https://github.com/chartium/libchartium/commit/259f4492663eef1aab3a98c59109ee071d2e4a9b))
+
 ## [0.20.0](https://github.com/chartium/libchartium/compare/libchartium-v0.19.0...libchartium-v0.20.0) (2024-07-02)
 
 
