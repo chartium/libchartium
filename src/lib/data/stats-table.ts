@@ -257,7 +257,7 @@ export class StatsTable {
     const handles = pipe(
       concat(...tables.map((t) => t.#p.handles)),
       unique,
-      Uint32Array.from,
+      (hs) => Uint32Array.from(hs),
     );
 
     const stats = tables.flatMap((t) => t.#p.stats);
