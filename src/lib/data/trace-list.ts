@@ -26,6 +26,7 @@ import {
   toChartRange,
   assertAllUnitsCompatible,
   unitConversionFactor,
+  unitOf,
 } from "../units/mod.js";
 import {
   exportTraceListData,
@@ -101,15 +102,21 @@ export interface FromColumnsParams {
   labels?: Iterable<[string, string | undefined]>;
 }
 
-export interface FromThresholdsParams {
+type _ThresholdParamsCore = {
   ids: string[];
-  ys: Float64Array;
   xDataUnit?: DataUnit;
-  yDataUnit?: DataUnit;
   style?: TraceStyleSheet;
   labels?: Iterable<[string, string | undefined]>;
   tracelistsRange: ChartRange;
-}
+};
+
+export type FromThresholdsParamsRaw = _ThresholdParamsCore & {
+  ys: Float64Array;
+  yDataUnit: DataUnit;
+};
+export type FromThresholdsParamsChartVals = _ThresholdParamsCore & {
+  ys: ChartValue[];
+};
 
 export interface TraceListParams {
   handles: VariantHandleArray;
@@ -270,15 +277,21 @@ export class TraceList {
     return tl;
   }
 
-  static fromThresholds({
-    ids,
-    ys,
-    xDataUnit,
-    yDataUnit,
-    style,
-    labels,
-    tracelistsRange,
-  }: FromThresholdsParams) {
+  static fromThresholds(params: FromThresholdsParamsRaw): TraceList;
+  static fromThresholds(params: FromThresholdsParamsChartVals): TraceList;
+  static fromThresholds(
+    params: FromThresholdsParamsRaw | FromThresholdsParamsChartVals,
+  ) {
+    let ys: Float64Array;
+    let yDataUnit: DataUnit;
+    if (params.ys instanceof Float64Array) {
+      ys = params.ys;
+      yDataUnit = (params as FromThresholdsParamsRaw).yDataUnit;
+    } else {
+      yDataUnit = unitOf(params.ys[0]);
+      ys = new Float64Array(params.ys.map((v) => toNumeric(v, yDataUnit)));
+    }
+    const { ids, xDataUnit, style, labels, tracelistsRange } = params;
     if (ids.length === 0) return TraceList.empty();
 
     const handles: VariantHandleArray = new Uint32Array(ids.length);
