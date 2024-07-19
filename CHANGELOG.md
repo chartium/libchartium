@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.21.0](https://github.com/chartium/libchartium/compare/libchartium-v0.20.1...libchartium-v0.21.0) (2024-07-19)
+
+
+### Features
+
+* **trace-list.ts:** overloaded fromThresholds to accept ChartValues too ([95e09bb](https://github.com/chartium/libchartium/commit/95e09bb7dadbb34fcadd176e040519c9a90c11d9))
+
 ## [0.20.1](https://github.com/chartium/libchartium/compare/libchartium-v0.20.0...libchartium-v0.20.1) (2024-07-09)
 
 
