@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.23.0](https://github.com/chartium/libchartium/compare/libchartium-v0.22.0...libchartium-v0.23.0) (2024-07-20)
+
+
+### Features
+
+* **stats-table.ts:** added a companion to variantEntries, statEntries ([3e54753](https://github.com/chartium/libchartium/commit/3e547536c1c76f3809811a20bc57a6f2c30fe40c))
+
 ## [0.22.0](https://github.com/chartium/libchartium/compare/libchartium-v0.21.0...libchartium-v0.22.0) (2024-07-20)
 
 
