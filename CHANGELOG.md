@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.22.0](https://github.com/chartium/libchartium/compare/libchartium-v0.21.0...libchartium-v0.22.0) (2024-07-20)
+
+
+### Features
+
+* added toNumeric to exports ([b8443f2](https://github.com/chartium/libchartium/commit/b8443f2efdabfcc351f1ec4e09583b74ef0b0448))
+
 ## [0.21.0](https://github.com/chartium/libchartium/compare/libchartium-v0.20.1...libchartium-v0.21.0) (2024-07-19)
 
 
