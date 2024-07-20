@@ -54,6 +54,16 @@ export interface VariantCell {
   value: ChartValue | undefined;
   formattedValue: string | undefined;
 }
+export interface StatRow {
+  statTitle: string;
+  variants: StatCell[];
+}
+export interface StatCell {
+  variantId: string;
+  value: ChartValue | undefined;
+  formattedValue: string | undefined;
+  style: ComputedTraceStyle; // FIXME This should prolly be in StatRow, but we have styles for variants, but not for stats :C
+}
 
 export interface StatsTableParams {
   handles: VariantHandleArray;
@@ -179,6 +189,62 @@ export class StatsTable {
         variantId,
         style,
         stats,
+      };
+    }
+  }
+
+  *statEntries(): Iterable<StatRow> {
+    const ranges = new Map(
+      this.#p.stats.map((stat) =>
+        pipe(
+          stat.data.values(),
+          (values) => map(values, (v) => toChartValue(v, stat.dataUnit)),
+          (values) =>
+            fold<ChartValue, { from?: ChartValue; to?: ChartValue }>(
+              values,
+              ({ from: min, to: max }, v) => ({
+                from: min ? minValue(min, v) : v,
+                to: max ? maxValue(max, v) : v,
+              }),
+              {},
+            ),
+          (range) => [stat, range as ChartRange],
+        ),
+      ),
+    );
+
+    for (const stat of this.#p.stats) {
+      const range = ranges.get(stat)!;
+      const { displayUnit, dataUnit, data, title } = stat;
+      const statTitle = title;
+
+      const variants: StatCell[] = pipe(
+        map(this.#p.handles, (h) => {
+          const variantId =
+            variantIds.get(h) ?? yeet(UnknownVariantHandleError, h);
+          const style = this.getStyle(variantId);
+          const unit = computeDefaultUnit(dataUnit, displayUnit, range);
+          const value = data.has(h)
+            ? toChartValue(data.get(h)!, dataUnit)
+            : undefined;
+
+          const formattedValue = value
+            ? formatChartValue(value, { unit })
+            : undefined;
+
+          return {
+            variantId,
+            style,
+            value,
+            formattedValue,
+          };
+        }),
+        (it) => [...it],
+      );
+
+      yield {
+        statTitle,
+        variants,
       };
     }
   }
