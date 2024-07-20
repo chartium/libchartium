@@ -32,5 +32,7 @@ export {
   formatChartValue,
   toChartRange,
   toChartValue,
+  toNumeric,
+  toNumericRange,
   unitOf,
 } from "./units/mod.js";
