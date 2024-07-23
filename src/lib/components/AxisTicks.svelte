@@ -28,6 +28,7 @@
   import { noop } from "lodash-es";
   import { mapOpt } from "../utils/mapOpt.js";
   import type { UnitChangeActions } from "../state/core/axis.js";
+  import type { ChartStyleSheet } from "../state/core/style.js";
 
   export const dispatchEvent = createEventDispatcher<{
     shift: Shift;
@@ -52,6 +53,10 @@
   export let disableInteractivity: Signal<boolean>;
 
   export let visibleAction: WritableSignal<VisibleAction | undefined>;
+
+  export let chartStylesheet: Partial<ChartStyleSheet> = {};
+  const tickClass = `${chartStylesheet?.ticks?.class ?? ""} ${chartStylesheet?.[`ticks.${axis}`]?.class ?? ""}`;
+  const tickStyle = `${chartStylesheet?.ticks?.style ?? ""} ${chartStylesheet?.[`ticks.${axis}`]?.style ?? ""}`;
 
   export let dimensionFlock: FlockRegistry<number> | undefined;
   let contentRect: DOMRect | undefined;
@@ -210,11 +215,13 @@
 
     {#if axis === "y"}
       <RotatedBox>
-        <div class="y label">{labelText}</div>
+        <div style={tickStyle} class="y label {tickClass}">{labelText}</div>
       </RotatedBox>
     {:else}
       <div style="display: flex; justify-content: center; align-items: center;">
-        <div class="{axis} label">{labelText}</div>
+        <div style={tickStyle} class="{axis} label {tickClass}">
+          {labelText}
+        </div>
       </div>
     {/if}
   {/if}
@@ -235,7 +242,7 @@
     >
       {#each ticks as tick}
         <span style={tickSpanStyle(tick)}>
-          <div class="{axis} innermost">
+          <div class="{axis} innermost {tickClass}" style={tickStyle}>
             {tick.text}
             {#if tick.subtext}
               <br />

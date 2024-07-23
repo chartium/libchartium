@@ -10,6 +10,9 @@
   export let xDisplayUnit: DisplayUnit;
   export let yDisplayUnit: DisplayUnit;
   export let decimalPlaces: number = 3;
+  let klass: string = "";
+  export { klass as class };
+  export let style: string;
 </script>
 
 <div class="tooltip-container">
@@ -17,7 +20,7 @@
     {formatChartValue(hoverX, { unit: xDisplayUnit })}
   </div>
   {#each nearestTraces as trace}
-    <div class="trace-info">
+    <div class="trace-info {klass}" {style}>
       <div class="trace-name">
         <TracePreview
           traceStyle={trace.style}

@@ -4,7 +4,7 @@ import {
   type ChartStyleSheet,
   type ResolvedChartStyleSheet,
   type ResolvedGuidelineStyle,
-} from "./style.js";
+} from "../core/style.js";
 import type { Size, Tick } from "../../types.js";
 import { physicalSize$ } from "../../utils/actions.js";
 import { mapOpt } from "../../utils/mapOpt.js";

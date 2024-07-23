@@ -36,7 +36,7 @@
   import type { TextMeasuringFunction } from "../state/core/axisTicks.js";
   import { type ChartMouseEvent, hover$ } from "../state/interactive/hover.js";
   import type { InterpolationStrategy } from "../../../dist/wasm/libchartium.js";
-  import type { ChartStyleSheet } from "../state/guidelines/style.js";
+  import type { ChartStyleSheet } from "../state/core/style.js";
   import { derived } from "@mod.js/signals";
   import RulerBubble from "./RulerBubble.svelte";
   import { setContext } from "../utils/svelte-context.js";
@@ -344,6 +344,7 @@
 {#if !hideTooltip && $commonXRuler$ !== undefined}
   <TraceTooltip
     {forbiddenRectangle}
+    {chartStylesheet}
     hoverX={$commonXRuler$}
     nearestTraces={$nearestTraces$}
     hoveredTrace={$hoveredTrace$}
@@ -376,6 +377,7 @@
       <AxisTicks
         slot="yticks"
         axis="y"
+        {chartStylesheet}
         ticks={$yTicks$ ?? []}
         label={yLabel}
         unit={$yDisplayUnit$}
@@ -393,7 +395,7 @@
       {#if !hideYBubble && $commonXRuler$ !== undefined && $commonYRuler$ !== undefined}
         <div class="y bubble-reference">
           <RulerBubble
-            decimalPlaces={$yTicksDecimalPlaces$ + 1}
+            autoDecimalPlaces={$yTicksDecimalPlaces$ + 1}
             axis="y"
             position={{
               x: 0,
@@ -410,7 +412,8 @@
       {#if !hideXBubble && $commonXRuler$ !== undefined}
         <div class="x bubble-reference">
           <RulerBubble
-            decimalPlaces={$xTicksDecimalPlaces$ + 1}
+            autoDecimalPlaces={$yTicksDecimalPlaces$ + 1}
+            {chartStylesheet}
             axis="x"
             position={{
               y: 0,
@@ -428,6 +431,7 @@
       <AxisTicks
         slot="xticks"
         axis="x"
+        {chartStylesheet}
         ticks={$xTicks$ ?? []}
         label={xLabel}
         unit={$xDisplayUnit$}
@@ -508,6 +512,7 @@
         {#if legendPosition === "right" && !hideLegend}
           <ChartLegend
             {traces}
+            {chartStylesheet}
             hiddenTraceIds={hiddenTraceIds$}
             previewStyle={legendPreviewStyle}
             numberOfShownTraces={legendTracesShown === "all"
@@ -520,6 +525,7 @@
         {#if legendPosition === "bottom" && !hideLegend}
           <ChartLegend
             {traces}
+            {chartStylesheet}
             hiddenTraceIds={hiddenTraceIds$}
             previewStyle={legendPreviewStyle}
             numberOfShownTraces={legendTracesShown === "all"

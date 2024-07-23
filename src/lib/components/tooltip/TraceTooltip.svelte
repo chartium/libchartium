@@ -9,6 +9,7 @@
     CloseTrace,
     HoveredTrace,
   } from "../../state/interactive/hover.js";
+  import type { ChartStyleSheet } from "../../state/core/style.js";
 
   /** The tooltip will try its best to not be in this rectangle */
   export let forbiddenRectangle:
@@ -22,6 +23,7 @@
   export let decimalPlaces: number = 3;
   export let previewStyle: "simplified" | "full";
   export let hoverX: ChartValue;
+  export let chartStylesheet: Partial<ChartStyleSheet>;
 
   $: show = nearestTraces.length > 0 || hoveredTrace;
 
@@ -85,6 +87,8 @@
         {nearestTraces}
         {xDisplayUnit}
         {yDisplayUnit}
+        class={chartStylesheet?.tooltip?.manyTraces?.class ?? ""}
+        style={chartStylesheet?.tooltip?.manyTraces?.style ?? ""}
       />
     {/if}
   </GenericTooltip>

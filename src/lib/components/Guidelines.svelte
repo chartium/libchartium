@@ -3,7 +3,7 @@
   import type { Tick } from "../types.js";
   import { guidelines$ } from "../state/guidelines/guidelines.js";
   import { mut } from "@mod.js/signals";
-  import type { ChartStyleSheet } from "../state/guidelines/style.js";
+  import type { ChartStyleSheet } from "../state/core/style.js";
 
   export let chartStylesheet: Partial<ChartStyleSheet>;
   export const chartStylesheet$ = mut(chartStylesheet);

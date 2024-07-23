@@ -11,6 +11,7 @@
   import type { WritableSignal } from "@mod.js/signals";
   import { createVirtualizer } from "@tanstack/svelte-virtual";
   import { measureText } from "../utils/format.js";
+  import type { ChartStyleSheet } from "../state/core/style.js";
 
   export let numberOfShownTraces: number = 5;
 
@@ -27,6 +28,7 @@
   $: shownTraces = styledTraces.slice(0, numberOfShownTraces);
 
   export let hiddenTraceIds: WritableSignal<Set<string>>;
+  export let chartStylesheet: Partial<ChartStyleSheet> | undefined;
 
   const toggleTraceVisibility = (id: string) => {
     hiddenTraceIds.update((hidden) => {
@@ -108,7 +110,11 @@
   >
     {#each $virtualizer.getVirtualItems() as row (row.index)}
       {@const windowStart = row.index * cols}
-      <div class="legend-grid" style:transform="translateY({row.start}px)">
+      <div
+        class="legend-grid {chartStylesheet?.legend?.class ?? ''}"
+        style:transform="translateY({row.start}px)"
+        style={chartStylesheet?.legend?.style}
+      >
         {#each shownTraces.slice(windowStart, windowStart + cols) as { traceId, style }}
           {@const hidden = $hiddenTraceIds.has(traceId)}
           <LegendEntry

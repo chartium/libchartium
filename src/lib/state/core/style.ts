@@ -30,6 +30,30 @@ export interface BackgroundStyle {
   color: GuidelineColor;
 }
 
+export interface TickStyle {
+  style: string;
+  class: string;
+}
+export interface BubbleStyle {
+  style: string;
+  class: string;
+  decimalPlaces: number;
+}
+export interface TooltipStyle {
+  manyTraces: Partial<{
+    style: string;
+    class: string;
+  }>;
+  // singleTrace: {
+  //   style: string;
+  //   class: string;
+  // }
+}
+export interface LegendStyle {
+  style: string;
+  class: string;
+}
+
 export interface ChartStyleSheet {
   background: Partial<BackgroundStyle>;
 
@@ -40,6 +64,18 @@ export interface ChartStyleSheet {
   guideline: Partial<GuidelineStyle>;
   "guideline.vertical": Partial<GuidelineStyle>;
   "guideline.horizontal": Partial<GuidelineStyle>;
+
+  ticks: Partial<TickStyle>;
+  "ticks.x": Partial<TickStyle>;
+  "ticks.y": Partial<TickStyle>;
+
+  bubbles: Partial<BubbleStyle>;
+  "bubble.x": Partial<BubbleStyle>;
+  "bubble.y": Partial<BubbleStyle>;
+
+  tooltip: Partial<TooltipStyle>;
+
+  legend: Partial<LegendStyle>;
 }
 
 function orDefault<T>(value: T | "unset" | undefined, def: T): T {
