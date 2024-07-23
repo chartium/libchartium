@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.24.0](https://github.com/chartium/libchartium/compare/libchartium-v0.23.0...libchartium-v0.24.0) (2024-07-23)
+
+
+### Features
+
+* added more styling options ([f9b58ba](https://github.com/chartium/libchartium/commit/f9b58ba80396bed288fb1bb620983a90129bb585))
+
 ## [0.23.0](https://github.com/chartium/libchartium/compare/libchartium-v0.22.0...libchartium-v0.23.0) (2024-07-20)
 
 
