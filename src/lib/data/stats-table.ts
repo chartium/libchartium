@@ -44,6 +44,16 @@ export interface Stat {
   data: Map<VariantHandle, number>;
 }
 
+export type StatSortingStrategy = {
+  direction: "asc" | "desc";
+  by: "lexicallyByTitle";
+};
+
+export type VariantSortingStrategy = {
+  direction: "asc" | "desc";
+  by: { valueOfStat: string } | "lexicallyById";
+};
+
 export interface VariantRow {
   variantId: string;
   style: ComputedTraceStyle;
@@ -345,6 +355,49 @@ export class StatsTable {
       styles,
       precomputedColorIndices: undefined,
       randomSeed: randomUint(),
+    });
+  }
+
+  toSorted(strategy: StatSortingStrategy | VariantSortingStrategy): StatsTable {
+    const direction = strategy.direction === "asc" ? 1 : -1;
+    const by = strategy.by;
+
+    if (by === "lexicallyByTitle") {
+      return new StatsTable({
+        ...this.#p,
+        stats: this.#p.stats.toSorted((a, b) => {
+          const aTitle = a.title;
+          const bTitle = b.title;
+          return aTitle.localeCompare(bTitle) * direction;
+        }),
+      });
+    }
+
+    if (by === "lexicallyById") {
+      return new StatsTable({
+        ...this.#p,
+        handles: this.#p.handles.toSorted((a, b) => {
+          const aId = variantIds.get(a)!;
+          const bId = variantIds.get(b)!;
+          return aId.localeCompare(bId) * direction;
+        }),
+      });
+    }
+
+    const relevantStat = this.#p.stats.find(
+      (stat) => stat.title === by.valueOfStat,
+    );
+    if (relevantStat === undefined) return new StatsTable({ ...this.#p });
+    return new StatsTable({
+      ...this.#p,
+      handles: this.#p.handles.toSorted((a, b) => {
+        const aValue = relevantStat.data.get(a);
+        const bValue = relevantStat.data.get(b);
+
+        if (aValue === undefined) return -1;
+        if (bValue === undefined) return 1;
+        return (aValue - bValue) * direction;
+      }),
     });
   }
 }

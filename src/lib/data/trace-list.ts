@@ -62,6 +62,11 @@ export interface TraceStatistics {
   averageNonzero: ChartValue;
 }
 
+export type TraceSortingStrategy = {
+  direction: "asc" | "desc";
+  by: "label" | "max" | "min" | "average" | "averageNonzero";
+};
+
 export interface ComputedTraceStyle {
   label: string | undefined;
   color: `#${string}`;
@@ -914,5 +919,33 @@ export class TraceList {
    */
   exportData(opts: TraceListExportOptions = {}): IterableIterator<ExportRow> {
     return exportTraceListData(this, opts);
+  }
+
+  toSorted(strategy: TraceSortingStrategy): TraceList {
+    const direction = strategy.direction === "asc" ? 1 : -1;
+    const by = strategy.by;
+    if (by === "label") {
+      return new TraceList({
+        ...this.#params,
+        handles: this.#params.handles.toSorted((a, b) => {
+          const aLabel =
+            this.getLabel(variantIds.get(a)!) ?? variantIds.get(a)!;
+          const bLabel =
+            this.getLabel(variantIds.get(b)!) ?? variantIds.get(b)!;
+          return aLabel.localeCompare(bLabel) * direction;
+        }),
+      });
+    }
+
+    const metas = this.calculateStatistics();
+
+    return new TraceList({
+      ...this.#params,
+      handles: this.#params.handles.toSorted((a, b) => {
+        const aValue = toNumeric(metas[a][by], this.yDataUnit);
+        const bValue = toNumeric(metas[b][by], this.yDataUnit);
+        return (aValue - bValue) * direction;
+      }),
+    });
   }
 }
