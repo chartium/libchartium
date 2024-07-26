@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.25.0](https://github.com/chartium/libchartium/compare/libchartium-v0.24.0...libchartium-v0.25.0) (2024-07-26)
+
+
+### Features
+
+* added sorting for both TraceList and StatsTable ([135a8dc](https://github.com/chartium/libchartium/commit/135a8dc51ea8f64db51a9be36c14aaaabb10e90c))
+
 ## [0.24.0](https://github.com/chartium/libchartium/compare/libchartium-v0.23.0...libchartium-v0.24.0) (2024-07-23)
 
 
