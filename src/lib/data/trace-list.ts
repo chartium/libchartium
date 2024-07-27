@@ -56,15 +56,27 @@ export const LAZY = Symbol("trace-list-lazy");
 
 export interface TraceStatistics {
   traceId: string;
+  first: ChartValue;
+  last: ChartValue;
+  pointCount: number;
   min: ChartValue;
   max: ChartValue;
+  sum: ChartValue;
   average: ChartValue;
   averageNonzero: ChartValue;
 }
 
 export type TraceSortingStrategy = {
   direction: "asc" | "desc";
-  by: "label" | "max" | "min" | "average" | "averageNonzero";
+  by:
+    | "label"
+    | "max"
+    | "min"
+    | "average"
+    | "averageNonzero"
+    | "sum"
+    | "first"
+    | "last";
 };
 
 export interface ComputedTraceStyle {
@@ -718,6 +730,10 @@ export class TraceList {
         zip(metas, handles),
         ([meta, handle]): TraceStatistics => ({
           traceId: variantIds.get(handle)!,
+          first: withYUnit(meta.first),
+          last: withYUnit(meta.last),
+          pointCount: meta.pointCount,
+          sum: withYUnit(meta.avg * meta.pointCount),
           min: withYUnit(meta.min),
           max: withYUnit(meta.max),
           average: withYUnit(meta.avg),

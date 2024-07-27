@@ -44,6 +44,9 @@ impl From<(f64, f64)> for NumericRange {
 #[serde(rename_all = "camelCase")]
 pub struct TraceMetas {
     pub handle: TraceHandle,
+    pub first: f64,
+    pub last: f64,
+    pub point_count: usize,
     pub avg: f64,
     pub avg_nz: f64,
     pub min: f64,

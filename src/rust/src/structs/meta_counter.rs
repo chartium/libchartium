@@ -10,6 +10,9 @@ use crate::{
 pub struct MetaCounter {
     sums: Vec<f64>,
     lens: Vec<usize>,
+    firsts: Vec<f64>,
+    lasts: Vec<f64>,
+    point_counts: Vec<usize>,
     nz_lens: Vec<usize>,
     mins: Vec<f64>,
     maxs: Vec<f64>,
@@ -20,10 +23,14 @@ impl MetaCounter {
         if val.is_nan() {
             return;
         };
+        if self.lens[col] == 0 {
+            self.firsts[col] = val;
+        }
         self.sums[col] += val;
         self.lens[col] += 1;
         self.maxs[col] = val.max(self.maxs[col]);
         self.mins[col] = val.min(self.mins[col]);
+        self.lasts[col] = val;
         if val > 0. {
             self.nz_lens[col] += 1;
         }
@@ -32,6 +39,9 @@ impl MetaCounter {
     pub fn iter_metas(&self) -> impl Iterator<Item = TraceMetas> + '_ {
         (0..self.sums.len()).map(|i| TraceMetas {
             handle: 0,
+            first: self.firsts[i],
+            last: self.lasts[i],
+            point_count: self.lens[i],
             avg: self.sums[i] / self.lens[i] as f64,
             avg_nz: self.sums[i] / self.nz_lens[i] as f64,
             min: self.mins[i],
@@ -46,6 +56,9 @@ impl MetaCounter {
     pub fn new(len: usize) -> Self {
         Self {
             sums: vec![0.0; len],
+            firsts: vec![0.0; len],
+            point_counts: vec![0; len],
+            lasts: vec![0.0; len],
             lens: vec![0; len],
             nz_lens: vec![0; len],
             mins: vec![std::f64::INFINITY; len],
@@ -59,6 +72,9 @@ impl MetaCounter {
         self.nz_lens[col] += other.nz_lens[other_col];
         self.mins[col] = self.mins[col].min(other.mins[other_col]);
         self.maxs[col] = self.maxs[col].max(other.maxs[other_col]);
+        self.firsts[col] = self.firsts[col].min(other.firsts[other_col]);
+        self.lasts[col] = self.lasts[col].max(other.lasts[other_col]);
+        self.point_counts[col] += other.point_counts[other_col];
     }
 
     // ! TODO Ensure correct behavior for trace handles

@@ -58,6 +58,9 @@ impl BundleRc {
 
     pub fn get_trace_metas(&self, trace: TraceHandle, x_range: NumericRange) -> TraceMetas {
         let mut metas = TraceMetas {
+            point_count: 0,
+            first: 0.0,
+            last: 0.0,
             handle: trace,
             avg: 0.0,
             avg_nz: 0.0,
@@ -74,6 +77,10 @@ impl BundleRc {
             metas.avg += y;
             metas.min = f64::min(metas.min, y);
             metas.max = f64::max(metas.max, y);
+            if pts == 0 {
+                metas.first = y;
+            }
+            metas.last = y;
 
             pts += 1;
 
@@ -89,7 +96,7 @@ impl BundleRc {
         } else {
             0.0
         };
-
+        metas.point_count = pts;
         metas
     }
 
