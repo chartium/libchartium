@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.26.0](https://github.com/chartium/libchartium/compare/libchartium-v0.25.0...libchartium-v0.26.0) (2024-07-27)
+
+
+### Features
+
+* added sum, first, last and point count to metas ([47996bf](https://github.com/chartium/libchartium/commit/47996bf67b4e012fa4b059f9f9d5a5411cd5d1df))
+
 ## [0.25.0](https://github.com/chartium/libchartium/compare/libchartium-v0.24.0...libchartium-v0.25.0) (2024-07-26)
 
 
