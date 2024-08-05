@@ -953,13 +953,17 @@ export class TraceList {
       });
     }
 
-    const metas = this.calculateStatistics();
+    const metas = new Map(
+      this.calculateStatistics().map((s) => [s.traceId, s]),
+    );
 
     return new TraceList({
       ...this.#params,
       handles: this.#params.handles.toSorted((a, b) => {
-        const aValue = toNumeric(metas[a][by], this.yDataUnit);
-        const bValue = toNumeric(metas[b][by], this.yDataUnit);
+        const aID = variantIds.get(a)!;
+        const bID = variantIds.get(b)!;
+        const aValue = toNumeric(metas.get(aID)![by], this.yDataUnit);
+        const bValue = toNumeric(metas.get(bID)![by], this.yDataUnit);
         return (aValue - bValue) * direction;
       }),
     });
