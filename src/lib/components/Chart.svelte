@@ -562,7 +562,7 @@
     user-select: none;
 
     text-align: left;
-    padding: 0.25rem;
+    padding: 0.5rem;
 
     font-size: 0.8em;
     max-width: 300px;
@@ -570,7 +570,7 @@
     white-space: nowrap;
     text-overflow: ellipsis;
 
-    background: rgba(58, 3, 3, 0.6);
+    background: hsla(0, 0%, 5%, 0.6);
   }
 
   .toolbar {
@@ -587,7 +587,7 @@
 
     &:hover {
       opacity: 0.9;
-      background-color: rgba(58, 3, 3, 0.6);
+      background-color: hsla(0, 0%, 5%, 0.6);
     }
   }
 

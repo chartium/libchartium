@@ -33,7 +33,8 @@ export const observeClientSize = (
   });
 };
 
-/** Run a callback on mount and on resize detected by a ResizeObserver.
+/**
+ * Run a callback on mount and on resize detected by a ResizeObserver.
  * This is a convenience wrapper over {@link observeSize} to report offset size directly.
  */
 export const observeOffsetSize = (
