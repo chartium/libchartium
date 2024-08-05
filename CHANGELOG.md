@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.26.1](https://github.com/chartium/libchartium/compare/libchartium-v0.26.0...libchartium-v0.26.1) (2024-08-05)
+
+
+### Bug Fixes
+
+* improve styles of button row & infobox ([5e03ab0](https://github.com/chartium/libchartium/commit/5e03ab0f60004e603af10124c8e76d30eae6d2c1))
+
 ## [0.26.0](https://github.com/chartium/libchartium/compare/libchartium-v0.25.0...libchartium-v0.26.0) (2024-07-27)
 
 
