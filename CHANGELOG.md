@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.27.0](https://github.com/chartium/libchartium/compare/libchartium-v0.26.1...libchartium-v0.27.0) (2024-08-06)
+
+
+### Features
+
+* make CSV export usable directly from TraceList ([a730ae5](https://github.com/chartium/libchartium/commit/a730ae5f70b52538cd6d6bec4c1357948391cfdc))
+
+
+### Bug Fixes
+
+* **trace-list:** more rigorous sorting ([78c1459](https://github.com/chartium/libchartium/commit/78c1459ae12064b6f6a60f7352648d859c140489))
+
 ## [0.26.1](https://github.com/chartium/libchartium/compare/libchartium-v0.26.0...libchartium-v0.26.1) (2024-08-05)
 
 
