@@ -336,7 +336,7 @@
     toggleLegend: () => {
       hideLegend = !hideLegend;
     },
-    getTracelist: () => traces,
+    getTraceList: () => traces,
     getTitle: () => title,
   });
 </script>

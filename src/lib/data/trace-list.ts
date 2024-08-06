@@ -29,8 +29,7 @@ import {
   unitOf,
 } from "../units/mod.js";
 import {
-  exportTraceListData,
-  type ExportRow,
+  TraceListExport,
   type TraceListExportOptions,
 } from "./trace-export.js";
 import { Bundle } from "./bundle.js";
@@ -933,8 +932,8 @@ export class TraceList {
   /**
    * Creates an iterator that goes over all the available trace data.
    */
-  exportData(opts: TraceListExportOptions = {}): IterableIterator<ExportRow> {
-    return exportTraceListData(this, opts);
+  exportData(opts: TraceListExportOptions = {}): TraceListExport {
+    return new TraceListExport(this, opts);
   }
 
   toSorted(strategy: TraceSortingStrategy): TraceList {

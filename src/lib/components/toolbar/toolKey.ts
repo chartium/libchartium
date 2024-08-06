@@ -10,7 +10,7 @@ export type ToolContext = {
   fullscreen$: WritableSignal<boolean>;
   getWrapDiv: () => HTMLDivElement;
   toggleLegend: () => void;
-  getTracelist: () => TraceList;
+  getTraceList: () => TraceList;
   getTitle: () => string;
 };
 

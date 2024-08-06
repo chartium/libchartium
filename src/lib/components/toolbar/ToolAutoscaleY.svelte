@@ -8,8 +8,11 @@
   import Fa from "svelte-fa";
   import { fade } from "svelte/transition";
   import { getContext } from "../../utils/svelte-context.js";
+  import { yeet } from "@typek/typek";
 
-  const autoscaleY$ = getContext(toolKey)?.autoscaleY$;
+  const { autoscaleY$ } =
+    getContext(toolKey) ??
+    yeet("Attemting to use a chart tool outside of a chart.");
 
   const toggleAutoscaleY = () => autoscaleY$?.update((b) => !b);
   const notifyOfAutozoom$ = getContext(toolKey)?.notifyOfAutozoom$;

@@ -4,9 +4,12 @@
   import ToolbarButton from "./ToolbarButton.svelte";
   import { toolKey } from "./toolKey.js";
   import { getContext } from "../../utils/svelte-context.js";
+  import { yeet } from "@typek/typek";
 
-  const getWrapDiv = getContext(toolKey)?.getWrapDiv;
-  const getTitle = getContext(toolKey)?.getTitle;
+  const { getWrapDiv, getTitle } =
+    getContext(toolKey) ??
+    yeet("Attemting to use a chart tool outside of a chart.");
+
   const takeScreenshot = () => {
     const wrappingDiv = getWrapDiv!();
     const filename = getTitle?.() || "chartium";

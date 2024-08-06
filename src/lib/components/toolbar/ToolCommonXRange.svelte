@@ -7,8 +7,12 @@
   import { toolKey } from "./toolKey.js";
   import { cons, derived } from "@mod.js/signals";
   import { getContext } from "../../utils/svelte-context.js";
+  import { yeet } from "@typek/typek";
 
-  const doUseCommonXRange$ = getContext(toolKey)?.doUseCommonXRange$;
+  const { doUseCommonXRange$ } =
+    getContext(toolKey) ??
+    yeet("Attemting to use a chart tool outside of a chart.");
+
   const icon$ = derived(($) =>
     $(doUseCommonXRange$ ?? cons(false))
       ? faArrowsLeftRightToLine
