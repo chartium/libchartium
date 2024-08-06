@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.27.1](https://github.com/chartium/libchartium/compare/libchartium-v0.27.0...libchartium-v0.27.1) (2024-08-06)
+
+
+### Bug Fixes
+
+* export all types from TraceList ([11686a0](https://github.com/chartium/libchartium/commit/11686a077ff5d8f6c48928fdf594f0dd558140dc))
+
 ## [0.27.0](https://github.com/chartium/libchartium/compare/libchartium-v0.26.1...libchartium-v0.27.0) (2024-08-06)
 
 
