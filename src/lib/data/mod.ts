@@ -2,6 +2,10 @@ export {
   TraceList,
   type ComputedTraceStyle,
   type TraceStatistics,
+  type TraceSortingStrategy,
+  type FromRowBufferParams,
+  type FromColumnsParams,
+  type FromThresholdsParams,
 } from "./trace-list.js";
 export {
   StatsTable,
@@ -15,4 +19,4 @@ export type {
   TracePointsStyle,
   PaletteName,
 } from "./trace-styles.js";
-export type { TraceListExportOptions } from "./trace-export.js";
+export type * from "./trace-export.js";

@@ -118,21 +118,23 @@ export interface FromColumnsParams {
   labels?: Iterable<[string, string | undefined]>;
 }
 
-type _ThresholdParamsCore = {
+interface FromThresholdsParamsCommon {
   ids: string[];
   xDataUnit?: DataUnit;
   style?: TraceStyleSheet;
   labels?: Iterable<[string, string | undefined]>;
   tracelistsRange: ChartRange;
-};
-
-export type FromThresholdsParamsRaw = _ThresholdParamsCore & {
+}
+interface FromThresholdsParamsF64 extends FromThresholdsParamsCommon {
   ys: Float64Array;
   yDataUnit: DataUnit;
-};
-export type FromThresholdsParamsChartVals = _ThresholdParamsCore & {
+}
+interface FromThresholdsParamsChartValues extends FromThresholdsParamsCommon {
   ys: ChartValue[];
-};
+}
+export type FromThresholdsParams =
+  | FromThresholdsParamsF64
+  | FromThresholdsParamsChartValues;
 
 export interface TraceListParams {
   handles: VariantHandleArray;
@@ -293,16 +295,12 @@ export class TraceList {
     return tl;
   }
 
-  static fromThresholds(params: FromThresholdsParamsRaw): TraceList;
-  static fromThresholds(params: FromThresholdsParamsChartVals): TraceList;
-  static fromThresholds(
-    params: FromThresholdsParamsRaw | FromThresholdsParamsChartVals,
-  ) {
+  static fromThresholds(params: FromThresholdsParams): TraceList {
     let ys: Float64Array;
     let yDataUnit: DataUnit;
     if (params.ys instanceof Float64Array) {
       ys = params.ys;
-      yDataUnit = (params as FromThresholdsParamsRaw).yDataUnit;
+      yDataUnit = (params as FromThresholdsParamsF64).yDataUnit;
     } else {
       yDataUnit = unitOf(params.ys[0]);
       ys = new Float64Array(params.ys.map((v) => toNumeric(v, yDataUnit)));
