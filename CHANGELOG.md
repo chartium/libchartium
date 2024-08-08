@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.27.2](https://github.com/chartium/libchartium/compare/libchartium-v0.27.1...libchartium-v0.27.2) (2024-08-08)
+
+
+### Bug Fixes
+
+* turned fullscreeen into normal prop ([4cbbdab](https://github.com/chartium/libchartium/commit/4cbbdab8a9fbd886efbd61791b9286c560ce3478))
+
 ## [0.27.1](https://github.com/chartium/libchartium/compare/libchartium-v0.27.0...libchartium-v0.27.1) (2024-08-06)
 
 
