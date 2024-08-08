@@ -195,8 +195,9 @@
   const margins$ = mut(margins);
   $: margins$.set(margins);
 
-  /** Bindable property saying whether the chart is currently in fullscreen mode */
-  export const fullscreen$ = mut(false);
+  export let fullscreen: boolean = false;
+  const fullscreen$ = mut(false);
+  $: fullscreen$.set(fullscreen);
   fullscreen$.subscribe((f) => {
     if (f) {
       document.addEventListener("keydown", function callback(e) {
