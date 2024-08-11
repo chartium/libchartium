@@ -1,12 +1,12 @@
-import type { TraceList } from "../mod.js";
+import type { DataUnit, StatsTable, TraceList } from "../mod.js";
 import { type ChartRange, type VariantHandle } from "../types.js";
-import { toNumeric } from "../units/mod.js";
+import { toNumeric, unitOf } from "../units/mod.js";
 import { variantIds } from "./variant-ids.js";
 import { PARAMS } from "./trace-list.js";
 import type { Bundle } from "./bundle.js";
-import { Queue, assertNever } from "@typek/typek";
+import { Queue, assertNever, concat } from "@typek/typek";
 
-export type ExportRow = {
+export type TraceExportRow = {
   x: number;
   y: { [traceId: string]: number };
 };
@@ -28,11 +28,11 @@ export class TraceListExport {
     private readonly options: TraceListExportOptions,
   ) {}
 
-  [Symbol.iterator](): IterableIterator<ExportRow> {
+  [Symbol.iterator](): IterableIterator<TraceExportRow> {
     return this.rows();
   }
 
-  *rows(this: TraceListExport): IterableIterator<ExportRow> {
+  *rows(this: TraceListExport): IterableIterator<TraceExportRow> {
     const { traces } = this;
     const range = this.options.range ?? traces.range;
     const linesPerBuffer = 1000;
@@ -49,8 +49,8 @@ export class TraceListExport {
       new Map(),
     );
     // fill up queues for all buffers
-    const queues: Map<Bundle, Queue<ExportRow>> = new Map(
-      unfinishedBundles.map((bundle) => [bundle, new Queue<ExportRow>()]),
+    const queues: Map<Bundle, Queue<TraceExportRow>> = new Map(
+      unfinishedBundles.map((bundle) => [bundle, new Queue<TraceExportRow>()]),
     );
     const currentBufferLength: Map<Bundle, number> = new Map();
     const fillUpQueue = (bundle: Bundle, from: number) => {
@@ -63,7 +63,7 @@ export class TraceListExport {
       currentBufferLength.set(bundle, length);
 
       const queue = queues.get(bundle)!;
-      let row: ExportRow = { x: buffer[0], y: {} };
+      let row: TraceExportRow = { x: buffer[0], y: {} };
       for (const [i, el] of buffer.entries()) {
         if (i >= length) break;
 
@@ -91,23 +91,23 @@ export class TraceListExport {
       (b) => queues.get(b)!.size !== 0,
     );
 
-    const lastLines: Map<Bundle, ExportRow> = new Map(
+    const lastLines: Map<Bundle, TraceExportRow> = new Map(
       unfinishedBundles
         .map((b) => [b, queues.get(b)!.peek()] as const)
-        .filter((_, q) => q !== undefined) as [Bundle, ExportRow][],
+        .filter((_, q) => q !== undefined) as [Bundle, TraceExportRow][],
     );
 
     // TODO implement different interpolation strategies
     const getOrInterpolate = (
       x: number,
       bundle: Bundle,
-      lastLine: ExportRow,
+      lastLine: TraceExportRow,
     ) => {
       const thisQueue = queues.get(bundle)!;
       const nextLine = thisQueue.peek()!;
       if (x === nextLine.x) return thisQueue.dequeue()!;
       const fraction = (x - lastLine.x) / (nextLine.x - lastLine.x);
-      const toReturn: ExportRow = { x: x, y: {} };
+      const toReturn: TraceExportRow = { x: x, y: {} };
       for (const id of Object.keys(lastLine)) {
         toReturn.y[id] =
           fraction * (nextLine.y[id] - lastLine.y[id]) + lastLine.y[id];
@@ -117,7 +117,7 @@ export class TraceListExport {
 
     let lastX = Number.NEGATIVE_INFINITY;
     while (unfinishedBundles.length > 0) {
-      const toWrite: ExportRow[] = [];
+      const toWrite: TraceExportRow[] = [];
       const xs = Array.from(
         new Set(
           unfinishedBundles.map((b) =>
@@ -139,7 +139,7 @@ export class TraceListExport {
       );
       if (xs[0] >= rangeToInLatest || xs.length === 0) break;
       for (const x of xs) {
-        let row: ExportRow = { x: x, y: {} };
+        let row: TraceExportRow = { x: x, y: {} };
         for (const bundle of unfinishedBundles) {
           if (queues.get(bundle)!.peek() === undefined) {
             continue;
@@ -168,11 +168,11 @@ export class TraceListExport {
   csv(
     this: TraceListExport,
     { valueOnMissingData }: { valueOnMissingData?: string } = {},
-  ): TraceListExportTextFile {
+  ): ExportTextFile {
     valueOnMissingData ??= "";
     const self = this;
 
-    return new TraceListExportTextFile("export.csv", function* () {
+    return new ExportTextFile("export.csv", function* () {
       const ids = Array.from(self.traces.traces());
       yield `timestamp,${ids.join(",")}\n`;
 
@@ -183,20 +183,122 @@ export class TraceListExport {
   }
 }
 
+type TableExportRow = {
+  rowKey: "variantId" | "statTitle";
+  rowTitle: string;
+  values: { [columnTitle: string]: number | undefined };
+};
+
+export interface StatsTableExportOptions {
+  valueOnMissingData?: string;
+  orientation?: "oneStatPerRow" | "oneVariantPerRow";
+}
+
+export class StatsTableExport {
+  constructor(
+    public readonly statsTable: StatsTable,
+    private readonly options: StatsTableExportOptions,
+  ) {}
+
+  [Symbol.iterator](): IterableIterator<TableExportRow> {
+    return this.rows();
+  }
+  #commonUnitsOfStat: Map<string, DataUnit> = new Map();
+
+  *rows(this: StatsTableExport): IterableIterator<TableExportRow> {
+    const { statsTable } = this;
+    const orientation = this.options.orientation ?? "oneVariantPerRow";
+
+    switch (orientation) {
+      case "oneStatPerRow":
+        for (const { statTitle, variants } of statsTable.statEntries()) {
+          const unit = this.#commonUnitsOfStat.get(statTitle);
+
+          yield {
+            rowKey: "statTitle",
+            rowTitle: `${statTitle}${unit ? ` [${unit}]` : ""}`,
+            values: Object.fromEntries(
+              variants.map(({ variantId, value }) => [
+                variantId,
+                value ? toNumeric(value, unit) : undefined,
+              ]),
+            ),
+          };
+        }
+        break;
+      case "oneVariantPerRow":
+        for (const { variantId, stats } of statsTable.variantEntries()) {
+          yield {
+            rowKey: "variantId",
+            rowTitle: variantId,
+            values: Object.fromEntries(
+              stats.map(({ statTitle, value }) => {
+                const unit = this.#commonUnitsOfStat.get(statTitle);
+                return [statTitle, value ? toNumeric(value, unit) : undefined];
+              }),
+            ),
+          };
+        }
+        break;
+      default:
+        assertNever(orientation);
+    }
+  }
+
+  csv(this: StatsTableExport): ExportTextFile {
+    const self = this;
+    return new ExportTextFile("export.csv", function* () {
+      for (const stat of self.statsTable.statEntries()) {
+        self.#commonUnitsOfStat.set(
+          stat.statTitle,
+          unitOf(stat.variants.find((v) => v.value !== undefined)?.value ?? 0),
+        );
+      }
+      const unitString = (id: string) => {
+        return `${self.#commonUnitsOfStat.has(id) ? ` [${self.#commonUnitsOfStat.get(id)}]` : ""}`;
+      };
+      const rows = self.rows();
+      const firstRow = rows.next();
+      if (firstRow.done) return;
+      const ids = Object.keys(firstRow.value.values);
+
+      if (firstRow.value.rowKey === "statTitle")
+        yield `${firstRow.value.rowKey},${ids.join(",")}\n`;
+      else
+        yield `${firstRow.value.rowKey},${ids.map((id) => `${id}${unitString(id)}`).join(",")}\n`;
+
+      for (const row of concat(
+        (function* () {
+          yield firstRow.value;
+        })(),
+        rows,
+      )) {
+        const rowUnits =
+          row.rowKey === "statTitle" ? unitString(row.rowTitle) : "";
+        yield `${row.rowTitle}${rowUnits},${ids.map((id) => row.values[id] ?? self.options.valueOnMissingData ?? "").join(",")}\n`;
+      }
+    });
+  }
+}
+
 export interface ExportDownloadOptions {
   fileName?: string;
   method?: "anchor" | "fs-api";
 }
 
-export class TraceListExportTextFile {
+export class ExportTextFile {
   constructor(
     public readonly defaultFileName: string,
-    public readonly lines: () => Iterable<string>,
+    public readonly lines: () => IterableIterator<string>,
   ) {}
 
+  [Symbol.iterator](): IterableIterator<string> {
+    return this.lines();
+  }
+
   async download(
-    this: TraceListExportTextFile,
-    { fileName, method }: ExportDownloadOptions,
+    this: ExportTextFile,
+    { fileName, method }: ExportDownloadOptions = {},
   ): Promise<void> {
     fileName ??= this.defaultFileName;
     method ??= "anchor";
@@ -232,7 +334,6 @@ async function downloadViaFileSystemApi(
   const writer = (await fileHandle.createWritable()).getWriter();
 
   for (const line of lines) {
-    console.log(line);
     await writer.ready;
     await writer.write(line);
   }

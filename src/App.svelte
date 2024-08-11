@@ -4,10 +4,11 @@
     faArrowLeft,
     faChartLine,
   } from "@fortawesome/free-solid-svg-icons";
-  import { IEC } from "unitlib/systems";
+  import { IEC, SI } from "unitlib/systems";
   import {
     ChartComponent as Chart,
     NumericDateRepresentation,
+    StatsTable,
     TraceList,
   } from "./lib/mod.js";
 
@@ -106,7 +107,24 @@
 
   let wrapDiv: HTMLDivElement;
 
-  let commonXRuler$ = mut();
+  const table = StatsTable.mergeByVariant(
+    StatsTable.fromSingleStat({
+      statTitle: "Megabytes imagery",
+      dataUnit: IEC.parseUnit("MiB"),
+      data: [1000, 2000, 3000],
+      ids: ["a", "b", "c"],
+      displayUnit: IEC.parseUnit("GiB"),
+    }),
+    StatsTable.fromSingleStat({
+      statTitle: "Centimeters of flesh",
+      dataUnit: SI.parseUnit("cm"),
+      data: [22, 33, 44],
+      ids: ["d", "b", "c"],
+      displayUnit: SI.parseUnit("m"),
+    }),
+  );
+
+  $: (window as any).table = table;
 </script>
 
 <main>

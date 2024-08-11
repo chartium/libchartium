@@ -36,6 +36,10 @@ import {
   yeet,
   zip,
 } from "@typek/typek";
+import {
+  StatsTableExport,
+  type StatsTableExportOptions,
+} from "./data-export.js";
 
 export interface Stat {
   title: string;
@@ -399,5 +403,12 @@ export class StatsTable {
         return (aValue - bValue) * direction;
       }),
     });
+  }
+
+  /**
+   * Creates an iterator that goes over all the available stat data.
+   */
+  exportData(opts: StatsTableExportOptions = {}): StatsTableExport {
+    return new StatsTableExport(this, opts);
   }
 }

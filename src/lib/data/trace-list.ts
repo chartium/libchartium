@@ -28,10 +28,7 @@ import {
   unitConversionFactor,
   unitOf,
 } from "../units/mod.js";
-import {
-  TraceListExport,
-  type TraceListExportOptions,
-} from "./trace-export.js";
+import { TraceListExport, type TraceListExportOptions } from "./data-export.js";
 import { Bundle } from "./bundle.js";
 import { resolvedColorToHex } from "../utils/color.js";
 import { hashAny } from "../utils/hash.js";

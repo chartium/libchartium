@@ -19,4 +19,4 @@ export type {
   TracePointsStyle,
   PaletteName,
 } from "./trace-styles.js";
-export type * from "./trace-export.js";
+export type * from "./data-export.js";
