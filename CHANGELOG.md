@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.28.0](https://github.com/chartium/libchartium/compare/libchartium-v0.27.1...libchartium-v0.28.0) (2024-08-13)
+
+
+### Features
+
+* added data export to stats tables ([5c1d331](https://github.com/chartium/libchartium/commit/5c1d3316ffb0488a5922533fbcb17a137783e000))
+* **StatsTable:** custom stats ([b4bd927](https://github.com/chartium/libchartium/commit/b4bd9270d7522c8f22c6dcb782bec77a1c3ffe03))
+* **StatsTable:** fix csv export ([386781f](https://github.com/chartium/libchartium/commit/386781fe755c4998c6b4c7f3964560d6a6847970))
+
+
+### Bug Fixes
+
+* turned fullscreeen into normal prop ([4cbbdab](https://github.com/chartium/libchartium/commit/4cbbdab8a9fbd886efbd61791b9286c560ce3478))
+
 ## [0.27.1](https://github.com/chartium/libchartium/compare/libchartium-v0.27.0...libchartium-v0.27.1) (2024-08-06)
 
 
