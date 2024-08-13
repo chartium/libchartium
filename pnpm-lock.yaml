@@ -21,8 +21,8 @@ importers:
         specifier: ^3.7.0
         version: 3.7.0(svelte@4.2.18)
       '@typek/typek':
-        specifier: npm:@jsr/typek__typek@^0.3.0
-        version: '@jsr/typek__typek@0.3.0'
+        specifier: npm:@jsr/typek__typek@^0.3.1
+        version: '@jsr/typek__typek@0.3.1'
       '@types/lodash-es':
         specifier: ^4.17.12
         version: 4.17.12
@@ -335,8 +335,8 @@ packages:
   '@jsr/std__internal@1.0.1':
     resolution: {integrity: sha512-ssI1kvluIero6cCfiWNmYItqCR8QpQB+STBJoe/xQVZ79SDpoqjK5VF2Eq/2M+Dz8WbqHVmrXRCaGN162x+Ebw==, tarball: https://npm.jsr.io/~/11/@jsr/std__internal/1.0.1.tgz}
 
-  '@jsr/typek__typek@0.3.0':
-    resolution: {integrity: sha512-LUI3q77qc8T9FQf6gGbg5s+crziUf3GW/rw++ozw8YYJ+rq2loJZOcr7S08gmpGMJXt/iZyVuxa9AaDXNwXdyg==, tarball: https://npm.jsr.io/~/11/@jsr/typek__typek/0.3.0.tgz}
+  '@jsr/typek__typek@0.3.1':
+    resolution: {integrity: sha512-2oRRLctpSVnJ5W1JdQhaqBgeU7KAJJK4LnvVYdm1V/Vp7MEjFcMI5i0iGALnSwhGBAsK7EMM9wyuX5fcp7XjgA==, tarball: https://npm.jsr.io/~/11/@jsr/typek__typek/0.3.1.tgz}
 
   '@mod.js/signals@0.0.34':
     resolution: {integrity: sha512-kJsL1PKSjQh6RogviJCIcMH74w7FemUE0W8SayLJh9ExWIl0NvlSvXasuZ80L+6pHSSzfUojrAo0UWo/FUjw2Q==}
@@ -1713,7 +1713,7 @@ snapshots:
 
   '@jsr/std__internal@1.0.1': {}
 
-  '@jsr/typek__typek@0.3.0':
+  '@jsr/typek__typek@0.3.1':
     dependencies:
       '@jsr/std__assert': 1.0.2
 

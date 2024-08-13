@@ -1,10 +1,10 @@
-import type { DataUnit, StatsTable, TraceList } from "../mod.js";
+import type { StatsTable, TraceList } from "../mod.js";
 import { type ChartRange, type VariantHandle } from "../types.js";
-import { toNumeric, unitOf } from "../units/mod.js";
+import { toNumeric } from "../units/mod.js";
 import { variantIds } from "./variant-ids.js";
 import { PARAMS } from "./trace-list.js";
 import type { Bundle } from "./bundle.js";
-import { Queue, assertNever, concat } from "@typek/typek";
+import { Queue, assertNever, map, pipe } from "@typek/typek";
 
 export type TraceExportRow = {
   x: number;
@@ -183,99 +183,49 @@ export class TraceListExport {
   }
 }
 
-type TableExportRow = {
-  rowKey: "variantId" | "statTitle";
-  rowTitle: string;
-  values: { [columnTitle: string]: number | undefined };
-};
-
-export interface StatsTableExportOptions {
-  valueOnMissingData?: string;
-  orientation?: "oneStatPerRow" | "oneVariantPerRow";
-}
-
 export class StatsTableExport {
-  constructor(
-    public readonly statsTable: StatsTable,
-    private readonly options: StatsTableExportOptions,
-  ) {}
+  constructor(public readonly statsTable: StatsTable<any>) {}
 
-  [Symbol.iterator](): IterableIterator<TableExportRow> {
-    return this.rows();
-  }
-  #commonUnitsOfStat: Map<string, DataUnit> = new Map();
-
-  *rows(this: StatsTableExport): IterableIterator<TableExportRow> {
-    const { statsTable } = this;
-    const orientation = this.options.orientation ?? "oneVariantPerRow";
-
-    switch (orientation) {
-      case "oneStatPerRow":
-        for (const { statTitle, variants } of statsTable.statEntries()) {
-          const unit = this.#commonUnitsOfStat.get(statTitle);
-
-          yield {
-            rowKey: "statTitle",
-            rowTitle: `${statTitle}${unit ? ` [${unit}]` : ""}`,
-            values: Object.fromEntries(
-              variants.map(({ variantId, value }) => [
-                variantId,
-                value ? toNumeric(value, unit) : undefined,
-              ]),
-            ),
-          };
-        }
-        break;
-      case "oneVariantPerRow":
-        for (const { variantId, stats } of statsTable.variantEntries()) {
-          yield {
-            rowKey: "variantId",
-            rowTitle: variantId,
-            values: Object.fromEntries(
-              stats.map(({ statTitle, value }) => {
-                const unit = this.#commonUnitsOfStat.get(statTitle);
-                return [statTitle, value ? toNumeric(value, unit) : undefined];
-              }),
-            ),
-          };
-        }
-        break;
-      default:
-        assertNever(orientation);
-    }
-  }
-
-  csv(this: StatsTableExport): ExportTextFile {
+  csv(
+    this: StatsTableExport,
+    {
+      valueOnMissingData,
+      orientation,
+    }: {
+      valueOnMissingData?: string;
+      orientation?: "one-stat-per-row" | "one-variant-per-row";
+    } = {},
+  ): ExportTextFile {
+    valueOnMissingData ??= "";
+    orientation ??= "one-variant-per-row";
     const self = this;
+
     return new ExportTextFile("export.csv", function* () {
-      for (const stat of self.statsTable.statEntries()) {
-        self.#commonUnitsOfStat.set(
-          stat.statTitle,
-          unitOf(stat.variants.find((v) => v.value !== undefined)?.value ?? 0),
-        );
-      }
-      const unitString = (id: string) => {
-        return `${self.#commonUnitsOfStat.has(id) ? ` [${self.#commonUnitsOfStat.get(id)}]` : ""}`;
-      };
-      const rows = self.rows();
-      const firstRow = rows.next();
-      if (firstRow.done) return;
-      const ids = Object.keys(firstRow.value.values);
+      const statTitles = pipe(
+        self.statsTable.statEntries(),
+        (stats) =>
+          map(stats, (s) =>
+            "unit" in s ? `${s.statTitle} [${s.unit}]` : s.statTitle,
+          ),
+        Array.from<string>,
+      );
 
-      if (firstRow.value.rowKey === "statTitle")
-        yield `${firstRow.value.rowKey},${ids.join(",")}\n`;
-      else
-        yield `${firstRow.value.rowKey},${ids.map((id) => `${id}${unitString(id)}`).join(",")}\n`;
+      const variantTitles = pipe(
+        self.statsTable.variantEntries(),
+        (variants) => map(variants, (v) => v.style.label ?? v.variantId),
+        Array.from<string>,
+      );
 
-      for (const row of concat(
-        (function* () {
-          yield firstRow.value;
-        })(),
-        rows,
-      )) {
-        const rowUnits =
-          row.rowKey === "statTitle" ? unitString(row.rowTitle) : "";
-        yield `${row.rowTitle}${rowUnits},${ids.map((id) => row.values[id] ?? self.options.valueOnMissingData ?? "").join(",")}\n`;
+      if (orientation === "one-variant-per-row") {
+        yield `variant,${statTitles.join(",")}`;
+        for (const variant of self.statsTable.variantEntries()) {
+          yield `${variantTitles.shift()},${variant.stats.map((s) => s.value).join(",")}`;
+        }
+      } else {
+        yield `stat,${variantTitles.join(",")}`;
+        for (const stat of self.statsTable.statEntries()) {
+          yield `${statTitles.shift()},${stat.variants.map((v) => v.value).join(",")}`;
+        }
       }
     });
   }

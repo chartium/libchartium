@@ -67,7 +67,7 @@
     "@mod.js/signals": "^0.0.34",
     "@risai/bim": "^1.4.2",
     "@tanstack/svelte-virtual": "^3.7.0",
-    "@typek/typek": "npm:@jsr/typek__typek@^0.3.0",
+    "@typek/typek": "npm:@jsr/typek__typek@^0.3.1",
     "@types/lodash-es": "^4.17.12",
     "@types/seedrandom": "^3.0.8",
     "@types/wicg-file-system-access": "^2023.10.5",

@@ -3,6 +3,7 @@ import type {
   ChartRange,
   ChartValue,
   DataUnit,
+  DisplayUnit,
   DisplayUnitPreference,
   VariantHandle,
   VariantHandleArray,
@@ -37,10 +38,7 @@ import {
   zip,
   type ValuesUnion,
 } from "@typek/typek";
-import {
-  StatsTableExport,
-  type StatsTableExportOptions,
-} from "./data-export.js";
+import { StatsTableExport } from "./data-export.js";
 
 export interface ValueStat {
   title: string;
@@ -92,10 +90,17 @@ type VariantRowFromStatsMap<StatsMap extends Record<string, Stat>> = VariantRow<
     : never)[]
 >;
 
-export interface StatRow<Cells extends StatCell[]> {
+export interface StatValueRow {
   statTitle: string;
-  variants: Cells;
+  variants: StatValueCell[];
+  dataUnit: DataUnit;
+  unit: DisplayUnit;
 }
+export interface StatCustomRow<T> {
+  statTitle: string;
+  variants: StatCustomCell<T>[];
+}
+export type StatRow = StatValueRow | StatCustomRow<any>;
 export interface StatValueCell {
   variantId: string;
   value: ChartValue | undefined;
@@ -109,15 +114,14 @@ export interface StatCustomCell<T> {
 }
 export type StatCell = StatValueCell | StatCustomCell<any>;
 
-type StatRowFromStatsMap<StatsMap extends Record<string, Stat>> = StatRow<
-  (ValuesUnion<StatsMap> extends infer Stat
+type StatRowFromStatsMap<StatsMap extends Record<string, Stat>> =
+  ValuesUnion<StatsMap> extends infer Stat
     ? Stat extends ValueStat
-      ? StatValueCell
+      ? StatValueRow
       : Stat extends CustomStat<infer T>
-        ? StatCustomCell<T>
+        ? StatCustomRow<T>
         : never
-    : never)[]
->;
+    : never;
 
 type MergeStatsTables<StatsTables extends StatsTable<any>[]> = StatsTable<
   StatsTables extends []
@@ -294,6 +298,7 @@ export class StatsTable<StatsMap extends Record<string, Stat>> {
       if ("dataUnit" in stat) {
         const range = ranges.get(stat)!;
         const { displayUnit, dataUnit, data, title } = stat;
+        const unit = computeDefaultUnit(dataUnit, displayUnit, range);
         const statTitle = title;
 
         const variants: StatCell[] = pipe(
@@ -301,7 +306,6 @@ export class StatsTable<StatsMap extends Record<string, Stat>> {
             const variantId =
               variantIds.get(h) ?? yeet(UnknownVariantHandleError, h);
             const style = this.getStyle(variantId);
-            const unit = computeDefaultUnit(dataUnit, displayUnit, range);
             const value = data.has(h)
               ? toChartValue(data.get(h)!, dataUnit)
               : undefined;
@@ -322,8 +326,10 @@ export class StatsTable<StatsMap extends Record<string, Stat>> {
 
         yield {
           statTitle,
+          dataUnit,
+          unit,
           variants: variants satisfies StatCell[] as any,
-        };
+        } satisfies StatValueRow as any;
       } else {
         const { title, data } = stat;
         yield {
@@ -332,7 +338,7 @@ export class StatsTable<StatsMap extends Record<string, Stat>> {
             map(this.#p.handles, (h) => data.get(h)),
             Array.from<any>,
           ),
-        };
+        } satisfies StatCustomRow<any> as any;
       }
     }
   }
@@ -486,7 +492,7 @@ export class StatsTable<StatsMap extends Record<string, Stat>> {
   /**
    * Creates an iterator that goes over all the available stat data.
    */
-  exportData(opts: StatsTableExportOptions = {}): StatsTableExport {
-    return new StatsTableExport(this, opts);
+  exportData(): StatsTableExport {
+    return new StatsTableExport(this);
   }
 }
