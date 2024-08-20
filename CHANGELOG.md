@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.29.0](https://github.com/chartium/libchartium/compare/libchartium-v0.28.0...libchartium-v0.29.0) (2024-08-20)
+
+
+### Features
+
+* **StatsTable:** allow creating custom stats ([42753df](https://github.com/chartium/libchartium/commit/42753dfc76bf28117f22787b491de601b2c3b524))
+
 ## [0.28.0](https://github.com/chartium/libchartium/compare/libchartium-v0.27.1...libchartium-v0.28.0) (2024-08-13)
 
 
