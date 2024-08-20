@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.29.1](https://github.com/chartium/libchartium/compare/libchartium-v0.29.0...libchartium-v0.29.1) (2024-08-20)
+
+
+### Bug Fixes
+
+* empty commit for releaseplease ([cd6296f](https://github.com/chartium/libchartium/commit/cd6296f405463b85515e3acb15a875d15c88ebd6))
+
 ## [0.29.0](https://github.com/chartium/libchartium/compare/libchartium-v0.28.0...libchartium-v0.29.0) (2024-08-20)
 
 
