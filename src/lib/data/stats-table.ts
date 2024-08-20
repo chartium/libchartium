@@ -170,12 +170,31 @@ export class StatsTable<StatsMap extends Record<string, Stat>> {
     });
   }
 
+  static fromSingleStat<Title extends string>(opts: {
+    statTitle: Title;
+    dataUnit?: DataUnit;
+    displayUnit?: DisplayUnitPreference;
+    ids: string[];
+    values: number[];
+    style?: TraceStyleSheet;
+    labels?: Iterable<[string, string | undefined]>;
+  }): StatsTable<{ [t in Title]: ValueStat }>;
+
+  static fromSingleStat<Title extends string, DataType>(opts: {
+    statTitle: Title;
+    ids: string[];
+    customData: DataType[];
+    style?: TraceStyleSheet;
+    labels?: Iterable<[string, string | undefined]>;
+  }): StatsTable<{ [t in Title]: CustomStat<DataType> }>;
+
   static fromSingleStat<Title extends string>({
     statTitle,
     dataUnit,
     displayUnit,
     ids,
-    data,
+    values,
+    customData,
     style,
     labels,
   }: {
@@ -183,10 +202,13 @@ export class StatsTable<StatsMap extends Record<string, Stat>> {
     dataUnit?: DataUnit;
     displayUnit?: DisplayUnitPreference;
     ids: string[];
-    data: number[];
+    values?: number[];
+    customData?: any[];
     style?: TraceStyleSheet;
     labels?: Iterable<[string, string | undefined]>;
-  }): StatsTable<{ [t in Title]: ValueStat }> {
+  }):
+    | StatsTable<{ [t in Title]: ValueStat }>
+    | StatsTable<{ [t in Title]: CustomStat<any> }> {
     const handles: VariantHandleArray = new Uint32Array(ids.length);
 
     for (const [i, id] of enumerate(ids)) {
@@ -205,12 +227,17 @@ export class StatsTable<StatsMap extends Record<string, Stat>> {
       randomSeed: randomUint(),
       styles: oxidizeStyleSheet(style),
       stats: [
-        {
-          title: statTitle,
-          dataUnit,
-          displayUnit: displayUnit ?? "auto",
-          data: new Map(zip(handles, data)),
-        },
+        values
+          ? {
+              title: statTitle,
+              dataUnit,
+              displayUnit: displayUnit ?? "auto",
+              data: new Map(zip(handles, values)),
+            }
+          : {
+              title: statTitle,
+              data: new Map(zip(handles, customData!)),
+            },
       ],
     });
   }
