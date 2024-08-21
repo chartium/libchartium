@@ -7,11 +7,7 @@ export {
   type FromColumnsParams,
   type FromThresholdsParams,
 } from "./trace-list.js";
-export {
-  StatsTable,
-  type VariantRow,
-  type VariantCell,
-} from "./stats-table.js";
+export * from "./stats-table.js";
 export type {
   TraceStyleSheet,
   TraceStyle,
