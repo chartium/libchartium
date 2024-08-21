@@ -111,14 +111,14 @@
     StatsTable.fromSingleStat({
       statTitle: "Megabytes imagery",
       dataUnit: IEC.parseUnit("MiB"),
-      data: [1000, 2000, 3000],
+      values: [1000, 2000, 3000],
       ids: ["a", "b", "c"],
       displayUnit: IEC.parseUnit("GiB"),
     }),
     StatsTable.fromSingleStat({
       statTitle: "Centimeters of flesh",
       dataUnit: SI.parseUnit("cm"),
-      data: [22, 33, 44],
+      values: [22, 33, 44],
       ids: ["d", "b", "c"],
       displayUnit: SI.parseUnit("m"),
     }),
