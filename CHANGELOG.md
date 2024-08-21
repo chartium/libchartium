@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.29.2](https://github.com/chartium/libchartium/compare/libchartium-v0.29.1...libchartium-v0.29.2) (2024-08-21)
+
+
+### Bug Fixes
+
+* **StatsTable:** export types ([71ee6c4](https://github.com/chartium/libchartium/commit/71ee6c44b24f4c9b2aa297a7ba8bc6d9eb085a58))
+
 ## [0.29.1](https://github.com/chartium/libchartium/compare/libchartium-v0.29.0...libchartium-v0.29.1) (2024-08-20)
 
 
