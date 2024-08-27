@@ -3,7 +3,7 @@ import {
   derived,
   mutDerived,
   type Signal,
-} from "@mod.js/signals";
+} from "@typek/signalhead";
 import { type TraceList } from "../../mod.js";
 import {
   rangesHaveMeaningfulIntersection,

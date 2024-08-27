@@ -8,7 +8,7 @@
     effect,
     cons,
     WritableSignal,
-  } from "@mod.js/signals";
+  } from "@typek/signalhead";
   import { toolKey } from "./toolbar/toolKey.js";
   import { flockReduce } from "../utils/collection.js";
   import { mapOpt } from "../utils/mapOpt.js";
@@ -37,7 +37,7 @@
   import { type ChartMouseEvent, hover$ } from "../state/interactive/hover.js";
   import type { InterpolationStrategy } from "../../../dist/wasm/libchartium.js";
   import type { ChartStyleSheet } from "../state/core/style.js";
-  import { derived } from "@mod.js/signals";
+  import { derived } from "@typek/signalhead";
   import RulerBubble from "./RulerBubble.svelte";
   import { setContext } from "../utils/svelte-context.js";
 

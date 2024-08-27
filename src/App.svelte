@@ -13,7 +13,7 @@
   } from "./lib/mod.js";
 
   import Fa from "svelte-fa";
-  import { mut } from "@mod.js/signals";
+  import { mut } from "@typek/signalhead";
   import { Quantity } from "unitlib";
 
   // autogenerate a lot of data

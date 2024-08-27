@@ -1,4 +1,3 @@
-import { pipe } from "@mod.js/signals";
 import type {
   ChartRange,
   ChartValue,
@@ -33,6 +32,7 @@ import {
   flatMap,
   fold,
   map,
+  pipe,
   unique,
   yeet,
   zip,

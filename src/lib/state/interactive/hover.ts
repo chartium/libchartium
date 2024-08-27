@@ -4,7 +4,7 @@ import {
   type DeferLike,
   type Signal,
   type WritableSignal,
-} from "@mod.js/signals";
+} from "@typek/signalhead";
 import type { PointInChartFactory } from "../core/chartAffineSpace.js";
 import type { ChartValue, DataUnit } from "../../types.js";
 import type {

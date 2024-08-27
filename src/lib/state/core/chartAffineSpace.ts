@@ -1,4 +1,4 @@
-import type { Signal } from "@mod.js/signals";
+import type { Signal } from "@typek/signalhead";
 import type { ChartValue, ChartRange, Size } from "../../types.js";
 import { toNumeric, toChartValue, unitOf } from "../../units/mod.js";
 

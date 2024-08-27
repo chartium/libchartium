@@ -1,4 +1,4 @@
-import { Defer, mut } from "@mod.js/signals";
+import { Defer, mut } from "@typek/signalhead";
 
 const mutDevicePixelRatio$ = mut(globalThis.devicePixelRatio ?? 1, {
   onStart({ defer: onStop }) {

@@ -1,4 +1,4 @@
-import { Defer, effect, type DeferLike, type Signal } from "@mod.js/signals";
+import { Defer, effect, type DeferLike, type Signal } from "@typek/signalhead";
 import {
   resolveChartStyleSheet,
   type ChartStyleSheet,

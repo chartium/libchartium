@@ -3,7 +3,7 @@ import {
   effect,
   type Signal,
   type Unsubscriber,
-} from "@mod.js/signals";
+} from "@typek/signalhead";
 import { devicePixelRatio$ } from "../../utils/reactive-globals.js";
 import type { TraceList } from "../../mod.js";
 import type { ChartRange, Size } from "../../types.js";

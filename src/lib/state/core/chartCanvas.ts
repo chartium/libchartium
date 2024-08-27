@@ -1,4 +1,4 @@
-import { derived, mut, type Signal } from "@mod.js/signals";
+import { derived, mut, type Signal } from "@typek/signalhead";
 import type { Size } from "../../types.js";
 
 export interface ChartCanvasProps {

@@ -2,7 +2,7 @@
   import { onDestroy } from "svelte";
   import type { Tick } from "../types.js";
   import { guidelines$ } from "../state/guidelines/guidelines.js";
-  import { mut } from "@mod.js/signals";
+  import { mut } from "@typek/signalhead";
   import type { ChartStyleSheet } from "../state/core/style.js";
 
   export let chartStylesheet: Partial<ChartStyleSheet>;

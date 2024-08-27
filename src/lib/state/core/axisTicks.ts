@@ -1,4 +1,4 @@
-import { derived, type Signal } from "@mod.js/signals";
+import { derived, type Signal } from "@typek/signalhead";
 import {
   isDateRange,
   type NumericRange,

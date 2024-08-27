@@ -1,4 +1,4 @@
-import { type Flock, type Signal } from "@mod.js/signals";
+import { type Flock, type Signal } from "@typek/signalhead";
 
 export function weakSetUnion<T extends object>(
   a: WeakSet<T>,
