@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.29.3](https://github.com/chartium/libchartium/compare/libchartium-v0.29.2...libchartium-v0.29.3) (2024-08-27)
+
+
+### Bug Fixes
+
+* minor fixes ([34c0bf8](https://github.com/chartium/libchartium/commit/34c0bf866f24870334b025c6baade6ac4432e5a8))
+* **StatsTable:** make type argument optional ([f9b729a](https://github.com/chartium/libchartium/commit/f9b729a9b4e94d8a4f57d4b0b706225d2c7c24f3))
+
 ## [0.29.2](https://github.com/chartium/libchartium/compare/libchartium-v0.29.1...libchartium-v0.29.2) (2024-08-21)
 
 
