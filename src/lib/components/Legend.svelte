@@ -8,7 +8,7 @@
   import LegendEntry from "./LegendEntry.svelte";
 
   import type { ComputedTraceStyle, TraceList } from "../data/trace-list.js";
-  import type { WritableSignal } from "@mod.js/signals";
+  import type { WritableSignal } from "@typek/signalhead";
   import { createVirtualizer } from "@tanstack/svelte-virtual";
   import { measureText } from "../utils/format.js";
   import type { ChartStyleSheet } from "../state/core/style.js";

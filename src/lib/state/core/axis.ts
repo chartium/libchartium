@@ -1,4 +1,4 @@
-import { Signal, WritableSignal } from "@mod.js/signals";
+import { Signal, WritableSignal } from "@typek/signalhead";
 import { type TraceList } from "../../mod.js";
 import {
   Quantity,

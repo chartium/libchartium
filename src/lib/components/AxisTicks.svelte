@@ -22,7 +22,7 @@
     Signal,
     WritableSignal,
     ZippedSignal,
-  } from "@mod.js/signals";
+  } from "@typek/signalhead";
   import { measureText } from "../utils/format.js";
   import RotatedBox from "../utils/RotatedBox.svelte";
   import { noop } from "lodash-es";

@@ -37,7 +37,7 @@
 
   import type { ContextItem } from "./context-menu/contextMenu.js";
   import GenericContextMenu from "./context-menu/GenericContextMenu.svelte";
-  import type { Signal, WritableSignal } from "@mod.js/signals";
+  import type { Signal, WritableSignal } from "@typek/signalhead";
   import type { Chart } from "../state/core/chart.js";
   import { P, match } from "ts-pattern";
   import { mapOpt } from "../utils/mapOpt.js";

@@ -11,18 +11,18 @@ importers:
       '@fortawesome/free-solid-svg-icons':
         specifier: ^6.5.2
         version: 6.5.2
-      '@mod.js/signals':
-        specifier: ^0.0.34
-        version: 0.0.34
       '@risai/bim':
         specifier: ^1.4.2
         version: 1.4.2
       '@tanstack/svelte-virtual':
         specifier: ^3.7.0
         version: 3.7.0(svelte@4.2.18)
+      '@typek/signalhead':
+        specifier: npm:@jsr/typek__signalhead@^0.0.39
+        version: '@jsr/typek__signalhead@0.0.39'
       '@typek/typek':
-        specifier: npm:@jsr/typek__typek@^0.3.1
-        version: '@jsr/typek__typek@0.3.1'
+        specifier: npm:@jsr/typek__typek@^0.6.4
+        version: '@jsr/typek__typek@0.6.4'
       '@types/lodash-es':
         specifier: ^4.17.12
         version: 4.17.12
@@ -335,11 +335,11 @@ packages:
   '@jsr/std__internal@1.0.1':
     resolution: {integrity: sha512-ssI1kvluIero6cCfiWNmYItqCR8QpQB+STBJoe/xQVZ79SDpoqjK5VF2Eq/2M+Dz8WbqHVmrXRCaGN162x+Ebw==, tarball: https://npm.jsr.io/~/11/@jsr/std__internal/1.0.1.tgz}
 
-  '@jsr/typek__typek@0.3.1':
-    resolution: {integrity: sha512-2oRRLctpSVnJ5W1JdQhaqBgeU7KAJJK4LnvVYdm1V/Vp7MEjFcMI5i0iGALnSwhGBAsK7EMM9wyuX5fcp7XjgA==, tarball: https://npm.jsr.io/~/11/@jsr/typek__typek/0.3.1.tgz}
+  '@jsr/typek__signalhead@0.0.39':
+    resolution: {integrity: sha512-vhbbYLpe57q1UYFeKFOySkvbAtOvXnAGWCWmqHgo2XndVmdvtgvTCEwzmTdYpidt8ztNlwQg3Bu0B1/gzaLQjg==, tarball: https://npm.jsr.io/~/11/@jsr/typek__signalhead/0.0.39.tgz}
 
-  '@mod.js/signals@0.0.34':
-    resolution: {integrity: sha512-kJsL1PKSjQh6RogviJCIcMH74w7FemUE0W8SayLJh9ExWIl0NvlSvXasuZ80L+6pHSSzfUojrAo0UWo/FUjw2Q==}
+  '@jsr/typek__typek@0.6.4':
+    resolution: {integrity: sha512-CVtU10q9kkGnoTLwXSKdJOV+iT5qUJHTR+74wW+iZiS5ogucn/NZZtVaY9ZZAIvHKnO7TiIGwkD/JiujpGHMWg==, tarball: https://npm.jsr.io/~/11/@jsr/typek__typek/0.6.4.tgz}
 
   '@nodelib/fs.scandir@2.1.5':
     resolution: {integrity: sha512-vq24Bq3ym5HEQm2NKCr3yXDwjc7vTsEThRDnkp2DK9p1uqLR+DHurm/NOTo0KG7HYHU7eppKZj3MyqYuMBf62g==}
@@ -1713,11 +1713,13 @@ snapshots:
 
   '@jsr/std__internal@1.0.1': {}
 
-  '@jsr/typek__typek@0.3.1':
+  '@jsr/typek__signalhead@0.0.39':
+    dependencies:
+      '@jsr/typek__typek': 0.6.4
+
+  '@jsr/typek__typek@0.6.4':
     dependencies:
       '@jsr/std__assert': 1.0.2
-
-  '@mod.js/signals@0.0.34': {}
 
   '@nodelib/fs.scandir@2.1.5':
     dependencies:

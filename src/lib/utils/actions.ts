@@ -1,4 +1,4 @@
-import { Signal, derived, mut } from "@mod.js/signals";
+import { Signal, derived, mut } from "@typek/signalhead";
 import type { ActionReturn } from "svelte/action";
 import type { Size } from "../types.js";
 import { devicePixelRatio$ } from "./reactive-globals.js";

@@ -1,4 +1,4 @@
-import { derived, mutDerived, type Signal } from "@mod.js/signals";
+import { derived, mutDerived, type Signal } from "@typek/signalhead";
 import { type FactorDefinition } from "unitlib";
 import Fraction from "fraction.js";
 

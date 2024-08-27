@@ -5,7 +5,7 @@
     faArrowsLeftRightToLine,
   } from "@fortawesome/free-solid-svg-icons";
   import { toolKey } from "./toolKey.js";
-  import { cons, derived } from "@mod.js/signals";
+  import { cons, derived } from "@typek/signalhead";
   import { getContext } from "../../utils/svelte-context.js";
   import { yeet } from "@typek/typek";
 

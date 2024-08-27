@@ -3,7 +3,7 @@ import {
   WritableSignal,
   type DeferLike,
   type Signal,
-} from "@mod.js/signals";
+} from "@typek/signalhead";
 import type { TraceList } from "../../mod.js";
 import { xAxis$, yAxis$, type Axis } from "./axis.js";
 import { chartCanvas$ } from "./chartCanvas.js";
