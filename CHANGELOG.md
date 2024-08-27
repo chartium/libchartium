@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.30.0](https://github.com/chartium/libchartium/compare/libchartium-v0.29.5...libchartium-v0.30.0) (2024-08-27)
+
+
+### Features
+
+* **StatsTable:** add stat group & style ([13599c0](https://github.com/chartium/libchartium/commit/13599c0de8d8d0e6756d3f6bbf986124b7ed0a41))
+
 ## [0.29.5](https://github.com/chartium/libchartium/compare/libchartium-v0.29.4...libchartium-v0.29.5) (2024-08-27)
 
 
