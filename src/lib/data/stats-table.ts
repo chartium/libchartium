@@ -40,15 +40,24 @@ import {
 } from "@typek/typek";
 import { StatsTableExport } from "./data-export.js";
 
-export interface ValueStat {
+export interface StatStyle {
+  template?: string;
+  collapseGroup?: boolean;
+}
+
+export interface StatCommon {
   title: string;
+  group: string | undefined;
+  style: StatStyle;
+}
+
+export interface ValueStat extends StatCommon {
   dataUnit: DataUnit;
   displayUnit: DisplayUnitPreference;
   data: Map<VariantHandle, number>;
 }
 
-export interface CustomStat<T> {
-  title: string;
+export interface CustomStat<T> extends StatCommon {
   data: Map<VariantHandle, T>;
 }
 
@@ -69,13 +78,17 @@ export interface VariantRow<Cells extends VariantCell[]> {
   style: ComputedTraceStyle;
   stats: Cells;
 }
-export interface VariantValueCell {
+
+export interface VariantCellCommon {
   statTitle: string;
+  statGroup: string | undefined;
+  statStyle: StatStyle;
+}
+export interface VariantValueCell extends VariantCellCommon {
   value: ChartValue | undefined;
   formattedValue: string | undefined;
 }
-export interface VariantCustomCell<T> {
-  statTitle: string;
+export interface VariantCustomCell<T> extends VariantCellCommon {
   value: T | undefined;
 }
 export type VariantCell = VariantValueCell | VariantCustomCell<any>;
@@ -92,6 +105,8 @@ type VariantRowFromStatsMap<StatsMap extends Record<string, Stat>> = VariantRow<
 
 export interface StatValueRow {
   statTitle: string;
+  statGroup: string | undefined;
+  statStyle: StatStyle;
   variants: StatValueCell[];
   dataUnit: DataUnit;
   unit: DisplayUnit;
@@ -141,7 +156,7 @@ export interface StatsTableParams {
   stats: Stat[];
 
   labels: ReadonlyMap<string, string>;
-  styles: lib.TraceStyleSheet;
+  variantStyles: lib.TraceStyleSheet;
   precomputedColorIndices: lib.ResolvedColorIndices | undefined;
 
   randomSeed: number;
@@ -166,7 +181,7 @@ export class StatsTable<
       handles: new Uint32Array([]),
       stats: [],
       labels: new Map(),
-      styles: lib.TraceStyleSheet.unset(),
+      variantStyles: lib.TraceStyleSheet.unset(),
       precomputedColorIndices: undefined,
       randomSeed: randomUint(),
     });
@@ -174,44 +189,54 @@ export class StatsTable<
 
   static fromSingleStat<Title extends string>(opts: {
     statTitle: Title;
+    statGroup?: string;
     dataUnit?: DataUnit;
     displayUnit?: DisplayUnitPreference;
     ids: string[];
     values: number[];
-    style?: TraceStyleSheet;
+    variantStyle?: TraceStyleSheet;
+    statStyle?: StatStyle;
     labels?: Iterable<[string, string | undefined]>;
   }): StatsTable<{ [t in Title]: ValueStat }>;
 
   static fromSingleStat<Title extends string, DataType>(opts: {
     statTitle: Title;
+    statGroup?: string;
     ids: string[];
     customData: DataType[];
-    style?: TraceStyleSheet;
+    variantStyle?: TraceStyleSheet;
+    statStyle?: StatStyle;
     labels?: Iterable<[string, string | undefined]>;
   }): StatsTable<{ [t in Title]: CustomStat<DataType> }>;
 
   static fromSingleStat<Title extends string>({
     statTitle,
+    statGroup,
     dataUnit,
     displayUnit,
     ids,
     values,
     customData,
-    style,
+    variantStyle,
+    statStyle,
     labels,
   }: {
     statTitle: Title;
+    statGroup?: string;
     dataUnit?: DataUnit;
     displayUnit?: DisplayUnitPreference;
     ids: string[];
     values?: number[];
     customData?: any[];
-    style?: TraceStyleSheet;
+    variantStyle?: TraceStyleSheet;
+    statStyle?: StatStyle;
     labels?: Iterable<[string, string | undefined]>;
   }):
     | StatsTable<{ [t in Title]: ValueStat }>
     | StatsTable<{ [t in Title]: CustomStat<any> }> {
     const handles: VariantHandleArray = new Uint32Array(ids.length);
+
+    statStyle ??= {};
 
     for (const [i, id] of enumerate(ids)) {
       handles[i] = variantIds.getKey(id) ?? registerNewVariantHandle(id);
@@ -227,18 +252,22 @@ export class StatsTable<
       ),
       precomputedColorIndices: undefined,
       randomSeed: randomUint(),
-      styles: oxidizeStyleSheet(style),
+      variantStyles: oxidizeStyleSheet(variantStyle),
       stats: [
         values
           ? {
               title: statTitle,
+              group: statGroup,
               dataUnit,
               displayUnit: displayUnit ?? "auto",
               data: new Map(zip(handles, values)),
+              style: statStyle,
             }
           : {
               title: statTitle,
+              group: statGroup,
               data: new Map(zip(handles, customData!)),
+              style: statStyle,
             },
       ],
     });
@@ -275,7 +304,7 @@ export class StatsTable<
         (it) =>
           map(it, ([stat, range]) => {
             if ("dataUnit" in stat) {
-              const { title, data, dataUnit, displayUnit } = stat;
+              const { title, group, style, data, dataUnit, displayUnit } = stat;
               const unit = computeDefaultUnit(dataUnit, displayUnit, range!);
               const value = data.has(handle)
                 ? toChartValue(data.get(handle)!, dataUnit)
@@ -285,9 +314,20 @@ export class StatsTable<
                 ? formatChartValue(value, { unit })
                 : undefined;
 
-              return { statTitle: title, value, formattedValue };
+              return {
+                statTitle: title,
+                statGroup: group,
+                statStyle: style,
+                value,
+                formattedValue,
+              };
             } else {
-              return { statTitle: stat.title, value: stat.data.get(handle) };
+              return {
+                statTitle: stat.title,
+                statGroup: stat.group,
+                statStyle: stat.style,
+                value: stat.data.get(handle),
+              };
             }
           }),
         (it) => [...it],
@@ -355,6 +395,8 @@ export class StatsTable<
 
         yield {
           statTitle,
+          statGroup: stat.group,
+          statStyle: stat.style,
           dataUnit,
           unit,
           variants: variants satisfies StatCell[] as any,
@@ -390,7 +432,10 @@ export class StatsTable<
       this.#colorIndices_ ??
       (this.#colorIndices_ =
         this.#p.precomputedColorIndices ??
-        lib.ResolvedColorIndices.compute(this.#p.styles, this.#p.handles))
+        lib.ResolvedColorIndices.compute(
+          this.#p.variantStyles,
+          this.#p.handles,
+        ))
     );
   }
 
@@ -412,7 +457,7 @@ export class StatsTable<
 
   getColor(variantId: string): `#${string}` {
     return resolvedColorToHex(
-      this.#p.styles.get_color(
+      this.#p.variantStyles.get_color(
         variantIds.getKey(variantId) ?? yeet(UnknownVariantIdError, variantId),
         this.#colorIndices,
         this.#p.randomSeed,
@@ -421,7 +466,7 @@ export class StatsTable<
   }
 
   getStyle(variantId: string): ComputedTraceStyle {
-    const style = this.#p.styles.get_computed(
+    const style = this.#p.variantStyles.get_computed(
       variantIds.getKey(variantId) ?? yeet(UnknownVariantIdError, variantId),
     );
     return {
@@ -457,9 +502,11 @@ export class StatsTable<
     // Compute Styles
     // beware: mutating `tables`!
     const first = tables.pop()!;
-    const styleBuilder = new lib.TraceStyleSheetUnionBuilder(first.#p.styles);
+    const styleBuilder = new lib.TraceStyleSheetUnionBuilder(
+      first.#p.variantStyles,
+    );
     for (const next of tables) {
-      styleBuilder.add(next.#p.handles, next.#p.styles);
+      styleBuilder.add(next.#p.handles, next.#p.variantStyles);
     }
     const styles = styleBuilder.collect();
 
@@ -467,7 +514,7 @@ export class StatsTable<
       handles,
       labels,
       stats,
-      styles,
+      variantStyles: styles,
       precomputedColorIndices: undefined,
       randomSeed: randomUint(),
     });
