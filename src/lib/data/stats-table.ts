@@ -80,7 +80,9 @@ export interface VariantCustomCell<T> {
 }
 export type VariantCell = VariantValueCell | VariantCustomCell<any>;
 
-type VariantRowFromStatsMap<StatsMap extends Record<string, Stat>> = VariantRow<
+type VariantRowFromStatsMap<
+  StatsMap extends Record<string, Stat> = Record<string, Stat>,
+> = VariantRow<
   (ValuesUnion<StatsMap> extends infer Stat
     ? Stat extends ValueStat
       ? VariantValueCell
