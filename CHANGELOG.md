@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.29.4](https://github.com/chartium/libchartium/compare/libchartium-v0.29.3...libchartium-v0.29.4) (2024-08-27)
+
+
+### Bug Fixes
+
+* **StatsTable:** ještě jednou a lépe ([ddf2d5d](https://github.com/chartium/libchartium/commit/ddf2d5debdee69d2d4698bc505d634b6fc07ac93))
+
 ## [0.29.3](https://github.com/chartium/libchartium/compare/libchartium-v0.29.2...libchartium-v0.29.3) (2024-08-27)
 
 
