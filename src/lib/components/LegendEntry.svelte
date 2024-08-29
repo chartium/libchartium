@@ -38,7 +38,7 @@
     cursor: pointer;
     display: flex;
     flex-direction: row;
-    align-items: flex-start;
+    align-items: center;
     text-wrap: nowrap;
     width: fit-content;
   }
