@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.30.1](https://github.com/chartium/libchartium/compare/libchartium-v0.30.0...libchartium-v0.30.1) (2024-08-29)
+
+
+### Bug Fixes
+
+* **LegendEntry:** aligned legent label to the center ([1eff9fd](https://github.com/chartium/libchartium/commit/1eff9fdae38f83e6d7302ca0d57780b692b2e75f))
+
 ## [0.30.0](https://github.com/chartium/libchartium/compare/libchartium-v0.29.5...libchartium-v0.30.0) (2024-08-27)
 
 
