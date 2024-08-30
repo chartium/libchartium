@@ -52,7 +52,7 @@ export type StatSortingStrategy = {
 
 export type VariantSortingStrategy = {
   direction: "asc" | "desc";
-  by: { valueOfStat: string } | "lexicallyById";
+  by: { valueOfStat: string } | "lexicallyById" | "lexicallyByLabel";
 };
 
 /** How the data is stored internally */
@@ -544,6 +544,19 @@ export class StatsTable<CustomData = never> {
           const aId = variantIds.get(a)!;
           const bId = variantIds.get(b)!;
           return aId.localeCompare(bId) * direction;
+        }),
+      });
+    }
+
+    if (by === "lexicallyByLabel") {
+      return new StatsTable({
+        ...this.#p,
+        handles: this.#p.handles.toSorted((a, b) => {
+          const aId = variantIds.get(a)!;
+          const bId = variantIds.get(b)!;
+          const aLabel = this.#p.labels.get(aId) ?? aId;
+          const bLabel = this.#p.labels.get(bId) ?? bId;
+          return aLabel.localeCompare(bLabel) * direction;
         }),
       });
     }
