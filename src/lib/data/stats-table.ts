@@ -254,11 +254,11 @@ export class StatsTable<CustomData = never> {
     });
   }
 
-  variantEntries(): Variant<CustomData>[] {
-    return [...this.iterateVariantEntries()];
+  variants(): Variant<CustomData>[] {
+    return [...this.iterateVariants()];
   }
 
-  *iterateVariantEntries(): Iterable<Variant<CustomData>> {
+  *iterateVariants(): Iterable<Variant<CustomData>> {
     const ranges = this.#p.stats.map((stat) => {
       if ("dataUnit" in stat) {
         const { data, dataUnit } = stat;
@@ -328,11 +328,11 @@ export class StatsTable<CustomData = never> {
     }
   }
 
-  statEntries(): Stat<CustomData>[] {
-    return [...this.iterateStatEntries()];
+  stats(): Stat<CustomData>[] {
+    return [...this.iterateStats()];
   }
 
-  *iterateStatEntries(): Iterable<Stat<CustomData>> {
+  *iterateStats(): Iterable<Stat<CustomData>> {
     const ranges = new Map(
       this.#p.stats
         .filter((stat) => "dataUnit" in stat)

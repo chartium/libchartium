@@ -202,7 +202,7 @@ export class StatsTableExport {
 
     return new ExportTextFile("export.csv", function* () {
       const statTitles = pipe(
-        self.statsTable.iterateStatEntries(),
+        self.statsTable.iterateStats(),
         (stats) =>
           map(stats, (s) =>
             "unit" in s ? `${s.statTitle} [${s.unit}]` : s.statTitle,
@@ -211,19 +211,19 @@ export class StatsTableExport {
       );
 
       const variantTitles = pipe(
-        self.statsTable.iterateVariantEntries(),
+        self.statsTable.iterateVariants(),
         (variants) => map(variants, (v) => v.style.label ?? v.variantId),
         Array.from<string>,
       );
 
       if (orientation === "one-variant-per-row") {
         yield `variant,${statTitles.join(",")}`;
-        for (const variant of self.statsTable.iterateVariantEntries()) {
+        for (const variant of self.statsTable.iterateVariants()) {
           yield `${variantTitles.shift()},${variant.stats.map((s) => s.value).join(",")}`;
         }
       } else {
         yield `stat,${variantTitles.join(",")}`;
-        for (const stat of self.statsTable.iterateStatEntries()) {
+        for (const stat of self.statsTable.iterateStats()) {
           yield `${statTitles.shift()},${stat.variants.map((v) => v.value).join(",")}`;
         }
       }
