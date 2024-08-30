@@ -26,6 +26,7 @@ import {
   formatChartValue,
 } from "../units/mod.js";
 import {
+  assertNever,
   concat,
   enumerate,
   filter,
@@ -36,7 +37,6 @@ import {
   unique,
   yeet,
   zip,
-  type ValuesUnion,
 } from "@typek/typek";
 import { StatsTableExport } from "./data-export.js";
 
@@ -44,24 +44,6 @@ export interface StatStyle {
   template?: string;
   collapseGroup?: boolean;
 }
-
-export interface StatCommon {
-  title: string;
-  group: string | undefined;
-  style: StatStyle;
-}
-
-export interface ValueStat extends StatCommon {
-  dataUnit: DataUnit;
-  displayUnit: DisplayUnitPreference;
-  data: Map<VariantHandle, number>;
-}
-
-export interface CustomStat<T> extends StatCommon {
-  data: Map<VariantHandle, T>;
-}
-
-export type Stat = ValueStat | CustomStat<any>;
 
 export type StatSortingStrategy = {
   direction: "asc" | "desc";
@@ -73,87 +55,88 @@ export type VariantSortingStrategy = {
   by: { valueOfStat: string } | "lexicallyById";
 };
 
-export interface VariantRow<Cells extends VariantCell[]> {
+/** How the data is stored internally */
+type StatData<CustomData> = {
+  title: string;
+  group: string | undefined;
+  style: StatStyle;
+} & (
+  | {
+      type: "value";
+      dataUnit: DataUnit;
+      displayUnit: DisplayUnitPreference;
+      data: Map<VariantHandle, number>;
+    }
+  | {
+      type: "custom";
+      data: Map<VariantHandle, CustomData>;
+    }
+);
+
+export interface Variant<CustomData> {
   variantId: string;
   style: ComputedTraceStyle;
-  stats: Cells;
+  stats: Array<
+    {
+      statTitle: string;
+      statGroup: string | undefined;
+      statStyle: StatStyle;
+    } & (
+      | {
+          type: "value";
+          value: ChartValue | undefined;
+          formattedValue: string | undefined;
+        }
+      | {
+          type: "custom";
+          value: CustomData | undefined;
+        }
+    )
+  >;
 }
 
-export interface VariantCellCommon {
+export type Stat<CustomData = never> = {
   statTitle: string;
   statGroup: string | undefined;
   statStyle: StatStyle;
-}
-export interface VariantValueCell extends VariantCellCommon {
-  value: ChartValue | undefined;
-  formattedValue: string | undefined;
-}
-export interface VariantCustomCell<T> extends VariantCellCommon {
-  value: T | undefined;
-}
-export type VariantCell = VariantValueCell | VariantCustomCell<any>;
+} & (
+  | {
+      type: "value";
+      dataUnit: DataUnit;
+      unit: DisplayUnit;
+      variants: Array<{
+        variantId: string;
+        value: ChartValue | undefined;
+        formattedValue: string | undefined;
+        style: ComputedTraceStyle;
+      }>;
+    }
+  | {
+      type: "custom";
+      variants: Array<{
+        variantId: string;
+        value: CustomData | undefined;
+        style: ComputedTraceStyle;
+      }>;
+    }
+);
 
-type VariantRowFromStatsMap<StatsMap extends Record<string, Stat>> = VariantRow<
-  (ValuesUnion<StatsMap> extends infer Stat
-    ? Stat extends ValueStat
-      ? VariantValueCell
-      : Stat extends CustomStat<infer T>
-        ? VariantCustomCell<T>
-        : never
-    : never)[]
->;
-
-export interface StatValueRow {
-  statTitle: string;
-  statGroup: string | undefined;
-  statStyle: StatStyle;
-  variants: StatValueCell[];
-  dataUnit: DataUnit;
-  unit: DisplayUnit;
-}
-export interface StatCustomRow<T> {
-  statTitle: string;
-  variants: StatCustomCell<T>[];
-}
-export type StatRow = StatValueRow | StatCustomRow<any>;
-export interface StatValueCell {
-  variantId: string;
-  value: ChartValue | undefined;
-  formattedValue: string | undefined;
-  style: ComputedTraceStyle;
-}
-export interface StatCustomCell<T> {
-  variantId: string;
-  value: T | undefined;
-  style: ComputedTraceStyle;
-}
-export type StatCell = StatValueCell | StatCustomCell<any>;
-
-type StatRowFromStatsMap<StatsMap extends Record<string, Stat>> =
-  ValuesUnion<StatsMap> extends infer Stat
-    ? Stat extends ValueStat
-      ? StatValueRow
-      : Stat extends CustomStat<infer T>
-        ? StatCustomRow<T>
-        : never
-    : never;
-
-type MergeStatsTables<StatsTables extends StatsTable<any>[]> = StatsTable<
+type Merge<StatsTables extends StatsTable<any>[]> = StatsTable<
   StatsTables extends []
     ? Record<string, never>
     : StatsTables extends [
           StatsTable<infer Head>,
           ...infer Tail extends StatsTable<any>[],
         ]
-      ? Head & MergeStatsTables<Tail>
+      ? Head | Merge<Tail>
       : StatsTables extends StatsTable<infer T>[]
         ? T
         : never
 >;
 
-export interface StatsTableParams {
+export interface StatsTableParams<CustomData> {
   handles: VariantHandleArray;
-  stats: Stat[];
+  stats: StatData<CustomData>[];
 
   labels: ReadonlyMap<string, string>;
   variantStyles: lib.TraceStyleSheet;
@@ -162,17 +145,15 @@ export interface StatsTableParams {
   randomSeed: number;
 }
 
-export class StatsTable<
-  StatsMap extends Record<string, Stat> = Record<string, Stat>,
-> {
-  #p: Readonly<StatsTableParams>;
-  private constructor(params: StatsTableParams) {
+export class StatsTable<CustomData = never> {
+  #p: Readonly<StatsTableParams<CustomData>>;
+  private constructor(params: StatsTableParams<CustomData>) {
     this.#p = params;
   }
   get [PARAMS]() {
     return this.#p;
   }
-  static [CONSTRUCTOR](params: StatsTableParams) {
+  static [CONSTRUCTOR]<T>(params: StatsTableParams<T>) {
     return new StatsTable(params);
   }
 
@@ -187,8 +168,8 @@ export class StatsTable<
     });
   }
 
-  static fromSingleStat<Title extends string>(opts: {
-    statTitle: Title;
+  static fromSingleStat(opts: {
+    statTitle: string;
     statGroup?: string;
     dataUnit?: DataUnit;
     displayUnit?: DisplayUnitPreference;
@@ -197,17 +178,17 @@ export class StatsTable<
     variantStyle?: TraceStyleSheet;
     statStyle?: StatStyle;
     labels?: Iterable<[string, string | undefined]>;
-  }): StatsTable<{ [t in Title]: ValueStat }>;
+  }): StatsTable<never>;
 
-  static fromSingleStat<Title extends string, DataType>(opts: {
-    statTitle: Title;
+  static fromSingleStat<CustomData>(opts: {
+    statTitle: string;
     statGroup?: string;
     ids: string[];
-    customData: DataType[];
+    customData: CustomData[];
     variantStyle?: TraceStyleSheet;
     statStyle?: StatStyle;
     labels?: Iterable<[string, string | undefined]>;
-  }): StatsTable<{ [t in Title]: CustomStat<DataType> }>;
+  }): StatsTable<CustomData>;
 
   static fromSingleStat<Title extends string>({
     statTitle,
@@ -231,9 +212,7 @@ export class StatsTable<
     variantStyle?: TraceStyleSheet;
     statStyle?: StatStyle;
     labels?: Iterable<[string, string | undefined]>;
-  }):
-    | StatsTable<{ [t in Title]: ValueStat }>
-    | StatsTable<{ [t in Title]: CustomStat<any> }> {
+  }): StatsTable<any> {
     const handles: VariantHandleArray = new Uint32Array(ids.length);
 
     statStyle ??= {};
@@ -256,6 +235,7 @@ export class StatsTable<
       stats: [
         values
           ? {
+              type: "value",
               title: statTitle,
               group: statGroup,
               dataUnit,
@@ -264,6 +244,7 @@ export class StatsTable<
               style: statStyle,
             }
           : {
+              type: "custom",
               title: statTitle,
               group: statGroup,
               data: new Map(zip(handles, customData!)),
@@ -273,7 +254,11 @@ export class StatsTable<
     });
   }
 
-  *variantEntries(): Iterable<VariantRowFromStatsMap<StatsMap>> {
+  variantEntries(): Variant<CustomData>[] {
+    return [...this.iterateVariantEntries()];
+  }
+
+  *iterateVariantEntries(): Iterable<Variant<CustomData>> {
     const ranges = this.#p.stats.map((stat) => {
       if ("dataUnit" in stat) {
         const { data, dataUnit } = stat;
@@ -299,10 +284,10 @@ export class StatsTable<
         variantIds.get(handle) ?? yeet(UnknownVariantHandleError, handle);
       const style = this.getStyle(variantId);
 
-      const stats: VariantCell[] = pipe(
+      const stats: Variant<CustomData>["stats"] = pipe(
         zip(this.#p.stats, ranges),
         (it) =>
-          map(it, ([stat, range]) => {
+          map(it, ([stat, range]): Variant<CustomData>["stats"][number] => {
             if ("dataUnit" in stat) {
               const { title, group, style, data, dataUnit, displayUnit } = stat;
               const unit = computeDefaultUnit(dataUnit, displayUnit, range!);
@@ -315,6 +300,7 @@ export class StatsTable<
                 : undefined;
 
               return {
+                type: "value",
                 statTitle: title,
                 statGroup: group,
                 statStyle: style,
@@ -323,6 +309,7 @@ export class StatsTable<
               };
             } else {
               return {
+                type: "custom",
                 statTitle: stat.title,
                 statGroup: stat.group,
                 statStyle: stat.style,
@@ -336,12 +323,16 @@ export class StatsTable<
       yield {
         variantId,
         style,
-        stats: stats satisfies VariantCell[] as any,
+        stats,
       };
     }
   }
 
-  *statEntries(): Iterable<StatRowFromStatsMap<StatsMap>> {
+  statEntries(): Stat<CustomData>[] {
+    return [...this.iterateStatEntries()];
+  }
+
+  *iterateStatEntries(): Iterable<Stat<CustomData>> {
     const ranges = new Map(
       this.#p.stats
         .filter((stat) => "dataUnit" in stat)
@@ -364,13 +355,13 @@ export class StatsTable<
     );
 
     for (const stat of this.#p.stats) {
-      if ("dataUnit" in stat) {
+      if (stat.type === "value") {
         const range = ranges.get(stat)!;
         const { displayUnit, dataUnit, data, title } = stat;
         const unit = computeDefaultUnit(dataUnit, displayUnit, range);
         const statTitle = title;
 
-        const variants: StatCell[] = pipe(
+        const variants: Stat["variants"] = pipe(
           map(this.#p.handles, (h) => {
             const variantId =
               variantIds.get(h) ?? yeet(UnknownVariantHandleError, h);
@@ -394,22 +385,26 @@ export class StatsTable<
         );
 
         yield {
+          type: "value",
           statTitle,
           statGroup: stat.group,
           statStyle: stat.style,
           dataUnit,
           unit,
-          variants: variants satisfies StatCell[] as any,
-        } satisfies StatValueRow as any;
+          variants,
+        };
       } else {
         const { title, data } = stat;
         yield {
+          type: "custom",
           statTitle: title,
+          statGroup: stat.group,
+          statStyle: stat.style,
           variants: pipe(
             map(this.#p.handles, (h) => data.get(h)),
             Array.from<any>,
           ),
-        } satisfies StatCustomRow<any> as any;
+        };
       }
     }
   }
@@ -488,7 +483,7 @@ export class StatsTable<
 
   static mergeByVariant<StatsTables extends StatsTable<any>[]>(
     ...l: StatsTables
-  ): MergeStatsTables<StatsTables> {
+  ): Merge<StatsTables> {
     const tables = l.filter((t) => t.variantCount > 0 && t.statCount > 0);
     const handles = pipe(
       concat(...tables.map((t) => t.#p.handles)),
@@ -520,9 +515,7 @@ export class StatsTable<
     });
   }
 
-  toSorted(
-    strategy: StatSortingStrategy | VariantSortingStrategy,
-  ): StatsTable<StatsMap> {
+  withSortedStats(strategy: StatSortingStrategy): StatsTable<CustomData> {
     const direction = strategy.direction === "asc" ? 1 : -1;
     const by = strategy.by;
 
@@ -537,6 +530,13 @@ export class StatsTable<
       });
     }
 
+    assertNever(by);
+  }
+
+  withSortedVariants(strategy: VariantSortingStrategy): StatsTable<CustomData> {
+    const direction = strategy.direction === "asc" ? 1 : -1;
+    const by = strategy.by;
+
     if (by === "lexicallyById") {
       return new StatsTable({
         ...this.#p,
@@ -548,21 +548,27 @@ export class StatsTable<
       });
     }
 
-    const relevantStat = this.#p.stats.find(
-      (stat) => stat.title === by.valueOfStat,
-    );
-    if (relevantStat === undefined) return new StatsTable({ ...this.#p });
-    return new StatsTable({
-      ...this.#p,
-      handles: this.#p.handles.toSorted((a, b) => {
-        const aValue = relevantStat.data.get(a);
-        const bValue = relevantStat.data.get(b);
+    if ("valueOfStat" in by) {
+      const stat = this.#p.stats.find((stat) => stat.title === by.valueOfStat);
+      if (stat === undefined) return new StatsTable({ ...this.#p });
+      return new StatsTable({
+        ...this.#p,
+        handles: this.#p.handles.toSorted((a, b) => {
+          const aValue = stat.data.get(a);
+          const bValue = stat.data.get(b);
 
-        if (aValue === undefined) return -1;
-        if (bValue === undefined) return 1;
-        return (aValue - bValue) * direction;
-      }),
-    });
+          if (aValue === undefined) return -1;
+          if (bValue === undefined) return 1;
+          if (stat.type === "value") {
+            return (+aValue! - +bValue!) * direction;
+          } else {
+            return String(aValue).localeCompare(String(bValue)) * direction;
+          }
+        }),
+      });
+    }
+
+    assertNever(by);
   }
 
   /**
