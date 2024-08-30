@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.32.0](https://github.com/chartium/libchartium/compare/libchartium-v0.31.0...libchartium-v0.32.0) (2024-08-30)
+
+
+### Features
+
+* **StatsTable:** add variant sorting by label ([0331257](https://github.com/chartium/libchartium/commit/0331257e53bd3771631dae7f1100d8c7233c9780))
+
 ## [0.31.0](https://github.com/chartium/libchartium/compare/libchartium-v0.30.1...libchartium-v0.31.0) (2024-08-30)
 
 
