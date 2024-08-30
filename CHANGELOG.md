@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.31.0](https://github.com/chartium/libchartium/compare/libchartium-v0.30.1...libchartium-v0.31.0) (2024-08-30)
+
+
+### Features
+
+* **StatsTable:** učesány typy ([f6557b1](https://github.com/chartium/libchartium/commit/f6557b1f09ab86b5d312c1007bb622b65696cc87))
+
 ## [0.30.1](https://github.com/chartium/libchartium/compare/libchartium-v0.30.0...libchartium-v0.30.1) (2024-08-29)
 
 
