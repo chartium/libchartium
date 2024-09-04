@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.32.5](https://github.com/chartium/libchartium/compare/libchartium-v0.32.4...libchartium-v0.32.5) (2024-09-04)
+
+
+### Bug Fixes
+
+* used const where i wanted let ([0e99707](https://github.com/chartium/libchartium/commit/0e9970707196d407eb502c6c983e83519ca843bc))
+
 ## [0.32.4](https://github.com/chartium/libchartium/compare/libchartium-v0.32.3...libchartium-v0.32.4) (2024-09-04)
 
 
