@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.32.4](https://github.com/chartium/libchartium/compare/libchartium-v0.32.3...libchartium-v0.32.4) (2024-09-04)
+
+
+### Bug Fixes
+
+* fullscreen is now a signal for proper binding ([eb9d629](https://github.com/chartium/libchartium/commit/eb9d629cd3896394866de12dc6ac8bc996bb3d11))
+
 ## [0.32.3](https://github.com/chartium/libchartium/compare/libchartium-v0.32.2...libchartium-v0.32.3) (2024-09-04)
 
 
