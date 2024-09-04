@@ -199,7 +199,7 @@
    * Whether the chart should be fullscreen
    * to programatically toggle fullscreen, use `fullscreen$.set(true)`
    */
-  export const fullscreen$: WritableSignal<boolean> = mut(false);
+  export let fullscreen$: WritableSignal<boolean> = mut(false);
   fullscreen$.subscribe((f) => {
     if (f) {
       document.addEventListener("keydown", function callback(e) {
