@@ -195,9 +195,11 @@
   const margins$ = mut(margins);
   $: margins$.set(margins);
 
-  export let fullscreen: boolean = false;
-  const fullscreen$ = mut(false);
-  $: fullscreen$.set(fullscreen);
+  /**
+   * Whether the chart should be fullscreen
+   * to programatically toggle fullscreen, use `fullscreen$.set(true)`
+   */
+  export const fullscreen$: WritableSignal<boolean> = mut(false);
   fullscreen$.subscribe((f) => {
     if (f) {
       document.addEventListener("keydown", function callback(e) {
