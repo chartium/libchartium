@@ -70,8 +70,8 @@ export interface ChartStyleSheet {
   "ticks.y": Partial<TickStyle>;
 
   bubbles: Partial<BubbleStyle>;
-  "bubble.x": Partial<BubbleStyle>;
-  "bubble.y": Partial<BubbleStyle>;
+  "bubbles.x": Partial<BubbleStyle>;
+  "bubbles.y": Partial<BubbleStyle>;
 
   tooltip: Partial<TooltipStyle>;
 
