@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.32.3](https://github.com/chartium/libchartium/compare/libchartium-v0.32.2...libchartium-v0.32.3) (2024-09-04)
+
+
+### Bug Fixes
+
+* sysiphian version bump ([f91b7d4](https://github.com/chartium/libchartium/commit/f91b7d41ae73b91bf248e822e9f0f37ae9df9690))
+
 ## [0.32.2](https://github.com/chartium/libchartium/compare/libchartium-v0.32.1...libchartium-v0.32.2) (2024-09-04)
 
 
