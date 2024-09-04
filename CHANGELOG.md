@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.32.1](https://github.com/chartium/libchartium/compare/libchartium-v0.32.0...libchartium-v0.32.1) (2024-09-04)
+
+
+### Bug Fixes
+
+* unitlib version bump ([db5de0a](https://github.com/chartium/libchartium/commit/db5de0a2fb8abb38c6653746efe3e7b19e5a0fee))
+
 ## [0.32.0](https://github.com/chartium/libchartium/compare/libchartium-v0.31.0...libchartium-v0.32.0) (2024-08-30)
 
 
