@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.32.2](https://github.com/chartium/libchartium/compare/libchartium-v0.32.1...libchartium-v0.32.2) (2024-09-04)
+
+
+### Bug Fixes
+
+* typo fix and also fuck npm ([598ae3b](https://github.com/chartium/libchartium/commit/598ae3b0644aa2583410b74c56fd758ae37fcd8a))
+
 ## [0.32.1](https://github.com/chartium/libchartium/compare/libchartium-v0.32.0...libchartium-v0.32.1) (2024-09-04)
 
 
