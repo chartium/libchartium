@@ -39,13 +39,13 @@
     position: absolute;
     pointer-events: none;
     user-select: none;
+    z-index: var(--libchartium-popup-z-index, 100);
   }
   .axis-bubble {
     background-color: var(--libchartium-secondary-background);
     border-radius: 4px;
     padding: 4px;
     font-size: 0.8rem;
-    z-index: var(--libchartium-popup-z-index, 100);
     width: max-content;
     height: max-content;
     overflow: visible;

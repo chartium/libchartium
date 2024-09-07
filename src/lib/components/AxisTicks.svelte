@@ -66,7 +66,8 @@
   );
   $: onDestroy(dimensionFlock?.register(minorDim) ?? noop);
 
-  export const textLength = (text: string) => measureText(text, measuringSpan);
+  export const textLength = (text: string) =>
+    measuringSpan !== undefined ? measureText(text, measuringSpan) : 0;
 
   export let unitChangeActions: Signal<UnitChangeActions>;
 
@@ -196,6 +197,8 @@
     const transformOrigin = "center center";
     return `${absolutePos}; transform: ${transform}; transform-origin: ${transformOrigin};`;
   }
+
+  $: console.log(`Im axis ${axis} and my hide variable is ${hideTicks}`);
 </script>
 
 <GenericContextMenu items={$contextItems} bind:this={menu} />
