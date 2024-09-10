@@ -23,7 +23,7 @@
   const stepSize = (to - from) / numSteps;
 
   const traceCount = 8;
-  const normalTraces = (async () => {
+  const normalTraces = (() => {
     const results = [];
 
     for (let i = 0; i < 1; ++i) {
@@ -99,11 +99,7 @@
     },
   });
 
-  const traces = Promise.all([threshold, normalTraces]).then((ts) =>
-    TraceList.union(
-      ...ts.flatMap((list) => (Array.isArray(list) ? list : [list])),
-    ),
-  );
+  const traces = TraceList.union(threshold, ...normalTraces);
 
   let wrapDiv: HTMLDivElement;
 
