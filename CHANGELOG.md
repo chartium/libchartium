@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.32.6](https://github.com/chartium/libchartium/compare/libchartium-v0.32.5...libchartium-v0.32.6) (2024-09-10)
+
+
+### Bug Fixes
+
+* axis bugfixes ([7938994](https://github.com/chartium/libchartium/commit/7938994aa7d9cf5c6c1a4c08124fc801029671a9))
+* remove all $-prefixed variable names to hopefully achieve Svelte 5 compatibility ([47e7d6b](https://github.com/chartium/libchartium/commit/47e7d6bb5193dced34552ed372bef9ff6b2aea5e))
+
 ## [0.32.5](https://github.com/chartium/libchartium/compare/libchartium-v0.32.4...libchartium-v0.32.5) (2024-09-04)
 
 
