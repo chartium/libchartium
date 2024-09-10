@@ -1,10 +1,8 @@
-<script lang="ts" context="module">
+<script lang="ts">
   const PREVIEW_WIDTH = 15;
   const GAP = 3;
   const ROW_HEIGHT = 24;
-</script>
 
-<script lang="ts">
   import LegendEntry from "./LegendEntry.svelte";
 
   import type { ComputedTraceStyle, TraceList } from "../data/trace-list.js";

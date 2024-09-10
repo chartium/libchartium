@@ -15,7 +15,10 @@
     chartStylesheet?.[`bubbles.${axis}`]?.decimalPlaces ??
     chartStylesheet?.bubbles?.decimalPlaces ??
     autoDecimalPlaces;
-  const bubbleClass = `${chartStylesheet?.[`bubbles.${axis}`]?.class ?? ""} ${chartStylesheet?.bubbles?.class ?? ""}`;
+  const bubbleClass =
+    (chartStylesheet?.[`bubbles.${axis}`]?.class ?? "") +
+    " " +
+    (chartStylesheet?.bubbles?.class ?? "");
   const bubbleStyle = `${chartStylesheet?.[`bubbles.${axis}`]?.style ?? ""} ${chartStylesheet?.bubbles?.style ?? ""}`;
 
   $: positionedStyle =

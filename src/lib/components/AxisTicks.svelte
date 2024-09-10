@@ -14,7 +14,7 @@
     type Shift,
     type Tick,
   } from "../types.js";
-  import type { VisibleAction } from "./ActionsOverlay.svelte";
+  import type { VisibleAction } from "./ActionsOverlay.js";
   import { type ContextItem, GenericContextMenu } from "./context-menu/mod.js";
   import {
     FlockRegistry,
@@ -55,7 +55,10 @@
   export let visibleAction: WritableSignal<VisibleAction | undefined>;
 
   export let chartStylesheet: Partial<ChartStyleSheet> = {};
-  const tickClass = `${chartStylesheet?.ticks?.class ?? ""} ${chartStylesheet?.[`ticks.${axis}`]?.class ?? ""}`;
+  const tickClass =
+    (chartStylesheet?.ticks?.class ?? "") +
+    " " +
+    (chartStylesheet?.[`ticks.${axis}`]?.class ?? "");
   const tickStyle = `${chartStylesheet?.ticks?.style ?? ""} ${chartStylesheet?.[`ticks.${axis}`]?.style ?? ""}`;
 
   export let dimensionFlock: FlockRegistry<number> | undefined;
@@ -254,7 +257,7 @@
           </div>
         </span>
       {/each}
-      <span class="measuring-span" bind:this={measuringSpan} />
+      <span class="measuring-span" bind:this={measuringSpan}></span>
     </div>
   {/if}
 </div>

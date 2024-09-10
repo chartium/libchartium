@@ -1,14 +1,4 @@
 <!-- Chart overlay that draw rectangles and line segments on zoom -->
-<script lang="ts" context="module">
-  export type VisibleAction = {
-    zoom?: Zoom;
-    shift?: Shift;
-    highlightedPoints?: HighlightPoint[];
-  };
-
-  /** If the zoom rectangle has one side this big or smaller the zoom will be just 1D */
-  export const oneDZoomWindow = 20;
-</script>
 
 <script lang="ts">
   import { createEventDispatcher, onMount } from "svelte";
@@ -41,6 +31,7 @@
   import type { Chart } from "../state/core/chart.js";
   import { P, match } from "ts-pattern";
   import { mapOpt } from "../utils/mapOpt.js";
+  import { oneDZoomWindow, type VisibleAction } from "./ActionsOverlay.js";
 
   export const events = createEventDispatcher<{
     reset: undefined;
@@ -407,7 +398,7 @@
   let menu: any;
 </script>
 
-<GenericContextMenu bind:items={options} bind:this={menu} />
+<GenericContextMenu bind:items={options as any} bind:this={menu} />
 
 <canvas
   bind:this={canvasRef}
@@ -437,7 +428,7 @@
     threshold: oneDZoomWindow,
   }}
   use:mouseDrag={{ ...rightDragCallbacks, button: MouseButtons.Right }}
-/>
+></canvas>
 
 <style>
   canvas {

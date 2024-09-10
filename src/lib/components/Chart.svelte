@@ -15,7 +15,7 @@
   import ChartGrid from "./ChartGrid.svelte";
   import AxisTicks from "./AxisTicks.svelte";
   import Guidelines from "./Guidelines.svelte";
-  import ActionsOverlay, { oneDZoomWindow } from "./ActionsOverlay.svelte";
+  import ActionsOverlay from "./ActionsOverlay.svelte";
   import DefaultToolbar from "./toolbar/DefaultToolbar.svelte";
   import ChartLegend from "./Legend.svelte";
   import TraceTooltip from "./tooltip/TraceTooltip.svelte";
@@ -28,7 +28,7 @@
     type DisplayUnitPreference,
     type ChartRange,
   } from "../types.js";
-  import type { VisibleAction } from "./ActionsOverlay.svelte";
+  import { oneDZoomWindow, type VisibleAction } from "./ActionsOverlay.js";
   import {
     explicifyRangeMargins,
     type RangeMargins,
@@ -456,7 +456,7 @@
         chartStylesheet={chartStylesheet ?? {}}
       />
 
-      <canvas bind:this={canvas} on:contextmenu|preventDefault />
+      <canvas bind:this={canvas} on:contextmenu|preventDefault></canvas>
 
       {#if $$slots.infobox && infoboxPosition !== "none"}
         <div
