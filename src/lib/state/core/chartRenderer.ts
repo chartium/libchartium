@@ -66,8 +66,8 @@ export const chartRenderer$ = ({
   };
 
   // reactively re-render
-  effect(($) => {
-    const awaited = $(awaitedRenderParams$);
+  effect((S) => {
+    const awaited = S(awaitedRenderParams$);
     if (awaited === undefined) return;
     const [renderer, size, visibleTraces, xRange, yRange] = awaited; // Just a TS issue, will be fixed in next mod.js version
     if (!renderer || !size) return;
