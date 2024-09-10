@@ -82,9 +82,9 @@ export const clientSize$ = (element: HTMLElement): Signal<Size> => {
 
 export const physicalSize$ = (element: HTMLElement): Signal<Size> => {
   const logicalSize$ = clientSize$(element);
-  return derived(($) => {
-    const zoom = $(devicePixelRatio$);
-    const { width, height } = $(logicalSize$);
+  return derived((S) => {
+    const zoom = S(devicePixelRatio$);
+    const { width, height } = S(logicalSize$);
 
     return {
       width: width * zoom,

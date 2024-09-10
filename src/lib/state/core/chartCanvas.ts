@@ -32,8 +32,8 @@ export const chartCanvas$ = ({ canvas$ }: ChartCanvasProps): ChartCanvas => {
     HTMLCanvasElement,
     OffscreenCanvas
   >();
-  const offscreenCanvas$ = derived(($) => {
-    const onscreen = $(canvas$);
+  const offscreenCanvas$ = derived((S) => {
+    const onscreen = S(canvas$);
     if (!onscreen) return undefined;
 
     const offscreen = offscreenCanvasCache.get(onscreen);

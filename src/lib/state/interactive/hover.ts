@@ -95,20 +95,20 @@ export const hover$ = ({
     })
     .pipe(defer);
 
-  const unstyledNearestTraces$ = derived(($) => {
-    const { x, y } = $(hoverQuantity$);
+  const unstyledNearestTraces$ = derived((S) => {
+    const { x, y } = S(hoverQuantity$);
     if (x === undefined || y === undefined) return [];
 
-    const traces = $(visibleTraces$);
-    const _count = $(tooltipTraceCount$);
+    const traces = S(visibleTraces$);
+    const _count = S(tooltipTraceCount$);
     const count = _count === "all" ? traces.traceCount : _count;
 
     return traces.findNearestTraces({ x, y }, count, interpolation);
   });
 
-  const nearestTracesSortedByCloseness$ = derived(($): CloseTrace[] => {
-    const traces = $(visibleTraces$);
-    return $(unstyledNearestTraces$).map(({ traceId, x, y, displayY }) => ({
+  const nearestTracesSortedByCloseness$ = derived((S): CloseTrace[] => {
+    const traces = S(visibleTraces$);
+    return S(unstyledNearestTraces$).map(({ traceId, x, y, displayY }) => ({
       style: traces.getStyle(traceId),
       traceId,
       x,
@@ -117,11 +117,11 @@ export const hover$ = ({
     }));
   });
 
-  const isClosestTraceHovered$ = derived(($) => {
-    const trace = $(nearestTracesSortedByCloseness$)?.[0];
+  const isClosestTraceHovered$ = derived((S) => {
+    const trace = S(nearestTracesSortedByCloseness$)?.[0];
     if (!trace) return false;
 
-    const { x, y } = $(hoverQuantity$);
+    const { x, y } = S(hoverQuantity$);
     if (x === undefined || y === undefined) return false;
 
     const hoverPoint = point().fromQuantities(x, y);
@@ -129,14 +129,14 @@ export const hover$ = ({
 
     const dist = hoverPoint.vectorTo(closestPoint).magnitudeInLogicalPixels();
 
-    return dist <= $(traceHoverPointRadius$);
+    return dist <= S(traceHoverPointRadius$);
   });
 
-  const hoveredTrace$ = derived(($) => {
-    const trace = $(nearestTracesSortedByCloseness$).at(0);
-    if (!$(isClosestTraceHovered$) || !trace) return;
+  const hoveredTrace$ = derived((S) => {
+    const trace = S(nearestTracesSortedByCloseness$).at(0);
+    if (!S(isClosestTraceHovered$) || !trace) return;
 
-    const statistics = $(visibleTraces$).calculateStatistics({
+    const statistics = S(visibleTraces$).calculateStatistics({
       traces: [trace.traceId],
     })[0];
 

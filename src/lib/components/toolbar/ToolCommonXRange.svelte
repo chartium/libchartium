@@ -13,8 +13,8 @@
     getContext(toolKey) ??
     yeet("Attemting to use a chart tool outside of a chart.");
 
-  const icon$ = derived(($) =>
-    $(doUseCommonXRange$ ?? cons(false))
+  const icon$ = derived((S) =>
+    S(doUseCommonXRange$ ?? cons(false))
       ? faArrowsLeftRightToLine
       : faLeftRight,
   );

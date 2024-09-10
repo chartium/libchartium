@@ -112,9 +112,9 @@
         unitChangeActions$
           .map((v) => v.bestFit)
           .skipEqual()
-          .map(($v) => {
-            if (!$v) return;
-            const { unit, callback } = $v;
+          .map((v) => {
+            if (!v) return;
+            const { unit, callback } = v;
             return <const>{
               type: "leaf",
               content: `Fit to best unit ${unit}`,
@@ -127,9 +127,9 @@
         unitChangeActions$
           .map((v) => v.raise)
           .skipEqual()
-          .map(($v) => {
-            if (!$v) return;
-            const { unit, callback } = $v;
+          .map((v) => {
+            if (!v) return;
+            const { unit, callback } = v;
             return <const>{
               type: "leaf",
               content: `Raise unit to ${unit}`,
@@ -142,9 +142,9 @@
         unitChangeActions$
           .map((v) => v.reset)
           .skipEqual()
-          .map(($v) => {
-            if (!$v) return;
-            const { unit, callback } = $v;
+          .map((v) => {
+            if (!v) return;
+            const { unit, callback } = v;
             return <const>{
               type: "leaf",
               content: `Reset unit to ${unit}`,
@@ -157,9 +157,9 @@
         unitChangeActions$
           .map((v) => v.lower)
           .skipEqual()
-          .map(($v) => {
-            if (!$v) return;
-            const { unit, callback } = $v;
+          .map((v) => {
+            if (!v) return;
+            const { unit, callback } = v;
             return <const>{
               type: "leaf",
               content: `Lower unit to ${unit}`,

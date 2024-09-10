@@ -47,12 +47,12 @@ export const xAxisRange$ = ({
   doUseCommonRange$,
   lengthInPx$,
 }: XAxisRangeProps): AxisRange => {
-  const tracesRange$ = derived(($) => $(visibleTraces$).range);
-  const defaultRange$ = derived(($) => {
+  const tracesRange$ = derived((S) => S(visibleTraces$).range);
+  const defaultRange$ = derived((S) => {
     const rangeWithMargins = preventEmptyRange(
-      addMarginsToRange($(tracesRange$), $(margins$), $(lengthInPx$)),
+      addMarginsToRange(S(tracesRange$), S(margins$), S(lengthInPx$)),
     );
-    if ($(showZero$)) {
+    if (S(showZero$)) {
       return addZeroToRange(rangeWithMargins);
     } else {
       return rangeWithMargins;
@@ -60,10 +60,10 @@ export const xAxisRange$ = ({
   });
 
   let isAutozoomed = true;
-  const range$ = mutDerived<ChartRange>(($, { prev }) => {
-    const def = $(defaultRange$);
-    if ($(commonRange$) !== undefined && $(doUseCommonRange$))
-      return $(commonRange$) as ChartRange;
+  const range$ = mutDerived<ChartRange>((S, { prev }) => {
+    const def = S(defaultRange$);
+    if (S(commonRange$) !== undefined && S(doUseCommonRange$))
+      return S(commonRange$) as ChartRange;
 
     if (isAutozoomed || prev === undefined) {
       return def;
@@ -117,12 +117,12 @@ export const yAxisRange$ = ({
   lengthInPx$,
   xRange$,
 }: YAxisRangeProps): AxisRange => {
-  const tracesRange$ = derived(($) => $(visibleTraces$).getYRange());
-  const defaultRange$ = derived(($) => {
+  const tracesRange$ = derived((S) => S(visibleTraces$).getYRange());
+  const defaultRange$ = derived((S) => {
     const rangeWithMargins = preventEmptyRange(
-      addMarginsToRange($(tracesRange$), $(margins$), $(lengthInPx$)),
+      addMarginsToRange(S(tracesRange$), S(margins$), S(lengthInPx$)),
     );
-    if ($(showZero$)) {
+    if (S(showZero$)) {
       return addZeroToRange(rangeWithMargins);
     } else {
       return rangeWithMargins;
@@ -130,14 +130,14 @@ export const yAxisRange$ = ({
   });
 
   let isAutozoomed = true;
-  const range$ = mutDerived<ChartRange>(($, { prev }) => {
-    const def = $(defaultRange$);
-    if ($(autoscale$)) {
+  const range$ = mutDerived<ChartRange>((S, { prev }) => {
+    const def = S(defaultRange$);
+    if (S(autoscale$)) {
       return preventEmptyRange(
         addMarginsToRange(
-          $(visibleTraces$).getYRange($(xRange$), false),
-          $(margins$),
-          $(lengthInPx$),
+          S(visibleTraces$).getYRange(S(xRange$), false),
+          S(margins$),
+          S(lengthInPx$),
         ),
       );
     }

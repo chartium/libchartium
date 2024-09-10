@@ -34,11 +34,11 @@ export const chartRenderer$ = ({
   );
   // TODO destroy the renderer
 
-  const canvasPhysicalSize$ = derived(($) => {
-    const logicalSize = $(canvasLogicalSize$);
+  const canvasPhysicalSize$ = derived((S) => {
+    const logicalSize = S(canvasLogicalSize$);
     if (!logicalSize) return;
     const { width, height } = logicalSize;
-    const zoom = $(devicePixelRatio$);
+    const zoom = S(devicePixelRatio$);
     return {
       width: width * zoom,
       height: height * zoom,

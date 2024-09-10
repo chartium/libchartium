@@ -49,20 +49,20 @@ export const guidelines$ = ({
       return { width, height };
     });
 
-  effect(($) => {
-    const ctx = $(ctx$);
-    const size = $(canvasPhysicalSize$);
+  effect((S) => {
+    const ctx = S(ctx$);
+    const size = S(canvasPhysicalSize$);
     if (!ctx || !size) return;
 
-    const styles = $(resolvedStyles$);
+    const styles = S(resolvedStyles$);
 
     renderGuidelines({
       ctx,
       size,
       styles,
-      devicePixelRatio: $(devicePixelRatio$),
-      xTicks: $(xTicks$),
-      yTicks: $(yTicks$),
+      devicePixelRatio: S(devicePixelRatio$),
+      xTicks: S(xTicks$),
+      yTicks: S(yTicks$),
     });
   }).pipe(defer);
 };

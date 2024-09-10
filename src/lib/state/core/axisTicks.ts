@@ -41,12 +41,12 @@ export const axisTicks$ = ({
   measureTextSize$,
   lengthInPx$,
 }: AxisTicksProps): AxisTicks => {
-  const res = derived(($) =>
+  const res = derived((S) =>
     linearTicks(
-      $(range$),
-      $(lengthInPx$),
-      $(measureTextSize$),
-      $(currentDisplayUnit$),
+      S(range$),
+      S(lengthInPx$),
+      S(measureTextSize$),
+      S(currentDisplayUnit$),
     ),
   );
 

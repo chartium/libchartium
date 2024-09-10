@@ -40,8 +40,8 @@ export const axisUnits$ = ({
   range$,
   displayUnitPreference$,
 }: AxisUnitsProps): AxisUnits => {
-  const dataUnit$ = derived(($) =>
-    axis === "x" ? $(visibleTraces$).xDataUnit : $(visibleTraces$).yDataUnit,
+  const dataUnit$ = derived((S) =>
+    axis === "x" ? S(visibleTraces$).xDataUnit : S(visibleTraces$).yDataUnit,
   ).skipEqual();
 
   const bestUnit$ = bestDisplayUnit$(dataUnit$, range$);
@@ -74,9 +74,9 @@ export const axisUnits$ = ({
   return {
     dataUnit$,
     currentDisplayUnit$,
-    unitChangeActions$: derived(($) => {
-      const unaware = $(dataUnawareUnitActions$);
-      const bestFit = $(unitBestFitAction$);
+    unitChangeActions$: derived((S) => {
+      const unaware = S(dataUnawareUnitActions$);
+      const bestFit = S(unitBestFitAction$);
 
       return {
         ...unaware,
@@ -92,8 +92,8 @@ const createDefaultUnit$ = (
   range$: Signal<ChartRange>,
 ) =>
   derived(
-    ($): DisplayUnit =>
-      computeDefaultUnit($(dataUnit$), $(displayUnitPreference$), $(range$)),
+    (S): DisplayUnit =>
+      computeDefaultUnit(S(dataUnit$), S(displayUnitPreference$), S(range$)),
   ).skipEqual();
 
 const createCurrentUnit$ = ({
@@ -104,9 +104,9 @@ const createCurrentUnit$ = ({
   defaultDisplayUnit$: Signal<DisplayUnit>;
 }) => {
   let isDefault = false;
-  const current$ = mutDerived<DisplayUnit>(($, { prev }) => {
-    const def = $(defaultDisplayUnit$);
-    const dat = $(dataUnit$);
+  const current$ = mutDerived<DisplayUnit>((S, { prev }) => {
+    const def = S(defaultDisplayUnit$);
+    const dat = S(dataUnit$);
 
     if (!isDisplayUnitValidForDataUnit(prev, dat)) {
       isDefault = true;
@@ -141,10 +141,10 @@ const createUnitBestFitAction$ = ({
   defaultDisplayUnit$: Signal<DisplayUnit>;
   setDisplayUnit: (u: DisplayUnit) => void;
 }) =>
-  derived(($): UnitChangeAction | undefined => {
-    const unit = $(bestUnit$);
-    const currUnit = $(currentDisplayUnit$);
-    const defaultUnit = $(defaultDisplayUnit$);
+  derived((S): UnitChangeAction | undefined => {
+    const unit = S(bestUnit$);
+    const currUnit = S(currentDisplayUnit$);
+    const defaultUnit = S(defaultDisplayUnit$);
 
     if (eq(unit, currUnit) || eq(unit, defaultUnit)) return undefined;
 
@@ -165,9 +165,9 @@ const createUnitChangeActions$ = ({
   resetDisplayUnit: () => void;
   setDisplayUnit: (u: DisplayUnit) => void;
 }) =>
-  derived(($) => {
-    const curr = $(currentDisplayUnit$);
-    const def = $(defaultDisplayUnit$);
+  derived((S) => {
+    const curr = S(currentDisplayUnit$);
+    const def = S(defaultDisplayUnit$);
 
     const reset = eq(curr, def)
       ? undefined
@@ -202,7 +202,7 @@ const bestDisplayUnit$ = (
   range$: Signal<ChartRange>,
 ) =>
   derived(
-    ($): DisplayUnit => bestDisplayUnit($(dataUnit$), $(range$)),
+    (S): DisplayUnit => bestDisplayUnit(S(dataUnit$), S(range$)),
   ).skipEqual();
 
 const changeFactor = ({

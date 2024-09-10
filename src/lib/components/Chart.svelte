@@ -186,9 +186,9 @@
   export let disableUserRangeChanges: { x?: boolean; y?: boolean } = {};
   const _disableUserRangeChanges$ = mut(disableUserRangeChanges);
   $: _disableUserRangeChanges$.set(disableUserRangeChanges);
-  const disableUserRangeChanges$ = derived(($) => ({
-    x: $(_disableUserRangeChanges$).x ?? false,
-    y: ($(_disableUserRangeChanges$).y ?? false) || $(autoscaleY$),
+  const disableUserRangeChanges$ = derived((S) => ({
+    x: S(_disableUserRangeChanges$).x ?? false,
+    y: (S(_disableUserRangeChanges$).y ?? false) || S(autoscaleY$),
   }));
 
   export let margins: RangeMargins | undefined = undefined;
@@ -261,8 +261,8 @@
   const visibleAction = mut<VisibleAction | undefined>(undefined);
 
   /** updates highilghted points in visibleAction */
-  effect(($) => {
-    const closestTraces = $(nearestTraces$);
+  effect((S) => {
+    const closestTraces = S(nearestTraces$);
     if (!closestTraces) {
       visibleAction.set({ highlightedPoints: [] });
     } else {
@@ -309,13 +309,13 @@
     })
     .pipe(onDestroy);
 
-  const notifyOfAutozoom$ = derived(($) => {
-    if (!$(autoscaleY$)) return false;
+  const notifyOfAutozoom$ = derived((S) => {
+    if (!S(autoscaleY$)) return false;
 
-    const shift = $(visibleAction)?.shift;
+    const shift = S(visibleAction)?.shift;
     if (shift?.dy !== undefined && shift.dy !== 0) return true;
 
-    const zoom = $(visibleAction)?.zoom;
+    const zoom = S(visibleAction)?.zoom;
     if (zoom === undefined) return false;
 
     const isZoominY =
@@ -474,9 +474,9 @@
         {hideHoverPoints}
         {hideXRuler}
         {hideYRuler}
-        disableUserRangeChanges$={derived(($) => ({
-          x: $(disableUserRangeChanges$).x,
-          y: $(disableUserRangeChanges$).y,
+        disableUserRangeChanges$={derived((S) => ({
+          x: S(disableUserRangeChanges$).x,
+          y: S(disableUserRangeChanges$).y,
         }))}
         traceHovered={$hoveredTrace$ !== undefined}
         commonXRuler={commonXRuler$}
