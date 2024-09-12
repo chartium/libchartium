@@ -24,6 +24,7 @@ import {
   minValue,
   computeDefaultUnit,
   formatChartValue,
+  toNumeric,
 } from "../units/mod.js";
 import {
   assertNever,
@@ -512,6 +513,62 @@ export class StatsTable<CustomData = never> {
       variantStyles: styles,
       precomputedColorIndices: undefined,
       randomSeed: randomUint(),
+    });
+  }
+
+  mergeStatsWithSameTitle(): StatsTable<CustomData> {
+    const stats: Record<string, StatData<CustomData>> = {};
+    for (const stat of this.#p.stats) {
+      const oldStat = stats[stat.title];
+      if (!oldStat) {
+        stats[stat.title] = stat;
+      } else {
+        if (oldStat.type !== stat.type || oldStat.group !== stat.group) {
+          throw new TypeError(
+            `Trying to merge incompatible stats "${stat.title}".`,
+          );
+        }
+        const style = {
+          ...oldStat.style,
+          ...stat.style,
+        };
+
+        const oldStatAsCustom = oldStat as Extract<
+          StatData<CustomData>,
+          { type: "custom" }
+        >;
+        const oldStatAsValue = oldStat as Extract<
+          StatData<CustomData>,
+          { type: "value" }
+        >;
+
+        const data: StatData<CustomData>["data"] =
+          stat.type === "custom"
+            ? new Map(concat(oldStatAsCustom.data, stat.data))
+            : new Map(
+                concat(
+                  oldStatAsValue.data,
+                  map(stat.data, ([h, value]) => [
+                    h,
+                    toNumeric(
+                      toChartValue(value, stat.dataUnit),
+                      oldStatAsValue.dataUnit,
+                    ),
+                  ]),
+                ),
+              );
+
+        stats[stat.title] = {
+          ...oldStat,
+          style,
+          data: data as any,
+        };
+      }
+    }
+
+    return new StatsTable<CustomData>({
+      ...this.#p,
+      stats: Object.values(stats),
     });
   }
 
