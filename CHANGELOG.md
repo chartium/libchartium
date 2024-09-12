@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.33.0](https://github.com/chartium/libchartium/compare/libchartium-v0.32.6...libchartium-v0.33.0) (2024-09-12)
+
+
+### Features
+
+* **StatsTable:** add method to merge stats with the same title ([dcc339b](https://github.com/chartium/libchartium/commit/dcc339bdcf5fde3272f381956861295e819a1c2b))
+
+
+### Bug Fixes
+
+* oops, one forgotten $-prefixed variable ([9365e40](https://github.com/chartium/libchartium/commit/9365e40f6108fd3338405248bf7f41231a849ba6))
+
 ## [0.32.6](https://github.com/chartium/libchartium/compare/libchartium-v0.32.5...libchartium-v0.32.6) (2024-09-10)
 
 
