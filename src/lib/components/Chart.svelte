@@ -40,6 +40,7 @@
   import { derived } from "@typek/signalhead";
   import RulerBubble from "./RulerBubble.svelte";
   import { setContext } from "../utils/svelte-context.js";
+  import { filter } from "@typek/typek";
 
   // SECTION Props
   let klass: string = "";
@@ -62,6 +63,15 @@
     .map((traces) => traces.withResolvedColors())
     .zip(hiddenTraceIds$)
     .map(([traces, hiddenIds]) => traces.withoutTraces(hiddenIds));
+
+  const hoverableTraces$ = visibleTraces$.map((traces) =>
+    traces.withoutTraces(
+      filter(
+        traces.traces(),
+        (t) => traces.getStyle(t)["tooltip-visibility"] === "hidden",
+      ),
+    ),
+  );
 
   export let title: string = "";
   export let subtitle: string = "";
@@ -237,7 +247,7 @@
     defer: onDestroy,
   });
   const { nearestTraces$, hoveredTrace$ } = hover$({
-    visibleTraces$,
+    hoverableTraces$,
     commonXRuler$,
     commonYRuler$,
     yDataUnit$: chart$.axes.y.dataUnit$,

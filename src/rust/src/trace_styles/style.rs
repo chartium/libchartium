@@ -14,7 +14,7 @@ use wasm_bindgen::prelude::wasm_bindgen;
 use super::{
     field_types::{TraceColor, TraceLineStyle, TracePaletteIndex, TracePointsStyle},
     utils::OrUnset,
-    TraceFillStyle,
+    TraceFillStyle, TraceTooltipVisibility,
 };
 
 #[optfield(
@@ -37,6 +37,7 @@ pub struct TraceStyle {
     pub fill: OrUnset<TraceFillStyle>,
     pub fill_opacity: OrUnset<f32>,
     pub stack_group: OrUnset<u32>,
+    pub tooltip_visibility: OrUnset<TraceTooltipVisibility>,
 }
 
 #[derive(Clone, Tsify, Serialize, Deserialize)]
@@ -53,6 +54,7 @@ pub struct ComputedTraceStyle {
     pub fill: TraceFillStyle,
     pub fill_opacity: f32,
     pub stack_group: Option<u32>,
+    pub tooltip_visibility: TraceTooltipVisibility,
 }
 
 impl TraceStylePatch {
@@ -66,6 +68,7 @@ impl TraceStylePatch {
             && self.legend_priority.is_none()
             && self.fill.is_none()
             && self.stack_group.is_none()
+            && self.tooltip_visibility.is_none()
     }
 }
 
@@ -126,6 +129,7 @@ impl TraceStyle {
             fill: self.get_fill(),
             fill_opacity: self.get_fill_opacity(),
             stack_group: self.stack_group.into(),
+            tooltip_visibility: self.tooltip_visibility.unwrap_or_default(),
         }
     }
 

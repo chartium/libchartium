@@ -37,7 +37,7 @@ export interface HoveredTrace extends CloseTrace {
 }
 
 export interface MouseHoverProps {
-  visibleTraces$: Signal<TraceList>;
+  hoverableTraces$: Signal<TraceList>;
   hoverEvent$: Signal<ChartMouseEvent | undefined>;
   point(): PointInChartFactory;
 
@@ -60,7 +60,7 @@ export interface MouseHover {
 }
 
 export const hover$ = ({
-  visibleTraces$,
+  hoverableTraces$,
   hoverEvent$,
   point,
   traceHoverPointRadius$,
@@ -99,7 +99,7 @@ export const hover$ = ({
     const { x, y } = S(hoverQuantity$);
     if (x === undefined || y === undefined) return [];
 
-    const traces = S(visibleTraces$);
+    const traces = S(hoverableTraces$);
     const _count = S(tooltipTraceCount$);
     const count = _count === "all" ? traces.traceCount : _count;
 
@@ -107,7 +107,7 @@ export const hover$ = ({
   });
 
   const nearestTracesSortedByCloseness$ = derived((S): CloseTrace[] => {
-    const traces = S(visibleTraces$);
+    const traces = S(hoverableTraces$);
     return S(unstyledNearestTraces$).map(({ traceId, x, y, displayY }) => ({
       style: traces.getStyle(traceId),
       traceId,
@@ -136,7 +136,7 @@ export const hover$ = ({
     const trace = S(nearestTracesSortedByCloseness$).at(0);
     if (!S(isClosestTraceHovered$) || !trace) return;
 
-    const statistics = S(visibleTraces$).calculateStatistics({
+    const statistics = S(hoverableTraces$).calculateStatistics({
       traces: [trace.traceId],
     })[0];
 

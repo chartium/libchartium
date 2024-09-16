@@ -84,6 +84,7 @@ export interface ComputedTraceStyle {
   "palette-index": number;
   "z-index": number;
   "legend-priority": number;
+  "tooltip-visibility": lib.TraceTooltipVisibility;
 }
 
 export interface FromRowBufferParams {

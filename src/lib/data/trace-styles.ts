@@ -6,6 +6,7 @@ import {
 import { variantIds } from "./variant-ids.js";
 import { lib } from "../wasm.js";
 
+export type TraceTooltipVisibility = lib.TraceTooltipVisibility;
 export type TraceRandomColorSpace = lib.TraceRandomColorSpace;
 export type TracePointsStyle = lib.TracePointsStyle;
 export type PaletteName = lib.PaletteName;
@@ -31,6 +32,7 @@ export interface TraceStyle {
   fill: "to-zero-y" | "to-next-in-stack" | "none" | "unset";
   "fill-opacity": number | "unset";
   "stack-group": number | "unset";
+  "tooltip-visibility": TraceTooltipVisibility;
 }
 
 export interface TraceStyleSheet {
@@ -80,6 +82,7 @@ const oxidizeStylePatch = (
     fill: s?.["fill"],
     "fill-opacity": s?.["fill-opacity"],
     "stack-group": s?.["stack-group"],
+    "tooltip-visibility": s?.["tooltip-visibility"],
   } satisfies NonOptionalButPossiblyUndefined<lib.TraceStylePatch>;
 };
 

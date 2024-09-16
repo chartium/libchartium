@@ -79,3 +79,11 @@ pub enum TraceFillStyle {
     ToNextInStack,
 }
 derive_static_default!(TraceFillStyle, TraceFillStyle::None);
+
+#[derive(Clone, Copy, Default, PartialEq, Tsify, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum TraceTooltipVisibility {
+    Hidden,
+    #[default]
+    Visible,
+}

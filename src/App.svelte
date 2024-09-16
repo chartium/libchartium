@@ -70,6 +70,7 @@
           trace_1: {
             line: "dashed",
             "line-dash-array": [5, 5],
+            "tooltip-visibility": "hidden",
           },
           trace_3: { fill: "to-next-in-stack", "stack-group": 0 },
           trace_4: { fill: "to-next-in-stack", "stack-group": 0 },
