@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.34.0](https://github.com/chartium/libchartium/compare/libchartium-v0.33.0...libchartium-v0.34.0) (2024-09-16)
+
+
+### Features
+
+* **TraceStyle:** add the ability to hide a trace from tooltips ([7af1ae2](https://github.com/chartium/libchartium/commit/7af1ae21c47da97abc738499b5e9b84c872f1751))
+
 ## [0.33.0](https://github.com/chartium/libchartium/compare/libchartium-v0.32.6...libchartium-v0.33.0) (2024-09-12)
 
 
