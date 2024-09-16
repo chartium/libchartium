@@ -51,6 +51,7 @@
     "@tsconfig/svelte": "^5.0.4",
     "@types/node": "^20.14.8",
     "eslint": "^9.5.0",
+    "eslint-plugin-compat": "^6.0.1",
     "eslint-plugin-svelte": "^2.41.0",
     "globals": "^15.6.0",
     "prettier": "3.3.2",
@@ -87,5 +88,8 @@
     "fraction.js": "^4.3.7",
     "unitlib": "^0.8.11"
   },
-  "packageManager": "pnpm@9.1.1+sha256.9551e803dcb7a1839fdf5416153a844060c7bce013218ce823410532504ac10b"
+  "packageManager": "pnpm@9.1.1+sha256.9551e803dcb7a1839fdf5416153a844060c7bce013218ce823410532504ac10b",
+  "browserslist": [
+    "fully supports offscreencanvas and fully supports es6 and last 3 versions"
+  ]
 }

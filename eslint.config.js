@@ -1,5 +1,6 @@
 import eslint from "@eslint/js";
 import tseslint from "typescript-eslint";
+import compat from "eslint-plugin-compat";
 import eslintPluginSvelte from "eslint-plugin-svelte";
 import globals from "globals";
 
@@ -7,6 +8,7 @@ export default tseslint.config(
   eslint.configs.recommended,
   ...tseslint.configs.recommended,
   ...eslintPluginSvelte.configs["flat/recommended"],
+  compat.configs["flat/recommended"],
   {
     languageOptions: {
       sourceType: "module",
