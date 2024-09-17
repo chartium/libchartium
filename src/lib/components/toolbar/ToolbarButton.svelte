@@ -25,7 +25,6 @@
 
   let showTooltip = false;
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-expressions
   $: showTooltip, updateButtonRect();
 </script>
 

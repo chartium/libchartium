@@ -40,6 +40,7 @@ export default tseslint.config(
     files: ["src/**/*.svelte"],
     rules: {
       "no-undef": "off",
+      "@typescript-eslint/no-unused-expressions": "off",
     },
   },
   {

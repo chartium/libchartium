@@ -263,7 +263,7 @@
 
   const xTicks$ = chart$.axes.x.ticks$;
   const yTicks$ = chart$.axes.y.ticks$;
-  const xTicksDecimalPlaces$ = chart$.axes.x.tickDecimalPlaces$;
+  const _xTicksDecimalPlaces$ = chart$.axes.x.tickDecimalPlaces$;
   const yTicksDecimalPlaces$ = chart$.axes.y.tickDecimalPlaces$;
   const xDisplayUnit$ = chart$.axes.x.currentDisplayUnit$;
   const yDisplayUnit$ = chart$.axes.y.currentDisplayUnit$;
@@ -605,12 +605,6 @@
   }
 
   .bubble-reference {
-    &.x {
-      bottom: 0;
-    }
-    &.y {
-      top: 0;
-    }
     left: 0;
     position: absolute;
     height: 0;
@@ -618,5 +612,13 @@
     overflow: visible;
     user-select: none;
     pointer-events: none;
+
+    &.x {
+      bottom: 0;
+    }
+
+    &.y {
+      top: 0;
+    }
   }
 </style>

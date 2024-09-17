@@ -1,7 +1,7 @@
 <script lang="ts">
   import { faFileCsv } from "@fortawesome/free-solid-svg-icons";
   import ToolbarButton from "./ToolbarButton.svelte";
-  import { toolKey, type ToolContext } from "./toolKey.js";
+  import { toolKey } from "./toolKey.js";
   import { getContext } from "../../utils/svelte-context.js";
   import { yeet } from "@typek/typek";
 

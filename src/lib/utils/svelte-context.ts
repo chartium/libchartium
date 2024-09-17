@@ -6,6 +6,7 @@ import {
 
 // https://github.com/sveltejs/svelte/issues/8941#issuecomment-1927036924
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface ContextKey<_T = unknown> {}
 
 export function getContext<T>(key: ContextKey<T>): T {
