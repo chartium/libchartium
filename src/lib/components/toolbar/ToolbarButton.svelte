@@ -1,10 +1,7 @@
 <script lang="ts">
-  import { afterUpdate } from "svelte";
+  import Fa from "svelte-fa";
   import GenericTooltip from "../../utils/GenericTooltip.svelte";
   import type { IconDefinition } from "@fortawesome/free-solid-svg-icons";
-  // weird hack to import svelte-fa bc of NodeNext module resolution
-  import { default as Fa_1, type Fa as Fa_2 } from "svelte-fa";
-  const Fa = Fa_1 as any as typeof Fa_2;
 
   /** Shown upon hover */
   export let title: string | undefined = undefined;
@@ -13,18 +10,23 @@
   export let icon: IconDefinition | undefined = undefined;
 
   let button: HTMLButtonElement;
-  let buttonRect: DOMRect;
-  afterUpdate(() => {
-    buttonRect = button?.getBoundingClientRect();
-  });
-  $: tooltipPosition =
-    buttonRect !== undefined
-      ? {
-          x: buttonRect.left + buttonRect.width / 2,
-          y: buttonRect.bottom,
-        }
-      : undefined;
+  let tooltipPosition: { x: number; y: number } | undefined;
+
+  function updateButtonRect() {
+    if (!button) return;
+
+    const rect = button.getBoundingClientRect();
+
+    tooltipPosition = {
+      x: rect.left + rect.width / 2,
+      y: rect.bottom,
+    };
+  }
+
   let showTooltip = false;
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+  $: showTooltip, updateButtonRect();
 </script>
 
 {#if title !== undefined}
@@ -37,9 +39,7 @@
     </div>
   </GenericTooltip>
 {/if}
-
 <button
-  bind:contentRect={buttonRect}
   bind:this={button}
   on:click={() => {
     showTooltip = false;
