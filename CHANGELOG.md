@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.35.2](https://github.com/chartium/libchartium/compare/libchartium-v0.35.1...libchartium-v0.35.2) (2024-09-17)
+
+
+### Bug Fixes
+
+* avoid self-closing tags ([947864f](https://github.com/chartium/libchartium/commit/947864f0d8257f38ad1fac91b18fd0360229ccc2))
+
 ## [0.35.1](https://github.com/chartium/libchartium/compare/libchartium-v0.35.0...libchartium-v0.35.1) (2024-09-17)
 
 
