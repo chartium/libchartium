@@ -32,26 +32,26 @@ export interface BackgroundStyle {
 
 export interface TickStyle {
   style: string;
-  class: string;
+  className: string;
 }
 export interface BubbleStyle {
   style: string;
-  class: string;
+  className: string;
   decimalPlaces: number;
 }
 export interface TooltipStyle {
   manyTraces: Partial<{
     style: string;
-    class: string;
+    className: string;
   }>;
   // singleTrace: {
   //   style: string;
-  //   class: string;
+  //   className: string;
   // }
 }
 export interface LegendStyle {
   style: string;
-  class: string;
+  className: string;
 }
 
 export interface ChartStyleSheet {

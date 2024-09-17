@@ -87,7 +87,7 @@
         {nearestTraces}
         {xDisplayUnit}
         {yDisplayUnit}
-        class={chartStylesheet?.tooltip?.manyTraces?.class ?? ""}
+        class={chartStylesheet?.tooltip?.manyTraces?.className ?? ""}
         style={chartStylesheet?.tooltip?.manyTraces?.style ?? ""}
       />
     {/if}

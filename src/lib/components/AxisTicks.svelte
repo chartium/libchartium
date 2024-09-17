@@ -55,7 +55,7 @@
   export let visibleAction: WritableSignal<VisibleAction | undefined>;
 
   export let chartStylesheet: Partial<ChartStyleSheet> = {};
-  const tickClass = `${chartStylesheet?.ticks?.class ?? ""} ${chartStylesheet?.[`ticks.${axis}`]?.class ?? ""}`;
+  const tickClass = `${chartStylesheet?.ticks?.className ?? ""} ${chartStylesheet?.[`ticks.${axis}`]?.className ?? ""}`;
   const tickStyle = `${chartStylesheet?.ticks?.style ?? ""} ${chartStylesheet?.[`ticks.${axis}`]?.style ?? ""}`;
 
   export let dimensionFlock: FlockRegistry<number> | undefined;

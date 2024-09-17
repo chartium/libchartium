@@ -111,7 +111,7 @@
     {#each $virtualizer.getVirtualItems() as row (row.index)}
       {@const windowStart = row.index * cols}
       <div
-        class="legend-grid {chartStylesheet?.legend?.class ?? ''}"
+        class="legend-grid {chartStylesheet?.legend?.className ?? ''}"
         style:transform="translateY({row.start}px)"
         style={chartStylesheet?.legend?.style}
       >
