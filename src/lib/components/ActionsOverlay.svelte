@@ -1,5 +1,5 @@
 <!-- Chart overlay that draw rectangles and line segments on zoom -->
-<script lang="ts" context="module">
+<script lang="ts" module>
   export type VisibleAction = {
     zoom?: Zoom;
     shift?: Shift;

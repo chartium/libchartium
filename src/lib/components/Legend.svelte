@@ -1,4 +1,4 @@
-<script lang="ts" context="module">
+<script lang="ts" module>
   const PREVIEW_WIDTH = 15;
   const GAP = 3;
   const ROW_HEIGHT = 24;
