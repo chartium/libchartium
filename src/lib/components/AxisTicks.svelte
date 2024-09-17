@@ -115,14 +115,14 @@
           .map((v) => {
             if (!v) return;
             const { unit, callback } = v;
-            return <const>{
+            return {
               type: "leaf",
               content: `Fit to best unit ${unit}`,
               callback() {
                 callback();
                 menu.close();
               },
-            };
+            } as const;
           }),
         unitChangeActions$
           .map((v) => v.raise)
@@ -130,14 +130,14 @@
           .map((v) => {
             if (!v) return;
             const { unit, callback } = v;
-            return <const>{
+            return {
               type: "leaf",
               content: `Raise unit to ${unit}`,
               callback() {
                 callback();
                 menu.close();
               },
-            };
+            } as const;
           }),
         unitChangeActions$
           .map((v) => v.reset)
@@ -145,14 +145,14 @@
           .map((v) => {
             if (!v) return;
             const { unit, callback } = v;
-            return <const>{
+            return {
               type: "leaf",
               content: `Reset unit to ${unit}`,
               callback() {
                 callback();
                 menu.close();
               },
-            };
+            } as const;
           }),
         unitChangeActions$
           .map((v) => v.lower)
@@ -160,14 +160,14 @@
           .map((v) => {
             if (!v) return;
             const { unit, callback } = v;
-            return <const>{
+            return {
               type: "leaf",
               content: `Lower unit to ${unit}`,
               callback() {
                 callback();
                 menu.close();
               },
-            };
+            } as const;
           }),
       ).map(([bestUnit, ...arr_]): ContextItem<string>[] => {
         let items = arr_.filter((x) => x) as ContextItem<string>[];
