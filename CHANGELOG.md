@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.35.1](https://github.com/chartium/libchartium/compare/libchartium-v0.35.0...libchartium-v0.35.1) (2024-09-17)
+
+
+### Bug Fixes
+
+* use more svelte5 friendly as const ([b3a4329](https://github.com/chartium/libchartium/commit/b3a4329666c92f7a43b26acc372d6cfd52411428))
+
 ## [0.35.0](https://github.com/chartium/libchartium/compare/libchartium-v0.34.1...libchartium-v0.35.0) (2024-09-17)
 
 
