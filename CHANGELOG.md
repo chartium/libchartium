@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.35.0](https://github.com/chartium/libchartium/compare/libchartium-v0.34.1...libchartium-v0.35.0) (2024-09-17)
+
+
+### ⚠ BREAKING CHANGES
+
+* change style props called "class" to "className"
+
+### Bug Fixes
+
+* change style props called "class" to "className" ([4bfd7be](https://github.com/chartium/libchartium/commit/4bfd7be34705615a882556125a0aa900d96e2c45))
+* **ToolbarButton:** fix reactivity loop ([5a8fb5e](https://github.com/chartium/libchartium/commit/5a8fb5e1fc97ad0d073a5acc580a2e71275f75ac))
+
 ## [0.34.1](https://github.com/chartium/libchartium/compare/libchartium-v0.34.0...libchartium-v0.34.1) (2024-09-17)
 
 
