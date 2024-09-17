@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.34.1](https://github.com/chartium/libchartium/compare/libchartium-v0.34.0...libchartium-v0.34.1) (2024-09-17)
+
+
+### Bug Fixes
+
+* cleanup of console.logs ([590912e](https://github.com/chartium/libchartium/commit/590912e82bc7f3d17f63fa8cf7694bd3d4df669e))
+
 ## [0.34.0](https://github.com/chartium/libchartium/compare/libchartium-v0.33.0...libchartium-v0.34.0) (2024-09-16)
 
 
