@@ -197,8 +197,6 @@
     const transformOrigin = "center center";
     return `${absolutePos}; transform: ${transform}; transform-origin: ${transformOrigin};`;
   }
-
-  $: console.log(`Im axis ${axis} and my hide variable is ${hideTicks}`);
 </script>
 
 <GenericContextMenu items={$contextItems} bind:this={menu} />

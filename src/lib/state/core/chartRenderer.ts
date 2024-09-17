@@ -56,7 +56,7 @@ export const chartRenderer$ = ({
     xRange: ChartRange,
     yRange: ChartRange,
   ) => {
-    console.log("render");
+    // console.log("render");
     renderer.render({
       traces: visibleTraces,
       clear: true,
