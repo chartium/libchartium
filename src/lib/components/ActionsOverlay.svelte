@@ -407,7 +407,7 @@
   let menu: any;
 </script>
 
-<GenericContextMenu bind:items={options} bind:this={menu} />
+<GenericContextMenu items={options} bind:this={menu} />
 
 <canvas
   bind:this={canvasRef}
@@ -437,7 +437,7 @@
     threshold: oneDZoomWindow,
   }}
   use:mouseDrag={{ ...rightDragCallbacks, button: MouseButtons.Right }}
-/>
+></canvas>
 
 <style>
   canvas {

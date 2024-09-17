@@ -76,16 +76,17 @@
 <div class="trace-preview" class:simplified>
   {#if simplified}
     {#if traceStyle.line === "solid"}
-      <div class="color-indicator" style="background: {traceStyle.color}" />
+      <div class="color-indicator" style="background: {traceStyle.color}"></div>
     {:else if traceStyle.line !== "none"}
       <div class="color-indicator">
         {#each segments(traceStyle.line) as _}
-          <div style="background: {traceStyle.color}" />
+          <div style="background: {traceStyle.color}"></div>
         {/each}
       </div>
     {/if}
   {:else}
-    <canvas bind:this={canvasRef} height={previewWidth} width={previewHeight} />
+    <canvas bind:this={canvasRef} height={previewWidth} width={previewHeight}
+    ></canvas>
   {/if}
 </div>
 

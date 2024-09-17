@@ -252,7 +252,7 @@
           </div>
         </span>
       {/each}
-      <span class="measuring-span" bind:this={measuringSpan} />
+      <span class="measuring-span" bind:this={measuringSpan}></span>
     </div>
   {/if}
 </div>

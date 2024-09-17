@@ -466,7 +466,7 @@
         chartStylesheet={chartStylesheet ?? {}}
       />
 
-      <canvas bind:this={canvas} on:contextmenu|preventDefault />
+      <canvas bind:this={canvas} on:contextmenu|preventDefault></canvas>
 
       {#if $$slots.infobox && infoboxPosition !== "none"}
         <div
