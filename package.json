@@ -25,6 +25,7 @@
   "types": "./dist/lib/mod.d.ts",
   "exports": {
     ".": {
+      "default": "./dist/lib/mod.js",
       "types": "./dist/lib/mod.d.ts",
       "svelte": "./dist/lib/mod.js"
     },
