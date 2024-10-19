@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.35.3](https://github.com/chartium/libchartium/compare/libchartium-v0.35.2...libchartium-v0.35.3) (2024-10-19)
+
+
+### Bug Fixes
+
+* add default exports directive ([b6d1f09](https://github.com/chartium/libchartium/commit/b6d1f09941e9c83f2d05851cf271a8d4ad5c1a2a))
+
 ## [0.35.2](https://github.com/chartium/libchartium/compare/libchartium-v0.35.1...libchartium-v0.35.2) (2024-09-17)
 
 
