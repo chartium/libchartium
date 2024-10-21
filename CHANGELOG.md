@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.35.4](https://github.com/chartium/libchartium/compare/libchartium-v0.35.3...libchartium-v0.35.4) (2024-10-21)
+
+
+### Bug Fixes
+
+* make package webpack friendly ([a755a4b](https://github.com/chartium/libchartium/commit/a755a4b3266f074bc04328228857c1103ed22724))
+
 ## [0.35.3](https://github.com/chartium/libchartium/compare/libchartium-v0.35.2...libchartium-v0.35.3) (2024-10-19)
 
 
