@@ -1,7 +1,8 @@
-export function render_between(
-  source: OffscreenCanvas,
-  target: OffscreenCanvas,
-) {
+/**
+ * @param {OffscreenCanvas} source
+ * @param {OffscreenCanvas} target
+ */
+export function render_between(source, target) {
   const ctxt = target.getContext("2d");
 
   if (!ctxt) return;

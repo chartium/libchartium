@@ -23,7 +23,7 @@ use trace_geometry::*;
 
 pub const MAX_LINE_WIDTH: i32 = 16;
 
-#[wasm_bindgen(module = "/src/renderers/webgl/webgl.ts")]
+#[wasm_bindgen(module = "/src/renderers/webgl/webgl.js")]
 extern "C" {
     fn render_between(source: &OffscreenCanvas, target: &OffscreenCanvas);
 }
