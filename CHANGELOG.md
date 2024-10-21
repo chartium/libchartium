@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.35.5](https://github.com/chartium/libchartium/compare/libchartium-v0.35.4...libchartium-v0.35.5) (2024-10-21)
+
+
+### Bug Fixes
+
+* ci hack ([f80adf3](https://github.com/chartium/libchartium/commit/f80adf3066b5f0c705ac8c39b85a902385217290))
+
 ## [0.35.4](https://github.com/chartium/libchartium/compare/libchartium-v0.35.3...libchartium-v0.35.4) (2024-10-21)
 
 
