@@ -53,6 +53,7 @@ jobs:
 
       - name: Publish libchartium
         run: npm publish
+        working-directory: /home/runner/work/libchartium/libchartium
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
