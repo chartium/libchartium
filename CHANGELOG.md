@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.35.7](https://github.com/chartium/libchartium/compare/libchartium-v0.35.6...libchartium-v0.35.7) (2024-10-22)
+
+
+### Bug Fixes
+
+* freeze wasm-bindgen version in ci ([4db54f0](https://github.com/chartium/libchartium/commit/4db54f05784826d066a0cfaa552b2fa3d7064874))
+
 ## [0.35.6](https://github.com/chartium/libchartium/compare/libchartium-v0.35.5...libchartium-v0.35.6) (2024-10-22)
 
 
