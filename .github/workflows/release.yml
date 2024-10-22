@@ -52,8 +52,7 @@ jobs:
         run: pnpm install
 
       - name: Publish libchartium
-        run: npm publish
-        working-directory: /home/runner/work/libchartium/libchartium
+        run: pnpm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
