@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.35.6](https://github.com/chartium/libchartium/compare/libchartium-v0.35.5...libchartium-v0.35.6) (2024-10-22)
+
+
+### Bug Fixes
+
+* use pnpm publish in ci ([696869b](https://github.com/chartium/libchartium/commit/696869b242c7e87d565c877cab190ea07318358f))
+
 ## [0.35.5](https://github.com/chartium/libchartium/compare/libchartium-v0.35.4...libchartium-v0.35.5) (2024-10-21)
 
 
