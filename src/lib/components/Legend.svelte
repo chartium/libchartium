@@ -70,7 +70,7 @@
     const max = traces.reduce<number>((prev, trace) => {
       return Math.max(
         prev,
-        measureText(trace.style.label ?? trace.traceId, containerElem),
+        measureText(trace.style.label ?? trace.traceId, containerElem).width,
       );
     }, 0);
 

@@ -15,6 +15,7 @@
   import Fa from "svelte-fa";
   import { mut } from "@typek/signalhead";
   import { Quantity } from "unitlib";
+  import Pie from "./lib/pie/pie.svelte";
 
   // autogenerate a lot of data
   const from = 0;
@@ -123,12 +124,43 @@
       ids: ["d", "b", "c"],
       displayUnit: SI.parseUnit("m"),
     }),
+    StatsTable.fromSingleStat({
+      statTitle: "foo",
+      dataUnit: SI.parseUnit("m"),
+      values: [20, 8, 7, 6, 9, 9, 8, 8, 8, 7, 6, 5, 4, 3, 2, 1, 100],
+      ids: [
+        "_johnny",
+        "alice",
+        "bob",
+        "cecil",
+        "diana",
+        "bobby",
+        "brocoli",
+        "mc grips",
+        "zachary",
+        "gec",
+        "bar",
+        "qux",
+        "dog",
+        "god",
+        "hot",
+        "xyzzy",
+        "yes",
+      ],
+    }),
   );
-
-  $: (window as any).table = table;
 </script>
 
 <main>
+  <div
+    style:width="350px"
+    style:height="250px"
+    style:margin="auto"
+    style:display="relative"
+  >
+    <Pie {table} statTitle="foo" />
+  </div>
+
   <h1>Chartium test page</h1>
   {#await traces then traces}
     {@const commonXRange$ = mut(traces.range)}

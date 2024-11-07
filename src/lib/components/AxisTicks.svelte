@@ -67,7 +67,7 @@
   $: onDestroy(dimensionFlock?.register(minorDim) ?? noop);
 
   export const textLength = (text: string) =>
-    measuringSpan !== undefined ? measureText(text, measuringSpan) : 0;
+    measuringSpan !== undefined ? measureText(text, measuringSpan).width : 0;
 
   export let unitChangeActions: Signal<UnitChangeActions>;
 

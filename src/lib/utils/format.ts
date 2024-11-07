@@ -55,6 +55,12 @@ export const measureText = (() => {
       .map(getStyle)
       .join(" ");
 
-    return ctx.measureText(text).width;
+    const { width, fontBoundingBoxAscent, fontBoundingBoxDescent } =
+      ctx.measureText(text);
+
+    return {
+      width,
+      height: fontBoundingBoxAscent + fontBoundingBoxDescent,
+    };
   };
 })();
