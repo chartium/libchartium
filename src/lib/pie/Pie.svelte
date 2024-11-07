@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { StatsTable } from "../mod.js";
   import { observeClientSize } from "../utils/actions.js";
+  import LabelLine from "./LabelLine.svelte";
   import { layoutPieChart } from "./pie.js";
 
   export let table: StatsTable<any>;
@@ -54,16 +55,14 @@
       />
     {/each}
     {#each layout?.labels ?? [] as label}
-      <path
-        style:stroke="white"
-        style:stroke-width="1px"
-        d="M {radius * Math.sin(label.variant.midpointDeg * DEG)} {-radius *
-          Math.cos(
-            label.variant.midpointDeg * DEG,
-          )} L {label.x_min} {label.y_min + (label.y_max - label.y_min) / 2}"
+      <LabelLine
+        from={[
+          radius * Math.sin(label.variant.midpointDeg * DEG),
+          -radius * Math.cos(label.variant.midpointDeg * DEG),
+        ]}
+        to={[label.x_min, label.y_min + (label.y_max - label.y_min) / 2]}
       />
     {/each}
-    <rect />
   </svg>
   <div class="labels" style:color="black">
     {#each layout?.labels ?? [] as label}
