@@ -15,7 +15,7 @@
   import Fa from "svelte-fa";
   import { mut } from "@typek/signalhead";
   import { Quantity } from "unitlib";
-  import Pie from "./lib/pie/pie.svelte";
+  import Pie from "./lib/pie/Pie.svelte";
 
   // autogenerate a lot of data
   const from = 0;
