@@ -1,7 +1,40 @@
-import { yeet } from "@typek/typek";
-import { toNumeric, type ChartValue, type StatsTable } from "../mod.js";
+import { todo, yeet } from "@typek/typek";
+import {
+  toNumeric,
+  type ChartValue,
+  type ComputedTraceStyle,
+  type StatsTable,
+} from "../mod.js";
 import { measureText } from "../utils/format.js";
 const DEG = Math.PI / 180;
+
+interface Extents {
+  x_min: number;
+  y_min: number;
+  x_max: number;
+  y_max: number;
+}
+
+interface Label extends Extents {
+  variant: {
+    startDeg: number;
+    midpointDeg: number;
+    endDeg: number;
+    id: string;
+    label: string | undefined;
+    style: ComputedTraceStyle;
+    value: number;
+    quantity: (ChartValue | undefined) & ChartValue;
+    offset: number;
+  };
+}
+
+interface LabelLayout {
+  extents: Extents | null;
+  radius: number;
+  done: boolean;
+  labels: Label[];
+}
 
 const getPieVariants = (table: StatsTable<any>, statTitle: string) => {
   const stat =
@@ -15,7 +48,7 @@ const getPieVariants = (table: StatsTable<any>, statTitle: string) => {
   }
 
   let sum = 0;
-  const variants = stat.variants
+  const offsetVariants = stat.variants
     .filter((v): v is typeof v & { value: ChartValue } => v.value !== undefined)
     .map((v) => {
       const value = toNumeric(v.value, stat.dataUnit);
@@ -42,12 +75,22 @@ const getPieVariants = (table: StatsTable<any>, statTitle: string) => {
       };
     });
 
+  // Rotate the chart so that the first label is at 45°
+  const firstMidpointDeg = offsetVariants[0]?.midpointDeg ?? 0;
+  const offsetDeg = 45 - firstMidpointDeg;
+  const variants = offsetVariants.map((v) => ({
+    ...v,
+    startDeg: v.startDeg + offsetDeg,
+    midpointDeg: v.midpointDeg + offsetDeg,
+    endDeg: v.endDeg + offsetDeg,
+  }));
+
   const { dataUnit, statStyle, unit } = stat;
 
   return { statTitle, statStyle, dataUnit, unit, variants };
 };
 
-const toLayout = (
+const toExtents = (
   mapCoord: (x: number, y: number) => [x: number, y: number],
   [x1, y1, x2, y2]: [
     x_min: number,
@@ -55,7 +98,7 @@ const toLayout = (
     x_max: number,
     y_max: number,
   ],
-) => {
+): Extents => {
   const [x1m, y1m] = mapCoord(x1, y1);
   const [x2m, y2m] = mapCoord(x2, y2);
 
@@ -66,6 +109,38 @@ const toLayout = (
     y_max: Math.max(y1m, y2m),
   };
 };
+
+const withExtents = <
+  T extends {
+    labels: Array<{
+      x_min: number;
+      y_min: number;
+      x_max: number;
+      y_max: number;
+    }>;
+  },
+>(
+  x: T,
+): T & { extents: Extents | null } => ({
+  ...x,
+  extents:
+    x.labels.length === 0
+      ? null
+      : x.labels.reduce<Extents>(
+          (prev, curr) => ({
+            x_min: Math.min(prev.x_min, curr.x_min),
+            x_max: Math.max(prev.x_max, curr.x_max),
+            y_min: Math.min(prev.y_min, curr.y_min),
+            y_max: Math.max(prev.y_max, curr.y_max),
+          }),
+          {
+            x_min: Infinity,
+            x_max: -Infinity,
+            y_min: Infinity,
+            y_max: -Infinity,
+          },
+        ),
+});
 
 const layoutVerticalOctant = ({
   radius,
@@ -86,16 +161,15 @@ const layoutVerticalOctant = ({
   filterAngle: (deg: number) => boolean;
   mapAngle: (deg: number) => number;
   mapCoord: (x: number, y: number) => [x: number, y: number];
-}) => {
+  limits: Extents;
+}): LabelLayout => {
   if (reverse) variants = variants.toReversed();
 
-  const labels: {
-    variant: (typeof variants)[number];
-    x_min: number;
-    y_min: number;
-    x_max: number;
-    y_max: number;
-  }[] = [];
+  const labels: Array<
+    Extents & {
+      variant: (typeof variants)[number];
+    }
+  > = [];
 
   let maxAngle = 0;
   let yAtMaxAngle = 0;
@@ -115,7 +189,7 @@ const layoutVerticalOctant = ({
 
       labels.push({
         variant,
-        ...toLayout(mapCoord, [x, 0, x + width, height]),
+        ...toExtents(mapCoord, [x, 0, x + width, height]),
       });
       maxAngle = Math.atan((x + width) / (radius - height)) / DEG;
       yAtMaxAngle = height;
@@ -128,7 +202,7 @@ const layoutVerticalOctant = ({
       const x = (radius - yAtMaxAngle) * Math.tan(midpointDeg * DEG);
       labels.push({
         variant,
-        ...toLayout(mapCoord, [
+        ...toExtents(mapCoord, [
           x,
           yAtMaxAngle,
           x + width,
@@ -143,12 +217,15 @@ const layoutVerticalOctant = ({
         yAtMaxAngle = yAtMaxAngle + height;
       }
 
-      minRadius = Math.min(minRadius, Math.hypot(x, radius - height));
+      minRadius = Math.min(
+        minRadius,
+        Math.hypot(x, radius - yAtMaxAngle - height),
+      );
     }
   }
 
   if (reverse) labels.reverse();
-  return { labels, done: false, radius: minRadius };
+  return withExtents({ labels, done: false, radius: minRadius });
 };
 
 const layoutHorizontalOctant = ({
@@ -159,6 +236,7 @@ const layoutHorizontalOctant = ({
   filterAngle,
   mapAngle,
   mapCoord,
+  limits,
 }: {
   radius: number;
   variants: ReturnType<typeof getPieVariants>["variants"];
@@ -170,19 +248,24 @@ const layoutHorizontalOctant = ({
   filterAngle: (deg: number) => boolean;
   mapAngle: (deg: number) => number;
   mapCoord: (x: number, y: number) => [x: number, y: number];
-}) => {
-  if (variants.length === 0) return { labels: [], done: false, radius };
+  limits: Extents;
+}): LabelLayout => {
+  if (variants.length === 0)
+    return {
+      labels: [],
+      done: false,
+      radius,
+      extents: null,
+    };
   if (reverse) variants = variants.toReversed();
 
-  const labels: {
-    variant: (typeof variants)[number];
-    x_min: number;
-    y_min: number;
-    x_max: number;
-    y_max: number;
-  }[] = [];
+  const labels: Array<
+    Extents & {
+      variant: (typeof variants)[number];
+    }
+  > = [];
 
-  let y = measureLabel(variants[0]).height / 2;
+  let y = limits.y_min + measureLabel(variants[0]).height / 2;
 
   for (const variant of variants) {
     const { midpointDeg: originalMidpointDeg } = variant;
@@ -196,14 +279,107 @@ const layoutHorizontalOctant = ({
 
     labels.push({
       variant,
-      ...toLayout(mapCoord, [-width, y, 0, y + height]),
+      ...toExtents(mapCoord, [-width, y, 0, y + height]),
     });
 
     y = y + height;
   }
 
   if (reverse) labels.reverse();
-  return { labels, done: false, radius };
+  return withExtents({ labels, done: false, radius });
+};
+
+const degToOctant = (deg: number) => {
+  if (deg < 45) return 1;
+  if (deg >= 45 && deg <= 90) return 2;
+  if (deg > 90 && deg <= 135) return 3;
+  if (deg > 135 && deg <= 180) return 4;
+};
+
+const layoutNthOctant = ({
+  octant,
+  width,
+  height,
+  prevExtents,
+  ...props
+}: {
+  octant: number;
+  width: number;
+  height: number;
+
+  radius: number;
+  variants: ReturnType<typeof getPieVariants>["variants"];
+  measureLabel: (variant: (typeof props.variants)[number]) => {
+    width: number;
+    height: number;
+  };
+  prevExtents: Extents | null;
+}) => {
+  switch (octant) {
+    case 1:
+      return layoutVerticalOctant({
+        ...props,
+        filterAngle: (deg) => degToOctant(deg) === octant,
+        mapAngle: (deg) => deg,
+        mapCoord: (x, y) => [x, y - props.radius],
+        reverse: false,
+        limits: {
+          x_min: 0,
+          x_max: width / 2,
+          y_min: -height / 2,
+          y_max: 0,
+        },
+      });
+    case 2:
+      return layoutHorizontalOctant({
+        ...props,
+        filterAngle: (deg) => degToOctant(deg) === octant,
+        mapAngle: (deg) => 90 - deg,
+        mapCoord: (x, y) => [x + width / 2, -y],
+        reverse: true,
+        limits: {
+          x_min: 0,
+          x_max: width / 2,
+          y_min: prevExtents?.y_max ?? -height / 2,
+          y_max: height / 2,
+        },
+      });
+    case 3:
+      return layoutHorizontalOctant({
+        ...props,
+        filterAngle: (deg) => degToOctant(deg) === octant,
+        mapAngle: (deg) => deg - 90,
+        mapCoord: (x, y) => [x + width / 2, y],
+        reverse: false,
+        limits: {
+          x_min: 0,
+          x_max: width / 2,
+          y_min: prevExtents?.y_max ?? -height / 2,
+          y_max: height / 2,
+        },
+      });
+    case 4:
+      return layoutVerticalOctant({
+        ...props,
+        filterAngle: (deg) => degToOctant(deg) === octant,
+        mapAngle: (deg) => -deg + 180,
+        mapCoord: (x, y) => [x, -y + height / 2],
+        reverse: true,
+        limits: {
+          x_min: -width / 2,
+          x_max: width / 2,
+          y_min: 0,
+          y_max: height / 2,
+        },
+      });
+    case 5:
+    case 6:
+    case 7:
+    case 8:
+      throw todo();
+    default:
+      throw Error(`Octant must be an integer from 1 to 8, got: ${octant}`);
+  }
 };
 
 export const layoutPieChart = ({
@@ -225,71 +401,29 @@ export const layoutPieChart = ({
   ) => measureText(variant.label ?? variant.id, document.body);
 
   const labels: ReturnType<typeof layoutVerticalOctant>["labels"] = [];
-  let done = false;
   let smallRadius = radius;
+  let prevExtents: Extents | null = null;
 
-  // 1st octant
-  {
-    const l = layoutVerticalOctant({
+  // starting from the second octant (ie. offset by 45° cw)
+  for (const octant of [2, 3, 4, 1]) {
+    const {
+      done,
+      labels: newLabels,
+      radius: newRadius,
+      extents,
+    } = layoutNthOctant({
+      octant,
+      height,
+      width,
       radius,
       measureLabel,
       variants,
-      filterAngle: (deg) => deg <= 45,
-      mapAngle: (deg) => deg,
-      mapCoord: (x, y) => [x, y - radius],
-      reverse: false,
+      prevExtents,
     });
-    labels.push(...l.labels);
-    done = l.done;
-    smallRadius = Math.min(smallRadius, l.radius);
-  }
-
-  // 2nd octant
-  if (!done) {
-    const l = layoutHorizontalOctant({
-      radius,
-      measureLabel,
-      variants,
-      filterAngle: (deg) => deg > 45 && deg <= 90,
-      mapAngle: (deg) => 90 - deg,
-      mapCoord: (x, y) => [x + width / 2, -y],
-      reverse: true,
-    });
-    labels.push(...l.labels);
-    done = l.done;
-    smallRadius = Math.min(smallRadius, l.radius);
-  }
-
-  // 3rd octant
-  if (!done) {
-    const l = layoutHorizontalOctant({
-      radius,
-      measureLabel,
-      variants,
-      filterAngle: (deg) => deg > 90 && deg <= 135,
-      mapAngle: (deg) => deg - 90,
-      mapCoord: (x, y) => [x + width / 2, y],
-      reverse: false,
-    });
-    labels.push(...l.labels);
-    done = l.done;
-    smallRadius = Math.min(smallRadius, l.radius);
-  }
-
-  // 4th octant
-  if (!done) {
-    const l = layoutVerticalOctant({
-      radius,
-      measureLabel,
-      variants,
-      filterAngle: (deg) => deg > 135 && deg <= 180,
-      mapAngle: (deg) => -deg + 180,
-      mapCoord: (x, y) => [x, -y + height / 2],
-      reverse: true,
-    });
-    labels.push(...l.labels);
-    done = l.done;
-    smallRadius = Math.min(smallRadius, l.radius);
+    labels.push(...newLabels);
+    smallRadius = Math.min(smallRadius, newRadius);
+    prevExtents = extents;
+    if (done) break;
   }
 
   return { labels, variants, radius: smallRadius };
