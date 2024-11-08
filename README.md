@@ -27,7 +27,12 @@ config.
 
 ```svelte
 <script lang="ts">
-  import { TraceList, ChartComponent as Chart } from 'libchartium';
+  import { TraceList, ChartComponent as Chart, NumericDateRepresentation } from 'libchartium';
+
+  const from = +new Date();
+	const numSteps = 10_000;
+	const stepSize = 100_000;
+	const to = from + numSteps * stepSize;
 
   const xs = Array.from(
     { length: numSteps },
@@ -37,7 +42,7 @@ config.
   const ys = Array.from({ length: 100 }, (_, idx) => ({
     id: `trace_${idx}`,
     data: Float32Array.from(
-      xs.map((x) => 100 + 100 * Math.sin((x / to) * 2 * Math.PI + idx)),
+      xs.map((x) => 100 + 100 * Math.sin((x / (from - to)) * 2 * Math.PI + idx)),
     ),
   }));
 
@@ -45,14 +50,15 @@ config.
     x: {
       type: "f32",
       data: Float32Array.from(xs),
+			unit: NumericDateRepresentation.EpochMilliseconds()
     },
     y: {
       type: "f32",
       columns: ys,
     },
     style: {
-      "*": { width: 2 },
-      sin: { color: "red" },
+      "*": { "line-width": 2 },
+      trace_0: { color: "red" },
     },
   });
 </script>
