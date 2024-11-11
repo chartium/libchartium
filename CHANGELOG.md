@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.36.0](https://github.com/chartium/libchartium/compare/libchartium-v0.35.7...libchartium-v0.36.0) (2024-11-11)
+
+
+### Features
+
+* **pie:** angled lines ([5379cec](https://github.com/chartium/libchartium/commit/5379cecd0d4b1a9c390db1966c780d02164ca784))
+* **pie:** improvements & refactors, [#56](https://github.com/chartium/libchartium/issues/56) ([a522dfa](https://github.com/chartium/libchartium/commit/a522dfa5124afa51d92ab9041904f833a0c2f21c))
+* **pie:** layout octant 5 ([5018e97](https://github.com/chartium/libchartium/commit/5018e977024ce12877d5aa5062239ac1ec967e87))
+* **pie:** proof of concept ([b350c2f](https://github.com/chartium/libchartium/commit/b350c2fe0d1e5da26586794ee3d4966d6d784a7a))
+
+
+### Bug Fixes
+
+* **pie:** export Pie component from package ([2053dba](https://github.com/chartium/libchartium/commit/2053dba306e7c506c9b3f5d59b3a7223cfd9c631))
+* **README:** make the code from README actually work ([763d7e2](https://github.com/chartium/libchartium/commit/763d7e2a0981318b320001bb6d316572cf3e3474))
+
 ## [0.35.7](https://github.com/chartium/libchartium/compare/libchartium-v0.35.6...libchartium-v0.35.7) (2024-10-22)
 
 
