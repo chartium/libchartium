@@ -60,7 +60,10 @@
           radius * Math.sin(label.variant.midpointDeg * DEG),
           -radius * Math.cos(label.variant.midpointDeg * DEG),
         ]}
-        to={[label.x_min, label.y_min + (label.y_max - label.y_min) / 2]}
+        to={[
+          label.variant.midpointDeg <= 180 ? label.x_min : label.x_max,
+          label.y_min + (label.y_max - label.y_min) / 2,
+        ]}
       />
     {/each}
   </svg>

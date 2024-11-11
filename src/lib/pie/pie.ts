@@ -178,6 +178,7 @@ const layoutVerticalOctant = ({
   for (const variant of variants) {
     const { midpointDeg: originalMidpointDeg } = variant;
     if (!filterAngle(originalMidpointDeg)) continue;
+    console.log(variant.id);
 
     const midpointDeg = mapAngle(originalMidpointDeg);
     const { width, height } = measureLabel(variant);
@@ -294,6 +295,10 @@ const degToOctant = (deg: number) => {
   if (deg >= 45 && deg <= 90) return 2;
   if (deg > 90 && deg <= 135) return 3;
   if (deg > 135 && deg <= 180) return 4;
+  if (deg > 180 && deg <= 225) return 5;
+  if (deg > 225 && deg <= 270) return 6;
+  if (deg > 270 && deg <= 315) return 7;
+  return 8;
 };
 
 const layoutNthOctant = ({
@@ -315,11 +320,13 @@ const layoutNthOctant = ({
   };
   prevExtents: Extents | null;
 }) => {
+  const filterAngle = (deg: number) => degToOctant(deg) === octant;
+
   switch (octant) {
     case 1:
       return layoutVerticalOctant({
         ...props,
-        filterAngle: (deg) => degToOctant(deg) === octant,
+        filterAngle,
         mapAngle: (deg) => deg,
         mapCoord: (x, y) => [x, y - props.radius],
         reverse: false,
@@ -333,7 +340,7 @@ const layoutNthOctant = ({
     case 2:
       return layoutHorizontalOctant({
         ...props,
-        filterAngle: (deg) => degToOctant(deg) === octant,
+        filterAngle,
         mapAngle: (deg) => 90 - deg,
         mapCoord: (x, y) => [x + width / 2, -y],
         reverse: true,
@@ -347,7 +354,7 @@ const layoutNthOctant = ({
     case 3:
       return layoutHorizontalOctant({
         ...props,
-        filterAngle: (deg) => degToOctant(deg) === octant,
+        filterAngle,
         mapAngle: (deg) => deg - 90,
         mapCoord: (x, y) => [x + width / 2, y],
         reverse: false,
@@ -361,7 +368,7 @@ const layoutNthOctant = ({
     case 4:
       return layoutVerticalOctant({
         ...props,
-        filterAngle: (deg) => degToOctant(deg) === octant,
+        filterAngle,
         mapAngle: (deg) => -deg + 180,
         mapCoord: (x, y) => [x, -y + height / 2],
         reverse: true,
@@ -373,7 +380,33 @@ const layoutNthOctant = ({
         },
       });
     case 5:
+      return layoutVerticalOctant({
+        ...props,
+        filterAngle,
+        mapAngle: (deg) => deg - 180,
+        mapCoord: (x, y) => [-x, -y + props.radius],
+        reverse: false,
+        limits: {
+          x_min: -width / 2,
+          x_max: width / 2,
+          y_min: 0,
+          y_max: height / 2,
+        },
+      });
     case 6:
+      return layoutHorizontalOctant({
+        ...props,
+        filterAngle,
+        mapAngle: (deg) => 270 - deg,
+        mapCoord: (x, y) => [-x - width / 2, y],
+        reverse: true,
+        limits: {
+          x_min: -width / 2,
+          x_max: 0,
+          y_min: -height / 2,
+          y_max: height / 2,
+        },
+      });
     case 7:
     case 8:
       throw todo();
@@ -405,7 +438,7 @@ export const layoutPieChart = ({
   let prevExtents: Extents | null = null;
 
   // starting from the second octant (ie. offset by 45° cw)
-  for (const octant of [2, 3, 4, 1]) {
+  for (const octant of [2, 3, 4, 5, /* 6, 7, 8, */ 1]) {
     const {
       done,
       labels: newLabels,
