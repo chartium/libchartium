@@ -1,5 +1,6 @@
 export * from "./components/mod.js";
 export * from "./data/mod.js";
+export { default as Pie } from "./pie/Pie.svelte";
 
 export { NumericDateRepresentation } from "./utils/numericDateRepresentation.js";
 
