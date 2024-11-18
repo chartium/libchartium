@@ -39,6 +39,11 @@ export interface BubbleStyle {
   className: string;
   decimalPlaces: number;
 }
+
+export interface YBubbleStyle extends BubbleStyle {
+  scaleToFitAxis: boolean;
+}
+
 export interface TooltipStyle {
   manyTraces: Partial<{
     style: string;
@@ -71,7 +76,7 @@ export interface ChartStyleSheet {
 
   bubbles: Partial<BubbleStyle>;
   "bubbles.x": Partial<BubbleStyle>;
-  "bubbles.y": Partial<BubbleStyle>;
+  "bubbles.y": Partial<YBubbleStyle>;
 
   tooltip: Partial<TooltipStyle>;
 

@@ -2,34 +2,61 @@
   import type { ChartStyleSheet } from "../state/core/style.js";
   import type { ChartValue, DisplayUnit, Point } from "../types.js";
   import { formatChartValue } from "../units/mod.js";
+  import { clamp } from "./position.js";
+  import type { Signal } from "@typek/signalhead";
+  import { measureText } from "../utils/format.js";
 
   /** position relative to body; i.e. absolute :d */
   export let position: Point;
+  export let maxX: number;
+  export let maxWidth$: Signal<number> | undefined = undefined;
   export let value: ChartValue | undefined;
   export let axis: "x" | "y";
   export let displayUnit: DisplayUnit;
   export let autoDecimalPlaces = 2;
   export let chartStylesheet: Partial<ChartStyleSheet> = {};
+  export let scaleIfTooLarge = false;
 
   const decimalPlaces =
     chartStylesheet?.[`bubbles.${axis}`]?.decimalPlaces ??
     chartStylesheet?.bubbles?.decimalPlaces ??
     autoDecimalPlaces;
   const bubbleClass = `${chartStylesheet?.[`bubbles.${axis}`]?.className ?? ""} ${chartStylesheet?.bubbles?.className ?? ""}`;
-  const bubbleStyle = `${chartStylesheet?.[`bubbles.${axis}`]?.style ?? ""} ${chartStylesheet?.bubbles?.style ?? ""}`;
+  let bubbleStyle = `${chartStylesheet?.[`bubbles.${axis}`]?.style ?? ""} ${chartStylesheet?.bubbles?.style ?? ""}`;
+
+  let borderBoxSize: ResizeObserverSize[];
+  $: clientWidth = borderBoxSize?.[0].inlineSize ?? 0;
+  $: clampedX = clamp(position.x, 0 + clientWidth / 2, maxX - clientWidth / 2);
+  $: bubbleText = formatChartValue(value ?? 0, {
+    unit: displayUnit,
+    decimalPlaces,
+  });
+  let bubbleMeasure: HTMLDivElement;
+  $: scaling = chartStylesheet?.[`bubbles.y`]?.scaleToFitAxis
+    ? scaleIfTooLarge || $maxWidth$ === undefined || bubbleMeasure === undefined
+      ? undefined
+      : clamp(
+          $maxWidth$ / (measureText(bubbleText, bubbleMeasure).width + 20),
+          0.65,
+          1,
+        )
+    : 1;
 
   $: positionedStyle =
     axis === "x"
-      ? `left: ${position.x.toFixed(1)}px; top: ${position.y.toFixed(1)}px; transform: translateX(-50%)`
-      : `right: ${position.x.toFixed(1)}px; top: ${position.y.toFixed(1)}px; transform: translateY(-50%)`;
+      ? `left: ${clampedX.toFixed(1)}px; top: ${position.y.toFixed(1)}px; transform: translateX(-50%) scale(${scaling}); transform-origin: right center`
+      : `right: ${position.x.toFixed(1)}px; top: ${position.y.toFixed(1)}px; transform: translateY(-50%) scale(${scaling}); transform-origin: right center`;
 </script>
 
-<div class="positioned" style={positionedStyle}>
+<div
+  bind:this={bubbleMeasure}
+  class="axis-bubble {bubbleClass}"
+  style={bubbleStyle}
+  style:visibility={"hidden"}
+></div>
+<div class="positioned" style={positionedStyle} bind:borderBoxSize>
   <div class="axis-bubble {bubbleClass}" style={bubbleStyle}>
-    {formatChartValue(value ?? 0, {
-      unit: displayUnit,
-      decimalPlaces,
-    })}
+    {bubbleText}
   </div>
 </div>
 

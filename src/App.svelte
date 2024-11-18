@@ -149,6 +149,7 @@
       ],
     }),
   );
+  const fullscreen$ = mut(false);
 </script>
 
 <main>
@@ -175,6 +176,8 @@
         legendPosition="bottom"
         hoverPointsInterpolation="nearest"
         {commonXRange$}
+        {fullscreen$}
+        class={$fullscreen$ ? "bg" : ""}
       >
         <!-- <svelte:fragment slot="toolbar">
             <ToolFullscreen on:click={() => (fullscreen = !fullscreen)} />
@@ -189,7 +192,7 @@
         </svelte:fragment>
       </Chart>
     </div>
-    <div style="height:400px;width:900px;" bind:this={wrapDiv}>
+    <!-- <div style="height:400px;width:900px;" bind:this={wrapDiv}>
       <Chart
         {traces}
         title="Titulek"
@@ -210,13 +213,19 @@
             <ToolExportToPng />
             <ToolHideLegend />
             <ToolExportToCsv />
-          </svelte:fragment> -->
+          </svelte:fragment> 
         <svelte:fragment slot="infobox">
           <Fa icon={faArrowRight} />&ensp;1<br />
           <Fa icon={faArrowLeft} />&ensp;1000<br />
           <Fa icon={faChartLine} />&ensp;3/3
         </svelte:fragment>
       </Chart>
-    </div>
+    </div> -->
   {/await}
 </main>
+
+<style>
+  :global(.bg) {
+    background-color: yellow;
+  }
+</style>
