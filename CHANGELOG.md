@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.37.0](https://github.com/chartium/libchartium/compare/libchartium-v0.36.0...libchartium-v0.37.0) (2024-11-18)
+
+
+### Features
+
+* **RulerBubble:** added an option to scale their size to fit in the axis ([7cafa8a](https://github.com/chartium/libchartium/commit/7cafa8aa97d40e67955a601b868721789af740c3))
+
 ## [0.36.0](https://github.com/chartium/libchartium/compare/libchartium-v0.35.7...libchartium-v0.36.0) (2024-11-11)
 
 
