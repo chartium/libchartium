@@ -118,6 +118,8 @@
   export let hideXBubble: boolean = false;
   /** Hides the coordinate bubble by the odge of the graph */
   export let hideYBubble: boolean = false;
+  /** Shrinks Y bubble if it is too wide and would overflow */
+  export let scaleYBubble: boolean = false;
 
   /** Hides the tooltips shown next to cursor */
   export let hideTooltip: boolean = false;
@@ -164,7 +166,7 @@
   );
 
   /** Charts supplied with the same FlockRegistry will have y axis of the same width */
-  export let commonYAxisWidth$: FlockRegistry<number> | undefined = undefined;
+  export let commonYAxisWidth$: FlockRegistry<number> = FlockRegistry<number>();
   $: yAxisWidth = mapOpt(commonYAxisWidth$, (f) =>
     flockReduce(f, (a, b) => Math.max(a, b), 0),
   );
@@ -409,6 +411,7 @@
         <div class="y bubble-reference">
           <RulerBubble
             autoDecimalPlaces={$yTicksDecimalPlaces$ + 1}
+            {chartStylesheet}
             axis="y"
             position={{
               x: 0,
@@ -417,8 +420,11 @@
                 .fromQuantity($commonYRuler$)
                 .toLogicalPixels(),
             }}
+            maxX={chart$.valueOnAxis("x").fromFraction(1).toLogicalPixels()}
+            maxWidth$={yAxisWidth}
             value={$commonYRuler$}
             displayUnit={$yDisplayUnit$}
+            scaleIfTooLarge={scaleYBubble}
           />
         </div>
       {/if}
@@ -435,6 +441,7 @@
                 .fromQuantity($commonXRuler$)
                 .toLogicalPixels(),
             }}
+            maxX={chart$.valueOnAxis("x").fromFraction(1).toLogicalPixels()}
             value={$commonXRuler$}
             displayUnit={$xDisplayUnit$}
           />

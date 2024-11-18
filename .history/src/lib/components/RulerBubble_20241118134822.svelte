@@ -47,16 +47,19 @@
           1,
         )
     : 1;
-
-  let bubbleScalingStyle = "";
+  $: if (axis == "y")
+    console.log({
+      scaling,
+      chartStylesheet,
+    });
   $: if (scaling !== undefined)
-    bubbleScalingStyle = ` transform: scale(${scaling}); transform-origin: right center`;
+    bubbleStyle += ` transform: scale(${scaling}); transform-origin: right center`;
 </script>
 
 <div
   bind:this={bubbleMeasure}
   class="axis-bubble {bubbleClass}"
-  style={bubbleStyle + bubbleScalingStyle}
+  style={bubbleStyle}
   style:visibility={"hidden"}
 ></div>
 <div class="positioned" style={positionedStyle} bind:borderBoxSize>

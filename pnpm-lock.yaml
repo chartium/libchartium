@@ -18,8 +18,8 @@ importers:
         specifier: ^3.10.8
         version: 3.10.8(svelte@4.2.19)
       '@typek/signalhead':
-        specifier: npm:@jsr/typek__signalhead@^0.0.39
-        version: '@jsr/typek__signalhead@0.0.39'
+        specifier: npm:@jsr/typek__signalhead@^0.0.40
+        version: '@jsr/typek__signalhead@0.0.40'
       '@typek/typek':
         specifier: npm:@jsr/typek__typek@^0.10.0
         version: '@jsr/typek__typek@0.10.0'
@@ -63,8 +63,8 @@ importers:
         specifier: ^5.3.1
         version: 5.3.1
       unitlib:
-        specifier: ^0.8.11
-        version: 0.8.11(fraction.js@4.3.7)(typescript@5.6.2)
+        specifier: ^0.9.0
+        version: 0.9.0(fraction.js@4.3.7)(typescript@5.6.2)
       vite-plugin-wasm:
         specifier: ^3.3.0
         version: 3.3.0(vite@5.4.6(@types/node@22.5.5)(sass@1.78.0))
@@ -335,8 +335,8 @@ packages:
   '@jsr/std__internal@1.0.3':
     resolution: {integrity: sha512-6R6UBR4hz0uwYkoYR2KmKj9r8kI1IbbVF8Yxvl0YwE4U8k3YzeCoG1MB/2GjoVNxWyn/bhj0UZSCz7jJb1P0zA==, tarball: https://npm.jsr.io/~/11/@jsr/std__internal/1.0.3.tgz}
 
-  '@jsr/typek__signalhead@0.0.39':
-    resolution: {integrity: sha512-vhbbYLpe57q1UYFeKFOySkvbAtOvXnAGWCWmqHgo2XndVmdvtgvTCEwzmTdYpidt8ztNlwQg3Bu0B1/gzaLQjg==, tarball: https://npm.jsr.io/~/11/@jsr/typek__signalhead/0.0.39.tgz}
+  '@jsr/typek__signalhead@0.0.40':
+    resolution: {integrity: sha512-171refcfiPkU7v04w5bpOuOWt+U6Ff1ijLsgJPQ3VTtIPB2t5QNZSIAhUNIHe00f4u7feZS0FMiM1oPYH1CTlA==, tarball: https://npm.jsr.io/~/11/@jsr/typek__signalhead/0.0.40.tgz}
 
   '@jsr/typek__typek@0.10.0':
     resolution: {integrity: sha512-oTfZURkJmmmUMyzp5F3/AoQEfrPT1B1xgzGDZ7bTt38t81CkViABkI0YoEnqU38hhVmoJQWeKmewASlvO88kZg==, tarball: https://npm.jsr.io/~/11/@jsr/typek__typek/0.10.0.tgz}
@@ -1313,8 +1313,8 @@ packages:
   undici-types@6.19.8:
     resolution: {integrity: sha512-ve2KP6f/JnbPBFyobGHuerC9g1FYGn/F8n1LWTwNxCEzd6IfqTwUQcNXgEtmmQ6DlRrC1hrSrBnCZPokRrDHjw==}
 
-  unitlib@0.8.11:
-    resolution: {integrity: sha512-K+Go3DCiM9JUnAb38P5gwXmioWJ3SSunEEw5ZOS0bO9h/VXO7j/GqgBJLwOA8VdNOVe4Dmgc9lpXJRUkYCdPxA==}
+  unitlib@0.9.0:
+    resolution: {integrity: sha512-PuxSgKxM4DIO1FS7wRoYfg6b/gu/EmS9EwVco4CzD5G2DQJPbroSmOD2eC/l5THwp0Vem1Zpfnf1rNe01KvE0w==}
     peerDependencies:
       fraction.js: ^4.2.1
 
@@ -1577,7 +1577,7 @@ snapshots:
 
   '@jsr/std__internal@1.0.3': {}
 
-  '@jsr/typek__signalhead@0.0.39':
+  '@jsr/typek__signalhead@0.0.40':
     dependencies:
       '@jsr/typek__typek': 0.6.7
 
@@ -2559,7 +2559,7 @@ snapshots:
 
   undici-types@6.19.8: {}
 
-  unitlib@0.8.11(fraction.js@4.3.7)(typescript@5.6.2):
+  unitlib@0.9.0(fraction.js@4.3.7)(typescript@5.6.2):
     dependencies:
       fraction.js: 4.3.7
       yeet-ts: 1.0.3(typescript@5.6.2)
