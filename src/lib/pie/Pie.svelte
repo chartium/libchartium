@@ -70,8 +70,15 @@
   <div class="labels" style:color="black">
     {#each layout?.labels ?? [] as label}
       <span
-        style={`position: absolute; left: ${label.x_min + width / 2}px; top: ${label.y_min + height / 2}px`}
-        >{label.variant.label ?? label.variant.id}</span
+        style={`
+          position: absolute;
+          left: ${label.x_min + width / 2}px;
+          top: ${label.y_min + height / 2}px;
+          width: ${label.x_max - label.x_min}px;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        `}>{label.variant.label ?? label.variant.id}</span
       >
     {/each}
   </div>
