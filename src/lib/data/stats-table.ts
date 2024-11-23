@@ -23,7 +23,6 @@ import {
   maxValue,
   minValue,
   computeDefaultUnit,
-  formatChartValue,
   toNumeric,
 } from "../units/mod.js";
 import {
@@ -86,7 +85,6 @@ export interface Variant<CustomData> {
       | {
           type: "value";
           value: ChartValue | undefined;
-          formattedValue: string | undefined;
         }
       | {
           type: "custom";
@@ -108,7 +106,6 @@ export type Stat<CustomData = never> = {
       variants: Array<{
         variantId: string;
         value: ChartValue | undefined;
-        formattedValue: string | undefined;
         style: ComputedTraceStyle;
       }>;
     }
@@ -288,16 +285,11 @@ export class StatsTable<CustomData = never> {
       const stats: Variant<CustomData>["stats"] = pipe(
         zip(this.#p.stats, ranges),
         (it) =>
-          map(it, ([stat, range]): Variant<CustomData>["stats"][number] => {
+          map(it, ([stat]): Variant<CustomData>["stats"][number] => {
             if ("dataUnit" in stat) {
-              const { title, group, style, data, dataUnit, displayUnit } = stat;
-              const unit = computeDefaultUnit(dataUnit, displayUnit, range!);
+              const { title, group, style, data, dataUnit } = stat;
               const value = data.has(handle)
                 ? toChartValue(data.get(handle)!, dataUnit)
-                : undefined;
-
-              const formattedValue = value
-                ? formatChartValue(value, { unit })
                 : undefined;
 
               return {
@@ -306,7 +298,6 @@ export class StatsTable<CustomData = never> {
                 statGroup: group,
                 statStyle: style,
                 value,
-                formattedValue,
               };
             } else {
               return {
@@ -371,15 +362,10 @@ export class StatsTable<CustomData = never> {
               ? toChartValue(data.get(h)!, dataUnit)
               : undefined;
 
-            const formattedValue = value
-              ? formatChartValue(value, { unit })
-              : undefined;
-
             return {
               variantId,
               style,
               value,
-              formattedValue,
             };
           }),
           (it) => [...it],
