@@ -15,7 +15,6 @@
   export let displayUnit: DisplayUnit;
   export let autoDecimalPlaces = 2;
   export let chartStylesheet: Partial<ChartStyleSheet> = {};
-  export let scaleIfTooLarge = false;
 
   const decimalPlaces =
     chartStylesheet?.[`bubbles.${axis}`]?.decimalPlaces ??
@@ -32,15 +31,16 @@
     decimalPlaces,
   });
   let bubbleMeasure: HTMLDivElement;
-  $: scaling = chartStylesheet?.[`bubbles.y`]?.scaleToFitAxis
-    ? scaleIfTooLarge || $maxWidth$ === undefined || bubbleMeasure === undefined
-      ? undefined
-      : clamp(
-          $maxWidth$ / (measureText(bubbleText, bubbleMeasure).width + 20),
-          0.65,
-          1,
-        )
-    : 1;
+  $: scaling =
+    chartStylesheet?.[`bubbles.y`]?.scaleToFitAxis && axis == "y"
+      ? $maxWidth$ === undefined || bubbleMeasure === undefined
+        ? undefined
+        : clamp(
+            $maxWidth$ / (measureText(bubbleText, bubbleMeasure).width + 20),
+            0.65,
+            1,
+          )
+      : 1;
 
   $: positionedStyle =
     axis === "x"

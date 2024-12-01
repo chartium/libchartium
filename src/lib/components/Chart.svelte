@@ -118,8 +118,6 @@
   export let hideXBubble: boolean = false;
   /** Hides the coordinate bubble by the odge of the graph */
   export let hideYBubble: boolean = false;
-  /** Shrinks Y bubble if it is too wide and would overflow */
-  export let scaleYBubble: boolean = false;
 
   /** Hides the tooltips shown next to cursor */
   export let hideTooltip: boolean = false;
@@ -424,7 +422,6 @@
             maxWidth$={yAxisWidth}
             value={$commonYRuler$}
             displayUnit={$yDisplayUnit$}
-            scaleIfTooLarge={scaleYBubble}
           />
         </div>
       {/if}
