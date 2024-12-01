@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.37.1](https://github.com/chartium/libchartium/compare/libchartium-v0.37.0...libchartium-v0.37.1) (2024-12-01)
+
+
+### Bug Fixes
+
+* deleted duplicate props ([116093d](https://github.com/chartium/libchartium/commit/116093d4925bfa474a00f05d24916325e8284400))
+* **pie:** ellipsis on label overflow ([ae013ca](https://github.com/chartium/libchartium/commit/ae013ca6fa2176e02ffc9e9358db905f5015ce91))
+* remove formattedValue from StatsTable ([c018eb7](https://github.com/chartium/libchartium/commit/c018eb767514290a758fd925850ea8cbec086449))
+
 ## [0.37.0](https://github.com/chartium/libchartium/compare/libchartium-v0.36.0...libchartium-v0.37.0) (2024-11-18)
 
 
