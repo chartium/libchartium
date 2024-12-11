@@ -63,8 +63,8 @@ importers:
         specifier: ^5.3.1
         version: 5.3.1
       unitlib:
-        specifier: ^0.9.0
-        version: 0.9.0(fraction.js@4.3.7)(typescript@5.6.2)
+        specifier: ^0.9.1
+        version: 0.9.1(fraction.js@4.3.7)(typescript@5.6.2)
       vite-plugin-wasm:
         specifier: ^3.3.0
         version: 3.3.0(vite@5.4.6(@types/node@22.5.5)(sass@1.78.0))
@@ -1313,8 +1313,8 @@ packages:
   undici-types@6.19.8:
     resolution: {integrity: sha512-ve2KP6f/JnbPBFyobGHuerC9g1FYGn/F8n1LWTwNxCEzd6IfqTwUQcNXgEtmmQ6DlRrC1hrSrBnCZPokRrDHjw==}
 
-  unitlib@0.9.0:
-    resolution: {integrity: sha512-PuxSgKxM4DIO1FS7wRoYfg6b/gu/EmS9EwVco4CzD5G2DQJPbroSmOD2eC/l5THwp0Vem1Zpfnf1rNe01KvE0w==}
+  unitlib@0.9.1:
+    resolution: {integrity: sha512-fr0jODqlRBNvhHAWtcEjdfjrQ1cx+/PfalDLMePOBvxJEUVwcvbZnsaSWADSoVcxjRnEGAfe5xrzWleQ/haS2g==}
     peerDependencies:
       fraction.js: ^4.2.1
 
@@ -2559,7 +2559,7 @@ snapshots:
 
   undici-types@6.19.8: {}
 
-  unitlib@0.9.0(fraction.js@4.3.7)(typescript@5.6.2):
+  unitlib@0.9.1(fraction.js@4.3.7)(typescript@5.6.2):
     dependencies:
       fraction.js: 4.3.7
       yeet-ts: 1.0.3(typescript@5.6.2)
