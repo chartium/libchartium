@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.38.1](https://github.com/chartium/libchartium/compare/libchartium-v0.38.0...libchartium-v0.38.1) (2024-12-22)
+
+
+### Bug Fixes
+
+* expandable toolbar tweak ([661686f](https://github.com/chartium/libchartium/commit/661686fc17de8d3f4dcde753cb5ee7c82a65b9dc))
+
 ## [0.38.0](https://github.com/chartium/libchartium/compare/libchartium-v0.37.2...libchartium-v0.38.0) (2024-12-22)
 
 
