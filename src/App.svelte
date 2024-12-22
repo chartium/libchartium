@@ -9,6 +9,8 @@
     ChartComponent as Chart,
     NumericDateRepresentation,
     StatsTable,
+    ToolFullscreen,
+    ToolHideLegend,
     TraceList,
   } from "./lib/mod.js";
 
@@ -16,6 +18,8 @@
   import { mut } from "@typek/signalhead";
   import { Quantity } from "unitlib";
   import Pie from "./lib/pie/Pie.svelte";
+  import ToolExportToCsv from "./lib/components/toolbar/ToolExportToCSV.svelte";
+  import ToolExportToPng from "./lib/components/toolbar/ToolExportToPNG.svelte";
 
   // autogenerate a lot of data
   const from = 0;
@@ -168,7 +172,7 @@
     <div style="height:400px;width:900px;" bind:this={wrapDiv}>
       <Chart
         {traces}
-        title="Titulek"
+        title="Hodně dlouhý titule co lidem překáží"
         subtitle="Podtitulek"
         xLabel="Time"
         yLabel="Amount"
@@ -177,14 +181,22 @@
         hoverPointsInterpolation="nearest"
         {commonXRange$}
         {fullscreen$}
+        hideToolbarUntilHover
         class={$fullscreen$ ? "bg" : ""}
       >
-        <!-- <svelte:fragment slot="toolbar">
-            <ToolFullscreen on:click={() => (fullscreen = !fullscreen)} />
-            <ToolExportToPng />
-            <ToolHideLegend />
-            <ToolExportToCsv />
-          </svelte:fragment> -->
+        <svelte:fragment slot="toolbar">
+          <ToolFullscreen on:click={() => fullscreen$.update((v) => !v)} />
+          <ToolExportToPng />
+          <ToolExportToPng />
+          <ToolExportToPng />
+          <ToolExportToPng />
+          <ToolExportToPng />
+          <ToolExportToPng />
+          <ToolExportToPng />
+          <ToolExportToPng />
+          <ToolHideLegend />
+          <ToolExportToCsv />
+        </svelte:fragment>
         <svelte:fragment slot="infobox">
           <Fa icon={faArrowRight} />&ensp;1<br />
           <Fa icon={faArrowLeft} />&ensp;1000<br />

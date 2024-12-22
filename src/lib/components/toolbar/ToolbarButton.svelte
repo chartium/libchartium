@@ -33,7 +33,7 @@
     position={showTooltip ? tooltipPosition : undefined}
     preferredPositioning="bottom"
   >
-    <div class="toolbar">
+    <div class="tooltip">
       {title}
     </div>
   </GenericTooltip>
@@ -69,9 +69,7 @@
     background: none;
     outline: none;
     border: none;
-
-    padding: 0.5em;
-
+    padding: 0;
     opacity: 0.6;
   }
 
@@ -79,7 +77,7 @@
     opacity: 1;
   }
 
-  .toolbar {
+  .tooltip {
     margin-top: 3px;
     border-radius: 3px;
     padding: 3px;

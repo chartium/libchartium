@@ -13,6 +13,7 @@
   import { flockReduce } from "../utils/collection.js";
   import { mapOpt } from "../utils/mapOpt.js";
   import ChartGrid from "./ChartGrid.svelte";
+  import ToolbarContainer from "./toolbar/ToolbarContainer.svelte";
   import AxisTicks from "./AxisTicks.svelte";
   import Guidelines from "./Guidelines.svelte";
   import ActionsOverlay, { oneDZoomWindow } from "./ActionsOverlay.svelte";
@@ -118,6 +119,8 @@
   export let hideXBubble: boolean = false;
   /** Hides the coordinate bubble by the odge of the graph */
   export let hideYBubble: boolean = false;
+  /** Replaces toolbar buttons with three dots that when hovered show the whole toolbar */
+  export let hideToolbarUntilHover = false;
 
   /** Hides the tooltips shown next to cursor */
   export let hideTooltip: boolean = false;
@@ -519,11 +522,11 @@
         on:blur={() => hoverEvent$.set({ name: "out" })}
       />
 
-      <div class="toolbar" slot="overlay">
+      <ToolbarContainer expandable={hideToolbarUntilHover} slot="overlay">
         <slot name="toolbar">
           <DefaultToolbar />
         </slot>
-      </div>
+      </ToolbarContainer>
 
       <svelte:fragment slot="right-legend">
         {#if legendPosition === "right" && !hideLegend}
@@ -588,24 +591,6 @@
     text-overflow: ellipsis;
 
     background: hsla(0, 0%, 5%, 0.6);
-  }
-
-  .toolbar {
-    position: absolute;
-    right: 0;
-    top: 0;
-
-    display: flex;
-    flex-flow: row nowrap;
-    align-items: center;
-
-    opacity: 0.6;
-    transition: all 0.2s ease-in-out;
-
-    &:hover {
-      opacity: 0.9;
-      background-color: hsla(0, 0%, 5%, 0.6);
-    }
   }
 
   .bubble-reference {
