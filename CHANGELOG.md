@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.38.0](https://github.com/chartium/libchartium/compare/libchartium-v0.37.2...libchartium-v0.38.0) (2024-12-22)
+
+
+### Features
+
+* toolbar can now be hidden and expanded on hover ([34457c5](https://github.com/chartium/libchartium/commit/34457c5c84323e43faf53a9c7ea50a1f4771cb2b))
+
 ## [0.37.2](https://github.com/chartium/libchartium/compare/libchartium-v0.37.1...libchartium-v0.37.2) (2024-12-11)
 
 
