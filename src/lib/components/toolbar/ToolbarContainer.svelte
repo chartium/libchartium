@@ -34,7 +34,7 @@
 
     opacity: 0.6;
     transition: all 0.2s ease-in-out;
-    width: var(--expander-width, fit-content);
+    width: calc(var(--expander-width, fit-content) + 0.5em);
 
     &:hover {
       opacity: 0.9;
