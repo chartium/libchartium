@@ -38,34 +38,28 @@ export class TraceListExport {
     const linesPerBuffer = 1000;
 
     let unfinishedBundles = traces[PARAMS].bundles.slice();
-    const buffers: Map<Bundle, Float64Array> = unfinishedBundles.reduce(
-      (map, bundle) => {
-        map.set(
-          bundle,
-          new Float64Array((bundle.traces.length + 1) * linesPerBuffer),
-        );
-        return map;
-      },
-      new Map(),
+    const buffers = new Map(
+      unfinishedBundles.map((bundle) => [
+        bundle,
+        {
+          data: new Float64Array((bundle.traces.length + 1) * linesPerBuffer),
+          length: 0,
+          queue: new Queue<TraceExportRow>(),
+        },
+      ]),
     );
     // fill up queues for all buffers
-    const queues: Map<Bundle, Queue<TraceExportRow>> = new Map(
-      unfinishedBundles.map((bundle) => [bundle, new Queue<TraceExportRow>()]),
-    );
-    const currentBufferLength: Map<Bundle, number> = new Map();
     const fillUpQueue = (bundle: Bundle, from: number) => {
       const buffer = buffers.get(bundle)!;
       const handles = bundle.traces;
-      const length = bundle.boxed.export_to_buffer(buffer, handles, {
+      buffer.length = bundle.boxed.export_to_buffer(buffer.data, handles, {
         from,
         to: toNumeric(range!.to, bundle.xDataUnit),
       });
-      currentBufferLength.set(bundle, length);
 
-      const queue = queues.get(bundle)!;
-      let row: TraceExportRow = { x: buffer[0], y: {} };
-      for (const [i, el] of buffer.entries()) {
-        if (i >= length) break;
+      let row: TraceExportRow = { x: buffer.data[0], y: {} };
+      for (const [i, el] of buffer.data.entries()) {
+        if (i >= buffer.length) break;
 
         const columnCount = handles.length + 1;
         const columnIndex = i % columnCount;
@@ -80,20 +74,20 @@ export class TraceListExport {
             )!
           ] = el;
         }
-        if (isLastColumn) queue.enqueue(row);
+        if (isLastColumn) buffer.queue.enqueue(row);
       }
     };
 
-    unfinishedBundles.forEach((b) =>
-      fillUpQueue(b, toNumeric(range!.from, b.xDataUnit)),
-    );
+    for (const bundle of unfinishedBundles)
+      fillUpQueue(bundle, toNumeric(range!.from, bundle.xDataUnit));
+
     unfinishedBundles = unfinishedBundles.filter(
-      (b) => queues.get(b)!.size !== 0,
+      (b) => buffers.get(b)!.queue.size !== 0,
     );
 
     const lastLines: Map<Bundle, TraceExportRow> = new Map(
       unfinishedBundles
-        .map((b) => [b, queues.get(b)!.peek()] as const)
+        .map((b) => [b, buffers.get(b)!.queue.peek()] as const)
         .filter((_, q) => q !== undefined) as [Bundle, TraceExportRow][],
     );
 
@@ -102,13 +96,13 @@ export class TraceListExport {
       x: number,
       bundle: Bundle,
       lastLine: TraceExportRow,
-    ) => {
-      const thisQueue = queues.get(bundle)!;
+    ): TraceExportRow => {
+      const thisQueue = buffers.get(bundle)!.queue;
       const nextLine = thisQueue.peek()!;
       if (x === nextLine.x) return thisQueue.dequeue()!;
       const fraction = (x - lastLine.x) / (nextLine.x - lastLine.x);
       const toReturn: TraceExportRow = { x: x, y: {} };
-      for (const id of Object.keys(lastLine)) {
+      for (const id of Object.keys(lastLine.y)) {
         toReturn.y[id] =
           fraction * (nextLine.y[id] - lastLine.y[id]) + lastLine.y[id];
       }
@@ -120,32 +114,40 @@ export class TraceListExport {
       const toWrite: TraceExportRow[] = [];
       const xs = Array.from(
         new Set(
-          unfinishedBundles.map((b) =>
-            queues
-              .get(b)!
-              .peekAll()
-              .map((h) => h.x),
-          ),
+          unfinishedBundles
+            .map((b) =>
+              buffers
+                .get(b)!
+                .queue.peekAll()
+                .map((h) => h.x),
+            )
+            .flat(),
         ),
-      )
-        .flat()
-        .toSorted((a, b) => a - b);
+      ).toSorted((a, b) => a - b);
+
       if (xs[0] === lastX) {
         xs.shift();
-        for (const q of queues.values()) if (q.peek()?.x === lastX) q.dequeue();
+        for (const b of unfinishedBundles) {
+          const q = buffers.get(b)!.queue;
+          if (q.peek()?.x === lastX) q.dequeue();
+        }
       }
+
+      // TODO this seems unnecessary
+      // <remove>
       const rangeToInLatest = Math.max(
         ...unfinishedBundles.map((b) => toNumeric(range!.to, b.xDataUnit)),
       );
       if (xs[0] >= rangeToInLatest || xs.length === 0) break;
+      // </remove>
+
       for (const x of xs) {
         let row: TraceExportRow = { x: x, y: {} };
         for (const bundle of unfinishedBundles) {
-          if (queues.get(bundle)!.peek() === undefined) {
-            continue;
-          }
-          if (queues.get(bundle)!.peek()?.x === x)
-            lastLines.set(bundle, queues.get(bundle)!.peek()!);
+          const queue = buffers.get(bundle)!.queue;
+          const next = queue.peek();
+          if (next === undefined) continue; // refill queues
+          if (next.x === x) lastLines.set(bundle, queue.peek()!);
 
           row = {
             ...row,
@@ -155,12 +157,16 @@ export class TraceListExport {
         toWrite.push(row);
       }
 
+      console.log("unfinishedBundles", unfinishedBundles);
+      console.log("buffers", buffers);
+      console.log("toWrite", toWrite);
+
       for (const line of toWrite) yield line;
 
       lastX = xs.at(-1)!;
       unfinishedBundles.forEach((b) => fillUpQueue(b, lastX));
       unfinishedBundles = unfinishedBundles.filter(
-        (b) => queues.get(b)!.size !== 0,
+        (b) => buffers.get(b)!.queue.size !== 0,
       );
     }
   }
