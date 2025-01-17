@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.38.2](https://github.com/chartium/libchartium/compare/libchartium-v0.38.1...libchartium-v0.38.2) (2025-01-17)
+
+
+### Bug Fixes
+
+* **rust:** update wasm-bindgen ([c76f7e6](https://github.com/chartium/libchartium/commit/c76f7e6de08f3b1654eb5a20c9234a1d9fe9941c))
+* **TraceList#rows:** partial fix of broken exports, chartium/dashboard[#173](https://github.com/chartium/libchartium/issues/173) ([fe28337](https://github.com/chartium/libchartium/commit/fe28337cb56c0809b3379a52f8a9287af182822a))
+
 ## [0.38.1](https://github.com/chartium/libchartium/compare/libchartium-v0.38.0...libchartium-v0.38.1) (2024-12-22)
 
 
