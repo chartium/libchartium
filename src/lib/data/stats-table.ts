@@ -43,6 +43,12 @@ import { StatsTableExport } from "./data-export.js";
 export interface StatStyle {
   template?: string;
   collapseGroup?: boolean;
+  header?: TextStyle;
+  data?: TextStyle;
+}
+
+export interface TextStyle {
+  align?: "left" | "center" | "right";
 }
 
 export type StatSortingStrategy = {
