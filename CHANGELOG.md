@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.39.1](https://github.com/chartium/libchartium/compare/libchartium-v0.39.0...libchartium-v0.39.1) (2025-02-20)
+
+
+### Bug Fixes
+
+* **CI:** update wasm-bindgen, but this time for real ([371ca65](https://github.com/chartium/libchartium/commit/371ca6544b2977b68b38a8f10e4e1495d4b95245))
+
 ## [0.39.0](https://github.com/chartium/libchartium/compare/libchartium-v0.38.1...libchartium-v0.39.0) (2025-02-20)
 
 
