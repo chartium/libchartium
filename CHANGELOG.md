@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.39.0](https://github.com/chartium/libchartium/compare/libchartium-v0.38.1...libchartium-v0.39.0) (2025-02-20)
+
+
+### Features
+
+* **StatsTable:** add text alignment to styles ([e37a172](https://github.com/chartium/libchartium/commit/e37a1726a232c0c0bab323d9171dd6f819b7036e))
+
+
+### Bug Fixes
+
+* **rust:** update wasm-bindgen ([c76f7e6](https://github.com/chartium/libchartium/commit/c76f7e6de08f3b1654eb5a20c9234a1d9fe9941c))
+* **TraceList#rows:** partial fix of broken exports, chartium/dashboard[#173](https://github.com/chartium/libchartium/issues/173) ([fe28337](https://github.com/chartium/libchartium/commit/fe28337cb56c0809b3379a52f8a9287af182822a))
+
 ## [0.38.1](https://github.com/chartium/libchartium/compare/libchartium-v0.38.0...libchartium-v0.38.1) (2024-12-22)
 
 
