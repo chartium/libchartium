@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.39.2](https://github.com/chartium/libchartium/compare/libchartium-v0.39.1...libchartium-v0.39.2) (2025-03-01)
+
+
+### Bug Fixes
+
+* **TraceListExport:** fix row export ([c55285b](https://github.com/chartium/libchartium/commit/c55285b1bd42303840ddcaaf3e6430c741c24eae))
+
 ## [0.39.1](https://github.com/chartium/libchartium/compare/libchartium-v0.39.0...libchartium-v0.39.1) (2025-02-20)
 
 
