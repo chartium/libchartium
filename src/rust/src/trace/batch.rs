@@ -201,7 +201,7 @@ struct BatchManyIterator<'a, X: N, Y: N> {
     index: usize,
 }
 
-impl<'a, X: N, Y: N> Iterator for BatchManyIterator<'a, X, Y> {
+impl<X: N, Y: N> Iterator for BatchManyIterator<'_, X, Y> {
     type Item = Vec<f64>;
     fn next(&mut self) -> Option<Self::Item> {
         if self.index >= self.batch.x.len() {

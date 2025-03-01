@@ -1,10 +1,16 @@
 import type { StatsTable, TraceList } from "../mod.js";
 import { type ChartRange, type VariantHandle } from "../types.js";
-import { toNumeric } from "../units/mod.js";
+import {
+  toNumeric,
+  toNumericRange,
+  unitConversionFactor,
+} from "../units/mod.js";
 import { variantIds } from "./variant-ids.js";
 import { PARAMS } from "./trace-list.js";
 import type { Bundle } from "./bundle.js";
-import { Queue, assertNever, map, pipe } from "@typek/typek";
+import { Queue, assertNever, enumerate, map, pipe, yeet } from "@typek/typek";
+import { joinSeq } from "../utils/collection.js";
+import { UnknownVariantHandleError } from "../errors.js";
 
 export type TraceExportRow = {
   x: number;
@@ -35,140 +41,43 @@ export class TraceListExport {
   *rows(this: TraceListExport): IterableIterator<TraceExportRow> {
     const { traces } = this;
     const range = this.options.range ?? traces.range;
-    const linesPerBuffer = 1000;
+    const bufferSize = 1000;
+    const { bundles, handles } = traces[PARAMS];
+    const handleSet = new Set(handles);
+    const iterables = bundles.map((b) => b.rawData({ range, bufferSize }));
 
-    let unfinishedBundles = traces[PARAMS].bundles.slice();
-    const buffers = new Map(
-      unfinishedBundles.map((bundle) => [
-        bundle,
-        {
-          data: new Float64Array((bundle.traces.length + 1) * linesPerBuffer),
-          length: 0,
-          queue: new Queue<TraceExportRow>(),
-        },
-      ]),
-    );
-    // fill up queues for all buffers
-    const fillUpQueue = (bundle: Bundle, from: number) => {
-      const buffer = buffers.get(bundle)!;
-      const handles = bundle.traces;
-      buffer.length = bundle.boxed.export_to_buffer(buffer.data, handles, {
-        from,
-        to: toNumeric(range!.to, bundle.xDataUnit),
-      });
+    yield* joinSeq({
+      iterables,
+      by: (point) => point[0],
+      select: (pts) => Math.min(...pts),
+      combine(x, currentDataPoints) {
+        const y: Record<string, number> = Object.create(null);
 
-      let row: TraceExportRow = { x: buffer.data[0], y: {} };
-      for (const [i, el] of buffer.data.entries()) {
-        if (i >= buffer.length) break;
+        for (const [bundleIndex, bundle] of enumerate(bundles)) {
+          const pointOpt = currentDataPoints[bundleIndex];
+          const yConversionFactor = unitConversionFactor(
+            bundle.yDataUnit,
+            traces.yDataUnit,
+          );
 
-        const columnCount = handles.length + 1;
-        const columnIndex = i % columnCount;
-        const isFirstColumn = columnIndex === 0;
-        const isLastColumn = columnIndex === columnCount - 1;
+          // skip points that are missing for this x
+          if (pointOpt.isNone) continue;
+          const point = pointOpt.inner;
 
-        if (isFirstColumn) row = { x: el, y: {} };
-        else {
-          row.y[
-            variantIds.get(
-              handles[(i % (handles.length + 1)) - 1] as VariantHandle,
-            )!
-          ] = el;
+          for (const [yIndex, handle] of enumerate(bundle.traces)) {
+            // skip Bundle traces that are excluded from the TraceList
+            if (!handleSet.has(handle)) continue;
+
+            const id =
+              variantIds.get(handle) ?? yeet(UnknownVariantHandleError, handle);
+
+            y[id] = yConversionFactor * point[yIndex + 1];
+          }
         }
-        if (isLastColumn) buffer.queue.enqueue(row);
-      }
-    };
 
-    for (const bundle of unfinishedBundles)
-      fillUpQueue(bundle, toNumeric(range!.from, bundle.xDataUnit));
-
-    unfinishedBundles = unfinishedBundles.filter(
-      (b) => buffers.get(b)!.queue.size !== 0,
-    );
-
-    const lastLines: Map<Bundle, TraceExportRow> = new Map(
-      unfinishedBundles
-        .map((b) => [b, buffers.get(b)!.queue.peek()] as const)
-        .filter((_, q) => q !== undefined) as [Bundle, TraceExportRow][],
-    );
-
-    // TODO implement different interpolation strategies
-    const getOrInterpolate = (
-      x: number,
-      bundle: Bundle,
-      lastLine: TraceExportRow,
-    ): TraceExportRow => {
-      const thisQueue = buffers.get(bundle)!.queue;
-      const nextLine = thisQueue.peek()!;
-      if (x === nextLine.x) return thisQueue.dequeue()!;
-      const fraction = (x - lastLine.x) / (nextLine.x - lastLine.x);
-      const toReturn: TraceExportRow = { x: x, y: {} };
-      for (const id of Object.keys(lastLine.y)) {
-        toReturn.y[id] =
-          fraction * (nextLine.y[id] - lastLine.y[id]) + lastLine.y[id];
-      }
-      return toReturn;
-    };
-
-    let lastX = Number.NEGATIVE_INFINITY;
-    while (unfinishedBundles.length > 0) {
-      const toWrite: TraceExportRow[] = [];
-      const xs = Array.from(
-        new Set(
-          unfinishedBundles
-            .map((b) =>
-              buffers
-                .get(b)!
-                .queue.peekAll()
-                .map((h) => h.x),
-            )
-            .flat(),
-        ),
-      ).toSorted((a, b) => a - b);
-
-      if (xs[0] === lastX) {
-        xs.shift();
-        for (const b of unfinishedBundles) {
-          const q = buffers.get(b)!.queue;
-          if (q.peek()?.x === lastX) q.dequeue();
-        }
-      }
-
-      // TODO this seems unnecessary
-      // <remove>
-      const rangeToInLatest = Math.max(
-        ...unfinishedBundles.map((b) => toNumeric(range!.to, b.xDataUnit)),
-      );
-      if (xs[0] >= rangeToInLatest || xs.length === 0) break;
-      // </remove>
-
-      for (const x of xs) {
-        let row: TraceExportRow = { x: x, y: {} };
-        for (const bundle of unfinishedBundles) {
-          const queue = buffers.get(bundle)!.queue;
-          const next = queue.peek();
-          if (next === undefined) continue; // refill queues
-          if (next.x === x) lastLines.set(bundle, queue.peek()!);
-
-          row = {
-            ...row,
-            ...getOrInterpolate(x, bundle, lastLines.get(bundle)!),
-          };
-        }
-        toWrite.push(row);
-      }
-
-      console.log("unfinishedBundles", unfinishedBundles);
-      console.log("buffers", buffers);
-      console.log("toWrite", toWrite);
-
-      for (const line of toWrite) yield line;
-
-      lastX = xs.at(-1)!;
-      unfinishedBundles.forEach((b) => fillUpQueue(b, lastX));
-      unfinishedBundles = unfinishedBundles.filter(
-        (b) => buffers.get(b)!.queue.size !== 0,
-      );
-    }
+        return { x, y };
+      },
+    });
   }
 
   csv(

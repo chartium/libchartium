@@ -107,24 +107,18 @@ impl BundleRc {
     ///   * Therefore returned number is always a multiple of `trace_handles.length()+1`
     ///   * Only whole datapoints are recorded. If there isn't space for n+1 more elements left the remaining space will remain unchanged
     ///   * The same applies for the end of the range
-    // FIXME not used for batches? idk lol
-    // /// * If any trace doesn't have data for an x, the y datapoint get's interpolated via interpolation_strategy
-    // ///   * if interpolation_strategy == InterpolationStrategy::None, the y will be NaN
     pub fn export_to_buffer(
         &self,
         buffer: &mut [f64],
         trace_handles: &[u32],
         x_range: NumericRange,
-        //interpolation_strategy: InterpolationStrategy,
     ) -> usize {
         let datapoint_length = trace_handles.len() + 1;
         let space_in_buffer = buffer.len() / datapoint_length;
-        if space_in_buffer == 0 {
-            return 0;
-        }
         let mut iterator = self
             .bundle
             .iter_many_in_range_f64(trace_handles.to_vec(), x_range);
+
         for i in 0..space_in_buffer {
             if let Some(datapoint) = iterator.next() {
                 buffer[i * datapoint_length..(i + 1) * datapoint_length]
