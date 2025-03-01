@@ -1,14 +1,9 @@
 import type { StatsTable, TraceList } from "../mod.js";
-import { type ChartRange, type VariantHandle } from "../types.js";
-import {
-  toNumeric,
-  toNumericRange,
-  unitConversionFactor,
-} from "../units/mod.js";
+import { type ChartRange } from "../types.js";
+import { unitConversionFactor } from "../units/mod.js";
 import { variantIds } from "./variant-ids.js";
 import { PARAMS } from "./trace-list.js";
-import type { Bundle } from "./bundle.js";
-import { Queue, assertNever, enumerate, map, pipe, yeet } from "@typek/typek";
+import { assertNever, enumerate, map, pipe, yeet } from "@typek/typek";
 import { joinSeq } from "../utils/collection.js";
 import { UnknownVariantHandleError } from "../errors.js";
 
