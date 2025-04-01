@@ -143,7 +143,6 @@ let _init: {
 function init() {
   if (_init) return _init;
 
-  // eslint-disable-next-line compat/compat
   const canvas = new OffscreenCanvas(640, 480);
   const context =
     canvas.getContext("webgl2", {

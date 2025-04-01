@@ -23,7 +23,6 @@ export const get2DContext = (() => {
   return () => {
     if (context) return context;
     if (typeof OffscreenCanvas === "undefined") return;
-    // eslint-disable-next-line compat/compat
     canvas = new OffscreenCanvas(0, 0);
     context = canvas.getContext("2d") ?? undefined;
     return context;

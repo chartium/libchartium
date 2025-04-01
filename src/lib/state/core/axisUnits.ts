@@ -1,6 +1,6 @@
 import { derived, mutDerived, type Signal } from "@typek/signalhead";
 import { type FactorDefinition } from "unitlib";
-import Fraction from "fraction.js";
+import { Fraction } from "fraction.js";
 
 import { TraceList } from "../../mod.js";
 import {

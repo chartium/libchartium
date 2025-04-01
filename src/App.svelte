@@ -16,7 +16,6 @@
 
   import Fa from "svelte-fa";
   import { mut } from "@typek/signalhead";
-  import { Quantity } from "unitlib";
   import Pie from "./lib/pie/Pie.svelte";
   import ToolExportToCsv from "./lib/components/toolbar/ToolExportToCSV.svelte";
   import ToolExportToPng from "./lib/components/toolbar/ToolExportToPNG.svelte";
@@ -225,7 +224,7 @@
             <ToolExportToPng />
             <ToolHideLegend />
             <ToolExportToCsv />
-          </svelte:fragment> 
+          </svelte:fragment>
         <svelte:fragment slot="infobox">
           <Fa icon={faArrowRight} />&ensp;1<br />
           <Fa icon={faArrowLeft} />&ensp;1000<br />
