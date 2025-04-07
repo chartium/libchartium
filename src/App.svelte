@@ -20,6 +20,8 @@
   import ToolExportToCsv from "./lib/components/toolbar/ToolExportToCSV.svelte";
   import ToolExportToPng from "./lib/components/toolbar/ToolExportToPNG.svelte";
 
+  import "./app.css";
+
   // autogenerate a lot of data
   const from = 0;
   const to = new Date(1973, 1, 1).getTime() / 1000;
@@ -185,13 +187,6 @@
       >
         <svelte:fragment slot="toolbar">
           <ToolFullscreen on:click={() => fullscreen$.update((v) => !v)} />
-          <ToolExportToPng />
-          <ToolExportToPng />
-          <ToolExportToPng />
-          <ToolExportToPng />
-          <ToolExportToPng />
-          <ToolExportToPng />
-          <ToolExportToPng />
           <ToolExportToPng />
           <ToolHideLegend />
           <ToolExportToCsv />

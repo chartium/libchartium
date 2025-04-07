@@ -60,7 +60,7 @@
   </div>
 </div>
 
-<style lang="scss">
+<style>
   .positioned {
     padding: 4px;
     position: absolute;
@@ -68,6 +68,7 @@
     user-select: none;
     z-index: var(--libchartium-popup-z-index, 100);
   }
+
   .axis-bubble {
     background-color: var(--libchartium-secondary-background);
     border-radius: 4px;

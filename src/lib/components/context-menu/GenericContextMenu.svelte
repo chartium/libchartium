@@ -221,14 +221,14 @@
   </div>
 {/if}
 
-<style lang="scss">
+<style>
   .context-menu {
-    $radius: 8px;
+    --radius: 8px;
 
     border: none;
-    border-radius: $radius;
+    border-radius: var(--radius);
     background-color: var(--libchartium-secondary-background);
-    padding: $radius 0;
+    padding: var(--radius) 0;
 
     position: fixed;
     user-select: none;

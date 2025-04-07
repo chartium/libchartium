@@ -90,7 +90,7 @@
   {/if}
 </div>
 
-<style lang="scss">
+<style>
   .trace-preview {
     margin: 0 0.5rem;
     &.simplified {
@@ -107,13 +107,14 @@
     display: flex;
     flex-direction: column;
     gap: 4px;
-    > div {
+
+    & > div {
       height: 100%;
       flex-shrink: 1;
     }
 
-    // &.highlight {
-    //   min-width: round_to_px(0.5rem);
-    // }
+    /* &.highlight {
+      min-width: round_to_px(0.5rem);
+    } */
   }
 </style>

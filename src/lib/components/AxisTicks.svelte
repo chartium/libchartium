@@ -257,18 +257,20 @@
   {/if}
 </div>
 
-<style lang="scss">
+<style>
   .axis-container {
     flex-grow: 1;
     display: flex;
     align-items: center;
     justify-content: flex-end;
-  }
-  .axis-container.x {
-    flex-direction: column-reverse;
-  }
-  .axis-container.y {
-    flex-direction: row;
+
+    &.x {
+      flex-direction: column-reverse;
+    }
+
+    &.y {
+      flex-direction: row;
+    }
   }
 
   .label.y {

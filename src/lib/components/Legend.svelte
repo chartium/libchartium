@@ -157,7 +157,7 @@
   </div>
 {/if}
 
-<style lang="scss">
+<style>
   .legend-grid {
     display: grid;
     overflow: hidden;
@@ -175,10 +175,10 @@
     display: flex;
     justify-content: center;
     gap: var(--legend-gap);
+  }
 
-    :global(> div) {
-      width: var(--col-width);
-    }
+  .legend-flex :global(> div) {
+    width: var(--col-width);
   }
 
   .legend-container {

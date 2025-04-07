@@ -21,7 +21,7 @@
   </div>
 </div>
 
-<style lang="scss">
+<style>
   .rotate-outer {
     display: flex;
     align-items: center;

@@ -124,7 +124,7 @@
   </div>
 {/if}
 
-<style lang="scss">
+<style>
   .tooltip {
     position: fixed;
     padding: 0px 4px;

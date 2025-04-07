@@ -558,7 +558,7 @@
   </div>
 </div>
 
-<style lang="scss">
+<style>
   :global(:root) {
     --libchartium-secondary-background: rgb(51, 51, 51);
     --libchartium-highlight-background: rgb(75, 75, 75);

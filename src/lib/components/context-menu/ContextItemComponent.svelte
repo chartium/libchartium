@@ -26,7 +26,7 @@
   </div>
 {/if}
 
-<style lang="scss">
+<style>
   .context-item {
     display: flex;
     align-items: center;
@@ -49,17 +49,17 @@
     margin: 4px 0;
   }
 
-  // caret for branches
+  /* caret for branches */
   .context-submenu::after {
-    $size: 5px;
+    --size: 5px;
 
     content: "";
     width: 0;
     height: 0;
 
-    border-top: $size solid transparent;
-    border-bottom: $size solid transparent;
-    border-left: $size solid currentColor;
+    border-top: var(--size) solid transparent;
+    border-bottom: var(--size) solid transparent;
+    border-left: var(--size) solid currentColor;
 
     padding-left: 4px;
     margin-left: auto;
