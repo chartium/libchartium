@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.40.0](https://github.com/chartium/libchartium/compare/libchartium-v0.39.2...libchartium-v0.40.0) (2025-04-07)
+
+
+### Features
+
+* remove scss, update packages ([ed7c49d](https://github.com/chartium/libchartium/commit/ed7c49d01cbcd6e62320e3454ebec1a81fdfe03f))
+
 ## [0.39.2](https://github.com/chartium/libchartium/compare/libchartium-v0.39.1...libchartium-v0.39.2) (2025-03-01)
 
 
