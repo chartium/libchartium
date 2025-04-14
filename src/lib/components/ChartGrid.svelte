@@ -39,13 +39,16 @@
 
 <style>
   .graph-inner {
+    /* FIXME: the fit-content is hardcoded to approximate 3 lines of legend text,
+              the value of 24px is hardcoded in Legend.svelte */
     display: grid;
     grid-template:
       "title title title" auto
       "subtitle subtitle subtitle" auto
       "yticks graph rl" 1fr
       "b xticks c" auto
-      "bl bl bl" auto / auto 1fr auto;
+      "bl bl bl" fit-content(calc(72px))
+      / auto 1fr auto;
 
     /* gap: 0.5rem;  <- exchanged for padding so the "gap" is still clickable*/
     /*  -        Title      -        */
