@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.40.1](https://github.com/chartium/libchartium/compare/libchartium-v0.40.0...libchartium-v0.40.1) (2025-04-14)
+
+
+### Bug Fixes
+
+* add max height to bottom legend ([3f37687](https://github.com/chartium/libchartium/commit/3f37687b656f9220eb59993432f4f9e20e933254))
+
 ## [0.40.0](https://github.com/chartium/libchartium/compare/libchartium-v0.39.2...libchartium-v0.40.0) (2025-04-07)
 
 
