@@ -194,7 +194,7 @@ impl TraceGeometry {
 fn create_trace_buffer(renderer: &WebGlRenderer, trace: &TraceData) -> WebGlBuffer {
     renderer.create_buffer(unsafe {
         core::slice::from_raw_parts(
-            std::mem::transmute(trace.data.as_ptr()),
+            std::mem::transmute::<*const (f32, f32), *const f32>(trace.data.as_ptr()),
             trace.data.len() * 2,
         )
     })

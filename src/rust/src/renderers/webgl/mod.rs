@@ -309,7 +309,6 @@ impl WebGlRenderer {
 
         // Calculate the next curve in the stack
         let data = bundle
-            .unwrap()
             .iter_in_range_with_neighbors_f64(trace, x_range)
             .with_origin_at(x_range.from, 0.0);
 

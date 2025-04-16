@@ -51,7 +51,7 @@ export interface MouseHoverProps {
 
   defer: DeferLike;
 
-  interpolation: InterpolationStrategy;
+  interpolation$: Signal<InterpolationStrategy>;
 }
 
 export interface MouseHover {
@@ -69,7 +69,7 @@ export const hover$ = ({
   commonXRuler$,
   commonYRuler$,
   defer: deferLike,
-  interpolation,
+  interpolation$,
 }: MouseHoverProps): MouseHover => {
   const defer = Defer.from(deferLike);
 
@@ -102,7 +102,7 @@ export const hover$ = ({
     const traces = S(hoverableTraces$);
     const _count = S(tooltipTraceCount$);
     const count = _count === "all" ? traces.traceCount : _count;
-
+    const interpolation = S(interpolation$);
     return traces.findNearestTraces({ x, y }, count, interpolation);
   });
 

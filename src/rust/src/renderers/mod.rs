@@ -29,7 +29,6 @@ pub struct TraceData {
 impl TraceData {
     pub fn compute(bundle: &BundleRc, handle: TraceHandle, x_range: NumericRange) -> Self {
         let data = bundle
-            .unwrap()
             .iter_in_range_with_neighbors_f64(handle, x_range)
             .with_origin_at(x_range.from, 0.0)
             .map(|(x, y)| (x as f32, y as f32))

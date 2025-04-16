@@ -61,8 +61,8 @@ impl MetaCounter {
             lasts: vec![0.0; len],
             lens: vec![0; len],
             nz_lens: vec![0; len],
-            mins: vec![std::f64::INFINITY; len],
-            maxs: vec![std::f64::NEG_INFINITY; len],
+            mins: vec![f64::INFINITY; len],
+            maxs: vec![f64::NEG_INFINITY; len],
         }
     }
 
@@ -88,7 +88,7 @@ impl MetaCounter {
     ) {
         for (i, trace_data) in traces
             .iter()
-            .map(|&t| bundle.unwrap().iter_in_range_f64(t, x_range))
+            .map(|&t| bundle.iter_in_range_f64(t, x_range))
             .enumerate()
         {
             for (_, y) in trace_data {

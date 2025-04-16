@@ -21,28 +21,30 @@ impl BundleRc {
         n: usize,
         max_dy: Option<f64>,
         interpolation: InterpolationStrategy,
-    ) -> Box<[JsValue]> {
+    ) -> Result<Box<[JsValue]>, serde_wasm_bindgen::Error> {
         if !self.range().contains(x) {
-            return vec![].into();
+            return Ok(vec![].into());
         }
 
-        let mut dists: Vec<_> = traces
-            .unwrap_or_else(|| self.traces())
+        let trace_handles = traces.unwrap_or_else(|| self.traces());
+
+        let mut distances: Vec<_> = trace_handles
             .iter()
-            .map(|&h| (h, self.unwrap().value_at(h, x, interpolation)))
-            .filter_map(|(h, ty_opt)| ty_opt.map(|ty| (h, ty)))
-            .map(|(h, point)| (h, point, (point.1 - y).abs()))
+            .filter_map(|&trace_handle| {
+                self.value_at(trace_handle, x, interpolation)
+                    .map(|point| (trace_handle, point, (point.1 - y).abs()))
+            })
             .filter(|(_, _, delta)| match max_dy {
                 Some(m) => *delta < m,
                 None => true,
             })
             .collect();
 
-        dists.sort_by(|(_, _, a_delta), (_, _, b_delta)| {
+        distances.sort_by(|(_, _, a_delta), (_, _, b_delta)| {
             a_delta.partial_cmp(b_delta).unwrap_or(Ordering::Equal)
         });
 
-        dists
+        distances
             .into_iter()
             .take(n)
             .map(|(handle, (x, trace_y), _)| TracePoint {
@@ -52,7 +54,7 @@ impl BundleRc {
                 display_y: trace_y,
                 dist: (trace_y - y).abs(),
             })
-            .map(|tp| serde_wasm_bindgen::to_value(&tp).unwrap())
+            .map(|tp| serde_wasm_bindgen::to_value(&tp))
             .collect()
     }
 
@@ -70,7 +72,7 @@ impl BundleRc {
         let mut pts = 0;
         let mut nz_pts = 0;
 
-        for (_, y) in self.unwrap().iter_in_range_f64(trace, x_range) {
+        for (_, y) in self.iter_in_range_f64(trace, x_range) {
             if y.is_nan() {
                 continue;
             }
@@ -104,22 +106,21 @@ impl BundleRc {
         &self,
         traces: &[TraceHandle],
         x_range: NumericRange,
-    ) -> Vec<JsValue> {
+    ) -> Result<Vec<JsValue>, serde_wasm_bindgen::Error> {
         traces
             .iter()
             .map(|t| self.get_trace_metas(*t, x_range))
-            .map(|m| serde_wasm_bindgen::to_value(&m).unwrap())
+            .map(|m| serde_wasm_bindgen::to_value(&m))
             .collect()
     }
 
-    /// checks if all datapoints of selected trace in specific interval are identically zero
+    /// checks if all data points of selected trace in specific interval are identically zero
     pub fn is_trace_zero(&self, trace: TraceHandle, x_range: NumericRange) -> bool {
-        self.unwrap()
-            .iter_in_range_f64(trace, x_range)
+        self.iter_in_range_f64(trace, x_range)
             .any(|(_, y)| y.abs() > 1e-3)
     }
 
-    /// checks if which traces have all their datapoints indentically zero on set interval
+    /// checks if which traces have all their data points identically zero on set interval
     pub fn are_traces_zero(&self, traces: &[TraceHandle], x_range: NumericRange) -> Box<[JsValue]> {
         traces
             .iter()
@@ -135,8 +136,7 @@ impl BundleRc {
         x_range: NumericRange,
         tres: f64,
     ) -> bool {
-        self.unwrap()
-            .iter_in_range_f64(trace, x_range)
+        self.iter_in_range_f64(trace, x_range)
             .any(|(_, y)| y >= tres)
     }
 

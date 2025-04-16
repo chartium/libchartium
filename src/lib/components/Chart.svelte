@@ -134,6 +134,8 @@
 
   /** Interpolates the hover points using the provided strategy */
   export let hoverPointsInterpolation: InterpolationStrategy = "linear";
+  const interpolation$ = mut(hoverPointsInterpolation);
+  $: interpolation$.set(hoverPointsInterpolation);
 
   export let legendPosition: "right" | "bottom" = "right";
   export let hideLegend: boolean = false;
@@ -259,7 +261,7 @@
     point: chart$.point,
     defer: onDestroy,
     hoverEvent$,
-    interpolation: hoverPointsInterpolation,
+    interpolation$,
   });
 
   //!SECTION
