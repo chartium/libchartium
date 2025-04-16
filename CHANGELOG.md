@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.40.2](https://github.com/chartium/libchartium/compare/libchartium-v0.40.1...libchartium-v0.40.2) (2025-04-16)
+
+
+### Bug Fixes
+
+* minor rust refactors, fix interpolation reactivity ([10e9af5](https://github.com/chartium/libchartium/commit/10e9af53c6d93e7eaeb0406c05030528a70d3eea))
+
 ## [0.40.1](https://github.com/chartium/libchartium/compare/libchartium-v0.40.0...libchartium-v0.40.1) (2025-04-14)
 
 
