@@ -115,7 +115,7 @@
         style:transform="translateY({row.start}px)"
         style={chartStylesheet?.legend?.style}
       >
-        {#each shownTraces.slice(windowStart, windowStart + cols) as { traceId, style }}
+        {#each shownTraces.slice(windowStart, windowStart + cols) as { traceId, style } (traceId)}
           {@const hidden = $hiddenTraceIds.has(traceId)}
           <LegendEntry
             {hidden}
@@ -141,7 +141,7 @@
     style:--legend-cols={`repeat(${cols}, 1fr)`}
   >
     <div class="legend-flex">
-      {#each shownTraces as { traceId, style }}
+      {#each shownTraces as { traceId, style } (traceId)}
         {@const hidden = $hiddenTraceIds.has(traceId)}
         <LegendEntry
           {hidden}

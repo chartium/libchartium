@@ -82,7 +82,7 @@ export function scale(a: Vec2Like, scalar: number): Vec2 {
   return [a[0] * scalar, a[1] * scalar];
 }
 
-export function normsq(a: Vec2Like): number {
+export function normSq(a: Vec2Like): number {
   return dot(a, a);
 }
 
@@ -90,7 +90,7 @@ export function norm(a: Vec2Like): number {
   return Math.sqrt(dot(a, a));
 }
 
-export function normalise(a: Vec2Like): Vec2 {
+export function normalize(a: Vec2Like): Vec2 {
   return scale(a, 1 / norm(a));
 }
 

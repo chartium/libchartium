@@ -21,7 +21,7 @@ export interface CoordinatesInChart {
   toClipSpace(): { x: number; y: number };
   toPhysicalPixels(): { x: number; y: number };
   toLogicalPixels(): { x: number; y: number };
-  toQuantitites(): { x: ChartValue; y: ChartValue };
+  toQuantities(): { x: ChartValue; y: ChartValue };
 }
 
 export interface PointInChart extends CoordinatesInChart {
@@ -147,7 +147,7 @@ export const chartAffineSpace = ({
         x: x.toLogicalPixels(),
         y: y.toLogicalPixels(),
       }),
-      toQuantitites: () => ({ x: x.toQuantity(), y: y.toQuantity() }),
+      toQuantities: () => ({ x: x.toQuantity(), y: y.toQuantity() }),
     });
 
     const pointFromValues = (x: ValueOnAxis, y: ValueOnAxis): PointInChart => ({

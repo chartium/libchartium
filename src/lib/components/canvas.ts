@@ -56,7 +56,7 @@ export function drawArrow(
 ): void {
   drawSegment(ctxt, from, to, style);
 
-  const normal = Vec.normalise(Vec.sub(from, to));
+  const normal = Vec.normalize(Vec.sub(from, to));
 
   drawSegment(
     ctxt,

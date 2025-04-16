@@ -193,7 +193,7 @@
     in:fade={{ duration: 100, delay: main ? 0 : 200 }}
     on:mousedown|stopPropagation
   >
-    {#each items as item, index}
+    {#each items as item, index (index)}
       {@const activate = activateIdx(index)}
 
       <ContextItemComponent

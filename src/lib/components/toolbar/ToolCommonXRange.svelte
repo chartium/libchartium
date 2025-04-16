@@ -11,7 +11,7 @@
 
   const { doUseCommonXRange$ } =
     getContext(toolKey) ??
-    yeet("Attemting to use a chart tool outside of a chart.");
+    yeet("Attempting to use a chart tool outside of a chart.");
 
   const icon$ = derived((S) =>
     S(doUseCommonXRange$ ?? cons(false))

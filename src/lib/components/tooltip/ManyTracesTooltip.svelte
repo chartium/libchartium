@@ -19,7 +19,7 @@
   <div class="header">
     {formatChartValue(hoverX, { unit: xDisplayUnit })}
   </div>
-  {#each nearestTraces as trace}
+  {#each nearestTraces as trace (trace.traceId)}
     <div class="trace-info {klass}" {style}>
       <div class="trace-name">
         <TracePreview

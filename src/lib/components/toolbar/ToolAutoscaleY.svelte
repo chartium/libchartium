@@ -12,13 +12,13 @@
 
   const { autoscaleY$ } =
     getContext(toolKey) ??
-    yeet("Attemting to use a chart tool outside of a chart.");
+    yeet("Attempting to use a chart tool outside of a chart.");
 
   const toggleAutoscaleY = () => autoscaleY$?.update((b) => !b);
   const notifyOfAutozoom$ = getContext(toolKey)?.notifyOfAutozoom$;
 </script>
 
-<div class="wrpa">
+<div class="wrapper">
   {#if $notifyOfAutozoom$}
     <div class="positioned" transition:fade={{ duration: 300 }}>
       <div class="bubble">
@@ -36,7 +36,7 @@
 </div>
 
 <style>
-  .wrpa {
+  .wrapper {
     position: relative;
   }
   .positioned {

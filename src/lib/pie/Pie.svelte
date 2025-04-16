@@ -21,7 +21,7 @@
 </script>
 
 <div
-  style={"height: 100%; width: 100%; position: relative"}
+  style="height: 100%; width: 100%; position: relative"
   use:observeClientSize={(s) => (contentSize = s)}
 >
   <svg

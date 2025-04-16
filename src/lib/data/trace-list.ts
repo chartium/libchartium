@@ -490,7 +490,7 @@ export class TraceList {
 
   /**
    * Create a new trace list with the same traces and styles, but limited to
-   * the range provided. Traces and datapoints that are outside the range may
+   * the range provided. Traces and data points that are outside the range may
    * or may not be deleted – if you narrow down the range of a trace list and
    * than expand it again, don't expect you'll get back all the data.
    */

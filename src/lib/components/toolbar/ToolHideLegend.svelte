@@ -7,7 +7,7 @@
 
   const { toggleLegend } =
     getContext(toolKey) ??
-    yeet("Attemting to use a chart tool outside of a chart.");
+    yeet("Attempting to use a chart tool outside of a chart.");
 </script>
 
 <ToolbarButton title="Toggle legend" icon={faList} on:click={toggleLegend} />

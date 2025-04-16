@@ -241,7 +241,7 @@
       role="presentation"
       on:dblclick={() => dispatchEvent("reset")}
     >
-      {#each ticks as tick}
+      {#each ticks as tick, idx (idx)}
         <span style={tickSpanStyle(tick)}>
           <div class="{axis} innermost {tickClass}" style={tickStyle}>
             {tick.text}

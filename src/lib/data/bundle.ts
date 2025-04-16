@@ -102,7 +102,7 @@ export class Bundle {
 
   /**
    * Iterate over the data of this bundle, yielded as rows in the format [x, y0, y1, ...].
-   * The rows are views into the underlying buffer (ie. subarrays) to avoid needlessly copying
+   * The rows are views into the underlying buffer (ie. sub-arrays) to avoid needlessly copying
    * data. However, if you need to keep a reference to previous items, or collect them into
    * an array, you have to copy them first.
    */

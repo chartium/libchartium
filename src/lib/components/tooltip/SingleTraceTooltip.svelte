@@ -34,8 +34,8 @@
     </div>
   </div>
 
-  <div style:margin-bottom={"9px"}></div>
-  {#each Object.entries(traceMetas) as [key, value]}
+  <div style:margin-bottom="9px"></div>
+  {#each Object.entries(traceMetas) as [key, value] (key)}
     <div class="trace-info">
       <div class="value-name">{key}:</div>
       <div class="value-value">

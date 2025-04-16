@@ -52,7 +52,7 @@
   bind:this={bubbleMeasure}
   class="axis-bubble {bubbleClass}"
   style={bubbleStyle}
-  style:visibility={"hidden"}
+  style:visibility="hidden"
 ></div>
 <div class="positioned" style={positionedStyle} bind:borderBoxSize>
   <div class="axis-bubble {bubbleClass}" style={bubbleStyle}>

@@ -184,7 +184,7 @@ const createUnitChangeActions$ = ({
         changeFactor({ direction, currentUnit: curr }),
         (unit): UnitChangeAction | undefined => {
           // if raising/lowering should change to the same unit
-          // as reseting, only show the reset action
+          // as resetting, only show the reset action
           if (eq(reset?.unit, unit)) return;
           return {
             unit,

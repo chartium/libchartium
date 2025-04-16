@@ -79,7 +79,7 @@
       <div class="color-indicator" style="background: {traceStyle.color}"></div>
     {:else if traceStyle.line !== "none"}
       <div class="color-indicator">
-        {#each segments(traceStyle.line) as _}
+        {#each segments(traceStyle.line) as _, i (i)}
           <div style="background: {traceStyle.color}"></div>
         {/each}
       </div>

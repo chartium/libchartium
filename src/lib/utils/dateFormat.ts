@@ -26,7 +26,7 @@ export type FormattingStrings = {
   [period in Period]: PeriodFormattingString;
 };
 
-const isPeriodFormatingEqual = (
+const isPeriodFormattingEqual = (
   a: PeriodFormattingString,
   b: PeriodFormattingString,
 ) => {
@@ -59,7 +59,7 @@ export class DateFormat {
       this.shortWindow === other.shortWindow &&
       this.timezone === other.timezone &&
       Object.entries(this.formattingStrings).every(([key, value]) =>
-        isPeriodFormatingEqual(other.formattingStrings[key as Period], value),
+        isPeriodFormattingEqual(other.formattingStrings[key as Period], value),
       )
     );
   }
@@ -102,7 +102,7 @@ export class DateFormat {
 
   /**
    * Returns a string that represents the larger period than input units,
-   * or undefined if the larger period shoud not be displayed.
+   * or undefined if the larger period should not be displayed.
    * @example getLargerEra(new Date(2020, 0, 1), "days") === "Jan 2020"
    */
   formatInLargerPeriod(
@@ -126,7 +126,7 @@ export class DateFormat {
  */
 export function getFloatDayjsValue(date: dayjs.Dayjs, unit: Period): number {
   const start = date.startOf(unit);
-  const fract = date.diff(start, unit, true);
+  const frac = date.diff(start, unit, true);
 
-  return start.get(unit === "days" ? "date" : unit) + fract;
+  return start.get(unit === "days" ? "date" : unit) + frac;
 }

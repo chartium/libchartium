@@ -3,7 +3,7 @@
   import type { ChartValue, DisplayUnit, Point } from "../../types.js";
   import { globalMouseMove } from "../../utils/mouseActions.js";
   import GenericTooltip from "../../utils/GenericTooltip.svelte";
-  import SingleTraceTootlip from "./SingleTraceTootlip.svelte";
+  import SingleTraceTooltip from "./SingleTraceTooltip.svelte";
   import ManyTracesTooltip from "./ManyTracesTooltip.svelte";
   import type {
     CloseTrace,
@@ -44,17 +44,17 @@
       return positionRelativeToPage;
     }
 
-    const tooltipXright = positionRelativeToPage.x;
-    const tooltipYbottom = positionRelativeToPage.y;
+    const tooltipXRight = positionRelativeToPage.x;
+    const tooltipYBottom = positionRelativeToPage.y;
 
-    const forbiddenXright = forbiddenRectangle.x + forbiddenRectangle.width;
-    const forbiddenYtop = forbiddenRectangle.y;
+    const forbiddenXRight = forbiddenRectangle.x + forbiddenRectangle.width;
+    const forbiddenYTop = forbiddenRectangle.y;
 
-    if (tooltipYbottom > forbiddenYtop && tooltipXright < forbiddenXright) {
+    if (tooltipYBottom > forbiddenYTop && tooltipXRight < forbiddenXRight) {
       //in rect
       return {
-        x: forbiddenXright,
-        y: forbiddenYtop,
+        x: forbiddenXRight,
+        y: forbiddenYTop,
       };
     }
 
@@ -72,7 +72,7 @@
 <div use:globalMouseMove={updateMousePosition}>
   <GenericTooltip position={show ? position : undefined}>
     {#if hoveredTrace !== undefined}
-      <SingleTraceTootlip
+      <SingleTraceTooltip
         {previewStyle}
         {decimalPlaces}
         {hoveredTrace}

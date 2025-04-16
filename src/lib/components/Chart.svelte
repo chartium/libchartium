@@ -76,9 +76,9 @@
 
   export let title: string = "";
   export let subtitle: string = "";
-  /** Label to be displayed next to x axis. If empty, label will be ommited */
+  /** Label to be displayed next to x axis. If empty, label will be omitted */
   export let xLabel: string = "";
-  /** Label to be displayed next to y axis. If empty, label will be ommited */
+  /** Label to be displayed next to y axis. If empty, label will be omitted */
   export let yLabel: string = "";
 
   export let chartStylesheet: Partial<ChartStyleSheet> = {};
@@ -115,9 +115,9 @@
   export let hideXRuler: boolean = false;
   /** Hides the lines shown upon mouse hover */
   export let hideYRuler: boolean = false;
-  /** Hides the coordinate bubble by the odge of the graph */
+  /** Hides the coordinate bubble by the edge of the graph */
   export let hideXBubble: boolean = false;
-  /** Hides the coordinate bubble by the odge of the graph */
+  /** Hides the coordinate bubble by the edge of the graph */
   export let hideYBubble: boolean = false;
   /** Replaces toolbar buttons with three dots that when hovered show the whole toolbar */
   export let hideToolbarUntilHover = false;
@@ -195,7 +195,7 @@
   const autoscaleY$ = mut(autoscaleY);
   $: autoscaleY$.set(autoscaleY);
 
-  /** Disallowes the user to manually change range in the direction of this axis */
+  /** Disallows the user to manually change range in the direction of this axis */
   export let disableUserRangeChanges: { x?: boolean; y?: boolean } = {};
   const _disableUserRangeChanges$ = mut(disableUserRangeChanges);
   $: _disableUserRangeChanges$.set(disableUserRangeChanges);
@@ -210,7 +210,7 @@
 
   /**
    * Whether the chart should be fullscreen
-   * to programatically toggle fullscreen, use `fullscreen$.set(true)`
+   * to programmatically toggle fullscreen, use `fullscreen$.set(true)`
    */
   export let fullscreen$: WritableSignal<boolean> = mut(false);
   fullscreen$.subscribe((f) => {
@@ -273,7 +273,7 @@
 
   const visibleAction = mut<VisibleAction | undefined>(undefined);
 
-  /** updates highilghted points in visibleAction */
+  /** updates highlighted points in visibleAction */
   effect((S) => {
     const closestTraces = S(nearestTraces$);
     if (!closestTraces) {
@@ -292,6 +292,7 @@
       }));
     }
   }).pipe(onDestroy);
+
   // forbidden rectangle for tooltip to avoid
   let forbiddenRectangle:
     | {
@@ -331,11 +332,11 @@
     const zoom = S(visibleAction)?.zoom;
     if (zoom === undefined) return false;
 
-    const isZoominY =
+    const isZoomingY =
       Math.abs(zoom.y.from - zoom.y.to) >
       chart$.valueOnAxis("y").fromLogicalPixels(oneDZoomWindow).toFraction();
 
-    return isZoominY;
+    return isZoomingY;
   }).skipEqual();
 
   let parentDiv: HTMLDivElement;
@@ -376,7 +377,7 @@
     use:portal={$fullscreen$ ? "body" : parentDiv}
     class:fullscreen={$fullscreen$}
     class={klass}
-    style={"height: 100%; width: 100%"}
+    style="height: 100%; width: 100%"
   >
     <ChartGrid
       bind:contentSize

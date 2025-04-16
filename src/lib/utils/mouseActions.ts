@@ -294,12 +294,12 @@ export function scrollMouseEvents(node: HTMLElement): ActionReturn<void> {
 }
 
 /**
- * Action that registers events similar to on:click and on:dblclick but if doubleclick happens the single clicks don't get triggered
+ * Action that registers events similar to on:click and on:dblclick but if double click happens the single clicks don't get triggered
  * @param node the node to attach the action to
  * @param callbacks the callbacks to call on single and double click
  * @param delayMS the delay in milliseconds to wait for the second click
  */
-export function singleOrDoubleclick(
+export function singleOrDoubleClick(
   node: HTMLElement,
   callbacks: {
     single: (event: MouseEvent) => void;

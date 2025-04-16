@@ -81,7 +81,7 @@ export const hover$ = ({
       case "move":
         return point()
           .fromLogicalPixels(e.event.offsetX, e.event.offsetY)
-          .toQuantitites();
+          .toQuantities();
 
       case "out":
         return { x: undefined, y: undefined };

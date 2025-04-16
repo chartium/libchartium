@@ -1,6 +1,6 @@
 <script lang="ts">
   import TracePreview from "./TracePreview.svelte";
-  import { singleOrDoubleclick } from "../utils/mouseActions.js";
+  import { singleOrDoubleClick } from "../utils/mouseActions.js";
   import type { ComputedTraceStyle } from "../data/trace-list.js";
 
   export let traceId: string;
@@ -17,7 +17,7 @@
   class="trace-legend"
   class:hidden
   on:click={() => (hidden = !hidden)}
-  use:singleOrDoubleclick={{
+  use:singleOrDoubleClick={{
     single: () => toggleTraceVisibility(traceId),
     double: () => toggleVisibilityOfAllTraces(traceId),
   }}
