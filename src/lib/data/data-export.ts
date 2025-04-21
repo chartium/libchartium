@@ -6,6 +6,7 @@ import { PARAMS } from "./trace-list.js";
 import { assertNever, enumerate, map, pipe, yeet } from "@typek/typek";
 import { joinSeq } from "../utils/collection.js";
 import { UnknownVariantHandleError } from "../errors.js";
+import { dayjs } from "../utils/dayjs.js";
 
 export type TraceExportRow = {
   x: number;
@@ -84,10 +85,10 @@ export class TraceListExport {
 
     return new ExportTextFile("export.csv", function* () {
       const ids = Array.from(self.traces.traces());
-      yield `timestamp,${ids.join(",")}\n`;
+      yield `timestamp,${ids.map((i) => self.traces.getLabel(i) ?? i).join(",")}\n`;
 
       for (const { x, y } of self.rows()) {
-        yield `${x},${ids.map((id) => y[id] ?? valueOnMissingData).join(",")}\n`;
+        yield `${dayjs(x).toISOString()},${ids.map((id) => y[id] ?? valueOnMissingData).join(",")}\n`;
       }
     });
   }
