@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.41.0](https://github.com/chartium/libchartium/compare/libchartium-v0.40.2...libchartium-v0.41.0) (2025-04-21)
+
+
+### Features
+
+* switch to more human redable csv format ([69a5133](https://github.com/chartium/libchartium/commit/69a51337724ed7bbcd9e1eeee44cee4618fa9310))
+
 ## [0.40.2](https://github.com/chartium/libchartium/compare/libchartium-v0.40.1...libchartium-v0.40.2) (2025-04-16)
 
 
