@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.41.1](https://github.com/chartium/libchartium/compare/libchartium-v0.41.0...libchartium-v0.41.1) (2025-04-24)
+
+
+### Bug Fixes
+
+* shrink ticks when possible ([119a04f](https://github.com/chartium/libchartium/commit/119a04fc3fa50193d7a9a76b5933ed3cf4462f28))
+
 ## [0.41.0](https://github.com/chartium/libchartium/compare/libchartium-v0.40.2...libchartium-v0.41.0) (2025-04-21)
 
 
