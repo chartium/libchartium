@@ -259,13 +259,13 @@
 
 <style>
   .axis-container {
-    flex-grow: 1;
     display: flex;
     align-items: center;
     justify-content: flex-end;
 
     &.x {
       flex-direction: column-reverse;
+      flex-grow: 1;
     }
 
     &.y {
