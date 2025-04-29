@@ -1,5 +1,5 @@
 import type { Signal } from "@typek/signalhead";
-import type { ChartValue, ChartRange, Size } from "../../types.js";
+import type { ChartValue, ChartRange, Size, DataUnit } from "../../types.js";
 import { toNumeric, toChartValue, unitOf } from "../../units/mod.js";
 
 export interface ChartAffineSpaceProps {
@@ -36,6 +36,7 @@ export interface VectorInChart extends CoordinatesInChart {
 }
 
 export interface ValueOnAxisFactory {
+  unit: DataUnit;
   fromFraction(value: number): ValueOnAxis;
   fromClipSpace(value: number): ValueOnAxis;
   fromPhysicalPixels(value: number): ValueOnAxis;
@@ -106,6 +107,7 @@ export const chartAffineSpace = ({
         : fromFraction(1 - (to - toNumeric(v, unit)) / length);
 
     return {
+      unit,
       fromFraction,
       fromClipSpace,
       fromPhysicalPixels,

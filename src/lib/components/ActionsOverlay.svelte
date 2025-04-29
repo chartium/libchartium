@@ -41,6 +41,7 @@
   import type { Chart } from "../state/core/chart.js";
   import { P, match } from "ts-pattern";
   import { mapOpt } from "../utils/mapOpt.js";
+  import { areUnitsCompatible, unitOf } from "../units/mod.js";
 
   export const events = createEventDispatcher<{
     reset: undefined;
@@ -104,12 +105,14 @@
         // Global Ruler
         // https://open.spotify.com/track/3vFZheR74pxUkzxqhXTZ2X
 
-        const x = mapOpt(commonXRuler.get(), (v) =>
-          chart.valueOnAxis("x").fromQuantity(v).toFraction(),
-        );
-        const y = mapOpt(commonYRuler.get(), (v) =>
-          chart.valueOnAxis("y").fromQuantity(v).toFraction(),
-        );
+        const convertor = (axis: "x" | "y") => (v: ChartValue) => {
+          const valueFactory = chart.valueOnAxis(axis);
+          if (areUnitsCompatible(valueFactory.unit, unitOf(v)))
+            return valueFactory.fromQuantity(v).toFraction();
+        };
+
+        const x = mapOpt(commonXRuler.get(), convertor("x"));
+        const y = mapOpt(commonYRuler.get(), convertor("y"));
 
         match({ x, y })
           .with({ x: P.number, y: P.number }, ({ x, y }) =>
