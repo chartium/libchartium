@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.41.2](https://github.com/chartium/libchartium/compare/libchartium-v0.41.1...libchartium-v0.41.2) (2025-04-29)
+
+
+### Bug Fixes
+
+* check unit compatibility when drawing a shared ruler ([5a7fba4](https://github.com/chartium/libchartium/commit/5a7fba44a00d90fdf2d4678b4708b7c8d5cb2ec1))
+
 ## [0.41.1](https://github.com/chartium/libchartium/compare/libchartium-v0.41.0...libchartium-v0.41.1) (2025-04-24)
 
 
