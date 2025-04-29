@@ -42,6 +42,7 @@
   import { filter } from "@typek/typek";
   import RulerBubble from "./RulerBubble.svelte";
   import { setContext } from "../utils/svelte-context.js";
+  import { areUnitsCompatible, unitOf } from "../mod.js";
 
   // SECTION Props
   let klass: string = "";
@@ -411,7 +412,7 @@
         bind:textLength={$measureYAxisTextSize$}
         dimensionFlock={commonYAxisWidth$}
       />
-      {#if !hideYBubble && $commonXRuler$ !== undefined && $commonYRuler$ !== undefined}
+      {#if !hideYBubble && $commonXRuler$ !== undefined && $commonYRuler$ !== undefined && areUnitsCompatible(chart$.valueOnAxis("y").unit, unitOf($commonYRuler$))}
         <div class="y bubble-reference">
           <RulerBubble
             autoDecimalPlaces={$yTicksDecimalPlaces$ + 1}
