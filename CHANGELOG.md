@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.41.3](https://github.com/chartium/libchartium/compare/libchartium-v0.41.2...libchartium-v0.41.3) (2025-04-29)
+
+
+### Bug Fixes
+
+* check ruler compatibility when showing y bubble ([fedb0ed](https://github.com/chartium/libchartium/commit/fedb0ed71995e828217dfbe105c867ed9a957a97))
+
 ## [0.41.2](https://github.com/chartium/libchartium/compare/libchartium-v0.41.1...libchartium-v0.41.2) (2025-04-29)
 
 
