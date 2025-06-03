@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.41.4](https://github.com/chartium/libchartium/compare/libchartium-v0.41.3...libchartium-v0.41.4) (2025-06-03)
+
+
+### Bug Fixes
+
+* betr kolr, fixes [#169](https://github.com/chartium/libchartium/issues/169) ([ad37a0b](https://github.com/chartium/libchartium/commit/ad37a0bce913505d3c5530405ba54f86f30770dd))
+
 ## [0.41.3](https://github.com/chartium/libchartium/compare/libchartium-v0.41.2...libchartium-v0.41.3) (2025-04-29)
 
 
