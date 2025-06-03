@@ -39,7 +39,7 @@
     &:hover {
       opacity: 0.9;
       width: fit-content;
-      background-color: hsla(0, 0%, 5%, 0.6);
+      background-color: var(--libchartium-secondary-background);
     }
   }
 </style>
